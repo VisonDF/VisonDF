@@ -1,1 +1,1 @@
-![alt text](logo/visonDF.svg)
+![alt text](logo/visonDF.png)
