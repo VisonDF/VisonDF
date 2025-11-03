@@ -16,21 +16,21 @@ template <typename T> void add_col(std::vector<T> &x, std::string name = "NA") {
       bool_v.push_back(i);
       cur_v.push_back(std::to_string(i));
     };
-  } else if constexpr (std::is_same_v<T, int>) {
+  } else if constexpr (std::is_same_v<T, IntT>) {
     matr_idx[3].push_back(ncol);
     type_refv.push_back('i');
     for (auto &i : x) {
       int_v.push_back(i);
       cur_v.push_back(std::to_string(i));
     };
-  } else if constexpr (std::is_same_v<T, unsigned int>) {
+  } else if constexpr (std::is_same_v<T, UIntT>) {
     matr_idx[4].push_back(ncol);
     type_refv.push_back('u');
     for (auto &i : x) {
       uint_v.push_back(i);
       cur_v.push_back(std::to_string(i));
     };
-  } else if constexpr (std::is_same_v<T, double>) {
+  } else if constexpr (std::is_same_v<T, FloatT>) {
     matr_idx[5].push_back(ncol);
     type_refv.push_back('d');
     for (auto &i : x) {
