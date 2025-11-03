@@ -29,20 +29,20 @@ void fapply(void (&f)(T&), unsigned int &n) {
       f(bool_v[i]);
       tmp_val_refv[n][i] = std::to_string(bool_v[i]);
     };
-  } else if constexpr (std::is_same_v<T, int>) {
+  } else if constexpr (std::is_same_v<T, IntT>) {
 
     for (i = i2; i < (i2 + nrow); i += 1) {
       f(int_v[i]);
       tmp_val_refv[n][i] = std::to_string(int_v[i]);
     };
-  } else if constexpr (std::is_same_v<T, unsigned int>) {
+  } else if constexpr (std::is_same_v<T, UIntT>) {
 
     for (i = i2; i < (i2 + nrow); i += 1) {
       f(uint_v[i]);
       tmp_val_refv[n][i3] = std::to_string(uint_v[i]);
       i3 += 1;
     };
-  } else if constexpr (std::is_same_v<T, double>) {
+  } else if constexpr (std::is_same_v<T, FloatT>) {
     for (i = i2; i < (i2 + nrow); i += 1) {
       f(dbl_v[i]);
       tmp_val_refv[n][i] = std::to_string(bool_v[i]);
@@ -59,3 +59,5 @@ void fapply(void (&f)(T&), unsigned int &n) {
     };
   };
 };
+
+
