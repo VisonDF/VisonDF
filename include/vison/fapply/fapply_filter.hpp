@@ -42,7 +42,7 @@ inline void apply_numeric(VecT& values,
 template <typename T>
 void fapply(void (&f)(T&), 
                 unsigned int& n, 
-                std::vector<bool>& mask) 
+                const std::vector<bool>& mask) 
 {
 
     if constexpr (std::is_same_v<T, bool>)

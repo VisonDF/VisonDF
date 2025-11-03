@@ -20,14 +20,15 @@ inline void apply_numeric(VecT& values,
 
     const unsigned int start = nrow * i2;
     unsigned int i3 = 0;
-    for (size_t i = start; i < start + mask.size(); ++i, ++i3) {
+    for (; i3 < mask.size(); ++i3) {
 
         unsigned int pos_idx = mask[i3];
+        unsigned int abs_idx = start + mask[i3];
 
-        f(values[pos_idx]);
+        f(values[abs_idx]);
 
         char buf[buf_size];
-        auto [ptr, ec] = std::to_chars(buf, buf + buf_size, values[pos_idx]);
+        auto [ptr, ec] = std::to_chars(buf, buf + buf_size, values[abs_idx]);
 
         if (ec == std::errc{}) [[likely]] {
             tmp_val_refv[n][pos_idx].assign(buf, ptr);
@@ -40,7 +41,7 @@ inline void apply_numeric(VecT& values,
 template <typename T>
 void fapply(void (&f)(T&), 
                 unsigned int& n, 
-                std::vector<unsigned int>& mask) 
+                const std::vector<unsigned int>& mask) 
 {
 
     if constexpr (std::is_same_v<T, bool>)
@@ -61,10 +62,11 @@ void fapply(void (&f)(T&),
             ++i2;
         const unsigned int start = nrow * i2;
         unsigned int i3 = 0;
-        for (size_t i = start; i < start + mask.size(); ++i, ++i3) {
+        for (; i3 < mask.size(); ++i3) {
             unsigned int pos_idx = mask[i3];
-            f(chr_v[pos_idx]);
-            tmp_val_refv[n][pos_idx].assign(1, chr_v[pos_idx]);
+            unsigned int abs_idx = start + mask[i3];
+            f(chr_v[abs_idx]);
+            tmp_val_refv[n][pos_idx].assign(1, chr_v[abs_idx]);
         }
     }
 
@@ -74,10 +76,11 @@ void fapply(void (&f)(T&),
             ++i2;
         const unsigned int start = nrow * i2;
         unsigned int i3 = 0;
-        for (size_t i = start; i < start + mask.size(); ++i, ++i3) {
+        for (; i3 < mask.size(); ++i3) {
             unsigned int pos_idx = mask[i3];
-            f(str_v[pos_idx]);
-            tmp_val_refv[n][pos_idx] = str_v[pos_idx];
+            unsigned int abs_idx = start + mask[i3];
+            f(str_v[abs_idx]);
+            tmp_val_refv[n][pos_idx] = str_v[abs_idx];
         }
     }
 }
