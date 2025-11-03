@@ -138,6 +138,8 @@ namespace vison {
 
         #include "fapply/fapply.hpp"
    
+        #include "fapply/fapply_filter.hpp"
+
         #include "fapply/vectorized_hint/fapply_simd_hint.hpp"
 
         #include "view_col/view_col.hpp"
