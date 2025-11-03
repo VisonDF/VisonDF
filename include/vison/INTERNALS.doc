@@ -296,7 +296,7 @@
 //@D Allow to copy a dataframe choosing columns (by index) of the copied dataframe, while applying an index mask on the desired rows. 
 //@A cols : is the vector of the index of the columns to copy (<code>{-1}</code>) for all
 //@A cur_obj : is the dataframe that will contain all the rows and columns of the copied dataframe
-//@A mask : is the index mask vector, <code>{-1}</code> to keep all rows
+//@A mask : is the index mask vector
 //@X
 //@E 
 //@E   Dataframe obj1, obj2, obj3;
