@@ -1,17 +1,5 @@
 #pragma once
 
-template <typename VecT>
-inline void append_block(std::vector<VecT>& dst,
-                         const std::vector<VecT>& src,
-                         size_t col_idx,
-                         size_t nrow)
-{
-    const size_t start = col_idx * nrow;
-    dst.insert(dst.end(), 
-                    src.begin() + start, 
-                    src.begin() + start + nrow);
-}
-
 void get_dataframe(const std::vector<int>& cols, Dataframe& cur_obj)
 {
     nrow = cur_obj.get_nrow();
@@ -48,17 +36,29 @@ void get_dataframe(const std::vector<int>& cols, Dataframe& cur_obj)
         type_refv.resize(ncol);
         name_v.resize(ncol);
 
-        unsigned int rs_val = ncol * nrow / 4;
-
-        str_v.reserve(rs_val);
-        chr_v.reserve(rs_val);
-        bool_v.reserve(rs_val);
-        int_v.reserve(rs_val);
-        uint_v.reserve(rs_val);
-        dbl_v.reserve(rs_val);
-
         size_t str_idx = 0, chr_idx = 0, bool_idx = 0;
         size_t int_idx = 0, uint_idx = 0, dbl_idx = 0;
+
+        for (int i : cols) {
+            switch (type_refv1[i]) {
+                case 's': ++str_idx; break;
+                case 'c': ++chr_idx; break;
+                case 'b': ++bool_idx; break;
+                case 'i': ++int_idx; break;
+                case 'u': ++uint_idx; break;
+                case 'd': ++dbl_idx; break;
+            }
+        }
+
+        str_v.reserve(nrow * str_idx);
+        chr_v.reserve(nrow * chr_idx);
+        bool_v.reserve(nrow * bool_idx);
+        int_v.reserve(nrow * int_idx);
+        uint_v.reserve(nrow * uint_idx);
+        dbl_v.reserve(nrow * dbl_idx);
+
+        str_idx = 0, chr_idx = 0, bool_idx = 0;
+        int_idx = 0, uint_idx = 0, dbl_idx = 0;
 
         for (int i : cols) {
             tmp_val_refv.push_back(cur_tmp[i]);

@@ -84,15 +84,15 @@ namespace vison {
           return bool_v;
         };
     
-        const std::vector<int>& get_int_vec() const {
+        const std::vector<IntT>& get_int_vec() const {
           return int_v;
         };
     
-        const std::vector<unsigned int>& get_uint_vec() const {
+        const std::vector<UIntT>& get_uint_vec() const {
           return uint_v;
         };
     
-        const std::vector<double>& get_dbl_vec() const {
+        const std::vector<FloatT>& get_dbl_vec() const {
           return dbl_v;
         };
     
@@ -103,6 +103,29 @@ namespace vison {
         template <typename T>
         constexpr size_t max_chars_needed() noexcept {
             return std::numeric_limits<T>::digits10 + 3;
+        }
+
+        template <typename VecT>
+        inline void append_block(std::vector<VecT>& dst,
+                                 const std::vector<VecT>& src,
+                                 size_t col_idx,
+                                 size_t nrow)
+        {
+
+            const size_t start = col_idx * nrow;
+            
+            if constexpr (std::is_trivially_copyable_v<VecT>) {
+                const size_t old_size = dst.size();
+                dst.resize(old_size + nrow);
+                std::memcpy(dst.data() + old_size,
+                            src.data() + start,
+                            nrow * sizeof(VecT));
+            } else {
+                dst.insert(dst.end(),
+                           src.begin() + start,
+                           src.begin() + start + nrow);
+            }
+
         }
 
         #include "detail/longest_determine.hpp"
