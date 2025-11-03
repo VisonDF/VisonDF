@@ -48,7 +48,7 @@ void get_dataframe(const std::vector<int>& cols, Dataframe& cur_obj)
         type_refv.resize(ncol);
         name_v.resize(ncol);
 
-        unsigned int rs_val = ncol * nrow / 2;
+        unsigned int rs_val = ncol * nrow / 4;
 
         str_v.reserve(rs_val);
         chr_v.reserve(rs_val);
