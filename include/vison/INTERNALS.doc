@@ -144,7 +144,7 @@
 //@T Dataframe.display_filter
 //@U void display_filter(std::vector&lt;bool&gt; &x, std::vector&lt;int&gt; &colv)
 //@X
-//@D Print the current dataframe. Works seemlessly with <code>Dataframe.view_colnb()</code> to efficiently create boolean vector to filter rows, see example.
+//@D Print the current dataframe. Works seemlessly with <code>Dataframe.view_col()</code> to efficiently create boolean vector to filter rows, see example.
 //@A x : is the boolean vector filtering the rows to display
 //@A colv : is the int vector representing the column index of the column to keep, <code>{-1}</code> to keep all columns
 //@X
@@ -154,7 +154,7 @@
 //@E
 //@E std::vector&lt;int&gt; cols = {-1};
 //@E
-//@E auto col = obj1.view_colnb(n);
+//@E auto col = obj1.view_col(n);
 //@E
 //@E std::vector&lt;bool&gt; mask; 
 //@E
@@ -182,7 +182,7 @@
 //@T Dataframe.display_filter_idx
 //@U void display_filter_idx(std::vector&lt;int&gt; &x, std::vector&lt;int&gt; &colv)
 //@X
-//@D Print the current dataframe. Works seemlessly with <code>Dataframe.view_colnb()</code> to efficiently create an int vector to filter rows, see example.
+//@D Print the current dataframe. Works seemlessly with <code>Dataframe.view_col()</code> to efficiently create an int vector to filter rows, see example.
 //@A x : is the int vector filtering the rows to display, the vector length is not forced to match the dataframe row number. <code>{-1}</code> to keep all rows in default order
 //@A colv : is the int vector representing the column index of the column to keep, <code>{-1}</code> to keep all columns
 //@X
@@ -266,7 +266,7 @@
 //@X
 //@E // after reading teste_dataframe.csv as obj1
 //@E unsigned int n = 3;
-//@E auto vec = obj1.view_colnb(n);
+//@E auto vec = obj1.view_col(n);
 //@E std::vector&lt;bool&gt; vmask = {};
 //@E std::visit([&vmask](auto&& span) {
 //@E     vmask.resize(span.size());
@@ -341,23 +341,24 @@
 //@E
 //@X
 
-//@T Dataframe.view_colnb
+//@T Dataframe.view_col
 //@U using ColumnView = std::variant&lt;
 //@U         std::span&lt;const int&gt;,
 //@U         std::span&lt;const unsigned int&gt;,
 //@U         std::span&lt;const double&gt;
 //@U     &gt;;
 //@U 
-//@U     ColumnView view_colnb(unsigned int &x) const
+//@U     ColumnView view_col(unsigned int &x) const
 //@X
-//@D Allow to get the reference of a int, unsigned int or double column as a span&lt;T&gt;, by column index (>= C++ 20).
-//@A rows : is a vector containing the row indices to copy (<code>{-1}</code>) for all. Intended to be used for creating boolean vecotr by your own functions, to maybe filter data later with <code>Dataframe.display_filter(), Dataframe.get_dataframe_filter(), Dataframe.get_col_filter, ...</code>
+//@D Allow to get the reference of a std::string, char, int, unsigned int or double column as a span&lt;T&gt;, by column index (>= C++ 20).
 //@A x : is the index of the column to get the ref from
 //@X
 //@E // after reading teste_dataframe.csv as obj1
 //@E unsigned int n = 1;
 //@E 
 //@E auto col = obj1.view_colnb(n);
+//@E auto &span_ref = std::get<std::span<const std::string>>(vec_refdbl);
+//@E // if col 1 is a std::string
 //@X
 
 //@T Dataframe.view_colstr

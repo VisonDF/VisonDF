@@ -137,7 +137,7 @@ namespace vison {
 
         #include "fapply/fapply.hpp"
    
-        #include "view_col/view_colnb.hpp"
+        #include "view_col/view_col.hpp"
         
         #include "view_col/view_colstr.hpp"
     
