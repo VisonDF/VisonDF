@@ -31,6 +31,7 @@ inline void apply_numeric(VecT& values, unsigned int n, size_t idx_type, F&& f) 
         } else [[unlikely]] {
             std::terminate();
         }
+        i3 += 1;
     }
 }
 
@@ -58,6 +59,7 @@ void fapply(void (&f)(T&), unsigned int& n) {
         for (size_t i = start; i < start + nrow; ++i, ++i3) {
             f(chr_v[i]);
             tmp_val_refv[n][i3].assign(1, chr_v[i]);
+            i3 += 1;
         }
     }
 
@@ -70,6 +72,7 @@ void fapply(void (&f)(T&), unsigned int& n) {
         for (size_t i = start; i < start + nrow; ++i, ++i3) {
             f(str_v[i]);
             tmp_val_refv[n][i3] = str_v[i];
+            i3 += 1;
         }
     }
 }
