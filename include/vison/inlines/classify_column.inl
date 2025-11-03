@@ -3,9 +3,9 @@ struct ColumnResult {
     std::vector<std::string> str_v;
     std::vector<char> chr_v;
     std::vector<bool> bool_v;
-    std::vector<int> int_v;
-    std::vector<unsigned int> uint_v;
-    std::vector<double> dbl_v;
+    std::vector<IntT> int_v;
+    std::vector<UIntT> uint_v;
+    std::vector<FloatT> dbl_v;
     std::vector<unsigned int> matr_idx[6];
 };
 
@@ -45,9 +45,9 @@ inline ColumnResult classify_column(
             result.matr_idx[5].push_back(col_idx);
             result.dbl_v.reserve(nrow);
             for (const auto& el : col_values) {
-                double val;
+                FloatT val;
                 auto [ptr, ec] = fast_float::from_chars(el.data(), el.data() + el.size(), val);
-                result.dbl_v.push_back(ec == std::errc() ? val : 0.0);
+                result.dbl_v.push_back(ec == std::errc() ? val : static_cast<FloatT>(0));
             }
             result.type = 'd';
             return result;
@@ -58,7 +58,7 @@ inline ColumnResult classify_column(
             result.matr_idx[3].push_back(col_idx);
             result.int_v.reserve(nrow);
             for (const auto& el : col_values) {
-                int val;
+                IntT val;
                 auto [ptr, ec] = std::from_chars(el.data(),
                                                  el.data() + el.size(), val);
                 result.int_v.push_back(ec == std::errc() ? val : 0);
@@ -87,7 +87,7 @@ inline ColumnResult classify_column(
         result.matr_idx[4].push_back(col_idx);
         result.uint_v.reserve(nrow);
         for (const auto& el : col_values) {
-            unsigned int val;
+            UIntT val;
             auto [ptr, ec] = std::from_chars(el.data(),
                                              el.data() + el.size(), val);
             result.uint_v.push_back(ec == std::errc() ? val : 0u);
@@ -97,7 +97,7 @@ inline ColumnResult classify_column(
         result.matr_idx[3].push_back(col_idx);
         result.int_v.reserve(nrow);
         for (const auto& el : col_values) {
-            int val;
+            IntT val;
             auto [ptr, ec] = std::from_chars(el.data(),
                                              el.data() + el.size(), val);
             result.int_v.push_back(ec == std::errc() ? val : 0);
@@ -107,3 +107,5 @@ inline ColumnResult classify_column(
 
     return result;
 }
+
+
