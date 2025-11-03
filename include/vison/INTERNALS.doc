@@ -1,0 +1,1705 @@
+//@L1 The Dataframe Object
+
+//@T Dataframe
+//@U Dataframe my_dataframe
+//@X
+//@D Dataframe objects supporting writing / reading csv, storing columns in differents vectors type (automatically or not), specifying the rows and columns to copy or get by reference, perform all types of joins, groupby... See examples.
+//@A See_below : See below
+//@X
+//@E See below
+//@X
+
+
+//@T Dataframe.readf
+//@U template <unsigned int strt_row = 0, 
+//@U          unsigned int end_row = 0, 
+//@U          unsigned int CORES = 1, 
+//@U          bool WARMING = 0, 
+//@U          bool CLEAN = 0, 
+//@U          bool MEM_CLEAN = 0>
+//@U     void readf(std::string &file_name, char delim = ',', 
+//@U                     bool header_name = 1, char str_context = '\'')
+//@X
+//@D Import a csv as a Dataframe object.
+//@A file_name : is the file_name of the csv to read
+//@A delim : is the column delimiter
+//@A header_name : is if the first row is in fact the column names
+//@A str_context_begin : is the first symbol of a quote, (to not take in count a comma as a new column if it is in a quote for example)
+//@A str_context_end : is the end symbol for a quote context
+//@A strt_row : is the first row to read, defaults to 0
+//@A end_row : is the last row to read, defaults to max (value of 0)
+//@A CORES : are the number of cores used for parsing and type inference
+//@A WARMING : enables cache warming, might help if a lot of delimiters by column
+//@A MEM_CLEAN : free unnused memory, might be slower
+//@X
+//@E Dataframe obj1;
+//@E std::string file_name = "teste_dataframe.csv";
+//@E obj1.readf<3, 8>(file_name); reads from the 3thrd to the 8nth row
+//@X
+
+//@T Dataframe.readf_trim
+//@U template<unsigned int strt_row = 0, unsigned int end_row = 0>
+//@U void readf_trim(std::string &file_name, char delim = ',', bool header_name = 1, char str_context_begin = '\'', char str_context_end = '\'')
+//@X
+//@D Import a csv as a Dataframe object. Automatically trim the value (removes extra spaces before and after)
+//@A file_name : is the file_name of the csv to read
+//@A delim : is the column delimiter
+//@A header_name : is if the first row is in fact the column names
+//@A str_context_begin : is the first symbol of a quote, (to not take in count a comma as a new column if it is in a quote for example)
+//@A str_context_end : is the end symbol for a quote context
+//@A strt_row : is the first row to read, defaults to 0
+//@A end_row : is the last row to read, defaults to max (value of 0)
+//@X
+//@E Dataframe obj1;
+//@E std::string file_name = "teste_dataframe2.csv";
+//@E obj1.readf_trim<0, 8>(file_name); // reads until the 8nth row
+//@X
+
+//@T Dataframe.readf_lambda
+//@U template<unsigned int strt_row = 0, unsigned int end_row = 0>
+//@U void readf_lambda(std::string &file_name, void (&f)(std::string&), char delim = ',', bool header_name = 1, char str_context_begin = '\'', char str_context_end = '\'')
+//@X
+//@D Import a csv as a Dataframe object. Applies a custom function to all values from the csv before parsing it as appropriate data types.
+//@A file_name : is the file_name of the csv to read
+//@A f : is your custom function (void, must take a std:string as argument)
+//@A delim : is the column delimiter
+//@A header_name : is if the first row is in fact the column names
+//@A str_context_begin : is the first symbol of a quote, (to not take in count a comma as a new column if it is in a quote for example)
+//@A str_context_end : is the end symbol for a quote context
+//@A strt_row : is the first row to read, defaults to 0
+//@A end_row : is the last row to read, defaults to max (value of 0)
+//@X
+//@E void myfunc (std::string &x) {
+//@E   x.push_back('L');
+//@E };
+//@E Dataframe obj1;
+//@E std::string file_name = "teste_dataframe2.csv";
+//@E obj1.readf_lambda<3, 0>(file_name, myfunc); // reads from the thirs row
+//@X
+
+//@T Dataframe.readf_alrd
+//@U template<unsigned int strt_row = 0, unsigned int end_row = 0>
+//@U void readf_alrd(std::string &file_name, std::vector&lt;string&gt;& dtype, char delim = ',', bool header_name = 1, char str_context_begin = '\'', char str_context_end = '\'')
+//@X
+//@D Import a csv as a Dataframe object. This function only makes sense if you know in advance the column data types (faster than semantical analysis). The column data types are contiguously described in <code>dtype</code> argument. The values are 's' (string), 'c' (char), 'b' (bool), 'i' (int), 'u' (unsigned int) and 'd' (double)
+//@A file_name : is the file_name of the csv to read
+//@A dtype : is the string vector containing all column data types
+//@A f : is your custom function (void, must take a std:string as argument)
+//@A delim : is the column delimiter
+//@A header_name : is if the first row is in fact the column names
+//@A str_context_begin : is the first symbol of a quote, (to not take in count a comma as a new column if it is in a quote for example)
+//@A str_context_end : is the end symbol for a quote context
+//@A strt_row : is the first row to read, defaults to 0
+//@A end_row : is the last row to read, defaults to max (value of 0)
+//@X
+//@E std::string dvec = "dsusic";
+//@E Dataframe obj1;
+//@E std::string file_name = "teste_dataframe2.csv";
+//@E obj1.readf_lambda(file_name, dvec); //reads the entire file
+//@X
+
+//@T Dataframe.writef
+//@U void writef(std::string &file_name, char delim = ',', bool header_name = 1, char str_context_bgn = '\'', char str_context_end = '\'')
+//@X
+//@D Write a dataframe object into a csv file.
+//@A file_name : is the file name to write data into
+//@A delim : is the column delimiter
+//@A header_name : 1 to write the column names, 0 else
+//@A str_context_begin : is the first symbol of a quote, (to not take in count a comma as a new column if it is in a quote for example)
+//@A str_context_end : is the end symbol for a quote context
+//@X
+//@E // after reading teste_dataframe.csv as obj1
+//@E std::string out_file = "out.csv";
+//@E obj1.writef(out_file);
+//@X
+
+//@T Dataframe.display
+//@U void display();
+//@X
+//@D Print the current dataframe.
+//@A no : no
+//@X
+//@E // after reading teste_dataframe.csv as obj1
+//@E obj1.display();
+//@E &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt; &lt;int&gt; &lt;char&gt;
+//@E col1 col2 col3 col4 col5 col6
+//@E :0:  1    2    3    aa   5    z
+//@E :1:  6    7    8    bb   10   e
+//@E :2:  1    2    3    cc   5    h
+//@E :3:  6    7    8    uu   10   a
+//@E :4:  1    2    3    s4   -5   q
+//@E :5:  6    7    8    s9   10   p
+//@E :6:  1    2    3    a4   5    j
+//@E :7:  6    7    8    m9   10   i
+//@E :8:  6    7    8    s9   10   p
+//@E :9:  1    2    3    a4   5    j
+//@E :10: 6    7    8    m9   10   i
+//@E :11: 6    7    8    m9   10   i
+//@E :12: 6    7    8    s9   10   p
+//@E :13: 1    2    3    a4   5    j
+//@E :14: 6    7    8    m9   10   i
+//@M img_dataframe.jpg
+//@X
+
+//@T Dataframe.display_filter
+//@U void display_filter(std::vector&lt;bool&gt; &x, std::vector&lt;int&gt; &colv)
+//@X
+//@D Print the current dataframe. Works seemlessly with <code>Dataframe.view_colnb()</code> to efficiently create boolean vector to filter rows, see example.
+//@A x : is the boolean vector filtering the rows to display
+//@A colv : is the int vector representing the column index of the column to keep, <code>{-1}</code> to keep all columns
+//@X
+//@E // after reading teste_dataframe.csv as obj1
+//@E
+//@E unsigned int n = 1;
+//@E
+//@E std::vector&lt;int&gt; cols = {-1};
+//@E
+//@E auto col = obj1.view_colnb(n);
+//@E
+//@E std::vector&lt;bool&gt; mask; 
+//@E
+//@E std::visit([&mask](auto&& span) {
+//@E     mask.resize(span.size());
+//@E     for (size_t i = 0; i &lt; span.size(); ++i)
+//@E         mask[i] = span[i] &gt; 3;
+//@E }, col);
+//@E 
+//@E obj1.display_filter(mask, cols);
+//@E
+//@E     &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt; &lt;int&gt; &lt;char&gt;
+//@E     col1   col2   col3   col4  col5  col6
+//@E :1:  6      7      8      bb    10    e
+//@E :3:  6      7      8      uu    10    a
+//@E :5:  6      7      8      s9    10    p
+//@E :7:  6      7      8      m9    10    i
+//@E :8:  6      7      8      s9    10    p
+//@E :10: 6      7      8      m9    10    i
+//@E :11: 6      7      8      m9    10    i
+//@E :12: 6      7      8      s9    10    p
+//@E :14: 6      7      8      m9    10    i
+//@X
+
+//@T Dataframe.display_filter_idx
+//@U void display_filter_idx(std::vector&lt;int&gt; &x, std::vector&lt;int&gt; &colv)
+//@X
+//@D Print the current dataframe. Works seemlessly with <code>Dataframe.view_colnb()</code> to efficiently create an int vector to filter rows, see example.
+//@A x : is the int vector filtering the rows to display, the vector length is not forced to match the dataframe row number. <code>{-1}</code> to keep all rows in default order
+//@A colv : is the int vector representing the column index of the column to keep, <code>{-1}</code> to keep all columns
+//@X
+//@E
+//@E  Dataframe obj1;
+//@E  std::string fname = "csv_test/outb.csv";
+//@E  obj1.readf&lt;3, 0&gt;(fname);
+//@E  obj1.display();
+//@E     &lt;str&gt; &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt;
+//@E     col1  col2   col3   col4   col5
+//@E :0:  id4   6      7      8      uu
+//@E :1:  id5   1      2      3      s4
+//@E :2:  id6   6      7      8      s9
+//@E :3:  id7   1      2      3      a4
+//@E :4:  id8   6      7      8      m9
+//@E :5:  id9   6      7      8      s9
+//@E :6:  id10  1      2      3      a4
+//@E :7:  id11  6      7      8      m9
+//@E :8:  id12  6      7      8      m9
+//@E :9:  id13  6      7      8      s9
+//@E :10: id14  1      2      3      NA
+//@E :11: id15  16     7      8      m9
+//@E  std::vector&lt;int&gt; rvec = {3, 2, 5, 3, 6, 7, 6, 5, 8, 9, 11, 10};
+//@E  std::vector&lt;int&gt; cvec = {-1};
+//@E  obj1.display_filter_idx(rvec, cvec);
+//@E
+//@E     &lt;str&gt; &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt;
+//@E     col1  col2   col3   col4   col5
+//@E :0:  id7   1      2      3      a4
+//@E :1:  id6   6      7      8      s9
+//@E :2:  id9   6      7      8      s9
+//@E :3:  id7   1      2      3      a4
+//@E :4:  id10  1      2      3      a4
+//@E :5:  id11  6      7      8      m9
+//@E :6:  id10  1      2      3      a4
+//@E :7:  id9   6      7      8      s9
+//@E :8:  id12  6      7      8      m9
+//@E :9:  id13  6      7      8      s9
+//@E :10: id15  16     7      8      m9
+//@E :11: id14  1      2      3      NA
+//@X
+
+//@T Dataframe.get_dataframe
+//@U void get_dataframe(std::vector&lt;int&gt; &cols, Dataframe &cur_obj)
+//@X
+//@D Allow to copy a dataframe choosing columns (by index) of the copied dataframe. 
+//@A cols : is the vector of the index of the columns to copy (<code>{-1}</code>) for all
+//@A cur_obj : is the dataframe that will contain all the rows and columns of the copied dataframe
+//@X
+//@E // after reading teste_dataframe.csv as obj1
+//@E Dataframe obj2;
+//@E std::vector&lt;int&gt; idx_cols2 = {1, 2, 3};
+//@E obj2.get_dataframe(idx_cols2, obj1);
+//@E 
+//@E obj2.display();
+//@E     col1 col2 col3
+//@E :0:  2    3    aa
+//@E :1:  7    8    bb
+//@E :2:  2    3    cc
+//@E :3:  7    8    uu
+//@E :4:  2    3    s4
+//@E :5:  7    8    s9
+//@E :6:  2    3    a4
+//@E :7:  7    8    m9
+//@E :8:  7    8    s9
+//@E :9:  2    3    a4
+//@E :10: 7    8    m9
+//@E :11: 7    8    m9
+//@E :12: 7    8    s9
+//@E :13: 2    3    a4
+//@E :14: 7    8    m9
+//@X
+
+//@T Dataframe.get_dataframe_filter
+//@U void get_dataframe_filter(std::vector&lt;int&gt; &cols, Dataframe &cur_obj, std::vector&lt;bool&gt; &mask)
+//@X
+//@D Allow to copy a dataframe choosing columns (by index) of the copied dataframe, while applying a mask on the desired rows. 
+//@A cols : is the vector of the index of the columns to copy (<code>{-1}</code>) for all
+//@A cur_obj : is the dataframe that will contain all the rows and columns of the copied dataframe
+//@A mask : is the boolean mask vector
+//@X
+//@E // after reading teste_dataframe.csv as obj1
+//@E unsigned int n = 3;
+//@E auto vec = obj1.view_colnb(n);
+//@E std::vector&lt;bool&gt; vmask = {};
+//@E std::visit([&vmask](auto&& span) {
+//@E     vmask.resize(span.size());
+//@E     for (size_t i = 0; i &lt; span.size(); ++i)
+//@E         vmask[i] = span[i] &gt; 4;
+//@E }, vec);
+//@E Dataframe obj2;
+//@E std::vector&lt;int&gt; idx_cols2 = {1, 2, 3};
+//@E obj2.get_dataframe_filter(idx_cols2, obj1, vmask);
+//@E 
+//@E obj2.display();
+//@E     col1 col2 col3
+//@E :1:  7    8    bb
+//@E :3:  7    8    uu
+//@E :5:  7    8    s9
+//@E :7:  7    8    m9
+//@E :8:  7    8    s9
+//@E :10: 7    8    m9
+//@E :11: 7    8    m9
+//@E :12: 7    8    s9
+//@E :14: 7    8    m9
+//@X
+
+//@T Dataframe.get_dataframe_filter_idx
+//@U void get_dataframe_filter_idx(std::vector&lt;int&gt; &cols, Dataframe &cur_obj, std::vector&lt;int&gt; &mask)
+//@X
+//@D Allow to copy a dataframe choosing columns (by index) of the copied dataframe, while applying an index mask on the desired rows. 
+//@A cols : is the vector of the index of the columns to copy (<code>{-1}</code>) for all
+//@A cur_obj : is the dataframe that will contain all the rows and columns of the copied dataframe
+//@A mask : is the index mask vector, <code>{-1}</code> to keep all rows
+//@X
+//@E 
+//@E   Dataframe obj1, obj2, obj3;
+//@E   std::string fname = "csv_test/outb.csv";
+//@E   obj1.readf&lt;3, 0&gt;(fname);
+//@E   obj1.display();
+//@E
+//@E     &lt;str&gt; &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt;
+//@E     col1  col2   col3   col4   col5
+//@E :0:  id4   6      7      8      uu
+//@E :1:  id5   1      2      3      s4
+//@E :2:  id6   6      7      8      s9
+//@E :3:  id7   1      2      3      a4
+//@E :4:  id8   6      7      8      m9
+//@E :5:  id9   6      7      8      s9
+//@E :6:  id10  1      2      3      a4
+//@E :7:  id11  6      7      8      m9
+//@E :8:  id12  6      7      8      m9
+//@E :9:  id13  6      7      8      s9
+//@E :10: id14  1      2      3      NA
+//@E :11: id15  16     7      8      m9
+//@E
+//@E   std::vector&lt;int&gt; rvec = {3, 2, 5, 3, 6, 7, 6, 5, 8, 9, 11, 10};
+//@E   std::vector&lt;int&gt; cvec = {-1};
+//@E   obj2.get_dataframe_filter_idx(cvec, obj1, rvec);
+//@E   obj2.display();
+//@E
+//@E     &lt;str&gt; &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt;
+//@E     col1  col2   col3   col4   col5
+//@E :0:  id7   1      2      3      a4
+//@E :1:  id6   6      7      8      s9
+//@E :2:  id9   6      7      8      s9
+//@E :3:  id7   1      2      3      a4
+//@E :4:  id10  1      2      3      a4
+//@E :5:  id11  6      7      8      m9
+//@E :6:  id10  1      2      3      a4
+//@E :7:  id9   6      7      8      s9
+//@E :8:  id12  6      7      8      m9
+//@E :9:  id13  6      7      8      s9
+//@E :10: id15  16     7      8      m9
+//@E :11: id14  1      2      3      NA
+//@E
+//@X
+
+//@T Dataframe.view_colnb
+//@U using ColumnView = std::variant&lt;
+//@U         std::span&lt;const int&gt;,
+//@U         std::span&lt;const unsigned int&gt;,
+//@U         std::span&lt;const double&gt;
+//@U     &gt;;
+//@U 
+//@U     ColumnView view_colnb(unsigned int &x) const
+//@X
+//@D Allow to get the reference of a int, unsigned int or double column as a span&lt;T&gt;, by column index (>= C++ 20).
+//@A rows : is a vector containing the row indices to copy (<code>{-1}</code>) for all. Intended to be used for creating boolean vecotr by your own functions, to maybe filter data later with <code>Dataframe.display_filter(), Dataframe.get_dataframe_filter(), Dataframe.get_col_filter, ...</code>
+//@A x : is the index of the column to get the ref from
+//@X
+//@E // after reading teste_dataframe.csv as obj1
+//@E unsigned int n = 1;
+//@E 
+//@E auto col = obj1.view_colnb(n);
+//@X
+
+//@T Dataframe.view_colstr
+//@U std::span&lt;const std::string&gt; view_colstr(unsigned int &x) const 
+//@X
+//@D Allow to get the reference of a std::string column by column index.
+//@A x : is the index of the column to get the ref from
+//@X
+//@E // after reading teste_dataframe.csv as obj1
+//@E unsigned int n = 3;
+//@E 
+//@E auto col = obj1.view_colstr(n);
+//@X
+
+//@T Dataframe.view_colchr
+//@U std::span&lt;const std::string&gt; view_colchr(unsigned int &x) const 
+//@X
+//@D Allow to get the reference of a char column by column index.
+//@A x : is the index of the column to get the ref from
+//@X
+//@E // after reading teste_dataframe.csv as obj1
+//@E unsigned int n = 5;
+//@E 
+//@E auto col = obj1.view_colchr(n);
+//@X
+
+//@T Dataframe.view_colint
+//@U std::span&lt;const std::string&gt; view_colint(unsigned int &x) const 
+//@X
+//@D Allow to get the reference of an int column by column index.
+//@A x : is the index of the column to get the ref from
+//@X
+//@E // after reading teste_dataframe.csv as obj1
+//@E unsigned int n = 4;
+//@E 
+//@E auto col = obj1.view_colstr(n);
+//@X
+
+//@T Dataframe.view_coluint
+//@U std::span&lt;const std::string&gt; view_coluint(unsigned int &x) const 
+//@X
+//@D Allow to get the reference of an uint column by column index.
+//@A x : is the index of the column to get the ref from
+//@X
+//@E // after reading teste_dataframe.csv as obj1
+//@E unsigned int n = 0;
+//@E 
+//@E auto col = obj1.view_colchr(n);
+//@X
+
+//@T Dataframe.view_coldbl
+//@U std::span&lt;const std::string&gt; view_coldbl(unsigned int &x) const 
+//@X
+//@D Allow to get the reference of a double column by column index.
+//@A x : is the index of the column to get the ref from
+//@X
+//@E // after reading teste_dataframe.csv as obj1
+//@E unsigned int n = 1;
+//@E 
+//@E auto col = obj1.view_coldbl(n);
+//@X
+
+//@T Dataframe.get_col
+//@U template &lt;typename T&gt;
+//@U void get_col(unsigned int x, std::vector&lt;T&gt; &rtn_v)
+//@X
+//@D Allow to copy a column as a vector, by column index.
+//@A x : is the index of the column to copy
+//@A rtn_v : is the vector that will contain the column to copy
+//@X
+//@E // after reading teste_dataframe.csv as obj1
+//@E std::vector&lt;std::string&gt; outv2 = {};
+//@E obj1.get_col(3, outv2);
+//@X
+
+//@T Dataframe.get_col_filter
+//@U template &lt;typename T&gt;
+//@U void get_col_filter(unsigned int x, std::vector&lt;T&gt; &rtn_v, std::vector&lt;bool&gt; &mask)
+//@X
+//@D Allow to copy a column as a vector, by column index with a boolean vector mask to keep the desired lines.
+//@A x : is the index of the column to copy
+//@A rtn_v : is the vector that will contain the column to copy
+//@X
+//@E // after reading teste_dataframe.csv as obj1
+//@E std::vector&lt;std::string&gt; outv2 = {};
+//@E unsigned int n = 0;
+//@E std::vector&lt;bool&gt; mask;
+//@E unsigned int nrow = obj1.get_nrow();
+//@E mask.reserve(nrow);
+//@E auto vec = obj1.view_coluint(n);
+//@E std::visit([&mask](auto&& span) {
+//@E     mask.resize(span.size());
+//@E     for (size_t i = 0; i &lt; span.size(); ++i)
+//@E         mask[i] = span[i] &gt; 3;
+//@E }, vec);
+//@E obj1.get_col(3, outv2, mask);
+//@X
+
+//@T Dataframe.fapply
+//@U template &lt;typename T&gt;
+//@U void fapply(void (&f)(T&), unsigned int &n)
+//@X
+//@D Apply whatever function to all elements of a column. See example
+//@A f : is the function to apply
+//@A n : is the column index
+//@X
+//@E 
+//@E   obj1.display();
+//@E
+//@E     &lt;str&gt; &lt;uint&gt;
+//@E     col1  col2
+//@E :0:  id1   1
+//@E :1:  id2   6
+//@E :2:  id4   6
+//@E :3:  id5   1
+//@E :4:  id6   6
+//@E :5:  id7   1
+//@E :6:  id8   6
+//@E :7:  id9   6
+//@E :8:  id11  6
+//@E :9:  id12  6
+//@E :10: id14  1
+//@E :11: id15  16
+//@E 
+//@E   unsigned int n = 1;
+//@E   obj1.fapply(mfunc, n);
+//@E 
+//@E   obj1.display();
+//@E
+//@E     &lt;str&gt; &lt;uint&gt;
+//@E     col1  col2
+//@E :0:  id1   2
+//@E :1:  id2   7
+//@E :2:  id4   7
+//@E :3:  id5   2
+//@E :4:  id6   7
+//@E :5:  id7   2
+//@E :6:  id8   7
+//@E :7:  id9   7
+//@E :8:  id11  7
+//@E :9:  id12  7
+//@E :10: id14  2
+//@E :11: id15  17
+//@E
+//@X
+
+//@T Dataframe.get_nrow
+//@U unsigned int get_nrow();
+//@X
+//@D Returns the number of rows for the associated dataframe.
+//@E // after reading teste_dataframe.csv as obj1
+//@E unsigned int nrow = obj1.get_nrow();
+//@E 15
+//@X
+
+//@T Dataframe.get_ncol
+//@U unsigned int get_ncol();
+//@X
+//@D Returns the number of columns for the associated dataframe.
+//@E // after reading teste_dataframe.csv as obj1
+//@E unsigned int ncol = obj1.get_ncol();
+//@E 6
+//@X
+
+//@T Dataframe.get_rowname
+//@U std::vector&lt;std::string&gt; get_rowname();
+//@X
+//@D Returns the rowname of the associated dataframe.
+//@E // after reading teste_dataframe.csv as obj1
+//@E std::vector&lt;std::string&gt; row_names = obj1.get_rowname();
+//@E nothing becuase obj1 has no rownames
+//@X
+
+//@T Dataframe.get_colname
+//@U std::vector&lt;std::string&gt; get_colname();
+//@X
+//@D Returns the colname of the associated dataframe.
+//@E // after reading teste_dataframe.csv as obj1
+//@E std::vector&lt;std::string&gt; col_names = obj1.get_colname();
+//@E col1 col2 col3 col4 col5 col6
+//@X
+
+//@T Dataframe.set_rowname
+//@U void set_rowname(std::vector&lt;std::string&gt; &x);
+//@X
+//@D Set rowname to the associated dataframe.
+//@E // after reading teste_dataframe.csv as obj1
+//@E std::vector&lt;std::string&gt; row_names = {"n1", "n2", "n3"..."n15"};
+//@E obj1.set_rowname(row_names);
+//@X
+
+//@T Dataframe.set_colname
+//@U void set_colname(std::vector&lt;std::string&gt; &x);
+//@X
+//@D Set colname to the associated dataframe.
+//@E // after reading teste_dataframe.csv as obj1
+//@E std::vector&lt;std::string&gt; col_names = {"col1", "col2", "col3", "col4", 
+//@E "col5", "col6"};
+//@E obj1.set_colname();
+//@X
+
+//@T Dataframe.replace_col
+//@U template &lt;typename T&gt; void replace_col(std::vector&lt;T&gt; &x, unsigned int &colnb)
+//@X
+//@D Replace a column of the associated dataframe.
+//@A x : is the column (as vector) that will replace the dataframe column
+//@A colnb : is the index of the column to replace
+//@X
+//@E // after reading teste_dataframe.csv as obj1
+//@E 
+//@E std::vector&lt;unsigned int&gt; rpl_col = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 
+//@E                                       10, 11, 12, 13, 14};
+//@E unsigned int col = 0;
+//@E obj1.replace_col(rpl_col, col);
+//@E obj1.display();
+//@E      &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt; &lt;int&gt; &lt;char&gt;
+//@E      col1   col2   col3   col4  col5  col6
+//@E  :0:  0      2      3      aa    5     z
+//@E  :1:  1      7      8      bb    10    e
+//@E  :2:  2      2      3      cc    5     h
+//@E  :3:  3      7      8      uu    10    a
+//@E  :4:  4      2      3      s4    -5    q
+//@E  :5:  5      7      8      s9    10    p
+//@E  :6:  6      2      3      a4    5     j
+//@E  :7:  7      7      8      m9    10    i
+//@E  :8:  8      7      8      s9    10    p
+//@E  :9:  9      2      3      a4    5     j
+//@E  :10: 10     7      8      m9    10    i
+//@E  :11: 11     7      8      m9    10    i
+//@E  :12: 12     7      8      s9    10    p
+//@E  :13: 13     2      3      NA    5     j
+//@E  :14: 14     7      8      m9    10    i
+//@X
+
+//@T Dataframe.add_col
+//@U template &lt;typename T&gt; void add_col(std::vector&lt;T&gt; &x, std::string name = "NA")
+//@X
+//@D Add a column int, unsigned int, bool, double, char or string type to the associated dataframe
+//@A x : is the column to add
+//@A name : is the column to add name
+//@X
+//@E // after reading teste_dataframe.csv as obj1
+//@E std::vector&lt;unsigned int&gt; rpl_col = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 
+//@E                                       10, 11, 12, 13, 14};
+//@E obj1.add_col(rpl_col);
+//@E obj1.display();
+//@E     &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt; &lt;int&gt; &lt;char&gt; &lt;uint&gt;
+//@E     col1   col2   col3   col4  col5  col6   NA
+//@E :0:  1      2      3      aa    5     z      0
+//@E :1:  6      7      8      bb    10    e      1
+//@E :2:  1      2      3      cc    5     h      2
+//@E :3:  6      7      8      uu    10    a      3
+//@E :4:  1      2      3      s4    -5    q      4
+//@E :5:  6      7      8      s9    10    p      5
+//@E :6:  1      2      3      a4    5     j      6
+//@E :7:  6      7      8      m9    10    i      7
+//@E :8:  6      7      8      s9    10    p      8
+//@E :9:  1      2      3      a4    5     j      9
+//@E :10: 6      7      8      m9    10    i      10
+//@E :11: 6      7      8      m9    10    i      11
+//@E :12: 6      7      8      s9    10    p      12
+//@E :13: 1      2      3      NA    5     j      13
+//@E :14: 6      7      8      m9    10    i      14
+//@X
+
+//@T Dataframe.rm_col
+//@U void rm_col(std::vector&lt;unsigned int&gt; &nbcolv)
+//@X
+//@D Removes columns from associated dataframe.
+//@A nbcolv : is a vector containing all the indices of the columns to erase from the associated dataframe. The indices must be sorted descendly.
+//@X
+//@E // after reading teste_dataframe.csv as obj1
+//@E std::vector&lt;unsigned int&gt; colv = {4, 1};
+//@E obj1.rm_col(colv);
+//@E obj1.display();
+//@E     &lt;uint&gt; &lt;uint&gt; &lt;str&gt;  &lt;char&gt;
+//@E     col1   col3   col4   col6
+//@E :0:  1      3      aa     z
+//@E :1:  6      8      bb     e
+//@E :2:  1      3      cc     h
+//@E :3:  6      8      uu     a
+//@E :4:  1      3      s4     q
+//@E :5:  6      8      s9     p
+//@E :6:  1      3      a4     j
+//@E :7:  6      8      m9     i
+//@E :8:  6      8      s9     p
+//@E :9:  1      3      a4     j
+//@E :10: 6      8      m9     i
+//@E :11: 6      8      m9     i
+//@E :12: 6      8      s9     p
+//@E :13: 1      3      NA     j
+//@E :14: 6      8      m9     i
+//@X
+
+//@T Dataframe.rm_row
+//@U void rm_col(std::vector&lt;unsigned int&gt; &nbcolv)
+//@X
+//@D Removes rows from associated dataframe.
+//@A nbcolv : is a vector containing all the indices of the rows to erase from the associated dataframe. The indices must be sorted descendly.
+//@X
+//@E // after reading teste_dataframe.csv as obj1
+//@E std::vector&lt;unsigned int&gt; rowv = {4, 1};
+//@E obj1.rm_row(rowv);
+//@E obj1.display();
+//@E     &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt; &lt;int&gt; &lt;char&gt;
+//@E     col1   col2   col3   col4  col5  col6
+//@E :0:  1      2      3      aa    5     z
+//@E :1:  1      2      3      cc    5     h
+//@E :2:  6      7      8      uu    10    a
+//@E :3:  6      7      8      s9    10    p
+//@E :4:  1      2      3      a4    5     j
+//@E :5:  6      7      8      m9    10    i
+//@E :6:  6      7      8      s9    10    p
+//@E :7:  1      2      3      a4    5     j
+//@E :8:  6      7      8      m9    10    i
+//@E :9:  6      7      8      m9    10    i
+//@E :10: 6      7      8      s9    10    p
+//@E :11: 1      2      3      NA    5     j
+//@E :12: 6      7      8      m9    10    i
+//@X
+
+//@T Dataframe.transform_inner
+//@U void transform_inner(Dataframe &cur_obj, unsigned int &in_col, unsigned int &ext_col)
+//@X
+//@D Applies a inner join on the associated dataframe.
+//@A cur_obj : is the other dataframe used for inner join
+//@A in_col : is the index of the column representing the key (primary) of the associated dataframe
+//@A ext_col : is the index of the column representing the key (foreign) of the other dataframe used for the inner join
+//@X
+//@E
+//@E Dataframe obj1, obj2;
+//@E std::string filename = "outb.csv";
+//@E obj1.readf(filename);
+//@E 
+//@E std::vector&lt;unsigned int&gt; colv = {4, 3, 2};
+//@E obj1.rm_col(colv);
+//@E 
+//@E std::string f2 = "outb2.csv";
+//@E obj2.readf(f2);
+//@E 
+//@E unsigned int col1 = 0;
+//@E unsigned int col2 = 0;
+//@E 
+//@E obj1.transform_inner(obj2, col1, col2);
+//@E obj1.display();
+//@E  &lt;str&gt; &lt;uint&gt;
+//@E     col1  col2
+//@E :0:  id1   1
+//@E :1:  id2   6
+//@E :2:  id4   6
+//@E :3:  id5   1
+//@E :4:  id6   6
+//@E :5:  id7   1
+//@E :6:  id8   6
+//@E :7:  id9   6
+//@E :8:  id11  6
+//@E :9:  id12  6
+//@E :10: id14  1
+//@E :11: id15  6
+//@X
+
+//@T Dataframe.transform_inner_clean
+//@U void transform_inner_clean(Dataframe &cur_obj, unsigned int &in_col, unsigned int &ext_col)
+//@X
+//@D Applies a inner join on the associated dataframe. Is basically the same as transform_inner but uses another algorithm that takes more time but frees memory after having kept the common elements.
+//@A cur_obj : is the other dataframe used for inner join
+//@A in_col : is the index of the column representing the key (primary) of the associated dataframe
+//@A ext_col : is the index of the column representing the key (foreign) of the other dataframe used for the inner join
+//@X
+//@E
+//@E Dataframe obj1, obj2;
+//@E std::string filename = "outb.csv";
+//@E obj1.readf(filename);
+//@E 
+//@E std::vector&lt;unsigned int&gt; colv = {4, 3, 2};
+//@E obj1.rm_col(colv);
+//@E 
+//@E std::string f2 = "outb2.csv";
+//@E obj2.readf(f2);
+//@E 
+//@E unsigned int col1 = 0;
+//@E unsigned int col2 = 0;
+//@E 
+//@E obj1.transform_inner_clean(obj2, col1, col2);
+//@E obj1.display();
+//@E  &lt;str&gt; &lt;uint&gt;
+//@E     col1  col2
+//@E :0:  id1   1
+//@E :1:  id2   6
+//@E :2:  id4   6
+//@E :3:  id5   1
+//@E :4:  id6   6
+//@E :5:  id7   1
+//@E :6:  id8   6
+//@E :7:  id9   6
+//@E :8:  id11  6
+//@E :9:  id12  6
+//@E :10: id14  1
+//@E :11: id15  6
+//@X
+
+//@T Dataframe.transform_excluding
+//@U void transform_excluding(Dataframe &cur_obj, unsigned int &in_col, unsigned int &ext_col)
+//@X
+//@D Applies an excluding join on the associated dataframe.
+//@A cur_obj : is the other dataframe used for inner join
+//@A in_col : is the index of the column representing the key (primary) of the associated dataframe
+//@A ext_col : is the index of the column representing the key (foreign) of the other dataframe used for the inner join
+//@X
+//@E
+//@E Dataframe obj1, obj2;
+//@E std::string filename = "outb.csv";
+//@E obj1.readf(filename);
+//@E 
+//@E std::vector&lt;unsigned int&gt; colv = {4, 3, 2};
+//@E obj1.rm_col(colv);
+//@E 
+//@E std::string f2 = "outb2.csv";
+//@E obj2.readf(f2);
+//@E 
+//@E unsigned int col1 = 0;
+//@E unsigned int col2 = 0;
+//@E 
+//@E obj1.transform_excluding(obj2, col1, col2);
+//@E obj1.display();
+//@E  &lt;str&gt; &lt;uint&gt;
+//@E     col1  col2
+//@E    col1  col2   col3   col4   col5
+//@E :0: id3   1      2      3      cc
+//@E :1: id10  1      2      3      a4
+//@E :2: id13  6      7      8      s9
+//@X
+
+//@T Dataframe.transform_excluding_clean
+//@U void transform_excluding_clean(Dataframe &cur_obj, unsigned int &in_col, unsigned int &ext_col)
+//@X
+//@D Applies an excluding join on the associated dataframe. Is basically the same as transform_excluding but uses another algorithm that takes more time but frees memory after having kept the common elements.
+//@A cur_obj : is the other dataframe used for inner join
+//@A in_col : is the index of the column representing the key (primary) of the associated dataframe
+//@A ext_col : is the index of the column representing the key (foreign) of the other dataframe used for the inner join
+//@X
+//@E
+//@E Dataframe obj1, obj2;
+//@E std::string filename = "outb.csv";
+//@E obj1.readf(filename);
+//@E 
+//@E std::vector&lt;unsigned int&gt; colv = {4, 3, 2};
+//@E obj1.rm_col(colv);
+//@E 
+//@E std::string f2 = "outb2.csv";
+//@E obj2.readf(f2);
+//@E 
+//@E unsigned int col1 = 0;
+//@E unsigned int col2 = 0;
+//@E 
+//@E obj1.transform_excluding_clean(obj2, col1, col2);
+//@E obj1.display();
+//@E  &lt;str&gt; &lt;uint&gt;
+//@E     col1  col2
+//@E    col1  col2   col3   col4   col5
+//@E :0: id3   1      2      3      cc
+//@E :1: id10  1      2      3      a4
+//@E :2: id13  6      7      8      s9
+//@X
+
+//@T Dataframe.merge_inner
+//@U void merge_inner(Dataframe &obj1, Dataframe &obj2, bool colname, unsigned int &key1, unsigned int &key2)
+//@X
+//@D Performs a inner join on a newly created dataframe. May creates dupplicates if multiple occurences of the key is found in the second dataframes, use Dataframe.merge_inner2 if you do not want to create dupplicates.
+//@A obj1 : is the first dataframe
+//@A obj2 : is the second dataframe
+//@A colname : 1 to give the column names to the newly created dataframe
+//@A key1 : is the index of the first dataframe column as primary key
+//@A key1 : is the index of the first dataframe column as foreign key
+//@X
+//@E 
+//@E Dataframe obj1, obj2, obj3;
+//@E std::string filename = "csv_test/outb.csv";
+//@E obj1.readf(filename);
+//@E 
+//@E std::string f2 = "csv_test/outb2.csv";
+//@E obj2.readf(f2);
+//@E 
+//@E unsigned int col1 = 0;
+//@E unsigned int col2 = 0;
+//@E 
+//@E obj3.merge_inner(obj1, obj2, 1, col1, col2);
+//@E obj3.display();
+//@E     &lt;str&gt; &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt; &lt;str&gt; &lt;uint&gt; &lt;uint&gt;
+//@E     [0]   [1]    [2]    [3]    [4]   [5]   [6]    [7]
+//@E :0:  id1   1      2      3      aa    id1   2      3
+//@E :1:  id1   1      2      3      aa    id1   2      3
+//@E :2:  id2   6      7      8      bb    id2   7      8
+//@E :3:  id4   6      7      8      uu    id4   7      8
+//@E :4:  id5   1      2      3      s4    id5   2      3
+//@E :5:  id6   6      7      8      s9    id6   7      8
+//@E :6:  id7   1      2      3      a4    id7   2      3
+//@E :7:  id8   6      7      8      m9    id8   2      3
+//@E :8:  id9   6      7      8      s9    id9   7      8
+//@E :9:  id11  6      7      8      m9    id11  7      8
+//@E :10: id11  6      7      8      m9    id11  7      8
+//@E :11: id12  6      7      8      m9    id12  7      8
+//@E :12: id14  1      2      3      NA    id14  7      8
+//@E :13: id15  16     7      8      m9    id15  2      3
+//@X
+
+//@T Dataframe.merge_inner2
+//@U void merge_inner2(Dataframe &obj1, Dataframe &obj2, bool colname, unsigned int &key1, unsigned int &key2)
+//@X
+//@D Performs a inner join on a newly created dataframe.
+//@A obj1 : is the first dataframe
+//@A obj2 : is the second dataframe
+//@A colname : 1 to give the column names to the newly created dataframe
+//@A key1 : is the index of the first dataframe column as primary key
+//@A key1 : is the index of the first dataframe column as foreign key
+//@X
+//@E 
+//@E Dataframe obj1, obj2, obj3;
+//@E std::string filename = "csv_test/outb.csv";
+//@E obj1.readf(filename);
+//@E 
+//@E std::string f2 = "csv_test/outb2.csv";
+//@E obj2.readf(f2);
+//@E 
+//@E unsigned int col1 = 0;
+//@E unsigned int col2 = 0;
+//@E 
+//@E obj3.merge_inner2(obj1, obj2, 1, col1, col2);
+//@E obj3.display();
+//@E     &lt;str&gt; &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt; &lt;str&gt; &lt;uint&gt; &lt;uint&gt;
+//@E     [0]   [1]    [2]    [3]    [4]   [5]   [6]    [7]
+//@E :0:  id1   1      2      3      aa    id1   2      3
+//@E :1:  id2   6      7      8      bb    id2   7      8
+//@E :2:  id4   6      7      8      uu    id4   7      8
+//@E :3:  id5   1      2      3      s4    id5   2      3
+//@E :4:  id6   6      7      8      s9    id6   7      8
+//@E :5:  id7   1      2      3      a4    id7   2      3
+//@E :6:  id8   6      7      8      m9    id8   2      3
+//@E :7:  id9   6      7      8      s9    id9   7      8
+//@E :8:  id11  6      7      8      m9    id11  7      8
+//@E :9:  id12  6      7      8      m9    id12  7      8
+//@E :10: id14  1      2      3      NA    id14  7      8
+//@E :11: id15  16     7      8      m9    id15  2      3
+//@X
+
+//@T Dataframe.merge_excluding
+//@U void merge_excluding(Dataframe &obj1, 
+//@U                          Dataframe &obj2, 
+//@U                          bool colname, 
+//@U                          unsigned int &key1, 
+//@U                          unsigned int &key2,
+//@U                          std::string default_str = "NA",
+//@U                          std::string default_chr = " ",
+//@U                          std::string default_bool = "0",
+//@U                          std::string default_int = "0",
+//@U                          std::string default_uint = "0",
+//@U                          std::string default_dbl = "0")
+//@X
+//@D Performs a left excluding join to the associated dataframe (newly created). The first dataframe as argument is considered as the left one.
+//@A obj1 : is the left dataframe
+//@A obj2 : is the right dataframe
+//@A colname : 1 to give the column names to the newly created dataframe
+//@A key1 : is the index of the column of the left dataframe
+//@A key2 : is the index of the column of the right dataframe
+//@X
+//@E Dataframe obj1, obj2, obj3;
+//@E std::string filename = "csv_test/outb.csv";
+//@E obj1.readf(filename);
+//@E 
+//@E std::string f2 = "csv_test/outb2.csv";
+//@E obj2.readf(f2);
+//@E 
+//@E unsigned int col1 = 0;
+//@E unsigned int col2 = 0;
+//@E 
+//@E obj3.merge_excluding(obj1, obj2, 1, col1, col2);
+//@E obj3.display();
+//@E    &lt;str&gt; &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt; &lt;str&gt; &lt;uint&gt; &lt;uint&gt;
+//@E    [0]   [1]    [2]    [3]    [4]   [5]   [6]    [7]
+//@E :0: id3   1      2      3      cc    NA    0      0
+//@E :1: id10  1      2      3      a4    NA    0      0
+//@E :2: id13  6      7      8      s9    NA    0      0
+//@X
+
+//@T Dataframe.merge_excluding_both
+//@U void merge_excluding_both(Dataframe &obj1, 
+//@U                               Dataframe &obj2, 
+//@U                               bool colname, 
+//@U                               unsigned int &key1, 
+//@U                               unsigned int &key2,
+//@U                               std::string default_str = "NA",
+//@U                               std::string default_chr = " ",
+//@U                               std::string default_bool = "0",
+//@U                               std::string default_int = "0",
+//@U                               std::string default_uint = "0",
+//@U                               std::string default_dbl = "0")
+//@X
+//@D Performs a full excluding join to the associated dataframe (newly created). The first dataframe as argument is considered as the left one.
+//@A obj1 : is the left dataframe
+//@A obj2 : is the right dataframe
+//@A colname : 1 to give the column names to the newly created dataframe
+//@A key1 : is the index of the column of the left dataframe
+//@A key2 : is the index of the column of the right dataframe
+//@X
+//@E Dataframe obj1, obj2, obj3;
+//@E std::string filename = "csv_test/outb.csv";
+//@E obj1.readf(filename);
+//@E 
+//@E std::string f2 = "csv_test/outb2.csv";
+//@E obj2.readf(f2);
+//@E 
+//@E unsigned int col1 = 0;
+//@E unsigned int col2 = 0;
+//@E 
+//@E obj3.merge_excluding_both(obj1, obj2, 1, col1, col2);
+//@E obj3.display();
+//@E    &lt;str&gt; &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt; &lt;str&gt; &lt;uint&gt; &lt;uint&gt;
+//@E    [0]   [1]    [2]    [3]    [4]   [5]   [6]    [7]
+//@E :0: id3   1      2      3      cc    NA    0      0
+//@E :1: id10  1      2      3      a4    NA    0      0
+//@E :2: id13  6      7      8      s9    NA    0      0
+//@E :3: NA    0      0      0      NA    id119 7      8
+//@X
+
+//@T Dataframe.merge_all
+//@U void merge_all(Dataframe &obj1, 
+//@U                     Dataframe &obj2, 
+//@U                     bool colname, 
+//@U                     unsigned int &key1, 
+//@U                     unsigned int &key2,
+//@U                     std::string default_str = "NA",
+//@U                     std::string default_chr = " ",
+//@U                     std::string default_bool = "0",
+//@U                     std::string default_int = "0",
+//@U                     std::string default_uint = "0",
+//@U                     std::string default_dbl = "0") 
+//@X
+//@D Performs a full join to the associated dataframe (newly created). The first dataframe as argument is considered as the left one. May producesdupplicates if several occurences of the same key appears in the second dataframe, use Dataframe.merge_all2 if you do not want to create dupplicates.
+//@A obj1 : is the left dataframe
+//@A obj2 : is the right dataframe
+//@A colname : 1 to give the column names to the newly created dataframe
+//@A key1 : is the index of the column of the left dataframe
+//@A key2 : is the index of the column of the right dataframe
+//@X
+//@E Dataframe obj1, obj2, obj3;
+//@E std::string filename = "csv_test/outb.csv";
+//@E obj1.readf(filename);
+//@E 
+//@E std::string f2 = "csv_test/outb2.csv";
+//@E obj2.readf(f2);
+//@E 
+//@E unsigned int col1 = 0;
+//@E unsigned int col2 = 0;
+//@E 
+//@E obj3.merge_all(obj1, obj2, 1, col1, col2);
+//@E obj3.display();
+//@E     &lt;str&gt; &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt; &lt;str&gt; &lt;uint&gt; &lt;uint&gt;
+//@E     [0]   [1]    [2]    [3]    [4]   [5]   [6]    [7]
+//@E :0:  id1   1      2      3      aa    id1   2      3
+//@E :1:  id1   1      2      3      aa    id1   22     3
+//@E :2:  id2   6      7      8      bb    id2   7      8
+//@E :3:  id3   1      2      3      cc    NA    0      0
+//@E :4:  id4   6      7      8      uu    id4   7      8
+//@E :5:  id5   1      2      3      s4    id5   2      3
+//@E :6:  id6   6      7      8      s9    id6   7      8
+//@E :7:  id7   1      2      3      a4    id7   2      3
+//@E :8:  id8   6      7      8      m9    id8   2      3
+//@E :9:  id9   6      7      8      s9    id9   7      8
+//@E :10: id10  1      2      3      a4    NA    0      0
+//@E :11: id11  6      7      8      m9    id11  7      8
+//@E :12: id11  6      7      8      m9    id11  17     8
+//@E :13: id12  6      7      8      m9    id12  7      8
+//@E :14: id13  6      7      8      s9    NA    0      0
+//@E :15: id14  1      2      3      NA    id14  7      8
+//@E :16: id15  6      7      8      m9    id15  2      3
+//@E :17: NA    NA     NA     NA     NA    id119 7      8
+//@X
+
+//@T Dataframe.merge_all2
+//@U void merge_all2(Dataframe &obj1, 
+//@U                     Dataframe &obj2, 
+//@U                     bool colname, 
+//@U                     unsigned int &key1, 
+//@U                     unsigned int &key2,
+//@U                     std::string default_str = "NA",
+//@U                     std::string default_chr = " ",
+//@U                     std::string default_bool = "0",
+//@U                     std::string default_int = "0",
+//@U                     std::string default_uint = "0",
+//@U                     std::string default_dbl = "0") 
+//@X
+//@D Performs a full join to the associated dataframe (newly created). The first dataframe as argument is considered as the left one.
+//@A obj1 : is the left dataframe
+//@A obj2 : is the right dataframe
+//@A colname : 1 to give the column names to the newly created dataframe
+//@A key1 : is the index of the column of the left dataframe
+//@A key2 : is the index of the column of the right dataframe
+//@X
+//@E Dataframe obj1, obj2, obj3;
+//@E std::string filename = "csv_test/outb.csv";
+//@E obj1.readf(filename);
+//@E 
+//@E std::string f2 = "csv_test/outb2.csv";
+//@E obj2.readf(f2);
+//@E 
+//@E unsigned int col1 = 0;
+//@E unsigned int col2 = 0;
+//@E 
+//@E obj3.merge_all2(obj1, obj2, 1, col1, col2);
+//@E obj3.display();
+//@E     &lt;str&gt; &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt; &lt;str&gt; &lt;uint&gt; &lt;uint&gt;
+//@E     [0]   [1]    [2]    [3]    [4]   [5]   [6]    [7]
+//@E :0:  id1   1      2      3      aa    id1   2      3
+//@E :1:  id2   6      7      8      bb    id2   7      8
+//@E :2:  id3   1      2      3      cc    NA    0      0
+//@E :3:  id4   6      7      8      uu    id4   7      8
+//@E :4:  id5   1      2      3      s4    id5   2      3
+//@E :5:  id6   6      7      8      s9    id6   7      8
+//@E :6:  id7   1      2      3      a4    id7   2      3
+//@E :7:  id8   6      7      8      m9    id8   2      3
+//@E :8:  id9   6      7      8      s9    id9   7      8
+//@E :9:  id10  1      2      3      a4    NA    0      0
+//@E :10: id11  6      7      8      m9    id11  7      8
+//@E :11: id12  6      7      8      m9    id12  7      8
+//@E :12: id13  6      7      8      s9    NA    0      0
+//@E :13: id14  1      2      3      NA    id14  7      8
+//@E :14: id15  16     7      8      m9    id15  2      3
+//@E :15: NA    0      0      0      NA    id119 7      8
+//@X
+
+//@T Dataframe.transform_merge_inner2
+//@U void transform_merge_inner2(Dataframe &obj1, Dataframe &obj2, unsigned int &key1, unsigned int &key2)
+//@X
+//@D Performs a inner join on a the current dataframe with another one.
+//@A obj1 : is the second dataframe
+//@A key1 : is the index of the first dataframe column as primary key
+//@A key1 : is the index of the first dataframe column as foreign key
+//@X
+//@E 
+//@E  Dataframe obj1, obj2;
+//@E  std::string fname = "csv_test/outb.csv";
+//@E  obj1.readf(fname);
+//@E
+//@E  std::cout << "\n";
+//@E
+//@E  fname = "csv_test/outb2.csv";
+//@E  obj2.readf(fname);
+//@E
+//@E  unsigned int n = 0;
+//@E  std::cout << "\n";
+//@E
+//@E  obj1.transform_merge_inner2(obj2, n, n);
+//@E  obj1.display();
+//@E     &lt;str&gt; &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt; &lt;str&gt; &lt;uint&gt; &lt;uint&gt;
+//@E     col1  col2   col3   col4   col5  col1  col2   col3
+//@E :0:  id1   1      2      3      aa    id1   2      3
+//@E :1:  id2   6      7      8      bb    id2   7      8
+//@E :2:  id4   6      7      8      uu    id4   7      8
+//@E :3:  id5   1      2      3      s4    id5   2      3
+//@E :4:  id6   6      7      8      s9    id6   7      8
+//@E :5:  id7   1      2      3      a4    id7   2      3
+//@E :6:  id8   6      7      8      m9    id8   2      3
+//@E :7:  id9   6      7      8      s9    id9   7      8
+//@E :8:  id11  6      7      8      m9    id11  7      8
+//@E :9:  id12  6      7      8      m9    id12  7      8
+//@E :10: id14  1      2      3      NA    id14  7      8
+//@E :11: id15  16     7      8      m9    id15  2      3
+//@X
+
+//@T Dataframe.transform_merge_inner2_clean
+//@U void transform_merge_inner2_clean(Dataframe &obj1, Dataframe &obj2, unsigned int &key1, unsigned int &key2)
+//@X
+//@D Performs a inner join on a the current dataframe with another one. Potentially significantly slower than transform_merge_inner2 because it frees unnused memory.
+//@A obj1 : is the second dataframe
+//@A key1 : is the index of the first dataframe column as primary key
+//@A key1 : is the index of the first dataframe column as foreign key
+//@X
+//@E 
+//@E  Dataframe obj1, obj2;
+//@E  std::string fname = "csv_test/outb.csv";
+//@E  obj1.readf(fname);
+//@E
+//@E  std::cout << "\n";
+//@E
+//@E  fname = "csv_test/outb2.csv";
+//@E  obj2.readf(fname);
+//@E
+//@E  unsigned int n = 0;
+//@E  std::cout << "\n";
+//@E
+//@E  obj1.transform_merge_inner2_clean(obj2, n, n);
+//@E  obj1.display();
+//@E     &lt;str&gt; &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt; &lt;str&gt; &lt;uint&gt; &lt;uint&gt;
+//@E     col1  col2   col3   col4   col5  col1  col2   col3
+//@E :0:  id1   1      2      3      aa    id1   2      3
+//@E :1:  id2   6      7      8      bb    id2   7      8
+//@E :2:  id4   6      7      8      uu    id4   7      8
+//@E :3:  id5   1      2      3      s4    id5   2      3
+//@E :4:  id6   6      7      8      s9    id6   7      8
+//@E :5:  id7   1      2      3      a4    id7   2      3
+//@E :6:  id8   6      7      8      m9    id8   2      3
+//@E :7:  id9   6      7      8      s9    id9   7      8
+//@E :8:  id11  6      7      8      m9    id11  7      8
+//@E :9:  id12  6      7      8      m9    id12  7      8
+//@E :10: id14  1      2      3      NA    id14  7      8
+//@E :11: id15  16     7      8      m9    id15  2      3
+//@X
+
+//@T Dataframe.transform_left_join
+//@U void transform_left_join(Dataframe &obj, 
+//@U                     unsigned int &key1, 
+//@U                     unsigned int &key2,
+//@U                     std::string default_str = "NA",
+//@U                     char default_chr = ' ',
+//@U                     bool default_bool = 0,
+//@U                     int default_int = 0,
+//@U                     unsigned int default_uint = 0,
+//@U                     double default_dbl = 0) 
+//@X
+//@D Transforms the dataframe performing a left join.
+//@A obj : is the second dataframe
+//@A key1 : is the column index of the primary key
+//@A key2 : is the foreign key
+//@A default_str : is the default value for NA string values
+//@A default_chr : is the default value for NA char values
+//@A default_bool : is the default value for NA boolean values
+//@A default_int : is the default value for NA int values
+//@A default_uint : is the default value for NA unsigned int values
+//@A default_dbl : is the default value for NA double values
+//@X
+//@E  Dataframe obj1, obj2;
+//@E  std::string fname = "csv_test/outb.csv";
+//@E  obj1.readf(fname);
+//@E  fname = "csv_test/outb2.csv";
+//@E  obj2.readf(fname);
+//@E
+//@E  unsigned int n = 0;
+//@E  obj1.transform_left_join(obj2, n, n);
+//@E
+//@E  obj1.display();
+//@E     &lt;str&gt; &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt; &lt;str&gt; &lt;uint&gt; &lt;uint&gt;
+//@E     col1  col2   col3   col4   col5  col1  col2   col3
+//@E :0:  id1   1      2      3      aa    id1   2      3
+//@E :1:  id2   6      7      8      bb    id2   7      8
+//@E :2:  id3   1      2      3      cc    NA    0      0
+//@E :3:  id4   6      7      8      uu    id4   7      8
+//@E :4:  id5   1      2      3      s4    id5   2      3
+//@E :5:  id6   6      7      8      s9    id6   7      8
+//@E :6:  id7   1      2      3      a4    id7   2      3
+//@E :7:  id8   6      7      8      m9    id8   2      3
+//@E :8:  id9   6      7      8      s9    id9   7      8
+//@E :9:  id10  1      2      3      a4    NA    0      0
+//@E :10: id11  6      7      8      m9    id11  7      8
+//@E :11: id12  6      7      8      m9    id12  7      8
+//@E :12: id13  6      7      8      s9    NA    0      0
+//@E :13: id14  1      2      3      NA    id14  7      8
+//@E :14: id15  16     7      8      m9    id15  2      3
+//@X
+
+//@T Dataframe.transform_filter
+//@U void transform_filter(std::vector&lt;bool&gt;& mask)
+//@X
+//@D Keeps the desired row from a boolean mask.
+//@A mask : is the boolean mask
+//@X
+//@E Dataframe obj1, obj2;
+//@E std::string fname = "csv_test/outb.csv";
+//@E obj1.readf(fname);
+//@E fname = "csv_test/outb2.csv";
+//@E obj2.readf(fname);
+//@E
+//@E std::vector<bool> mask = {0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1};
+//@E
+//@E obj1.transform_filter(mask);
+//@E
+//@E obj1.display();
+//@E    &lt;str&gt; &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt;
+//@E    col1  col2   col3   col4   col5
+//@E :0: id2   6      7      8      bb
+//@E :1: id4   6      7      8      uu
+//@E :2: id5   1      2      3      s4
+//@E :3: id6   6      7      8      s9
+//@E :4: id8   6      7      8      m9
+//@E :5: id10  1      2      3      a4
+//@E :6: id11  6      7      8      m9
+//@E :7: id12  6      7      8      m9
+//@E :8: id14  1      2      3      NA
+//@X
+
+//@T Dataframe.pivot_dbl
+//@U void pivot_dbl(Dataframe &obj, unsigned int &n1, unsigned int& n2, unsigned int& n3)
+//@X
+//@D Performs a pivot to a newly created dataframe.
+//@A obj : is the dataframe from which the pivot is performed
+//@A n1 : is the column index of the columns created for the pivot
+//@A n2 : is the column index of the rows created for the pivot
+//@A n3 : is the column index of the column from which the pivot is performed
+//@X
+//@E
+//@E  // after some random manipulation for obj1 dataframe
+//@E  Dataframe obj3;
+//@E  obj1.display();
+//@E
+//@E     &lt;str&gt; &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt; &lt;str&gt; &lt;uint&gt; &lt;double&gt;
+//@E     col1  col2   col3   col4   col5  col1  col2   col3
+//@E :0:  id1   1      2      3      A     D     2      3
+//@E :1:  id2   6      7      8      A     D     7      8
+//@E :2:  id3   1      2      3      A     C     0      0
+//@E :3:  id4   6      7      8      B     C     7      8
+//@E :4:  id5   1      2      3      B     C     2      3
+//@E :5:  id6   6      7      8      A     D     7      8
+//@E :6:  id7   1      2      3      B     C     2      3
+//@E :7:  id8   6      7      8      B     D     2      3
+//@E :8:  id9   6      7      8      B     D     7      8
+//@E :9:  id10  1      2      3      A     C     0      0
+//@E :10: id11  6      7      8      A     D     7      8
+//@E :11: id12  6      7      8      B     C     7      8
+//@E :12: id13  6      7      8      B     D     0      0
+//@E :13: id14  1      2      3      B     C     7      8
+//@E :14: id15  16     7      8      B     D     2      3
+//@E
+//@E  unsigned int n1 = 4;
+//@E  unsigned int n2 = 5;
+//@E  unsigned int n3 = 7;
+//@E
+//@E  obj3.pivot_uint(obj1, n, n2, n3);
+//@E
+//@E  obj3.display();
+//@E
+//@E    &lt;double&gt; &lt;double&gt;
+//@E    A        B
+//@E D : 27       14
+//@E C : 0        30
+//@E
+//@X
+
+//@T Dataframe.pivot_int
+//@U void pivot_int(Dataframe &obj, unsigned int &n1, unsigned int& n2, unsigned int& n3)
+//@X
+//@D Performs a pivot to a newly created dataframe.
+//@A obj : is the dataframe from which the pivot is performed
+//@A n1 : is the column index of the columns created for the pivot
+//@A n2 : is the column index of the rows created for the pivot
+//@A n3 : is the column index of the column from which the pivot is performed
+//@X
+//@E
+//@E  // after some random manipulation for obj1 dataframe
+//@E  Dataframe obj3;
+//@E  obj1.display();
+//@E
+//@E     &lt;str&gt; &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt; &lt;str&gt; &lt;uint&gt; &lt;int&gt;
+//@E     col1  col2   col3   col4   col5  col1  col2   col3
+//@E :0:  id1   1      2      3      A     D     2      3
+//@E :1:  id2   6      7      8      A     D     7      8
+//@E :2:  id3   1      2      3      A     C     0      0
+//@E :3:  id4   6      7      8      B     C     7      8
+//@E :4:  id5   1      2      3      B     C     2      3
+//@E :5:  id6   6      7      8      A     D     7      8
+//@E :6:  id7   1      2      3      B     C     2      3
+//@E :7:  id8   6      7      8      B     D     2      3
+//@E :8:  id9   6      7      8      B     D     7      8
+//@E :9:  id10  1      2      3      A     C     0      0
+//@E :10: id11  6      7      8      A     D     7      8
+//@E :11: id12  6      7      8      B     C     7      8
+//@E :12: id13  6      7      8      B     D     0      0
+//@E :13: id14  1      2      3      B     C     7      8
+//@E :14: id15  16     7      8      B     D     2      3
+//@E
+//@E  unsigned int n1 = 4;
+//@E  unsigned int n2 = 5;
+//@E  unsigned int n3 = 7;
+//@E
+//@E  obj3.pivot_uint(obj1, n, n2, n3);
+//@E
+//@E  obj3.display();
+//@E
+//@E    &lt;int&gt; &lt;int&gt;
+//@E    A        B
+//@E D : 27       14
+//@E C : 0        30
+//@E
+//@X
+
+//@T Dataframe.pivot_uint
+//@U void pivot_uint(Dataframe &obj, unsigned int &n1, unsigned int& n2, unsigned int& n3)
+//@X
+//@D Performs a pivot to a newly created dataframe.
+//@A obj : is the dataframe from which the pivot is performed
+//@A n1 : is the column index of the columns created for the pivot
+//@A n2 : is the column index of the rows created for the pivot
+//@A n3 : is the column index of the column from which the pivot is performed
+//@X
+//@E
+//@E  // after some random manipulation for obj1 dataframe
+//@E  Dataframe obj3;
+//@E  obj1.display();
+//@E
+//@E     &lt;str&gt; &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt; &lt;str&gt; &lt;uint&gt; &lt;uint&gt;
+//@E     col1  col2   col3   col4   col5  col1  col2   col3
+//@E :0:  id1   1      2      3      A     D     2      3
+//@E :1:  id2   6      7      8      A     D     7      8
+//@E :2:  id3   1      2      3      A     C     0      0
+//@E :3:  id4   6      7      8      B     C     7      8
+//@E :4:  id5   1      2      3      B     C     2      3
+//@E :5:  id6   6      7      8      A     D     7      8
+//@E :6:  id7   1      2      3      B     C     2      3
+//@E :7:  id8   6      7      8      B     D     2      3
+//@E :8:  id9   6      7      8      B     D     7      8
+//@E :9:  id10  1      2      3      A     C     0      0
+//@E :10: id11  6      7      8      A     D     7      8
+//@E :11: id12  6      7      8      B     C     7      8
+//@E :12: id13  6      7      8      B     D     0      0
+//@E :13: id14  1      2      3      B     C     7      8
+//@E :14: id15  16     7      8      B     D     2      3
+//@E
+//@E  unsigned int n1 = 4;
+//@E  unsigned int n2 = 5;
+//@E  unsigned int n3 = 7;
+//@E
+//@E  obj3.pivot_uint(obj1, n, n2, n3);
+//@E
+//@E  obj3.display();
+//@E
+//@E    &lt;uint&gt; &lt;uint&gt;
+//@E    A        B
+//@E D : 27       14
+//@E C : 0        30
+//@E
+//@X
+
+//@T Dataframe.get_typecol
+//@U const std::vector&lt;char&gt;& get_typecol() const
+//@X
+//@D Returns the column type of the dataframe, 'i' (int), 'u', (unsigned int), 'd', double, 's' (string), 'c' (char)
+//@A X : NO ARGS
+//@X
+//@E const std::vector<char>& dtype = obj1.get_typecol();
+//@E 'c' 'b' 'd' 'i' 
+//@X
+
+//@T Dataframe.transform_unique
+//@U void transform_unique(unsigned int& n)
+//@X
+//@D Trnasforms your current dataframe to keep the unique values from a chosen column.
+//@A n : is the column index
+//@X
+//@E   std::string fname = "csv_test/outb.csv";
+//@E   obj1.readf&lt;3, 0&gt;(fname);
+//@E   obj1.display();
+//@E   
+//@E     &lt;str&gt; &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt;
+//@E     col1  col2   col3   col4   col5
+//@E :0:  id4   6      7      8      uu
+//@E :1:  id5   1      2      3      s4
+//@E :2:  id6   6      7      8      s9
+//@E :3:  id7   1      2      3      a4
+//@E :4:  id8   6      7      8      m9
+//@E :5:  id9   6      7      8      s9
+//@E :6:  id10  1      2      3      a4
+//@E :7:  id11  6      7      8      m9
+//@E :8:  id12  6      7      8      m9
+//@E :9:  id13  6      7      8      s9
+//@E :10: id14  1      2      3      NA
+//@E :11: id15  16     7      8      m9
+//@E
+//@E   unsigned int n = 4;
+//@E   obj1.transform_unique(n);
+//@E   obj1.display();
+//@E
+//@E    &lt;str&gt; &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt;
+//@E    col1  col2   col3   col4   col5
+//@E :0: id4   6      7      8      uu
+//@E :1: id5   1      2      3      s4
+//@E :2: id6   6      7      8      s9
+//@E :3: id7   1      2      3      a4
+//@E :4: id8   6      7      8      m9
+//@E :5: id14  1      2      3      NA
+//@E
+//@X
+
+//@T Dataframe.transform_unique_clean
+//@U void transform_unique_clean(unsigned int& n)
+//@X
+//@D Trnasforms your current dataframe to keep the unique values from a chosen column. Basically the same as transfrm_unique, but frees memory, which can be slower.
+//@A n : is the column index
+//@X
+//@E   std::string fname = "csv_test/outb.csv";
+//@E   obj1.readf&lt;3, 0&gt;(fname);
+//@E   obj1.display();
+//@E   
+//@E     &lt;str&gt; &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt;
+//@E     col1  col2   col3   col4   col5
+//@E :0:  id4   6      7      8      uu
+//@E :1:  id5   1      2      3      s4
+//@E :2:  id6   6      7      8      s9
+//@E :3:  id7   1      2      3      a4
+//@E :4:  id8   6      7      8      m9
+//@E :5:  id9   6      7      8      s9
+//@E :6:  id10  1      2      3      a4
+//@E :7:  id11  6      7      8      m9
+//@E :8:  id12  6      7      8      m9
+//@E :9:  id13  6      7      8      s9
+//@E :10: id14  1      2      3      NA
+//@E :11: id15  16     7      8      m9
+//@E
+//@E   unsigned int n = 4;
+//@E   obj1.transform_unique_clean(n);
+//@E   obj1.display();
+//@E
+//@E    &lt;str&gt; &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt;
+//@E    col1  col2   col3   col4   col5
+//@E :0: id4   6      7      8      uu
+//@E :1: id5   1      2      3      s4
+//@E :2: id6   6      7      8      s9
+//@E :3: id7   1      2      3      a4
+//@E :4: id8   6      7      8      m9
+//@E :5: id14  1      2      3      NA
+//@E
+//@X
+
+//@T Dataframe.transform_merge_excluding
+//@U void transform_merge_excluding(Dataframe &obj, 
+//@U                          unsigned int &key1, 
+//@U                          unsigned int &key2,
+//@U                          std::string default_str = "NA",
+//@U                          char default_chr = ' ',
+//@U                          bool default_bool = 0,
+//@U                          int default_int = 0,
+//@U                          unsigned int default_uint = 0,
+//@U                          double default_dbl = 0)
+//@X
+//@D Performs a left excluding join to the associated dataframe (already created). The dataframe as argument is considered as the right one.
+//@A obj : is the left dataframe
+//@A colname : 1 to give the column names to the newly created dataframe
+//@A key1 : is the index of the column of the left dataframe
+//@A key2 : is the index of the column of the right dataframe
+//@X
+//@E
+//@E  Dataframe obj1, obj2, obj3;
+//@E  std::string fname = "csv_test/outb.csv";
+//@E  obj1.readf(fname);
+//@E
+//@E  fname = "csv_test/outb2.csv";
+//@E  obj2.readf(fname);
+//@E
+//@E  unsigned int n = 0;
+//@E
+//@E  obj1.transform_merge_excluding(obj2, n, n);
+//@E  obj1.display();
+//@E    &lt;str&gt; &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt; &lt;str&gt; &lt;uint&gt; &lt;uint&gt;
+//@E    col1  col2   col3   col4   col5  col1  col2   col3
+//@E :0: id3   1      2      3      cc    NA    0      0
+//@E :1: id10  1      2      3      a4    NA    0      0
+//@E :2: id13  6      7      8      s9    NA    0      0
+//@X
+
+//@T Dataframe.transform_merge_excluding_clean
+//@U void transform_merge_excluding_clean(Dataframe &obj, 
+//@U                          unsigned int &key1, 
+//@U                          unsigned int &key2,
+//@U                          std::string default_str = "NA",
+//@U                          char default_chr = ' ',
+//@U                          bool default_bool = 0,
+//@U                          int default_int = 0,
+//@U                          unsigned int default_uint = 0,
+//@U                          double default_dbl = 0)
+//@X
+//@D Performs a left excluding join to the associated dataframe (already created). The dataframe as argument is considered as the right one. May be significantly slower than transform_merge_excluding because this version frees unnused memory after doing the left excluding join.
+//@A obj : is the left dataframe
+//@A colname : 1 to give the column names to the newly created dataframe
+//@A key1 : is the index of the column of the left dataframe
+//@A key2 : is the index of the column of the right dataframe
+//@X
+//@E
+//@E  Dataframe obj1, obj2, obj3;
+//@E  std::string fname = "csv_test/outb.csv";
+//@E  obj1.readf(fname);
+//@E
+//@E  fname = "csv_test/outb2.csv";
+//@E  obj2.readf(fname);
+//@E
+//@E  unsigned int n = 0;
+//@E
+//@E  obj1.transform_merge_excluding_clean(obj2, n, n);
+//@E  obj1.display();
+//@E    &lt;str&gt; &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt; &lt;str&gt; &lt;uint&gt; &lt;uint&gt;
+//@E    col1  col2   col3   col4   col5  col1  col2   col3
+//@E :0: id3   1      2      3      cc    NA    0      0
+//@E :1: id10  1      2      3      a4    NA    0      0
+//@E :2: id13  6      7      8      s9    NA    0      0
+//@X
+
+//@T Dataframe.sort_by
+//@U template &lt;bool asc = 1&gt;
+//@U void sort_by(unsigned int& n)
+//@X
+//@D Transforms the dataframe by reordering the rows by the value of a column.
+//@A n : is the column index of the column value to reorder from
+//@X
+//@E
+//@E  Dataframe obj1;
+//@E  std::string fname = "csv_test/outb.csv";
+//@E  obj1.readf(fname);
+//@E  obj1.display();
+//@E
+//@E  obj1.display();
+//@E 
+//@E     &lt;str&gt; &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt;
+//@E     col1  col2   col3   col4   col5
+//@E :0:  id1   1      2      3      aa
+//@E :1:  id2   6      7      8      bb
+//@E :2:  id3   1      2      3      cc
+//@E :3:  id4   6      7      8      uu
+//@E :4:  id5   1      2      3      s4
+//@E :5:  id6   6      7      8      s9
+//@E :6:  id7   1      2      3      a4
+//@E :7:  id8   6      7      8      m9
+//@E :8:  id9   6      7      8      s9
+//@E :9:  id10  1      2      3      a4
+//@E :10: id11  6      7      8      m9
+//@E :11: id12  6      7      8      m9
+//@E :12: id13  6      7      8      s9
+//@E :13: id14  1      2      3      NA
+//@E :14: id15  16     7      8      m9
+//@E 
+//@E  n = 2;
+//@E  obj1.sort_by(n);
+//@E
+//@E  obj1.display();
+//@E
+//@E     &lt;str&gt; &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt;
+//@E     col1  col2   col3   col4   col5
+//@E :0:  id1   1      2      3      aa
+//@E :1:  id3   1      2      3      cc
+//@E :2:  id5   1      2      3      s4
+//@E :3:  id7   1      2      3      a4
+//@E :4:  id10  1      2      3      a4
+//@E :5:  id14  1      2      3      NA
+//@E :6:  id2   6      7      8      bb
+//@E :7:  id4   6      7      8      uu
+//@E :8:  id6   6      7      8      s9
+//@E :9:  id8   6      7      8      m9
+//@E :10: id9   6      7      8      s9
+//@E :11: id11  6      7      8      m9
+//@E :12: id12  6      7      8      m9
+//@E :13: id13  6      7      8      s9
+//@E :14: id15  16     7      8      m9
+//@E
+//@E  obj1.sort_by<0>(n);
+//@E
+//@E  obj1.display();
+//@E
+//@E     &lt;str&gt; &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt;
+//@E     col1  col2   col3   col4   col5
+//@E :0:  id2   6      7      8      bb
+//@E :1:  id4   6      7      8      uu
+//@E :2:  id6   6      7      8      s9
+//@E :3:  id8   6      7      8      m9
+//@E :4:  id9   6      7      8      s9
+//@E :5:  id11  6      7      8      m9
+//@E :6:  id12  6      7      8      m9
+//@E :7:  id13  6      7      8      s9
+//@E :8:  id15  16     7      8      m9
+//@E :9:  id1   1      2      3      aa
+//@E :10: id3   1      2      3      cc
+//@E :11: id5   1      2      3      s4
+//@E :12: id7   1      2      3      a4
+//@E :13: id10  1      2      3      a4
+//@E :14: id14  1      2      3      NA
+//@E
+//@X
+
+//@T Dataframe.concat
+//@U void concat(Dataframe& obj)
+//@X
+//@D Concaenates the row of the dataframes. See example.
+//@A obj : is the input datarame (from which the rows will be appended)
+//@X
+//@E
+//@E  Dataframe obj1, obj2, obj3;
+//@E  std::string fname = "csv_test/outb.csv";
+//@E  obj1.readf(fname);
+//@E  obj1.display();
+//@E
+//@E     &lt;str&gt; &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt;
+//@E     col1  col2   col3   col4   col5
+//@E :0:  id1   1      2      3      aa
+//@E :1:  id2   6      7      8      bb
+//@E :2:  id3   1      2      3      cc
+//@E :3:  id4   6      7      8      uu
+//@E :4:  id5   1      2      3      s4
+//@E :5:  id6   6      7      8      s9
+//@E :6:  id7   1      2      3      a4
+//@E :7:  id8   6      7      8      m9
+//@E :8:  id9   6      7      8      s9
+//@E :9:  id10  1      2      3      a4
+//@E :10: id11  6      7      8      m9
+//@E :11: id12  6      7      8      m9
+//@E :12: id13  6      7      8      s9
+//@E :13: id14  1      2      3      NA
+//@E :14: id15  16     7      8      m9
+//@E
+//@E  fname = "csv_test/outb.csv";
+//@E  obj2.readf(fname);
+//@E
+//@E  obj1.concat(obj2);
+//@E
+//@E  obj1.display();
+//@E
+//@E     &lt;str&gt; &lt;uint&gt; &lt;uint&gt; &lt;uint&gt; &lt;str&gt;
+//@E     col1  col2   col3   col4   col5
+//@E :0:  id1   1      2      3      aa
+//@E :1:  id2   6      7      8      bb
+//@E :2:  id3   1      2      3      cc
+//@E :3:  id4   6      7      8      uu
+//@E :4:  id5   1      2      3      s4
+//@E :5:  id6   6      7      8      s9
+//@E :6:  id7   1      2      3      a4
+//@E :7:  id8   6      7      8      m9
+//@E :8:  id9   6      7      8      s9
+//@E :9:  id10  1      2      3      a4
+//@E :10: id11  6      7      8      m9
+//@E :11: id12  6      7      8      m9
+//@E :12: id13  6      7      8      s9
+//@E :13: id14  1      2      3      NA
+//@E :14: id15  16     7      8      m9
+//@E :15: id1   1      2      3      aa
+//@E :16: id2   6      7      8      bb
+//@E :17: id3   1      2      3      cc
+//@E :18: id4   6      7      8      uu
+//@E :19: id5   1      2      3      s4
+//@E :20: id6   6      7      8      s9
+//@E :21: id7   1      2      3      a4
+//@E :22: id8   6      7      8      m9
+//@E :23: id9   6      7      8      s9
+//@E :24: id10  1      2      3      a4
+//@E :25: id11  6      7      8      m9
+//@E :26: id12  6      7      8      m9
+//@E :27: id13  6      7      8      s9
+//@E :28: id14  1      2      3      NA
+//@E :29: id15  16     7      8      m9
+//@E
+//@X
+
+
