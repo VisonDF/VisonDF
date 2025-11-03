@@ -27,6 +27,7 @@
 #include "external/ankerl/unordered_dense.h"
 #include "external/fast_float/fast_float.h"
 #include <omp.h>
+#include <fmt/core.h>
 
 namespace vison {
 
@@ -151,6 +152,8 @@ namespace vison {
         #include "view_col/view_colflt.hpp"
        
         #include "get_col/get_col_filter.hpp"
+
+        //#include "get_col/get_col_filter_idx.hpp"
 
         #include "get_col/get_col.hpp" 
         
