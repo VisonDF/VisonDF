@@ -1,6 +1,6 @@
 #pragma once
 
-std::span<const unsigned int> view_coluint(unsigned int &x) const {
+std::span<const UIntT> view_coluint(unsigned int &x) const {
   unsigned int i2 = 0;
 
   while (i2 < matr_idx[4].size()) {
@@ -13,6 +13,6 @@ std::span<const unsigned int> view_coluint(unsigned int &x) const {
   };
   i2 = nrow * i2;
 
-  return std::span<const unsigned int>(uint_v.data() + i2, nrow);
+  return std::span<const UIntT>(uint_v.data() + i2, nrow);
 
 };

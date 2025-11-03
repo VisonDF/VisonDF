@@ -39,27 +39,31 @@ namespace vison {
     #include "inlines/simd_can_be_nb.inl"
 
     #include "inlines/has_dot.inl"
-   
-    #include "inlines/classify_column.inl"
- 
+    
     #include "types/PairHash.hpp"    
-   
+  
+    #include "types/inference_type.hpp"
+
+    template <typename Types = DefaultTypes>
     class Dataframe{
       private:
-        
+
+        using IntT = typename Types::IntT;
+        using UIntT = typename Types::UIntT;
+        using FloatT = typename Types::FloatT;
+   
+        #include "inlines/classify_column.inl"
+
         unsigned int nrow = 0;
         unsigned int ncol = 0;
       
         std::vector<std::string> str_v = {};
         std::vector<char> chr_v = {};
         std::vector<bool> bool_v = {};
-        std::vector<int> int_v = {};
-        std::vector<unsigned int> uint_v = {};
-        std::vector<double> dbl_v = {};
+        std::vector<IntT> int_v = {};
+        std::vector<UIntT> uint_v = {};
+        std::vector<FloatT> dbl_v = {};
        
-        std::vector<int> pre_str_v = {};
-        std::vector<unsigned int> pre_chr_v = {};
-    
         std::vector<std::vector<unsigned int>> matr_idx = {{}, {}, {}, {}, {}, {}};
         std::vector<std::string> name_v = {};
         std::vector<std::string> name_v_row = {};
@@ -122,9 +126,6 @@ namespace vison {
           uint_v = {};
           dbl_v = {};
        
-          pre_str_v = {};
-          pre_chr_v = {};
-    
           matr_idx = {{}, {}, {}, {}, {}, {}};
           name_v = {};
           name_v_row = {};
@@ -147,7 +148,7 @@ namespace vison {
          
         #include "view_col/view_coluint.hpp"
        
-        #include "view_col/view_coldbl.hpp"
+        #include "view_col/view_colflt.hpp"
        
         #include "get_col/get_col_filter.hpp"
 

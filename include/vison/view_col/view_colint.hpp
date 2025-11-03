@@ -1,6 +1,6 @@
 #pragma once
 
-std::span<const int> view_colint(unsigned int &x) const {
+std::span<const IntT> view_colint(unsigned int &x) const {
   unsigned int i2 = 0;
 
   while (i2 < matr_idx[3].size()) {
@@ -13,7 +13,7 @@ std::span<const int> view_colint(unsigned int &x) const {
   };
   i2 = nrow * i2;
 
-  return std::span<const int>(int_v.data() + i2, nrow);
+  return std::span<const IntT>(int_v.data() + i2, nrow);
 
 };
 

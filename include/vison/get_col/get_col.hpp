@@ -27,7 +27,7 @@ void get_col(unsigned int &x,
       rtn_v.push_back(bool_v[i2 + i]);
     };
 
-  } else if constexpr (std::is_same_v<T, int>) {
+  } else if constexpr (std::is_same_v<T, IntT>) {
 
     while (i2 < matr_idx[3].size()) {
       if (x == matr_idx[3][i2]) {
@@ -47,7 +47,7 @@ void get_col(unsigned int &x,
       rtn_v.push_back(int_v[i2 + i]);
     };
 
-  } else if constexpr (std::is_same_v<T, unsigned int>) {
+  } else if constexpr (std::is_same_v<T, UIntT>) {
 
     while (i2 < matr_idx[4].size()) {
       if (x == matr_idx[4][i2]) {
@@ -67,7 +67,7 @@ void get_col(unsigned int &x,
       rtn_v.push_back(uint_v[i2 + i]);
     };
 
-  } else if constexpr (std::is_same_v<T, double>) {
+  } else if constexpr (std::is_same_v<T, FloatT>) {
 
     while (i2 < matr_idx[5].size()) {
       if (x == matr_idx[5][i2]) {
