@@ -1,6 +1,6 @@
 #pragma once
 
-void get_dataframe(std::vector<int> &cols, 
+void get_dataframe_filter(std::vector<int> &cols, 
                 Dataframe &cur_obj, 
                 std::vector<bool>& mask) {
   unsigned int i2;
