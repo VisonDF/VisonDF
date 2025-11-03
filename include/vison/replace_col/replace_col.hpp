@@ -30,7 +30,7 @@ template <typename T> void replace_col(std::vector<T> &x, unsigned int &colnb) {
       bool_v[i2 + i] = x[i];
       tmp_val_refv[colnb][i] = std::to_string(x[i]);
     };
-  } else if constexpr (std::is_same_v<T, int>) {
+  } else if constexpr (std::is_same_v<T, IntT>) {
 
     while (i2 < matr_idx[3].size()) {
       if (colnb == matr_idx[3][i2]) {
@@ -50,7 +50,7 @@ template <typename T> void replace_col(std::vector<T> &x, unsigned int &colnb) {
       int_v[i2 + i] = x[i];
       tmp_val_refv[colnb][i] = std::to_string(x[i]);
     };
-  } else if constexpr (std::is_same_v<T, unsigned int>) {
+  } else if constexpr (std::is_same_v<T, UIntT>) {
 
     while (i2 < matr_idx[4].size()) {
       if (colnb == matr_idx[4][i2]) {
@@ -70,7 +70,7 @@ template <typename T> void replace_col(std::vector<T> &x, unsigned int &colnb) {
       uint_v[i2 + i] = x[i];
       tmp_val_refv[colnb][i] = std::to_string(x[i]);
     };
-  } else if constexpr (std::is_same_v<T, double>) {
+  } else if constexpr (std::is_same_v<T, FloatT>) {
 
     while (i2 < matr_idx[5].size()) {
       if (colnb == matr_idx[5][i2]) {
