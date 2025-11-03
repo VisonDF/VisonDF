@@ -100,6 +100,11 @@ namespace vison {
           return matr_idx;
         };
 
+        template <typename T>
+        constexpr size_t max_chars_needed() noexcept {
+            return std::numeric_limits<T>::digits10 + 3;
+        }
+
         #include "detail/longest_determine.hpp"
     
       public:
@@ -135,7 +140,7 @@ namespace vison {
           tmp_val_refv = {};
     
         };
-
+ 
         #include "fapply/fapply.hpp"
    
         #include "fapply/fapply_filter.hpp"

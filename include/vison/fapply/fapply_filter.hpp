@@ -1,10 +1,5 @@
 #pragma once
 
-template <typename T>
-constexpr size_t max_chars_needed() noexcept {
-    return std::numeric_limits<T>::digits10 + 3;
-}
-
 template <typename VecT, typename T, typename F>
 inline void apply_numeric(VecT& values, 
                 unsigned int n, 
