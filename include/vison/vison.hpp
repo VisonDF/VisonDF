@@ -27,7 +27,6 @@
 #include "external/ankerl/unordered_dense.h"
 #include "external/fast_float/fast_float.h"
 #include <omp.h>
-#include <fmt/core.h>
 
 namespace vison {
 
