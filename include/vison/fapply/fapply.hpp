@@ -31,7 +31,6 @@ inline void apply_numeric(VecT& values, unsigned int n, size_t idx_type, F&& f) 
         } else [[unlikely]] {
             std::terminate();
         }
-        i3 += 1;
     }
 }
 
