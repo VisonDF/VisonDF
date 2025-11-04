@@ -5,7 +5,7 @@ inline void apply_numeric(VecT& values,
                 unsigned int n, 
                 size_t idx_type, 
                 F&& f,
-                const std::vector<bool>& mask) 
+                const std::vector<uint8_t>& mask) 
 {
     constexpr auto buf_size = max_chars_needed<T>();
     for (auto& s : tmp_val_refv[n])
@@ -42,7 +42,7 @@ inline void apply_numeric(VecT& values,
 template <typename T>
 void fapply(void (&f)(T&), 
                 unsigned int& n, 
-                const std::vector<bool>& mask) 
+                const std::vector<uint8_t>& mask) 
 {
 
     if constexpr (std::is_same_v<T, bool>)
