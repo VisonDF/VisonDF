@@ -23,6 +23,7 @@ void get_dataframe(const std::vector<int>& cols, Dataframe& cur_obj)
         ncol = cols.size();
 
         const auto& cur_tmp   = cur_obj.get_tmp_val_refv();
+
         const auto& str_vec2  = cur_obj.get_str_vec();
         const auto& chr_vec2  = cur_obj.get_chr_vec();
         const auto& bool_vec2 = cur_obj.get_bool_vec();
@@ -39,14 +40,15 @@ void get_dataframe(const std::vector<int>& cols, Dataframe& cur_obj)
         size_t str_idx = 0, chr_idx = 0, bool_idx = 0;
         size_t int_idx = 0, uint_idx = 0, dbl_idx = 0;
 
+        size_t i2 = 0;
         for (int i : cols) {
             switch (type_refv1[i]) {
-                case 's': ++str_idx; break;
-                case 'c': ++chr_idx; break;
-                case 'b': ++bool_idx; break;
-                case 'i': ++int_idx; break;
-                case 'u': ++uint_idx; break;
-                case 'd': ++dbl_idx; break;
+                case 's': ++str_idx; ; matr_idx[0].push_back(i2); ++i2; break;
+                case 'c': ++chr_idx; matr_idx[1].push_back(i2); ++i2; break;
+                case 'b': ++bool_idx; matr_idx[2].push_back(i2); ++i2; break;
+                case 'i': ++int_idx; matr_idx[3].push_back(i2); ++i2; break;
+                case 'u': ++uint_idx; matr_idx[4].push_back(i2); ++i2; break;
+                case 'd': ++dbl_idx; matr_idx[5].push_back(i2); ++i2; break;
             }
         }
 
