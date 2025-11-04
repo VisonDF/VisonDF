@@ -53,9 +53,7 @@ namespace vison {
         using IntT = typename Types::IntT;
         using UIntT = typename Types::UIntT;
         using FloatT = typename Types::FloatT;
-   
-        #include "inlines/classify_column.inl"
-
+    
         unsigned int nrow = 0;
         unsigned int ncol = 0;
       
@@ -101,10 +99,18 @@ namespace vison {
         const std::vector<std::vector<unsigned int>>& get_matr_idx() const {
           return matr_idx;
         };
-        
+   
+        #include "inlines/classify_column.inl"
+     
         #include "detail/longest_determine.hpp"
     
         #include "inlines/fapply/max_chars_needed.inl"
+
+        #include "inlines/fapply/apply_numeric.inl"
+
+        #include "inlines/fapply/apply_numeric_filter.inl"
+
+        #include "inlines/fapply/apply_numeric_filter_idx.inl"
 
         #include "inlines/fapply/vectorized_hint/simd_hint.inl"
 
@@ -120,28 +126,8 @@ namespace vison {
        
         #include "display/display.hpp"
 
-        void reinitiate() {
+        #include "reinitiate.hpp"
          
-          nrow = 0;
-          ncol = 0;
-     
-          str_v = {};
-          chr_v = {};
-          bool_v = {};
-          int_v = {};
-          uint_v = {};
-          dbl_v = {};
-       
-          matr_idx = {{}, {}, {}, {}, {}, {}};
-          name_v = {};
-          name_v_row = {};
-          longest_v = {};
-    
-          type_refv = {};
-          tmp_val_refv = {};
-    
-        };
- 
         #include "fapply/fapply.hpp"
    
         #include "fapply/fapply_filter.hpp"
@@ -243,40 +229,26 @@ namespace vison {
         #include "transform/sort_by.hpp"
 
         #include "concat/concat.hpp"
-        
-        void set_colname(std::vector<std::string> &x) {
-          if (x.size() != ncol) {
-            std::cout << "the number of columns of the dataframe does not correspond to the size of the input column name vector";
-            return;
-          } else {
-            name_v = x;
-          };
-        };
-    
-        void set_rowname(std::vector<std::string> &x) {
-          if (x.size() != nrow) {
-            std::cout << "the number of columns of the dataframe does not correspond to the size of the input column name vector";
-            return;
-          } else {
-            name_v_row = x;
-          };
-        };
-    
-        const std::vector<std::string>& get_colname() const {
+            
+        #include "set_colname.hpp"
+
+        #include "set_rowname.hpp"
+            
+        [[nodiscard]] const std::vector<std::string>& get_colname() const {
           return name_v;
         };
     
-        const std::vector<std::string>& get_rowname() const {
+        [[nodiscard]] const std::vector<std::string>& get_rowname() const {
           return name_v_row;
         };
     
-        const std::vector<char>& get_typecol() const {
+        [[nodiscard]] const std::vector<char>& get_typecol() const {
           return type_refv;
         };
     
-        Dataframe() {};
+        Dataframe() = default;
     
-        ~Dataframe() {};
+        ~Dataframe() = default;
     
     };
 
