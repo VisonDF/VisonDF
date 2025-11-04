@@ -19,17 +19,22 @@ inline void apply_numeric_filter_idx(VecT& values,
     }
 
     const unsigned int start = nrow * i2;
-    unsigned int i3 = 0;
     std::vector<std::string>& val_tmp = tmp_val_refv[n];
+    char buf[buf_size];
 
-    for (; i3 < mask.size(); ++i3) {
+    #if defined(__clang__)
+        #pragma clang loop vectorize(enable)
+    #elif defined(__GNUC__)
+        #pragma GCC ivdep
+    #elif defined(_MSC_VER)
+        #pragma loop(ivdep)
+    #endif
+    for (unsigned int& pos_idx : mask) {
 
-        unsigned int pos_idx = mask[i3];
-        unsigned int abs_idx = start + mask[i3];
+        const unsigned int abs_idx = start + pos_idx;
 
         f(values[abs_idx]);
 
-        char buf[buf_size];
         auto [ptr, ec] = std::to_chars(buf, buf + buf_size, values[abs_idx]);
 
         if (ec == std::errc{}) [[likely]] {
@@ -38,4 +43,7 @@ inline void apply_numeric_filter_idx(VecT& values,
             std::terminate();
         }
     }
+
 }
+
+
