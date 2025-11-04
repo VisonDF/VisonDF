@@ -21,8 +21,9 @@ inline void apply_numeric_filter(VecT& values,
     const unsigned int start = nrow * i2;
     unsigned int i3 = 0;
     std::vector<std::string>& val_tmp = tmp_val_refv[n];
+    const unsigned int end_val = mask.size();
 
-    for (size_t i = start; i < start + nrow; ++i, ++i3) {
+    for (size_t i = start; i < start + end_val; ++i, ++i3) {
 
         if (!mask[i3]) [[likely]] {
           continue;
