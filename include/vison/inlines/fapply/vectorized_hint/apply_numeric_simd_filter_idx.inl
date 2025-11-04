@@ -1,11 +1,11 @@
 #pragma once
 
 template <typename VecT, typename T, typename F>
-inline void apply_numeric_simd_filter(VecT& values, 
+inline void apply_numeric_simd_filter_idx(VecT& values, 
                 unsigned int n, 
                 size_t idx_type, 
                 F&& f,
-                std::vector<uint8_t> mask) {
+                const std::vector<uint8_t> mask) {
     
     constexpr size_t buf_size = max_chars_needed<T>();
     
@@ -22,69 +22,32 @@ inline void apply_numeric_simd_filter(VecT& values,
     unsigned int i3 = 0;
     size_t i = 0;
 
-    std::vector<std::string>& val_tmp = tmp_val_refv[n];
+    std::vector<std::string>& val_tmp = tmp_val_refv[n]; 
     
-    char buf[buf_size];
-
-#if defined(__clang__)
-    #pragma clang loop vectorize(enable)
-#elif defined(__GNUC__)
-    #pragma GCC ivdep
-#elif defined(_MSC_VER)
-    #pragma loop(ivdep)
-#endif
+    #if defined(__clang__)
+        #pragma clang loop vectorize(enable)
+    #elif defined(__GNUC__)
+        #pragma GCC ivdep
+    #elif defined(_MSC_VER)
+        #pragma loop(ivdep)
+    #endif
         
     for (; i + 4 <= end; i += 4, i3 += 4) {
-        
-        if (mask[i]) {
+        f(values[i + 0]);
+        f(values[i + 1]);
+        f(values[i + 2]);
+        f(values[i + 3]);
 
-            f(values[i + 0]);
-       
-            auto [ptr, ec] = std::to_chars(buf, buf + buf_size, values[i]);
+        char buf[buf_size];
+        for (int j = 0; j < 4; ++j) {
+            auto [ptr, ec] = std::to_chars(buf, buf + buf_size, values[i + j]);
             if (ec == std::errc{}) [[likely]]
-                val_tmp[i3].assign(buf, ptr);
+                val_tmp[i3 + j].assign(buf, ptr);
             else [[unlikely]]
                 std::terminate();
-
         }
-
-        if (mask[i + 1]) {
-
-            f(values[i + 1]);
-
-            auto [ptr, ec] = std::to_chars(buf, buf + buf_size, values[i + 1]);
-            if (ec == std::errc{}) [[likely]]
-                val_tmp[i3 + 1].assign(buf, ptr);
-            else [[unlikely]]
-                std::terminate();
-
-        }
-
-        if (mask[i + 2]) {
-
-            f(values[i + 2]);
-
-            auto [ptr, ec] = std::to_chars(buf, buf + buf_size, values[i + 2]);
-            if (ec == std::errc{}) [[likely]]
-                val_tmp[i3 + 2].assign(buf, ptr);
-            else [[unlikely]]
-                std::terminate();
-
-        }
-        if (mask[i + 3]) {
-
-            f(values[i + 3]);
-
-            auto [ptr, ec] = std::to_chars(buf, buf + buf_size, values[i + 3]);
-            if (ec == std::errc{}) [[likely]]
-                val_tmp[i3 + 3].assign(buf, ptr);
-            else [[unlikely]]
-                std::terminate();
-
-        }
-                
     }
-
+    
     for (; i < end; ++i, ++i3) {
         if (mask[i]) {
             f(values[i]);

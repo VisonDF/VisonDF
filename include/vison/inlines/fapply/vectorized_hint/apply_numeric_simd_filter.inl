@@ -21,22 +21,22 @@ inline void apply_numeric_simd_filter(VecT& values,
     const unsigned int end   = start + end_val;
 
     unsigned int i3 = 0;
-    size_t i = 0;
+    size_t i = start;
 
     std::vector<std::string>& val_tmp = tmp_val_refv[n];
-    
-    char buf[buf_size];
-
-#if defined(__clang__)
-    #pragma clang loop vectorize(enable)
-#elif defined(__GNUC__)
-    #pragma GCC ivdep
-#elif defined(_MSC_VER)
-    #pragma loop(ivdep)
-#endif
+     
+    #if defined(__clang__)
+        #pragma clang loop vectorize(enable)
+    #elif defined(__GNUC__)
+        #pragma GCC ivdep
+    #elif defined(_MSC_VER)
+        #pragma loop(ivdep)
+    #endif
         
     for (; i + 4 <= end; i += 4, i3 += 4) {
-        
+    
+        char buf[buf_size];
+    
         if (mask[i]) {
 
             f(values[i + 0]);

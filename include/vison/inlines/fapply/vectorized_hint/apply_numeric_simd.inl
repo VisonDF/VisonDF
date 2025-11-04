@@ -19,18 +19,18 @@ inline void apply_numeric_simd(VecT& values,
     const unsigned int end   = start + nrow;
 
     unsigned int i3 = 0;
-    size_t i = 0;
+    size_t i = start;
 
     std::vector<std::string>& val_tmp = tmp_val_refv[n];
 
     
-#if defined(__clang__)
-    #pragma clang loop vectorize(enable)
-#elif defined(__GNUC__)
-    #pragma GCC ivdep
-#elif defined(_MSC_VER)
-    #pragma loop(ivdep)
-#endif
+    #if defined(__clang__)
+        #pragma clang loop vectorize(enable)
+    #elif defined(__GNUC__)
+        #pragma GCC ivdep
+    #elif defined(_MSC_VER)
+        #pragma loop(ivdep)
+    #endif
         
     for (; i + 4 <= end; i += 4, i3 += 4) {
         f(values[i + 0]);
