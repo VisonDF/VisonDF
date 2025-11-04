@@ -65,9 +65,10 @@ void fapply(void (&f)(T&),
             ++i2;
         const unsigned int start = nrow * i2;
         unsigned int i3 = 0;
+        std::vector<std::string>& val_tmp = tmp_val_refv[n];
         for (size_t i = start; i < start + nrow; ++i, ++i3) {
             f(chr_v[i]);
-            tmp_val_refv[n][i3].assign(1, chr_v[i]);
+            val_tmp[i3].assign(1, chr_v[i]);
         }
     }
 
@@ -77,10 +78,13 @@ void fapply(void (&f)(T&),
             ++i2;
         const unsigned int start = nrow * i2;
         unsigned int i3 = 0;
+        std::vector<std::string>& val_tmp = tmp_val_refv[n];
         for (size_t i = start; i < start + nrow; ++i, ++i3) {
             f(str_v[i]);
-            tmp_val_refv[n][i3] = str_v[i];
+            val_tmp[i3] = str_v[i];
         }
     }
 }
+
+
 
