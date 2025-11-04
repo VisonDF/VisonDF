@@ -5,7 +5,7 @@ inline void apply_numeric_filter_idx(VecT& values,
                 unsigned int n, 
                 size_t idx_type, 
                 F&& f,
-                const std::vector<unsigned>& mask) 
+                const std::vector<unsigned int>& mask) 
 {
     constexpr auto buf_size = max_chars_needed<T>();
     for (auto& s : tmp_val_refv[n])
@@ -20,8 +20,7 @@ inline void apply_numeric_filter_idx(VecT& values,
 
     const unsigned int start = nrow * i2;
     std::vector<std::string>& val_tmp = tmp_val_refv[n];
-    char buf[buf_size];
-
+    
     #if defined(__clang__)
         #pragma clang loop vectorize(enable)
     #elif defined(__GNUC__)
@@ -30,6 +29,8 @@ inline void apply_numeric_filter_idx(VecT& values,
         #pragma loop(ivdep)
     #endif
     for (unsigned int& pos_idx : mask) {
+
+        char buf[buf_size];
 
         const unsigned int abs_idx = start + pos_idx;
 
