@@ -1,7 +1,7 @@
 #pragma once
 
 template <typename VecT, typename T, typename F>
-inline void apply_numeric(VecT& values, 
+inline void apply_numeric_filter_idx(VecT& values, 
                 unsigned int n, 
                 size_t idx_type, 
                 F&& f,
@@ -39,22 +39,22 @@ inline void apply_numeric(VecT& values,
 }
 
 template <typename T>
-void fapply(void (&f)(T&), 
+void fapply_filter_idx(void (&f)(T&), 
                 unsigned int& n, 
                 const std::vector<unsigned int>& mask) 
 {
 
     if constexpr (std::is_same_v<T, bool>)
-        apply_numeric<decltype(bool_v), bool>(bool_v, n, 0, f, mask);
+        apply_numeric_filter_idx<decltype(bool_v), bool>(bool_v, n, 0, f, mask);
 
     else if constexpr (std::is_same_v<T, IntT>)
-        apply_numeric<decltype(int_v), IntT>(int_v, n, 3, f, mask);
+        apply_numeric_filter_idx<decltype(int_v), IntT>(int_v, n, 3, f, mask);
 
     else if constexpr (std::is_same_v<T, UIntT>)
-        apply_numeric<decltype(uint_v), UIntT>(uint_v, n, 4, f, mask);
+        apply_numeric_filter_idx<decltype(uint_v), UIntT>(uint_v, n, 4, f, mask);
 
     else if constexpr (std::is_same_v<T, FloatT>)
-        apply_numeric<decltype(dbl_v), FloatT>(dbl_v, n, 5, f, mask);
+        apply_numeric_filter_idx<decltype(dbl_v), FloatT>(dbl_v, n, 5, f, mask);
 
     else if constexpr (std::is_same_v<T, char>) {
         unsigned int i2 = 0;
