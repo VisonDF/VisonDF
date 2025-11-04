@@ -72,31 +72,31 @@ namespace vison {
         std::vector<char> type_refv = {};
         std::vector<std::vector<std::string>> tmp_val_refv = {};
     
-        const std::vector<std::string>& get_str_vec() const {
+        [[nodiscard]] inline const std::vector<std::string>& get_str_vec() const {
           return str_v;
         };
     
-        const std::vector<char>& get_chr_vec() const {
+        [[nodiscard]] inline const std::vector<char>& get_chr_vec() const {
           return chr_v;
         };
     
-        const std::vector<bool>& get_bool_vec() const {
+        [[nodiscard]] inline const std::vector<bool>& get_bool_vec() const {
           return bool_v;
         };
     
-        const std::vector<IntT>& get_int_vec() const {
+        [[nodiscard]] inline const std::vector<IntT>& get_int_vec() const {
           return int_v;
         };
     
-        const std::vector<UIntT>& get_uint_vec() const {
+        [[nodiscard]] inline const std::vector<UIntT>& get_uint_vec() const {
           return uint_v;
         };
     
-        const std::vector<FloatT>& get_dbl_vec() const {
+        [[nodiscard]] inline const std::vector<FloatT>& get_dbl_vec() const {
           return dbl_v;
         };
     
-        const std::vector<std::vector<unsigned int>>& get_matr_idx() const {
+        [[nodiscard]] inline const std::vector<std::vector<unsigned int>>& get_matr_idx() const {
           return matr_idx;
         };
    
@@ -154,15 +154,15 @@ namespace vison {
 
         #include "get_col/get_col.hpp" 
         
-        const std::vector<std::vector<std::string>>& get_tmp_val_refv() const {
+        [[nodiscard]] const std::vector<std::vector<std::string>>& get_tmp_val_refv() const {
           return tmp_val_refv;
         };
     
-        const unsigned int& get_nrow() const {
+        [[nodiscard]] inline const unsigned int& get_nrow() const {
           return nrow;
         };
     
-        const unsigned int& get_ncol() const {
+        [[nodiscard]] inline const unsigned int& get_ncol() const {
           return ncol;
         };
    
@@ -234,15 +234,15 @@ namespace vison {
 
         #include "set_rowname.hpp"
             
-        [[nodiscard]] const std::vector<std::string>& get_colname() const {
+        [[nodiscard]] inline const std::vector<std::string>& get_colname() const {
           return name_v;
         };
     
-        [[nodiscard]] const std::vector<std::string>& get_rowname() const {
+        [[nodiscard]] inline const std::vector<std::string>& get_rowname() const {
           return name_v_row;
         };
     
-        [[nodiscard]] const std::vector<char>& get_typecol() const {
+        [[nodiscard]] inline const std::vector<char>& get_typecol() const {
           return type_refv;
         };
     
