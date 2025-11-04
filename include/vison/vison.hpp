@@ -112,7 +112,11 @@ namespace vison {
 
         #include "inlines/fapply/apply_numeric_filter_idx.inl"
 
-        #include "inlines/fapply/vectorized_hint/simd_hint.inl"
+        #include "inlines/fapply/vectorized_hint/apply_numeric_simd.inl"
+
+        #include "inlines/fapply/vectorized_hint/apply_numeric_simd_filter.inl"
+
+        //#include "inlines/fapply/vectorized_hint/apply_numeric_simd_filter_idx.inl"
 
       public:
        
@@ -135,6 +139,10 @@ namespace vison {
         #include "fapply/fapply_filter_idx.hpp"
 
         #include "fapply/vectorized_hint/fapply_simd_hint.hpp"
+
+        #include "fapply/vectorized_hint/fapply_simd_hint_filter.hpp"
+
+        //#include "fapply/vectorized_hint/fapply_simd_hint_filter_idx.hpp"
 
         #include "view_col/view_col.hpp"
         
