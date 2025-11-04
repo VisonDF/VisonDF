@@ -22,30 +22,47 @@ void fapply_filter_idx(void (&f)(T&),
         unsigned int i2 = 0;
         while (i2 < matr_idx[1].size() && n != matr_idx[1][i2])
             ++i2;
+        
         const unsigned int start = nrow * i2;
-        unsigned int i3 = 0;
         std::vector<std::string>& val_tmp = tmp_val_refv[n];
-        for (; i3 < mask.size(); ++i3) {
-            unsigned int pos_idx = mask[i3];
-            unsigned int abs_idx = start + mask[i3];
+        
+        #if defined(__clang__)
+          #pragma clang loop vectorize(enable)
+        #elif defined(__GNUC__)
+            #pragma GCC ivdep
+        #elif defined(_MSC_VER)
+            #pragma loop(ivdep)
+        #endif
+        
+        for (unsigned int& pos_idx : mask) {
+            unsigned int abs_idx = start + pos_idx;
             f(chr_v[abs_idx]);
             val_tmp[pos_idx].assign(1, chr_v[abs_idx]);
         }
+
     }
 
     else if constexpr (std::is_same_v<T, std::string>) {
         unsigned int i2 = 0;
         while (i2 < matr_idx[0].size() && n != matr_idx[0][i2])
             ++i2;
+        
         const unsigned int start = nrow * i2;
-        unsigned int i3 = 0;
         std::vector<std::string>& val_tmp = tmp_val_refv[n];
-        for (; i3 < mask.size(); ++i3) {
-            unsigned int pos_idx = mask[i3];
-            unsigned int abs_idx = start + mask[i3];
+
+        #if defined(__clang__)
+          #pragma clang loop vectorize(enable)
+        #elif defined(__GNUC__)
+            #pragma GCC ivdep
+        #elif defined(_MSC_VER)
+            #pragma loop(ivdep)
+        #endif
+        for (unsigned int& pos_idx : mask) {
+            unsigned int abs_idx = start + pos_idx;
             f(str_v[abs_idx]);
             val_tmp[pos_idx] = str_v[abs_idx];
         }
+
     }
 }
 
