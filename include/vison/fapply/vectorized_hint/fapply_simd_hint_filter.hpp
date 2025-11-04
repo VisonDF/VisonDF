@@ -6,6 +6,8 @@ void fapply_simd_filter(void (&f)(T&),
                 const std::vector<uint8_t>& mask) 
 {
 
+    assert(mask.size() <= nrow);
+
     if constexpr (std::is_same_v<T, bool>)
         apply_numeric_simd_filter<decltype(bool_v), bool>(bool_v, n, 0, f, mask);
 
