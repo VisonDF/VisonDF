@@ -15,6 +15,8 @@ inline void apply_numeric(VecT& values, unsigned int n, size_t idx_type, F&& f) 
 
     const unsigned int start = nrow * i2;
     unsigned int i3 = 0;
+    std::vector<std::string>& val_tmp = tmp_val_refv[n];
+
     for (size_t i = start; i < start + nrow; ++i, ++i3) {
         f(values[i]);
 
@@ -22,7 +24,7 @@ inline void apply_numeric(VecT& values, unsigned int n, size_t idx_type, F&& f) 
         auto [ptr, ec] = std::to_chars(buf, buf + buf_size, values[i]);
 
         if (ec == std::errc{}) [[likely]] {
-            tmp_val_refv[n][i3].assign(buf, ptr);
+            val_tmp[i3].assign(buf, ptr);
         } else [[unlikely]] {
             std::terminate();
         }

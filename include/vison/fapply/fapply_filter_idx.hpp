@@ -20,6 +20,8 @@ inline void apply_numeric_filter_idx(VecT& values,
 
     const unsigned int start = nrow * i2;
     unsigned int i3 = 0;
+    std::vector<std::string>& val_tmp = tmp_val_refv[n];
+
     for (; i3 < mask.size(); ++i3) {
 
         unsigned int pos_idx = mask[i3];
@@ -31,7 +33,7 @@ inline void apply_numeric_filter_idx(VecT& values,
         auto [ptr, ec] = std::to_chars(buf, buf + buf_size, values[abs_idx]);
 
         if (ec == std::errc{}) [[likely]] {
-            tmp_val_refv[n][pos_idx].assign(buf, ptr);
+            val_tmp[pos_idx].assign(buf, ptr);
         } else [[unlikely]] {
             std::terminate();
         }
