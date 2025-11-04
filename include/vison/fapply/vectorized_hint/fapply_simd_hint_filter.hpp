@@ -25,7 +25,8 @@ void fapply_simd_filter(void (&f)(T&),
         const unsigned int start = nrow * i2;
         unsigned int i3 = 0;
         std::vector<std::string>& val_tmp = tmp_val_refv[n];
-        for (size_t i = start; i < start + nrow; ++i, ++i3) {
+        const unsigned int end_val = mask.size();
+        for (size_t i = start; i < start + end_val; ++i, ++i3) {
             if (!mask[i3]) {
               continue;
             }
@@ -40,8 +41,9 @@ void fapply_simd_filter(void (&f)(T&),
             ++i2;
         const unsigned int start = nrow * i2;
         unsigned int i3 = 0;
-        std::vector<std::string>& val_tmp = tmp_val_refv[n]; 
-        for (size_t i = start; i < start + nrow; ++i, ++i3) {
+        std::vector<std::string>& val_tmp = tmp_val_refv[n];
+        const unsigned int end_val = mask.size();
+        for (size_t i = start; i < start + end_val; ++i, ++i3) {
             if (!mask[i3]) {
               continue;
             }

@@ -16,8 +16,9 @@ inline void apply_numeric_simd_filter(VecT& values,
     while (i2 < matr_idx[idx_type].size() && n != matr_idx[idx_type][i2])
         ++i2;
 
+    const unsigned int end_val = mask.size();
     const unsigned int start = nrow * i2;
-    const unsigned int end   = start + nrow;
+    const unsigned int end   = start + end_val;
 
     unsigned int i3 = 0;
     size_t i = 0;
