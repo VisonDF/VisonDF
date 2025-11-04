@@ -74,6 +74,7 @@ void get_dataframe_filter(const std::vector<int>& cols,
         for (size_t i = 0; i < type_refv.size(); i += 1) {
 
           const std::vector<std::string>& cur_tmp2 = cur_tmp[i];
+          std::vector<std::string>& refv_tmp = tmp_val_refv[i];
 
           switch (type_refv[i]) {
             case 's': {
@@ -89,7 +90,7 @@ void get_dataframe_filter(const std::vector<int>& cols,
                         for (size_t j = 0; j < nrow; ++j) [[likely]] {
                             const size_t act_row = active_rows[j];
                             dst[j] = src[act_row];  
-                            tmp_val_refv[i][j] = cur_tmp2[act_row];
+                            refv_tmp[j] = cur_tmp2[act_row];
                         }
 
                         ++str_idx;
@@ -109,7 +110,7 @@ void get_dataframe_filter(const std::vector<int>& cols,
                             for (size_t j = 0; j < nrow; ++j) [[likely]] {
                                 const size_t act_row = active_rows[j];
                                 dst[j] = src[act_row];
-                                tmp_val_refv[i][j] = cur_tmp2[act_row];
+                                refv_tmp[j] = cur_tmp2[act_row];
                             }
 
                             chr_idx += 1;
@@ -126,7 +127,7 @@ void get_dataframe_filter(const std::vector<int>& cols,
                                 for (size_t j = 0; j < nrow; ++j) [[likely]] {
                                     const size_t act_row = active_rows[j];
                                     bool_v[base_idx + j] = bool_vec2[pos_idx + act_row];
-                                    tmp_val_refv[i][j] = cur_tmp2[act_row];
+                                    refv_tmp[j] = cur_tmp2[act_row];
                                 }
                                 break;
 
@@ -144,7 +145,7 @@ void get_dataframe_filter(const std::vector<int>& cols,
                             for (size_t j = 0; j < nrow; ++j) [[likely]] {
                                 const size_t act_row = active_rows[j];
                                 dst[j] = src[act_row];
-                                tmp_val_refv[i][j] = cur_tmp2[act_row];
+                                refv_tmp[j] = cur_tmp2[act_row];
                             }
 
                             int_idx += 1;
@@ -164,7 +165,7 @@ void get_dataframe_filter(const std::vector<int>& cols,
                             for (size_t j = 0; j < nrow; ++j) [[likely]] {
                                 const size_t act_row = active_rows[j];
                                 dst[j] = src[act_row];
-                                tmp_val_refv[i][j] = cur_tmp2[act_row];
+                                refv_tmp[j] = cur_tmp2[act_row];
                             }
 
                             uint_idx += 1;
@@ -184,7 +185,7 @@ void get_dataframe_filter(const std::vector<int>& cols,
                             for (size_t j = 0; j < nrow; ++j) [[likely]] {
                                 const size_t act_row = active_rows[j];
                                 dst[j] = src[act_row];
-                                tmp_val_refv[i][j] = cur_tmp2[act_row];
+                                refv_tmp[j] = cur_tmp2[act_row];
                             }
 
                             dbl_idx += 1;
@@ -244,113 +245,134 @@ void get_dataframe_filter(const std::vector<int>& cols,
         for (int i : cols) {
 
             const std::vector<std::string>& cur_tmp2 = cur_tmp[i];
+            std::vector<std::string>& refv_tmp = tmp_val_refv[dst_col];
 
             switch (type_refv1[i]) {
                 case 's': {
-                            size_t pos_idx = str_idx * tot_nrow;
-                            auto base_it = str_vec2.begin() + pos_idx;
 
-                            const size_t base_idx = str_v.size();
-                            str_v.resize(base_idx + nrow);
+                        const size_t pos_idx  = str_idx * tot_nrow;
 
-                            size_t i3 = 0;
-                            for (auto& i2 : active_rows) [[likely]] {
-                              str_v[base_idx + i3] = *(base_it + i2);
-                              tmp_val_refv[dst_col][i3] = cur_tmp2[i2];
-                              i3 += 1;
-                            }
-                            str_idx += 1;
-                            break;
+                        const size_t base_idx = str_v.size();
+                        str_v.resize(base_idx + nrow);
+
+                        const std::string* __restrict src = str_vec2.data() + pos_idx;
+                        std::string* __restrict dst       = str_v.data() + base_idx;
+
+                        for (size_t j = 0; j < nrow; ++j) [[likely]] {
+                            const size_t act_row = active_rows[j];
+                            dst[j] = src[act_row];  
+                            refv_tmp[j] = cur_tmp2[act_row];
+                        }
+
+                        ++str_idx;
+                        break;
+
                           }
                 case 'c': {
+
                             size_t pos_idx = chr_idx * tot_nrow;
-                            auto base_it = chr_vec2.begin() + pos_idx;
 
                             const size_t base_idx = chr_v.size();
                             chr_v.resize(base_idx + nrow);
 
-                            size_t i3 = 0;
-                            for (auto& i2 : active_rows) [[likely]] {
-                              chr_v[base_idx + i3] = *(base_it + i2);
-                              tmp_val_refv[dst_col][i3] = cur_tmp2[i2];
-                              i3 += 1;
+                            const auto* __restrict src = chr_vec2.data() + pos_idx;
+                            auto* __restrict dst = chr_v.data() + base_idx;
+                            
+                            for (size_t j = 0; j < nrow; ++j) [[likely]] {
+                                const size_t act_row = active_rows[j];
+                                dst[j] = src[act_row];
+                                refv_tmp[j] = cur_tmp2[act_row];
                             }
+
                             chr_idx += 1;
                             break;
+
                           }
                 case 'b': {
-                            size_t pos_idx = bool_idx * tot_nrow;
-                            auto base_it = bool_vec2.begin() + pos_idx;
 
-                            const size_t base_idx = bool_v.size();
-                            bool_v.resize(base_idx + nrow);
+                                size_t pos_idx = bool_idx * tot_nrow;
+                                
+                                const size_t base_idx = bool_v.size();
+                                bool_v.resize(base_idx + nrow);
+                                
+                                for (size_t j = 0; j < nrow; ++j) [[likely]] {
+                                    const size_t act_row = active_rows[j];
+                                    bool_v[base_idx + j] = bool_vec2[pos_idx + act_row];
+                                    refv_tmp[j] = cur_tmp2[act_row];
+                                }
+                                break;
 
-                            size_t i3 = 0;
-                            for (auto& i2 : active_rows) [[likely]] {
-                              bool_v[base_idx + i3] = *(base_it + i2);
-                              tmp_val_refv[dst_col][i3] = cur_tmp2[i2];
-                              i3 += 1;
-                            }
-                            bool_idx += 1;
-                            break;
                           }
                 case 'i': {
+
                             size_t pos_idx = int_idx * tot_nrow;
-                            auto base_it = int_vec2.begin() + pos_idx;
 
                             const size_t base_idx = int_v.size();
                             int_v.resize(base_idx + nrow);
 
-                            size_t i3 = 0;
-                            for (auto& i2 : active_rows) [[likely]] {
-                              int_v[base_idx + i3] = *(base_it + i2);
-                              tmp_val_refv[dst_col][i3] = cur_tmp2[i2];
-                              i3 += 1;
+                            const auto* __restrict src = int_vec2.data() + pos_idx;
+                            auto* __restrict dst = int_v.data() + base_idx;
+                            
+                            for (size_t j = 0; j < nrow; ++j) [[likely]] {
+                                const size_t act_row = active_rows[j];
+                                dst[j] = src[act_row];
+                                refv_tmp[j] = cur_tmp2[act_row];
                             }
+
                             int_idx += 1;
                             break;
+
                           }
                case 'u': {
+
                             size_t pos_idx = uint_idx * tot_nrow;
-                            auto base_it = uint_vec2.begin() + pos_idx;
 
                             const size_t base_idx = uint_v.size();
                             uint_v.resize(base_idx + nrow);
 
-                            size_t i3 = 0;
-                            for (auto& i2 : active_rows) [[likely]] {
-                              uint_v[base_idx + i3] = *(base_it + i2);
-                              tmp_val_refv[dst_col][i3] = cur_tmp2[i2];
-                              i3 += 1;
+                            const auto* __restrict src = uint_vec2.data() + pos_idx;
+                            auto* __restrict dst = uint_v.data() + base_idx;
+                            
+                            for (size_t j = 0; j < nrow; ++j) [[likely]] {
+                                const size_t act_row = active_rows[j];
+                                dst[j] = src[act_row];
+                                refv_tmp[j] = cur_tmp2[act_row];
                             }
+
                             uint_idx += 1;
                             break;
+
                           }
                 case 'd': {
+
                             size_t pos_idx = dbl_idx * tot_nrow;
-                            auto base_it = dbl_vec2.begin() + pos_idx;
 
                             const size_t base_idx = dbl_v.size();
                             dbl_v.resize(base_idx + nrow);
 
-                            size_t i3 = 0;
-                            for (auto& i2 : active_rows) [[likely]] {
-                              dbl_v[base_idx + i3] = *(base_it + i2);
-                              tmp_val_refv[dst_col][i3] = cur_tmp2[i2];
-                              i3 += 1;
+                            const auto* __restrict src = dbl_vec2.data() + pos_idx;
+                            auto* __restrict dst = dbl_v.data() + base_idx;
+                            
+                            for (size_t j = 0; j < nrow; ++j) [[likely]] {
+                                const size_t act_row = active_rows[j];
+                                dst[j] = src[act_row];
+                                refv_tmp[j] = cur_tmp2[act_row];
                             }
+
                             dbl_idx += 1;
                             break;
+
                           }
-
-              }
-
-                name_v[dst_col]    = name_v1[i];
-                type_refv[dst_col] = type_refv1[i];
-
-                dst_col += 1;
-
+   
             }
+                
+            name_v[dst_col]    = name_v1[i];
+            type_refv[dst_col] = type_refv1[i];
+
+            dst_col += 1;
+
+        }
+
     }
 
 }
