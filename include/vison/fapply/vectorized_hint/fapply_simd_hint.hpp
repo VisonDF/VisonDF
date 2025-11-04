@@ -29,6 +29,8 @@ inline void apply_numeric_simd(VecT& values,
     #pragma loop(ivdep)
 #endif
 
+    std::vector<std::string>& val_tmp = tmp_val_refv[n];
+
     for (; i + 4 <= end; i += 4, i3 += 4) {
         f(values[i + 0]);
         f(values[i + 1]);
@@ -39,7 +41,7 @@ inline void apply_numeric_simd(VecT& values,
         for (int j = 0; j < 4; ++j) {
             auto [ptr, ec] = std::to_chars(buf, buf + buf_size, values[i + j]);
             if (ec == std::errc{}) [[likely]]
-                tmp_val_refv[n][i3 + j].assign(buf, ptr);
+                val_tmp[i3 + j].assign(buf, ptr);
             else [[unlikely]]
                 std::terminate();
         }
@@ -50,7 +52,7 @@ inline void apply_numeric_simd(VecT& values,
         char buf[buf_size];
         auto [ptr, ec] = std::to_chars(buf, buf + buf_size, values[i]);
         if (ec == std::errc{}) [[likely]]
-            tmp_val_refv[n][i3].assign(buf, ptr);
+            val_tmp[i3].assign(buf, ptr);
         else [[unlikely]]
             std::terminate();
     }
@@ -78,9 +80,10 @@ void fapply_simd(void (&f)(T&), unsigned int& n) {
             ++i2;
         const unsigned int start = nrow * i2;
         unsigned int i3 = 0;
+        std::vector<std::string>& val_tmp = tmp_val_refv[n];
         for (size_t i = start; i < start + nrow; ++i, ++i3) {
             f(chr_v[i]);
-            tmp_val_refv[n][i3].assign(1, chr_v[i]);
+            val_tmp[i3].assign(1, chr_v[i]);
         }
     }
 
@@ -90,9 +93,10 @@ void fapply_simd(void (&f)(T&), unsigned int& n) {
             ++i2;
         const unsigned int start = nrow * i2;
         unsigned int i3 = 0;
+        std::vector<std::string>& val_tmp = tmp_val_refv[n];
         for (size_t i = start; i < start + nrow; ++i, ++i3) {
             f(str_v[i]);
-            tmp_val_refv[n][i3] = str_v[i];
+            val_tmp[i3] = str_v[i];
         }
     }
 }
