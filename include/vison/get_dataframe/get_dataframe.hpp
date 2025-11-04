@@ -36,6 +36,10 @@ void get_dataframe(const std::vector<int>& cols, Dataframe& cur_obj)
 
         type_refv.resize(ncol);
         name_v.resize(ncol);
+        tmp_val_refv.resize(ncol);
+        for (auto& el : tmp_val_refv) {
+          el.reserve(nrow);
+        };
 
         size_t str_idx = 0, chr_idx = 0, bool_idx = 0;
         size_t int_idx = 0, uint_idx = 0, dbl_idx = 0;
@@ -62,8 +66,10 @@ void get_dataframe(const std::vector<int>& cols, Dataframe& cur_obj)
         str_idx = 0, chr_idx = 0, bool_idx = 0;
         int_idx = 0, uint_idx = 0, dbl_idx = 0;
 
+        i2 = 0;
         for (int i : cols) {
-            tmp_val_refv.push_back(cur_tmp[i]);
+            
+            tmp_val_refv[i2] = cur_tmp[i];
 
             switch (type_refv1[i]) {
                 case 's': append_block(str_v,  str_vec2,  str_idx,  nrow); ++str_idx ;break;
@@ -74,9 +80,10 @@ void get_dataframe(const std::vector<int>& cols, Dataframe& cur_obj)
                 case 'd': append_block(dbl_v,  dbl_vec2,  dbl_idx,  nrow); ++dbl_idx; break;
             }
 
-            size_t dst_col = tmp_val_refv.size() - 1;
-            name_v[dst_col]    = name_v1[i];
-            type_refv[dst_col] = type_refv1[i];
+            name_v[i2]    = name_v1[i];
+            type_refv[i2] = type_refv1[i];
+            i2 += 1;
+
         }
     }
 
