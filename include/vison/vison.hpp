@@ -30,14 +30,16 @@
 
 namespace vison {
 
-    #include "inlines/parse_rows_range_cached.inl"
+    #include "inlines/read_csv/parse_rows_range_cached.inl"
 
-    #include "inlines/parse_rows_range.inl"
+    #include "inlines/read_csv/parse_rows_range.inl"
     
-    #include "inlines/simd_count_newlines.inl"
+    #include "inlines/read_csv/simd_count_newlines.inl"
        
     #include "inlines/simd_can_be_nb.inl"
 
+    #include "inlines/get_dataframe/append_block.inl"
+ 
     #include "inlines/has_dot.inl"
     
     #include "types/PairHash.hpp"    
@@ -47,7 +49,7 @@ namespace vison {
     template <typename Types = DefaultTypes>
     class Dataframe{
       private:
-
+ 
         using IntT = typename Types::IntT;
         using UIntT = typename Types::UIntT;
         using FloatT = typename Types::FloatT;
@@ -99,37 +101,13 @@ namespace vison {
         const std::vector<std::vector<unsigned int>>& get_matr_idx() const {
           return matr_idx;
         };
-
-        template <typename T>
-        constexpr size_t max_chars_needed() noexcept {
-            return std::numeric_limits<T>::digits10 + 3;
-        }
-
-        template <typename VecT>
-        inline void append_block(std::vector<VecT>& dst,
-                                 const std::vector<VecT>& src,
-                                 size_t col_idx,
-                                 size_t nrow)
-        {
-
-            const size_t start = col_idx * nrow;
-            
-            if constexpr (std::is_trivially_copyable_v<VecT>) {
-                const size_t old_size = dst.size();
-                dst.resize(old_size + nrow);
-                std::memcpy(dst.data() + old_size,
-                            src.data() + start,
-                            nrow * sizeof(VecT));
-            } else {
-                dst.insert(dst.end(),
-                           src.begin() + start,
-                           src.begin() + start + nrow);
-            }
-
-        }
-
+        
         #include "detail/longest_determine.hpp"
     
+        #include "inlines/fapply/max_chars_needed.inl"
+
+        #include "inlines/fapply/vectorized_hint/simd_hint.inl"
+
       public:
        
         #include "read_csv/readf.hpp"
