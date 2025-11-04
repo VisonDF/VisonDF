@@ -64,11 +64,12 @@ void fapply_filter_idx(void (&f)(T&),
             ++i2;
         const unsigned int start = nrow * i2;
         unsigned int i3 = 0;
+        std::vector<std::string>& val_tmp = tmp_val_refv[n];
         for (; i3 < mask.size(); ++i3) {
             unsigned int pos_idx = mask[i3];
             unsigned int abs_idx = start + mask[i3];
             f(chr_v[abs_idx]);
-            tmp_val_refv[n][pos_idx].assign(1, chr_v[abs_idx]);
+            val_tmp[pos_idx].assign(1, chr_v[abs_idx]);
         }
     }
 
@@ -78,11 +79,12 @@ void fapply_filter_idx(void (&f)(T&),
             ++i2;
         const unsigned int start = nrow * i2;
         unsigned int i3 = 0;
+        std::vector<std::string>& val_tmp = tmp_val_refv[n];
         for (; i3 < mask.size(); ++i3) {
             unsigned int pos_idx = mask[i3];
             unsigned int abs_idx = start + mask[i3];
             f(str_v[abs_idx]);
-            tmp_val_refv[n][pos_idx] = str_v[abs_idx];
+            val_tmp[pos_idx] = str_v[abs_idx];
         }
     }
 }
