@@ -69,7 +69,7 @@ void get_dataframe(const std::vector<int>& cols, Dataframe& cur_obj)
         i2 = 0;
         for (int i : cols) {
             
-            tmp_val_refv[i2] = cur_tmp[i];
+            tmp_val_refv[i2].assign(cur_tmp[i].begin(), cur_tmp[i].end());
 
             switch (type_refv1[i]) {
                 case 's': append_block(str_v,  str_vec2,  str_idx,  nrow); ++str_idx ;break;
