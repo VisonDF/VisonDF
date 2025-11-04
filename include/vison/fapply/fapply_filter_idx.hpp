@@ -35,7 +35,7 @@ void fapply_filter_idx(void (&f)(T&),
         #endif
         
         for (unsigned int& pos_idx : mask) {
-            unsigned int abs_idx = start + pos_idx;
+            const unsigned int abs_idx = start + pos_idx;
             f(chr_v[abs_idx]);
             val_tmp[pos_idx].assign(1, chr_v[abs_idx]);
         }
@@ -58,7 +58,7 @@ void fapply_filter_idx(void (&f)(T&),
             #pragma loop(ivdep)
         #endif
         for (unsigned int& pos_idx : mask) {
-            unsigned int abs_idx = start + pos_idx;
+            const unsigned int abs_idx = start + pos_idx;
             f(str_v[abs_idx]);
             val_tmp[pos_idx] = str_v[abs_idx];
         }
