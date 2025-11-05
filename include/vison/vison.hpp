@@ -19,7 +19,7 @@
 
 #if __has_include(<simd>)
   #include <simd>
-  namespace v2 = std;   // use std::simd
+  namespace v2 = std;  
 #elif __has_include(<experimental/simd>)
   #include <experimental/simd>
   namespace v2 = std::experimental::parallelism_v2;
@@ -188,8 +188,12 @@ namespace vison {
     
         #include "get_dataframe/get_dataframe_filter.hpp"
          
+        #include "get_dataframe/vectorized/get_dataframe_filter_simd.hpp"
+
         #include "get_dataframe/get_dataframe_filter_idx.hpp"
   
+        #include "get_dataframe/vectorized/get_dataframe_filter_idx_simd.hpp"
+
         #include "write_csv/writef.hpp"
    
         #include "replace_col/replace_col.hpp"
