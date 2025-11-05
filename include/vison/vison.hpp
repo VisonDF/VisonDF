@@ -172,7 +172,7 @@ namespace vison {
 
         #include "get_col/get_col_filter_idx.hpp"
 
-        //#include "get_col/vectorized/get_col_filter_idx_simd.hpp"
+        #include "get_col/vectorized/get_col_filter_idx_simd.hpp"
 
         #include "get_col/get_col.hpp" 
         
