@@ -129,6 +129,9 @@ void get_dataframe_filter(const std::vector<int>& cols,
                                     bool_v[base_idx + j] = bool_vec2[pos_idx + act_row];
                                     refv_tmp[j] = cur_tmp2[act_row];
                                 }
+
+                                bool_idx += 1;
+
                                 break;
 
                           }
@@ -300,6 +303,9 @@ void get_dataframe_filter(const std::vector<int>& cols,
                                     bool_v[base_idx + j] = bool_vec2[pos_idx + act_row];
                                     refv_tmp[j] = cur_tmp2[act_row];
                                 }
+
+                                bool_idx += 1;
+
                                 break;
 
                           }
