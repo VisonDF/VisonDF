@@ -24,11 +24,10 @@ void get_col_filter(unsigned int &x,
     };
 
     i2 = nrow * i2;
-    size_t j = i2;
 
-    for (i = 0; i < nrow; ++i, ++j) {
+    for (i = 0; i < nrow; ++i, ++i2) {
       if (mask[i]) {
-        rtn_v.push_back(bool_v[j]);
+        rtn_v.push_back(bool_v[i2]);
       };
     };
 
@@ -47,11 +46,10 @@ void get_col_filter(unsigned int &x,
     };
 
     i2 = nrow * i2;
-    size_t j = i2;
 
-    for (i = 0; i < nrow; ++i, ++j) {
+    for (i = 0; i < nrow; ++i, ++i2) {
       if (mask[i]) {
-        rtn_v.push_back(int_v[j]);
+        rtn_v.push_back(int_v[i2]);
       };
     };
 
@@ -70,11 +68,10 @@ void get_col_filter(unsigned int &x,
     };
 
     i2 = nrow * i2;
-    size_t j = i2;
 
-    for (i = 0; i < nrow; ++i, ++j) {
+    for (i = 0; i < nrow; ++i, ++i2) {
       if (mask[i]) {
-        rtn_v.push_back(uint_v[j]);
+        rtn_v.push_back(uint_v[i2]);
       };
     };
 
@@ -93,11 +90,10 @@ void get_col_filter(unsigned int &x,
     };
 
     i2 = nrow * i2;
-    size_t j = i2;
 
-    for (i = 0; i < nrow; ++i, ++j) {
+    for (i = 0; i < nrow; ++i, ++i2) {
       if (mask[i]) {
-        rtn_v.push_back(dbl_v[j]);
+        rtn_v.push_back(dbl_v[i2]);
       };
     };
 
@@ -116,11 +112,10 @@ void get_col_filter(unsigned int &x,
     };
 
     i2 = nrow * i2;
-    size_t j = i2;
 
-    for (i = 0; i < nrow; ++i, ++j) {
+    for (i = 0; i < nrow; ++i, ++i2) {
       if (mask[i]) {
-        rtn_v.push_back(str_v[j]);
+        rtn_v.push_back(str_v[i2]);
       };
     };
 
@@ -139,11 +134,10 @@ void get_col_filter(unsigned int &x,
     };
 
     i2 = nrow * i2;
-    size_t j = i2;
 
-    for (i = 0; i < nrow; ++i, ++j) {
+    for (i = 0; i < nrow; ++i, ++i2) {
       if (mask[i]) {
-        rtn_v.push_back(chr_v[j]);
+        rtn_v.push_back(chr_v[i2]);
       };
     };
 
