@@ -1,7 +1,7 @@
 #pragma once
 
 template <typename T>
-void get_col_filter_idx(unsigned int &x, 
+void get_col_filter_idx_simd(unsigned int &x, 
                 std::vector<T> &rtn_v,
                 std::vector<unsigned int> &mask) {
   
