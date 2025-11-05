@@ -47,31 +47,11 @@ void get_col_filter_idx(unsigned int &x,
 
     i2 = nrow * i2;
     
-    #if defined(__ARM_FEATURE_SVE) || defined(__riscv_vector)
-        const size_t j = v2::simd_size<unsigned int>();
-    #else
-        constexpr size_t j = v2::simd_size<unsigned int>();
-    #endif
-
-    for (; i + j < n_el; i += j) {
-        
-        v2::simd<unsigned int> idx(&mask[i], v2::element_aligned);
+    for (i = 0; i < n_el; ++i) {
+      const size_t pos_idx = i2 + mask[i];
+      rtn_v[i] = int_v[pos_idx];
+    };
     
-        v2::simd<IntT> vals;
-    
-        for (size_t k = 0; k < j; ++k) {
-            const size_t pos = i2 + idx[k];
-            vals[k] = int_v[pos];
-        }
-    
-        vals.copy_to(&rtn_v[i], v2::element_aligned);
-    }
-
-    for (; i < n_el; i += 1) {
-      const size_t pos = i2 + mask[i];
-      rtn_v[i] = int_v[pos];
-    }
-
   } else if constexpr (std::is_same_v<T, UIntT>) {
 
     while (i2 < matr_idx[4].size()) {
@@ -88,30 +68,10 @@ void get_col_filter_idx(unsigned int &x,
 
     i2 = nrow * i2;
 
-    #if defined(__ARM_FEATURE_SVE) || defined(__riscv_vector)
-        const size_t j = v2::simd_size<unsigned int>();
-    #else
-        constexpr size_t j = v2::simd_size<unsigned int>();
-    #endif
-
-    for (; i + j < n_el; i += j) {
-        
-        v2::simd<unsigned int> idx(&mask[i], v2::element_aligned);
-    
-        v2::simd<UIntT> vals;
-    
-        for (size_t k = 0; k < j; ++k) {
-            const size_t pos = i2 + idx[k];
-            vals[k] = uint_v[pos];
-        }
-    
-        vals.copy_to(&rtn_v[i], v2::element_aligned);
-    }
-
-    for (; i < n_el; i += 1) {
-      const size_t pos = i2 + mask[i];
-      rtn_v[i] = uint_v[pos];
-    }
+    for (i = 0; i < n_el; ++i) {
+      const size_t pos_idx = i2 + mask[i];
+      rtn_v[i] = uint_v[pos_idx];
+    };
 
   } else if constexpr (std::is_same_v<T, FloatT>) {
 
@@ -129,30 +89,10 @@ void get_col_filter_idx(unsigned int &x,
 
     i2 = nrow * i2;
 
-    #if defined(__ARM_FEATURE_SVE) || defined(__riscv_vector)
-        const size_t j = v2::simd_size<unsigned int>();
-    #else
-        constexpr size_t j = v2::simd_size<unsigned int>();
-    #endif
-
-    for (; i + j < n_el; i += j) {
-        
-        v2::simd<unsigned int> idx(&mask[i], v2::element_aligned);
-    
-        v2::simd<FloatT> vals;
-    
-        for (size_t k = 0; k < j; ++k) {
-            const size_t pos = i2 + idx[k];
-            vals[k] = dbl_v[pos];
-        }
-    
-        vals.copy_to(&rtn_v[i], v2::element_aligned);
-    }
-
-    for (; i < n_el; i += 1) {
-      const size_t pos = i2 + mask[i];
-      rtn_v[i] = dbl_v[pos];
-    }
+    for (i = 0; i < n_el; ++i) {
+      const size_t pos_idx = i2 + mask[i];
+      rtn_v[i] = dbl_v[pos_idx];
+    };
 
   } else if constexpr (std::is_same_v<T, std::string>) {
 
@@ -191,30 +131,10 @@ void get_col_filter_idx(unsigned int &x,
 
     i2 = nrow * i2;
 
-    #if defined(__ARM_FEATURE_SVE) || defined(__riscv_vector)
-        const size_t j = v2::simd_size<unsigned int>();
-    #else
-        constexpr size_t j = v2::simd_size<unsigned int>();
-    #endif
-
-    for (; i + j < n_el; i += j) {
-        
-        v2::simd<unsigned int> idx(&mask[i], v2::element_aligned);
-    
-        v2::simd<FloatT> vals;
-    
-        for (size_t k = 0; k < j; ++k) {
-            const size_t pos = i2 + idx[k];
-            vals[k] = dbl_v[pos];
-        }
-    
-        vals.copy_to(&rtn_v[i], v2::element_aligned);
-    }
-
-    for (; i < n_el; i += 1) {
-      const size_t pos = i2 + mask[i];
-      rtn_v[i] = dbl_v[pos];
-    }
+    for (i = 0; i < n_el; ++i) {
+      const size_t pos_idx = i2 + mask[i];
+      rtn_v[i] = chr_v[pos_idx];
+    };
 
   } else {
     std::cerr << "Error in (get_col), unsupported type\n";
