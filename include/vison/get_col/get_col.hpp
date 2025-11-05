@@ -26,7 +26,7 @@ void get_col(unsigned int &x,
 
     size_t j = i2;
     #pragma GCC ivdep
-    for (i = 0; i < nrow; ++i; ++j) {
+    for (i = 0; i < nrow; ++i, ++j) {
       rtn_v[i] = bool_v[j];
     };
 
@@ -48,7 +48,7 @@ void get_col(unsigned int &x,
 
     size_t j = i2;
     #pragma GCC ivdep
-    for (i = 0; i < nrow; ++i; ++j) {
+    for (i = 0; i < nrow; ++i, ++j) {
       rtn_v[i] = int_v[j];
     };
 
@@ -70,7 +70,7 @@ void get_col(unsigned int &x,
 
     size_t j = i2;
     #pragma GCC ivdep
-    for (i = 0; i < nrow; ++i; ++j) {
+    for (i = 0; i < nrow; ++i, ++j) {
       rtn_v[i] = uint_v[j];
     };
 
@@ -92,7 +92,7 @@ void get_col(unsigned int &x,
 
     size_t j = i2;
     #pragma GCC ivdep
-    for (i = 0; i < nrow; ++i; ++j) {
+    for (i = 0; i < nrow; ++i, ++j) {
       rtn_v[i] = dbl_v[j];
     };
 
@@ -114,7 +114,7 @@ void get_col(unsigned int &x,
 
     size_t j = i2;
     #pragma GCC ivdep
-    for (i = 0; i < nrow; ++i; ++j) {
+    for (i = 0; i < nrow; ++i, ++j) {
       rtn_v[i] = str_v[j];
     };
 
@@ -136,7 +136,7 @@ void get_col(unsigned int &x,
 
     size_t j = i2;
     #pragma GCC ivdep
-    for (i = 0; i < nrow; ++i; ++j) {
+    for (i = 0; i < nrow; ++i, ++j) {
       rtn_v[i] = chr_v[j];
     };
 
