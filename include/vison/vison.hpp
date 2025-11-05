@@ -17,6 +17,16 @@
 #include <variant>
 #include <vector>
 
+#if __has_include(<simd>)
+  #include <simd>
+  namespace v2 = std;   // use std::simd
+#elif __has_include(<experimental/simd>)
+  #include <experimental/simd>
+  namespace v2 = std::experimental::parallelism_v2;
+#else
+  #error "No SIMD header found (need GCC 12+, Clang 15+, or MSVC 19.38+)"
+#endif
+
 // System
 #include <immintrin.h>
 #include <sys/mman.h>
@@ -158,7 +168,7 @@ namespace vison {
        
         #include "get_col/get_col_filter.hpp"
 
-        //#include "get_col/get_col_filter_idx.hpp"
+        #include "get_col/get_col_filter_idx.hpp"
 
         #include "get_col/get_col.hpp" 
         
