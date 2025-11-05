@@ -200,7 +200,7 @@ namespace vison {
 
         #include "write_csv/writef.hpp"
    
-        #include "replace_col/replace_col.hpp"
+        #include "replace_col/rep_col.hpp"
         
         #include "add_col/add_col.hpp"
         
