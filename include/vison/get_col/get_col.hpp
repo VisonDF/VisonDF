@@ -24,10 +24,9 @@ void get_col(unsigned int &x,
 
     i2 = nrow * i2;
 
-    size_t j = i2;
     #pragma GCC ivdep
-    for (i = 0; i < nrow; ++i, ++j) {
-      rtn_v[i] = bool_v[j];
+    for (i = 0; i < nrow; ++i, ++i2) {
+      rtn_v[i] = bool_v[i2];
     };
 
   } else if constexpr (std::is_same_v<T, IntT>) {
@@ -46,10 +45,9 @@ void get_col(unsigned int &x,
 
     i2 = nrow * i2;
 
-    size_t j = i2;
     #pragma GCC ivdep
-    for (i = 0; i < nrow; ++i, ++j) {
-      rtn_v[i] = int_v[j];
+    for (i = 0; i < nrow; ++i, ++i2) {
+      rtn_v[i] = int_v[i2];
     };
 
   } else if constexpr (std::is_same_v<T, UIntT>) {
@@ -68,10 +66,9 @@ void get_col(unsigned int &x,
 
     i2 = nrow * i2;
 
-    size_t j = i2;
     #pragma GCC ivdep
-    for (i = 0; i < nrow; ++i, ++j) {
-      rtn_v[i] = uint_v[j];
+    for (i = 0; i < nrow; ++i, ++i2) {
+      rtn_v[i] = uint_v[i2];
     };
 
   } else if constexpr (std::is_same_v<T, FloatT>) {
@@ -90,10 +87,9 @@ void get_col(unsigned int &x,
 
     i2 = nrow * i2;
 
-    size_t j = i2;
     #pragma GCC ivdep
-    for (i = 0; i < nrow; ++i, ++j) {
-      rtn_v[i] = dbl_v[j];
+    for (i = 0; i < nrow; ++i, ++i2) {
+      rtn_v[i] = dbl_v[i2];
     };
 
   } else if constexpr (std::is_same_v<T, std::string>) {
@@ -112,10 +108,9 @@ void get_col(unsigned int &x,
 
     i2 = nrow * i2;
 
-    size_t j = i2;
     #pragma GCC ivdep
-    for (i = 0; i < nrow; ++i, ++j) {
-      rtn_v[i] = str_v[j];
+    for (i = 0; i < nrow; ++i, ++i2) {
+      rtn_v[i] = str_v[i2];
     };
 
   } else if constexpr (std::is_same_v<T, char>) {
@@ -134,10 +129,9 @@ void get_col(unsigned int &x,
 
     i2 = nrow * i2;
 
-    size_t j = i2;
     #pragma GCC ivdep
-    for (i = 0; i < nrow; ++i, ++j) {
-      rtn_v[i] = chr_v[j];
+    for (i = 0; i < nrow; ++i, ++i2) {
+      rtn_v[i] = chr_v[i2];
     };
 
   } else {
