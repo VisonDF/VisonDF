@@ -7,7 +7,7 @@ template <typename T> void replace_col(std::vector<T> &x, unsigned int &colnb) {
               << ") does not match nrow (" << nrow << ")\n";
     return;
   }
-
+ 
   unsigned int i = 2;
   unsigned int i2 = 0;
   if constexpr (std::is_same_v<T, bool>) {
@@ -26,10 +26,29 @@ template <typename T> void replace_col(std::vector<T> &x, unsigned int &colnb) {
 
     i2 = nrow * i2;
 
+    std::vector<std::string>& val_tmp = tmp_val_refv[colnb]; 
+    const size_t buf_size = 2;
+
+    for (auto& el : val_tmp) {
+      el.reserve(buf_size);
+    }
+
     for (i = 0; i < nrow; ++i) {
-      bool_v[i2 + i] = x[i];
-      tmp_val_refv[colnb][i] = std::to_string(x[i]);
+        auto& vl = x[i];
+        bool_v[i2 + i] = vl;
+ 
+        char buf[buf_size];
+        auto [ptr, ec] = std::to_chars(buf, buf + buf_size, 
+                                       static_cast<int>(vl));
+
+        if (ec == std::errc{}) [[likely]] {
+            val_tmp[i].assign(buf, ptr);
+        } else [[unlikely]] {
+            std::terminate();
+        }
+
     };
+
   } else if constexpr (std::is_same_v<T, IntT>) {
 
     while (i2 < matr_idx[3].size()) {
@@ -46,10 +65,28 @@ template <typename T> void replace_col(std::vector<T> &x, unsigned int &colnb) {
 
     i2 = nrow * i2;
 
+    std::vector<std::string>& val_tmp = tmp_val_refv[colnb]; 
+    const size_t buf_size = max_chars_needed<T>();
+
+    for (auto& el : val_tmp) {
+      el.reserve(buf_size);
+    }
+
     for (i = 0; i < nrow; ++i) {
-      int_v[i2 + i] = x[i];
-      tmp_val_refv[colnb][i] = std::to_string(x[i]);
+        auto& vl = x[i];
+        int_v[i2 + i] = vl;
+ 
+        char buf[buf_size];
+        auto [ptr, ec] = std::to_chars(buf, buf + buf_size, vl);
+
+        if (ec == std::errc{}) [[likely]] {
+            val_tmp[i].assign(buf, ptr);
+        } else [[unlikely]] {
+            std::terminate();
+        }
+
     };
+
   } else if constexpr (std::is_same_v<T, UIntT>) {
 
     while (i2 < matr_idx[4].size()) {
@@ -66,10 +103,28 @@ template <typename T> void replace_col(std::vector<T> &x, unsigned int &colnb) {
 
     i2 = nrow * i2;
 
+    std::vector<std::string>& val_tmp = tmp_val_refv[colnb]; 
+    const size_t buf_size = max_chars_needed<T>();
+
+    for (auto& el : val_tmp) {
+      el.reserve(buf_size);
+    }
+
     for (i = 0; i < nrow; ++i) {
-      uint_v[i2 + i] = x[i];
-      tmp_val_refv[colnb][i] = std::to_string(x[i]);
+        auto& vl = x[i];
+        uint_v[i2 + i] = vl;
+ 
+        char buf[buf_size];
+        auto [ptr, ec] = std::to_chars(buf, buf + buf_size, vl);
+
+        if (ec == std::errc{}) [[likely]] {
+            val_tmp[i].assign(buf, ptr);
+        } else [[unlikely]] {
+            std::terminate();
+        }
+
     };
+
   } else if constexpr (std::is_same_v<T, FloatT>) {
 
     while (i2 < matr_idx[5].size()) {
@@ -85,11 +140,29 @@ template <typename T> void replace_col(std::vector<T> &x, unsigned int &colnb) {
     }
 
     i2 = nrow * i2;
+    
+    std::vector<std::string>& val_tmp = tmp_val_refv[colnb]; 
+    const size_t buf_size = max_chars_needed<T>();
+
+    for (auto& el : val_tmp) {
+      el.reserve(buf_size);
+    }
 
     for (i = 0; i < nrow; ++i) {
-      dbl_v[i2 + i] = x[i];
-      tmp_val_refv[colnb][i] = std::to_string(x[i]);
+        auto& vl = x[i];
+        dbl_v[i2 + i] = vl;
+ 
+        char buf[buf_size];
+        auto [ptr, ec] = std::to_chars(buf, buf + buf_size, vl);
+
+        if (ec == std::errc{}) [[likely]] {
+            val_tmp[i].assign(buf, ptr);
+        } else [[unlikely]] {
+            std::terminate();
+        }
+
     };
+
   } else if constexpr (std::is_same_v<T, std::string>) {
 
     while (i2 < matr_idx[0].size()) {
@@ -106,9 +179,11 @@ template <typename T> void replace_col(std::vector<T> &x, unsigned int &colnb) {
 
     i2 = nrow * i2;
 
+    std::vector<std::string>& val_tmp = tmp_val_refv[colnb];
+
     for (i = 0; i < nrow; ++i) {
       str_v[i2 + i] = x[i];
-      tmp_val_refv[colnb][i] = x[i];
+      val_tmp[i] = x[i];
     };
 
   } else if constexpr (std::is_same_v<T, char>) {
@@ -127,14 +202,18 @@ template <typename T> void replace_col(std::vector<T> &x, unsigned int &colnb) {
 
     i2 = nrow * i2;
 
+    std::vector<std::string>& val_tmp = tmp_val_refv[colnb];
+
     for (i = 0; i < nrow; ++i) {
       chr_v[i2 + i] = x[i];
-      tmp_val_refv[colnb][i] = std::string(1, x[i]);
+      val_tmp[i].assign(1, x[i]);
     };
 
   } else {
     std::cerr << "Error unsupported type in (replace_col)\n";
   };
 };
+
+
 
 

@@ -174,7 +174,7 @@ namespace vison {
 
         #include "get_col/vectorized/get_col_filter_idx_simd.hpp"
 
-        #include "get_col/get_col.hpp" 
+        #include "get_col/vectorized/get_col.hpp" 
         
         [[nodiscard]] const std::vector<std::vector<std::string>>& get_tmp_val_refv() const {
           return tmp_val_refv;
