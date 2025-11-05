@@ -3,7 +3,8 @@
 template <typename T>
 void get_col(unsigned int &x, 
                 std::vector<T> &rtn_v) {
-  rtn_v.reserve(nrow);
+  
+  rtn_v.resize(nrow);
   unsigned int i;
   unsigned int i2 = 0;
 
@@ -23,8 +24,10 @@ void get_col(unsigned int &x,
 
     i2 = nrow * i2;
 
-    for (i = 0; i < nrow; ++i) {
-      rtn_v.push_back(bool_v[i2 + i]);
+    size_t j = i2;
+    #pragma GCC ivdep
+    for (i = 0; i < nrow; ++i; ++j) {
+      rtn_v[i] = bool_v[j];
     };
 
   } else if constexpr (std::is_same_v<T, IntT>) {
@@ -43,8 +46,10 @@ void get_col(unsigned int &x,
 
     i2 = nrow * i2;
 
-    for (i = 0; i < nrow; ++i) {
-      rtn_v.push_back(int_v[i2 + i]);
+    size_t j = i2;
+    #pragma GCC ivdep
+    for (i = 0; i < nrow; ++i; ++j) {
+      rtn_v[i] = int_v[j];
     };
 
   } else if constexpr (std::is_same_v<T, UIntT>) {
@@ -63,8 +68,10 @@ void get_col(unsigned int &x,
 
     i2 = nrow * i2;
 
-    for (i = 0; i < nrow; ++i) {
-      rtn_v.push_back(uint_v[i2 + i]);
+    size_t j = i2;
+    #pragma GCC ivdep
+    for (i = 0; i < nrow; ++i; ++j) {
+      rtn_v[i] = uint_v[j];
     };
 
   } else if constexpr (std::is_same_v<T, FloatT>) {
@@ -83,8 +90,10 @@ void get_col(unsigned int &x,
 
     i2 = nrow * i2;
 
-    for (i = 0; i < nrow; ++i) {
-      rtn_v.push_back(dbl_v[i2 + i]);
+    size_t j = i2;
+    #pragma GCC ivdep
+    for (i = 0; i < nrow; ++i; ++j) {
+      rtn_v[i] = dbl_v[j];
     };
 
   } else if constexpr (std::is_same_v<T, std::string>) {
@@ -103,8 +112,10 @@ void get_col(unsigned int &x,
 
     i2 = nrow * i2;
 
-    for (i = 0; i < nrow; ++i) {
-      rtn_v.push_back(str_v[i2 + i]);
+    size_t j = i2;
+    #pragma GCC ivdep
+    for (i = 0; i < nrow; ++i; ++j) {
+      rtn_v[i] = str_v[j];
     };
 
   } else if constexpr (std::is_same_v<T, char>) {
@@ -123,8 +134,10 @@ void get_col(unsigned int &x,
 
     i2 = nrow * i2;
 
-    for (i = 0; i < nrow; ++i) {
-      rtn_v.push_back(chr_v[i2 + i]);
+    size_t j = i2;
+    #pragma GCC ivdep
+    for (i = 0; i < nrow; ++i; ++j) {
+      rtn_v[i] = chr_v[j];
     };
 
   } else {
