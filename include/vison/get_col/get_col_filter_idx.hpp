@@ -169,13 +169,31 @@ void get_col_filter_idx(unsigned int &x,
     };
 
     i2 = nrow * i2;
-    size_t j = i2;
 
-    for (i = 0; i < nrow; ++i, ++j) {
-      if (mask[i]) {
-        rtn_v.push_back(str_v[j]);
-      };
-    };
+    #if defined(__ARM_FEATURE_SVE) || defined(__riscv_vector)
+        const size_t j = v2::simd_size<unsigned int>();
+    #else
+        constexpr size_t j = v2::simd_size<unsigned int>();
+    #endif
+
+    for (; i + j < n_el; i += j) {
+        
+        v2::simd<unsigned int> idx(&mask[i], v2::element_aligned);
+    
+        v2::simd<FloatT> vals;
+    
+        for (size_t k = 0; k < j; ++k) {
+            const size_t pos = i2 + idx[k];
+            vals[k] = dbl_v[pos];
+        }
+    
+        vals.copy_to(&rtn_v[i], v2::element_aligned);
+    }
+
+    for (; i < n_el; i += 1) {
+      const size_t pos = i2 + mask[i];
+      rtn_v[i] = dbl_v[pos];
+    }
 
   } else if constexpr (std::is_same_v<T, char>) {
 
@@ -192,13 +210,31 @@ void get_col_filter_idx(unsigned int &x,
     };
 
     i2 = nrow * i2;
-    size_t j = i2;
 
-    for (i = 0; i < nrow; ++i, ++j) {
-      if (mask[i]) {
-        rtn_v.push_back(chr_v[j]);
-      };
-    };
+    #if defined(__ARM_FEATURE_SVE) || defined(__riscv_vector)
+        const size_t j = v2::simd_size<unsigned int>();
+    #else
+        constexpr size_t j = v2::simd_size<unsigned int>();
+    #endif
+
+    for (; i + j < n_el; i += j) {
+        
+        v2::simd<unsigned int> idx(&mask[i], v2::element_aligned);
+    
+        v2::simd<FloatT> vals;
+    
+        for (size_t k = 0; k < j; ++k) {
+            const size_t pos = i2 + idx[k];
+            vals[k] = dbl_v[pos];
+        }
+    
+        vals.copy_to(&rtn_v[i], v2::element_aligned);
+    }
+
+    for (; i < n_el; i += 1) {
+      const size_t pos = i2 + mask[i];
+      rtn_v[i] = dbl_v[pos];
+    }
 
   } else {
     std::cerr << "Error in (get_col), unsupported type\n";
