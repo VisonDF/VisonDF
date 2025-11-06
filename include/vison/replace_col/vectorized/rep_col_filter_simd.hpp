@@ -12,6 +12,8 @@ template <typename T> void rep_col_filter_simd(std::vector<T> &x,
  
   unsigned int i;
   unsigned int i2 = 0;
+  const unsigned int end_mask = mask.size();
+  
   if constexpr (std::is_same_v<T, bool>) {
 
     while (i2 < matr_idx[2].size()) {
@@ -40,9 +42,9 @@ template <typename T> void rep_col_filter_simd(std::vector<T> &x,
     auto* __restrict dst = x.data();
     auto* __restrict src = bool_v.data();
     
-    for (size_t i = 0; i < nrow; i += BATCH) {
+    for (size_t i = 0; i < end_mask; i += BATCH) {
  
-        const size_t end = std::min(i + BATCH, static_cast<size_t>(nrow));
+        const size_t end = std::min(i + BATCH, static_cast<size_t>(end_mask));
     
         #pragma GCC ivdep
         for (size_t j = i; j < end; ++j) {
@@ -100,8 +102,8 @@ template <typename T> void rep_col_filter_simd(std::vector<T> &x,
     auto* __restrict dst = x.data();
     auto* __restrict src = int_v.data();
     
-    for (size_t i = 0; i < nrow; i += BATCH) {
-        const size_t end = std::min(i + BATCH, static_cast<size_t>(nrow));
+    for (size_t i = 0; i < end_mask; i += BATCH) {
+        const size_t end = std::min(i + BATCH, static_cast<size_t>(end_mask));
     
         #pragma GCC ivdep
         for (size_t j = i; j < end; ++j) {
@@ -159,8 +161,8 @@ template <typename T> void rep_col_filter_simd(std::vector<T> &x,
     auto* __restrict dst = x.data();
     auto* __restrict src = uint_v.data();
     
-    for (size_t i = 0; i < nrow; i += BATCH) {
-        const size_t end = std::min(i + BATCH, static_cast<size_t>(nrow));
+    for (size_t i = 0; i < end_mask; i += BATCH) {
+        const size_t end = std::min(i + BATCH, static_cast<size_t>(end_mask));
     
         #pragma GCC ivdep
         for (size_t j = i; j < end; ++j) {
@@ -218,8 +220,8 @@ template <typename T> void rep_col_filter_simd(std::vector<T> &x,
     auto* __restrict dst = x.data();
     auto* __restrict src = str_v.data();
     
-    for (size_t i = 0; i < nrow; i += BATCH) {
-        const size_t end = std::min(i + BATCH, static_cast<size_t>(nrow));
+    for (size_t i = 0; i < end_mask; i += BATCH) {
+        const size_t end = std::min(i + BATCH, static_cast<size_t>(end_mask));
     
         #pragma GCC ivdep
         for (size_t j = i; j < end; ++j) {
@@ -278,8 +280,8 @@ template <typename T> void rep_col_filter_simd(std::vector<T> &x,
     constexpr size_t BATCH = 32;
     alignas(64) std::string buf[BATCH];
 
-    for (size_t i = 0; i < nrow; i += BATCH) {
-        const size_t end = std::min(i + BATCH, static_cast<size_t>(nrow));
+    for (size_t i = 0; i < end_mask; i += BATCH) {
+        const size_t end = std::min(i + BATCH, static_cast<size_t>(end_mask));
    
         for (size_t j = i; j < end; ++j) {
 
@@ -331,8 +333,8 @@ template <typename T> void rep_col_filter_simd(std::vector<T> &x,
     constexpr size_t BATCH = 32;
     alignas(64) char buf[BATCH];
 
-    for (size_t i = 0; i < nrow; i += BATCH) {
-        const size_t end = std::min(i + BATCH, static_cast<size_t>(nrow));
+    for (size_t i = 0; i < end_mask; i += BATCH) {
+        const size_t end = std::min(i + BATCH, static_cast<size_t>(end_mask));
     
         for (size_t j = i; j < end; ++j) {
             if (!mask[j]) {
