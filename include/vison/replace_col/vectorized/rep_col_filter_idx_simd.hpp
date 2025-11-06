@@ -2,7 +2,7 @@
 
 template <typename T> void rep_col_filter_idx_simd(std::vector<T> &x, 
                 unsigned int &colnb,
-                const std::vector<uint8_t>& mask) {
+                const std::vector<unsigned int>& mask) {
 
   if (x.size() != nrow) {
     std::cerr << "Error: vector length (" << x.size()
