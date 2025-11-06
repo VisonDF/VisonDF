@@ -36,9 +36,12 @@
 // Third-party
 #include "external/ankerl/unordered_dense.h"
 #include "external/fast_float/fast_float.h"
+#include "external/dragonbox/dragonbox_to_chars.h"
 #include <omp.h>
 
 namespace vison {
+
+    #include "inlines/fast_to_chars.inl"
 
     #include "inlines/read_csv/parse_rows_range_cached.inl"
 
@@ -214,6 +217,8 @@ namespace vison {
 
         #include "add_col/add_col.hpp"
         
+        #include "add_col/vectorized/add_col_simd.hpp"
+
         #include "rm_col/rm_col.hpp"
     
         #include "rm_row/rm_row.hpp"
