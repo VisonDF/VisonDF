@@ -47,6 +47,8 @@ namespace vison {
 
     #ifdef USE_DRAGONBOX
     #include "inlines/fast_to_chars.inl"
+    #else
+    #include "inlines/fast_to_chars_no_dragonbox.inl"
     #endif
 
     #include "inlines/read_csv/parse_rows_range_cached.inl"
