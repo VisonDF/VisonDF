@@ -29,20 +29,43 @@ void add_col(std::vector<T> &x, std::string name = "NA") {
         el.reserve(buf_size);
       }
 
-      for (i = 0; i < nrow; i += 1) {
-          bool_v[base_idx + i] = x[i];
-      };
+      if constexpr (Large) {
 
-      for (i = 0; i < nrow; i += 1) {
-          char buf[buf_size];
-          auto [ptr, ec] = std::to_chars(buf, buf + buf_size, 
-                                         static_cast<int>(x[i]));
+          for (i = 0; i < nrow; i += 1) {
+              bool_v[base_idx + i] = x[i];
+          };
 
-          if (ec == std::errc{}) [[likely]] {
-              val_tmp[i].assign(buf, ptr);
-          } else [[unlikely]] {
-              std::terminate();
+          for (i = 0; i < nrow; i += 1) {
+              char buf[buf_size];
+              auto [ptr, ec] = std::to_chars(buf, buf + buf_size, 
+                                             static_cast<int>(x[i]));
+
+              if (ec == std::errc{}) [[likely]] {
+                  val_tmp[i].assign(buf, ptr);
+              } else [[unlikely]] {
+                  std::terminate();
+              }
           }
+
+      } else if constexpr (!Large) {
+
+          for (i = 0; i < nrow; i += 1) {
+
+              const auto& val = x[i];
+
+              bool_v[base_idx + i] = val;
+
+              char buf[buf_size];
+              auto [ptr, ec] = std::to_chars(buf, buf + buf_size, 
+                                             static_cast<int>(val));
+
+              if (ec == std::errc{}) [[likely]] {
+                  val_tmp[i].assign(buf, ptr);
+              } else [[unlikely]] {
+                  std::terminate();
+              }
+          }
+
       }
 
     } else if constexpr (std::is_same_v<T, IntT>) {
@@ -62,20 +85,42 @@ void add_col(std::vector<T> &x, std::string name = "NA") {
         el.reserve(buf_size);
       }
 
-      #pragma GCC ivdep
-      for (i = 0; i < nrow; i += 1) {
-          dst[i] = src[i];
-      };
+      if constexpr (Large) {
 
-      for (i = 0; i < nrow; i += 1) {
-          char buf[buf_size];
-          auto [ptr, ec] = std::to_chars(buf, buf + buf_size, x[i]);
+          #pragma GCC ivdep
+          for (i = 0; i < nrow; i += 1) {
+              dst[i] = src[i];
+          };
 
-          if (ec == std::errc{}) [[likely]] {
-              val_tmp[i].assign(buf, ptr);
-          } else [[unlikely]] {
-              std::terminate();
+          for (i = 0; i < nrow; i += 1) {
+              char buf[buf_size];
+              auto [ptr, ec] = std::to_chars(buf, buf + buf_size, x[i]);
+
+              if (ec == std::errc{}) [[likely]] {
+                  val_tmp[i].assign(buf, ptr);
+              } else [[unlikely]] {
+                  std::terminate();
+              }
           }
+
+      } else if constexpr (!Large) {
+
+          for (i = 0; i < nrow; i += 1) {
+
+              const auto& val = src[i];
+
+              dst[i] = val;
+
+              char buf[buf_size];
+              auto [ptr, ec] = std::to_chars(buf, buf + buf_size, val);
+
+              if (ec == std::errc{}) [[likely]] {
+                  val_tmp[i].assign(buf, ptr);
+              } else [[unlikely]] {
+                  std::terminate();
+              }
+          }
+
       }
 
     } else if constexpr (std::is_same_v<T, UIntT>) {
@@ -95,20 +140,42 @@ void add_col(std::vector<T> &x, std::string name = "NA") {
         el.reserve(buf_size);
       }
 
-      #pragma GCC ivdep
-      for (i = 0; i < nrow; i += 1) {
-          dst[i] = src[i];
-      };
+      if constexpr (Large) {
 
-      for (i = 0; i < nrow; i += 1) {
-          char buf[buf_size];
-          auto [ptr, ec] = std::to_chars(buf, buf + buf_size, x[i]);
+          #pragma GCC ivdep
+          for (i = 0; i < nrow; i += 1) {
+              dst[i] = src[i];
+          };
 
-          if (ec == std::errc{}) [[likely]] {
-              val_tmp[i].assign(buf, ptr);
-          } else [[unlikely]] {
-              std::terminate();
+          for (i = 0; i < nrow; i += 1) {
+              char buf[buf_size];
+              auto [ptr, ec] = std::to_chars(buf, buf + buf_size, x[i]);
+
+              if (ec == std::errc{}) [[likely]] {
+                  val_tmp[i].assign(buf, ptr);
+              } else [[unlikely]] {
+                  std::terminate();
+              }
           }
+
+      } else if constexpr (!Large) {
+
+          for (i = 0; i < nrow; i += 1) {
+
+              const auto& val = src[i];
+
+              dst[i] = val;
+
+              char buf[buf_size];
+              auto [ptr, ec] = std::to_chars(buf, buf + buf_size, val);
+
+              if (ec == std::errc{}) [[likely]] {
+                  val_tmp[i].assign(buf, ptr);
+              } else [[unlikely]] {
+                  std::terminate();
+              }
+          }
+
       }
       
     } else if constexpr (std::is_same_v<T, FloatT>) {
@@ -128,20 +195,42 @@ void add_col(std::vector<T> &x, std::string name = "NA") {
         el.reserve(buf_size);
       }
 
-      #pragma GCC ivdep
-      for (i = 0; i < nrow; i += 1) {
-          dst[i] = src[i];
-      };
+      if constexpr (Large) {
 
-      for (i = 0; i < nrow; i += 1) {
-          char buf[buf_size];
-          auto [ptr, ec] = std::to_chars(buf, buf + buf_size, x[i]);
+          #pragma GCC ivdep
+          for (i = 0; i < nrow; i += 1) {
+              dst[i] = src[i];
+          };
 
-          if (ec == std::errc{}) [[likely]] {
-              val_tmp[i].assign(buf, ptr);
-          } else [[unlikely]] {
-              std::terminate();
+          for (i = 0; i < nrow; i += 1) {
+              char buf[buf_size];
+              auto [ptr, ec] = std::to_chars(buf, buf + buf_size, x[i]);
+
+              if (ec == std::errc{}) [[likely]] {
+                  val_tmp[i].assign(buf, ptr);
+              } else [[unlikely]] {
+                  std::terminate();
+              }
           }
+
+      } else if constexpr (!Large) {
+
+          for (i = 0; i < nrow; i += 1) {
+
+              const auto& val = src[i];
+
+              dst[i] = val;
+
+              char buf[buf_size];
+              auto [ptr, ec] = std::to_chars(buf, buf + buf_size, val);
+
+              if (ec == std::errc{}) [[likely]] {
+                  val_tmp[i].assign(buf, ptr);
+              } else [[unlikely]] {
+                  std::terminate();
+              }
+          }
+
       }
 
     } else if constexpr (std::is_same_v<T, char>) {
