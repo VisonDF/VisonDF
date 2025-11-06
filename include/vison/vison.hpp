@@ -217,7 +217,7 @@ namespace vison {
 
         #include "add_col/add_col.hpp"
         
-        #include "add_col/vectorized/add_col_simd.hpp"
+        //#include "add_col/vectorized/add_col_simd.hpp"
 
         #include "rm_col/rm_col.hpp"
     
