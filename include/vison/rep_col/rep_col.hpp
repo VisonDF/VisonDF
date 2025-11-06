@@ -1,6 +1,6 @@
 #pragma once
 
-template <typename T, bool Large = 1> 
+template <typename T, bool Large = false> 
 void rep_col(std::vector<T> &x, unsigned int &colnb) {
 
   if (x.size() != nrow) {

@@ -1,6 +1,6 @@
 #pragma once
 
-template <typename T, bool Large = 1> 
+template <typename T, bool Large = false> 
 void add_col(std::vector<T> &x, std::string name = "NA") {
   
     if (x.size() != nrow) {
