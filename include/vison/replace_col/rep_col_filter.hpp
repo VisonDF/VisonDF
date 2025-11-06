@@ -12,6 +12,8 @@ template <typename T> void rep_col_filter(std::vector<T> &x,
  
   unsigned int i;
   unsigned int i2 = 0;
+  const unsigned int end_mask = mask.size();
+
   if constexpr (std::is_same_v<T, bool>) {
 
     while (i2 < matr_idx[2].size()) {
@@ -35,7 +37,7 @@ template <typename T> void rep_col_filter(std::vector<T> &x,
       el.reserve(buf_size);
     }
 
-    for (i = 0; i < nrow; ++i) {
+    for (i = 0; i < end_mask; ++i) {
      
         if (!mask[i]) {
           continue;
@@ -79,7 +81,7 @@ template <typename T> void rep_col_filter(std::vector<T> &x,
       el.reserve(buf_size);
     }
 
-    for (i = 0; i < nrow; ++i) {
+    for (i = 0; i < end_mask; ++i) {
 
         if (!mask[i]) {
           continue;
@@ -122,7 +124,7 @@ template <typename T> void rep_col_filter(std::vector<T> &x,
       el.reserve(buf_size);
     }
 
-    for (i = 0; i < nrow; ++i) {
+    for (i = 0; i < end_mask; ++i) {
 
         if (!mask[i]) {
           continue;
@@ -165,7 +167,7 @@ template <typename T> void rep_col_filter(std::vector<T> &x,
       el.reserve(buf_size);
     }
 
-    for (i = 0; i < nrow; ++i) {
+    for (i = 0; i < end_mask; ++i) {
 
         if (!mask[i]) {
           continue;
@@ -203,7 +205,7 @@ template <typename T> void rep_col_filter(std::vector<T> &x,
 
     std::vector<std::string>& val_tmp = tmp_val_refv[colnb];
 
-    for (i = 0; i < nrow; ++i) {
+    for (i = 0; i < end_mask; ++i) {
      
       if (!mask[i]) {
         continue;
@@ -231,7 +233,7 @@ template <typename T> void rep_col_filter(std::vector<T> &x,
 
     std::vector<std::string>& val_tmp = tmp_val_refv[colnb];
 
-    for (i = 0; i < nrow; ++i) {
+    for (i = 0; i < end_mask; ++i) {
 
       if (!mask[i]) {
         continue;
