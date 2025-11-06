@@ -1,6 +1,7 @@
 #pragma once
 
-template <typename T> void rep_col_filter_idx(std::vector<T> &x, 
+template <typename T> 
+void rep_col_filter_idx(std::vector<T> &x, 
                 unsigned int &colnb,
                 const std::vector<unsigned int>& mask) {
 
