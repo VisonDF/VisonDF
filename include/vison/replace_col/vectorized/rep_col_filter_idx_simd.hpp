@@ -258,8 +258,8 @@ template <typename T> void rep_col_filter_idx_simd(std::vector<T> &x,
     const auto* __restrict src = x.data();
     
     #pragma unroll 32
-    for (size_t i = 0; i < nrow; ++i) {
-      dst[i] = src[i];
+    for (size_t i = 0; i < end_mask; ++i) {
+      dst[mask[i]] = src[mask[i]];
     };
 
     std::vector<std::string>& __restrict val_tmp = tmp_val_refv[colnb];
@@ -309,8 +309,8 @@ template <typename T> void rep_col_filter_idx_simd(std::vector<T> &x,
     const auto* __restrict src = x.data();
     
     #pragma unroll 32
-    for (size_t i = 0; i < nrow; ++i) {
-      dst[i] = src[i];
+    for (size_t i = 0; i < end_mask; ++i) {
+      dst[mask[i]] = src[mask[i]];
     };
 
     std::vector<std::string>& __restrict val_tmp = tmp_val_refv[colnb];
