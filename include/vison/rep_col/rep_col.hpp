@@ -1,6 +1,7 @@
 #pragma once
 
-template <typename T> void rep_col(std::vector<T> &x, unsigned int &colnb) {
+template <typename T, bool Large = 1> 
+void rep_col(std::vector<T> &x, unsigned int &colnb) {
 
   if (x.size() != nrow) {
     std::cerr << "Error: vector length (" << x.size()
@@ -33,21 +34,45 @@ template <typename T> void rep_col(std::vector<T> &x, unsigned int &colnb) {
       el.reserve(buf_size);
     }
 
-    for (i = 0; i < nrow; ++i) {
-        auto& vl = x[i];
-        bool_v[i2 + i] = vl;
- 
-        char buf[buf_size];
-        auto [ptr, ec] = std::to_chars(buf, buf + buf_size, 
-                                       static_cast<int>(vl));
+    if constexpr (Large) {
 
-        if (ec == std::errc{}) [[likely]] {
-            val_tmp[i].assign(buf, ptr);
-        } else [[unlikely]] {
-            std::terminate();
+        for (i = 0; i < nrow; i += 1) {
+          bool_v[i2 + i] = x[i];
         }
 
-    };
+        for (i = 0; i < nrow; ++i) {
+             
+            char buf[buf_size];
+            auto [ptr, ec] = std::to_chars(buf, buf + buf_size, 
+                                           static_cast<int>(x[i]));
+
+            if (ec == std::errc{}) [[likely]] {
+                val_tmp[i].assign(buf, ptr);
+            } else [[unlikely]] {
+                std::terminate();
+            }
+
+        };
+
+    } else if constexpr (!Large) {
+
+        for (i = 0; i < nrow; ++i) {
+            auto& vl = x[i];
+            bool_v[i2 + i] = vl;
+ 
+            char buf[buf_size];
+            auto [ptr, ec] = std::to_chars(buf, buf + buf_size, 
+                                           static_cast<int>(vl));
+
+            if (ec == std::errc{}) [[likely]] {
+                val_tmp[i].assign(buf, ptr);
+            } else [[unlikely]] {
+                std::terminate();
+            }
+
+        };
+
+    }
 
   } else if constexpr (std::is_same_v<T, IntT>) {
 
@@ -72,20 +97,43 @@ template <typename T> void rep_col(std::vector<T> &x, unsigned int &colnb) {
       el.reserve(buf_size);
     }
 
-    for (i = 0; i < nrow; ++i) {
-        auto& vl = x[i];
-        int_v[i2 + i] = vl;
- 
-        char buf[buf_size];
-        auto [ptr, ec] = std::to_chars(buf, buf + buf_size, vl);
+    if constexpr (Large) {
 
-        if (ec == std::errc{}) [[likely]] {
-            val_tmp[i].assign(buf, ptr);
-        } else [[unlikely]] {
-            std::terminate();
+        for (i = 0; i < nrow; i += 1) {
+          int_v[i2 + i] = x[i];
         }
 
-    };
+        for (i = 0; i < nrow; ++i) {
+             
+            char buf[buf_size];
+            auto [ptr, ec] = std::to_chars(buf, buf + buf_size, x[i]);
+
+            if (ec == std::errc{}) [[likely]] {
+                val_tmp[i].assign(buf, ptr);
+            } else [[unlikely]] {
+                std::terminate();
+            }
+
+        };
+
+    } else if constexpr (!Large) {
+
+        for (i = 0; i < nrow; ++i) {
+            auto& vl = x[i];
+            int_v[i2 + i] = vl;
+ 
+            char buf[buf_size];
+            auto [ptr, ec] = std::to_chars(buf, buf + buf_size, vl);
+
+            if (ec == std::errc{}) [[likely]] {
+                val_tmp[i].assign(buf, ptr);
+            } else [[unlikely]] {
+                std::terminate();
+            }
+
+        };
+
+    }
 
   } else if constexpr (std::is_same_v<T, UIntT>) {
 
@@ -110,20 +158,43 @@ template <typename T> void rep_col(std::vector<T> &x, unsigned int &colnb) {
       el.reserve(buf_size);
     }
 
-    for (i = 0; i < nrow; ++i) {
-        auto& vl = x[i];
-        uint_v[i2 + i] = vl;
- 
-        char buf[buf_size];
-        auto [ptr, ec] = std::to_chars(buf, buf + buf_size, vl);
+    if constexpr (Large) {
 
-        if (ec == std::errc{}) [[likely]] {
-            val_tmp[i].assign(buf, ptr);
-        } else [[unlikely]] {
-            std::terminate();
+        for (i = 0; i < nrow; i += 1) {
+          uint_v[i2 + i] = x[i];
         }
 
-    };
+        for (i = 0; i < nrow; ++i) {
+             
+            char buf[buf_size];
+            auto [ptr, ec] = std::to_chars(buf, buf + buf_size, x[i]);
+
+            if (ec == std::errc{}) [[likely]] {
+                val_tmp[i].assign(buf, ptr);
+            } else [[unlikely]] {
+                std::terminate();
+            }
+
+        };
+
+    } else if constexpr (!Large) {
+
+        for (i = 0; i < nrow; ++i) {
+            auto& vl = x[i];
+            uint_v[i2 + i] = vl;
+ 
+            char buf[buf_size];
+            auto [ptr, ec] = std::to_chars(buf, buf + buf_size, vl);
+
+            if (ec == std::errc{}) [[likely]] {
+                val_tmp[i].assign(buf, ptr);
+            } else [[unlikely]] {
+                std::terminate();
+            }
+
+        };
+
+    }
 
   } else if constexpr (std::is_same_v<T, FloatT>) {
 
@@ -148,20 +219,43 @@ template <typename T> void rep_col(std::vector<T> &x, unsigned int &colnb) {
       el.reserve(buf_size);
     }
 
-    for (i = 0; i < nrow; ++i) {
-        auto& vl = x[i];
-        dbl_v[i2 + i] = vl;
+    if constexpr (Large) {
+
+        for (i = 0; i < nrow; i += 1) {
+          dbl_v[i2 + i] = x[i];
+        };
+
+        for (i = 0; i < nrow; ++i) {
+           
+          char buf[buf_size];
+          auto [ptr, ec] = std::to_chars(buf, buf + buf_size, x[i]);
+
+          if (ec == std::errc{}) [[likely]] {
+              val_tmp[i].assign(buf, ptr);
+          } else [[unlikely]] {
+              std::terminate();
+          }
+
+      };
+
+    } else if constexpr (!Large) {
+
+        for (i = 0; i < nrow; ++i) {
+            auto& vl = x[i];
+            dbl_v[i2 + i] = vl;
  
-        char buf[buf_size];
-        auto [ptr, ec] = std::to_chars(buf, buf + buf_size, vl);
+            char buf[buf_size];
+            auto [ptr, ec] = std::to_chars(buf, buf + buf_size, vl);
 
-        if (ec == std::errc{}) [[likely]] {
-            val_tmp[i].assign(buf, ptr);
-        } else [[unlikely]] {
-            std::terminate();
-        }
+            if (ec == std::errc{}) [[likely]] {
+                val_tmp[i].assign(buf, ptr);
+            } else [[unlikely]] {
+                std::terminate();
+            }
 
-    };
+        };
+
+    }
 
   } else if constexpr (std::is_same_v<T, std::string>) {
 
@@ -181,10 +275,24 @@ template <typename T> void rep_col(std::vector<T> &x, unsigned int &colnb) {
 
     std::vector<std::string>& val_tmp = tmp_val_refv[colnb];
 
-    for (i = 0; i < nrow; ++i) {
-      str_v[i2 + i] = x[i];
-      val_tmp[i] = x[i];
-    };
+    if constexpr (!Large) {
+
+      for (i = 0; i < nrow; ++i) {
+        str_v[i2 + i] = x[i];
+        val_tmp[i] = x[i];
+      } 
+
+    } else if constexpr (Large) {
+
+      for (i = 0; i < nrow; ++i) {
+        str_v[i2 + i] = x[i];
+      }
+
+      for (i = 0; i < nrow; ++i) {
+        val_tmp[i] = x[i];
+      }
+
+    }
 
   } else if constexpr (std::is_same_v<T, char>) {
 
@@ -204,10 +312,24 @@ template <typename T> void rep_col(std::vector<T> &x, unsigned int &colnb) {
 
     std::vector<std::string>& val_tmp = tmp_val_refv[colnb];
 
-    for (i = 0; i < nrow; ++i) {
-      chr_v[i2 + i] = x[i];
-      val_tmp[i].assign(1, x[i]);
-    };
+    if constexpr (!Large) {
+
+      for (i = 0; i < nrow; ++i) {
+        chr_v[i2 + i] = x[i];
+        val_tmp[i].assign(1, x[i]);
+      };
+
+    } else if constexpr (Large) {
+
+      for (i = 0; i < nrow; ++i) {
+        chr_v[i2 + i] = x[i];
+      }
+
+      for (i = 0; i < nrow; ++i) {
+        val_tmp[i].assign(1, x[i]);
+      }
+
+    }
 
   } else {
     std::cerr << "Error unsupported type in (replace_col)\n";
