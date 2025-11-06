@@ -36,12 +36,18 @@
 // Third-party
 #include "external/ankerl/unordered_dense.h"
 #include "external/fast_float/fast_float.h"
+
+#ifdef USE_DRAGONBOX
 #include "external/dragonbox/dragonbox_to_chars.h"
+#endif
+
 #include <omp.h>
 
 namespace vison {
 
+    #ifdef USE_DRAGONBOX
     #include "inlines/fast_to_chars.inl"
+    #endif
 
     #include "inlines/read_csv/parse_rows_range_cached.inl"
 
