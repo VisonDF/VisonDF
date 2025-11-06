@@ -1,6 +1,6 @@
 #pragma once
 
-template <typename T>
+template <typename T, bool MemClean = false>
 void get_col_filter(unsigned int &x, 
                 std::vector<T> &rtn_v,
                 std::vector<uint8_t> &mask) {
@@ -146,6 +146,15 @@ void get_col_filter(unsigned int &x,
     return;
   };
 
+  if constexpr (MemClean) {
+
+    rtn_v.shrink_to_fit();
+
+  }
+
 };
+
+
+
 
 
