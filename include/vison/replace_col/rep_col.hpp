@@ -8,7 +8,7 @@ template <typename T> void rep_col(std::vector<T> &x, unsigned int &colnb) {
     return;
   }
  
-  unsigned int i = 2;
+  unsigned int i;
   unsigned int i2 = 0;
   if constexpr (std::is_same_v<T, bool>) {
 
@@ -27,7 +27,7 @@ template <typename T> void rep_col(std::vector<T> &x, unsigned int &colnb) {
     i2 = nrow * i2;
 
     std::vector<std::string>& val_tmp = tmp_val_refv[colnb]; 
-    const size_t buf_size = 2;
+    constexpr size_t buf_size = 2;
 
     for (auto& el : val_tmp) {
       el.reserve(buf_size);
@@ -66,7 +66,7 @@ template <typename T> void rep_col(std::vector<T> &x, unsigned int &colnb) {
     i2 = nrow * i2;
 
     std::vector<std::string>& val_tmp = tmp_val_refv[colnb]; 
-    const size_t buf_size = max_chars_needed<T>();
+    constexpr size_t buf_size = max_chars_needed<T>();
 
     for (auto& el : val_tmp) {
       el.reserve(buf_size);
@@ -104,7 +104,7 @@ template <typename T> void rep_col(std::vector<T> &x, unsigned int &colnb) {
     i2 = nrow * i2;
 
     std::vector<std::string>& val_tmp = tmp_val_refv[colnb]; 
-    const size_t buf_size = max_chars_needed<T>();
+    constexpr size_t buf_size = max_chars_needed<T>();
 
     for (auto& el : val_tmp) {
       el.reserve(buf_size);
@@ -142,7 +142,7 @@ template <typename T> void rep_col(std::vector<T> &x, unsigned int &colnb) {
     i2 = nrow * i2;
     
     std::vector<std::string>& val_tmp = tmp_val_refv[colnb]; 
-    const size_t buf_size = max_chars_needed<T>();
+    constexpr size_t buf_size = max_chars_needed<T>();
 
     for (auto& el : val_tmp) {
       el.reserve(buf_size);

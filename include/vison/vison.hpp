@@ -202,6 +202,8 @@ namespace vison {
    
         #include "replace_col/rep_col.hpp"
         
+        #include "replace_col/vectorized/rep_col_simd.hpp"
+
         #include "add_col/add_col.hpp"
         
         #include "rm_col/rm_col.hpp"
