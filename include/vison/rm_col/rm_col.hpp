@@ -53,6 +53,12 @@ void rm_col(unsigned int& nbcol) {
 
     }
 
+    if (!name_v.empty()) {
+        
+        name_v.erase(name_v.begin() + nbcol);
+
+    }
+
     --ncol;
 }
 
