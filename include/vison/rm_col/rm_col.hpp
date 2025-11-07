@@ -1,5 +1,6 @@
 #pragma once
 
+template <bool MemClean = false>
 void rm_col(unsigned int& nbcol) {
 
     std::vector<size_t> col_type(ncol);
@@ -27,13 +28,34 @@ void rm_col(unsigned int& nbcol) {
     matr_idx[type_i].erase(matr_idx[type_i].begin() + idx_in_type);
 
     size_t offset = idx_in_type * nrow;
-    switch (type_i) {
-        case 0: erase_block(str_v, offset); break;
-        case 1: erase_block(chr_v, offset); break;
-        case 2: erase_block(bool_v, offset); break;
-        case 3: erase_block(int_v, offset); break;
-        case 4: erase_block(uint_v, offset); break;
-        case 5: erase_block(dbl_v, offset); break;
+
+    if constexpr (MemClean) {
+
+        switch (type_i) {
+            case 0: erase_block(str_v, offset); str_v.shrink_to_fit(); break;
+            case 1: erase_block(chr_v, offset); chr_v.shrink_to_fit() ;break;
+            case 2: erase_block(bool_v, offset); bool_v.shrink_to_fit(); break;
+            case 3: erase_block(int_v, offset); int_v.shrink_to_fit(); break;
+            case 4: erase_block(uint_v, offset); uint_v.shrink_to_fit(); break;
+            case 5: erase_block(dbl_v, offset); dbl_v.shrink_to_fit(); break;
+        }
+
+        name_v.shrink_to_fit();
+        tmp_val_refv.shrink_to_fit();
+        type_refv.shrink_to_fit();
+        matr_idx[type_i].shrink_to_fit();
+
+    } else {
+
+        switch (type_i) {
+            case 0: erase_block(str_v, offset); break;
+            case 1: erase_block(chr_v, offset); break;
+            case 2: erase_block(bool_v, offset); break;
+            case 3: erase_block(int_v, offset); break;
+            case 4: erase_block(uint_v, offset); break;
+            case 5: erase_block(dbl_v, offset); break;
+        }
+
     }
 
     --ncol;
