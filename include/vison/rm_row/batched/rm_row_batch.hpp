@@ -71,6 +71,17 @@ void rm_row_batch(unsigned int x)
 
     }
 
+    if (!name_v_row.empty()) {
+        auto& aux = name_v_row;
+        size_t idx = 0;
+        auto it = std::remove_if(aux.begin(), aux.end(),
+                                 [&](auto&) mutable { return idx++ == x; });
+        aux.erase(it, aux.end());
+        if constexpr (MemClean) {
+          aux.shrink_to_fit();
+        }
+    }
+
     nrow = old_nrow - 1; 
 
 }
