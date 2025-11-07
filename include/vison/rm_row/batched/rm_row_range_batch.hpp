@@ -1,7 +1,7 @@
 #pragma once
 
 template <bool MemClean = false>
-void rm_row_range_simd(std::vector<unsigned int> x) 
+void rm_row_range_batch(std::vector<unsigned int> x) 
 {
 
     const size_t old_nrow = nrow;

@@ -233,6 +233,10 @@ namespace vison {
     
         #include "rm_row/rm_row.hpp"
    
+        #include "rm_row/rm_row_range.hpp"
+
+        #include "rm_row/batched/rm_row_range_batch.hpp"
+
         #include "transform/transform_inner.hpp"
          
         #include "transform/clean_memory/transform_inner_clean.hpp"
