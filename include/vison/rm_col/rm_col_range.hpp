@@ -1,5 +1,6 @@
 #pragma once
 
+template <bool MemClean = false>
 void rm_col_range(std::vector<unsigned int> nbcolv) {
     if (nbcolv.empty()) return;
 
@@ -43,6 +44,24 @@ void rm_col_range(std::vector<unsigned int> nbcolv) {
 
         --ncol;
     }
+
+    if constexpr (MemClean) {
+       type_refv.shrink_to_fit();
+       name_v.shrink_to_fit();
+       tmp_val_refv.shrink_to_fit();
+
+       for (auto& el : matr_idx) {
+         el.shrink_to_fit();
+       }
+
+       str_v.shrink_to_fit();
+       chr_v.shrink_to_fit();
+       bool_v.shrink_to_fit();
+       int_v.shrink_to_fit();
+       uint_v.shrink_to_fit();
+       dbl_v.shrink_to_fit();
+    }
+
 }
 
 
