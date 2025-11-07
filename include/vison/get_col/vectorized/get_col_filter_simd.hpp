@@ -6,11 +6,30 @@ void get_col_filter_simd(unsigned int &x,
                 const std::vector<uint8_t> &mask) {
   
   size_t i2 = 0;
+  const unsigned int n_el = mask.size();
 
   if constexpr (std::is_same_v<T, bool>) {
 
-    std::cerr << "Can't SIMD on bool\n";
-    return;
+    while (i2 < matr_idx[2].size()) {
+      if (x == matr_idx[2][i2]) {
+        break;
+      };
+      i2 += 1;
+    };
+
+    if (i2 == matr_idx[2].size()) {
+      std::cerr << "Error in (get_col), no column found\n";
+      return;
+    };
+
+    i2 = nrow * i2;
+
+    for (size_t i = 0; i < n_el; ++i) {
+      if (!mask[i]) {
+        continue;
+      }
+      rtn_v[i] = bool_v[i];
+    };
 
   } else if constexpr (std::is_same_v<T, IntT>) {
 
@@ -49,7 +68,7 @@ void get_col_filter_simd(unsigned int &x,
 
     #if defined(__AVX512F__)
 
-    for (; i + j <= nrow; i += j)
+    for (; i + j < n_el; i += j)
     {
         mask_t m(&mask[i], v2::element_aligned);
         simd_t vals(&int_v[i2 + i], v2::element_aligned);
@@ -62,7 +81,7 @@ void get_col_filter_simd(unsigned int &x,
 
     #elif defined(__AVX2__)
 
-    for (; i + j <= nrow; i += j)
+    for (; i + j < n_el; i += j)
     {
         mask_t m(&mask[i], v2::element_aligned);
         simd_t vals(&int_v[i2 + i], v2::element_aligned);
@@ -78,7 +97,7 @@ void get_col_filter_simd(unsigned int &x,
  
     #endif
 
-    for (; i < nrow; ++i) {
+    for (; i < n_el; ++i) {
         if (mask[i]) {
           rtn_v[out_idx] = int_v[i2 + i];
           out_idx += 1;
@@ -122,7 +141,7 @@ void get_col_filter_simd(unsigned int &x,
 
     #if defined(__AVX512F__)
 
-    for (; i + j <= nrow; i += j)
+    for (; i + j < n_el; i += j)
     {
         mask_t m(&mask[i], v2::element_aligned);
         simd_t vals(&uint_v[i2 + i], v2::element_aligned);
@@ -135,7 +154,7 @@ void get_col_filter_simd(unsigned int &x,
 
     #elif defined(__AVX2__)
 
-    for (; i + j <= nrow; i += j)
+    for (; i + j < n_el; i += j)
     {
         mask_t m(&mask[i], v2::element_aligned);
         simd_t vals(&uint_v[i2 + i], v2::element_aligned);
@@ -151,7 +170,7 @@ void get_col_filter_simd(unsigned int &x,
  
     #endif
 
-    for (; i < nrow; ++i) {
+    for (; i < n_el; ++i) {
         if (mask[i]) {
           rtn_v[out_idx] = uint_v[i2 + i];
           out_idx += 1;
@@ -195,7 +214,7 @@ void get_col_filter_simd(unsigned int &x,
 
     #if defined(__AVX512F__)
 
-    for (; i + j <= nrow; i += j)
+    for (; i + j < n_el; i += j)
     {
         mask_t m(&mask[i], v2::element_aligned);
         simd_t vals(&dbl_v[i2 + i], v2::element_aligned);
@@ -208,7 +227,7 @@ void get_col_filter_simd(unsigned int &x,
 
     #elif defined(__AVX2__)
 
-    for (; i + j <= nrow; i += j)
+    for (; i + j < n_el; i += j)
     {
         mask_t m(&mask[i], v2::element_aligned);
         simd_t vals(&dbl_v[i2 + i], v2::element_aligned);
@@ -224,7 +243,7 @@ void get_col_filter_simd(unsigned int &x,
  
     #endif
 
-    for (; i < nrow; ++i) {
+    for (; i < n_el; ++i) {
         if (mask[i]) {
           rtn_v[out_idx] = dbl_v[i2 + i];
           out_idx += 1;
@@ -233,8 +252,26 @@ void get_col_filter_simd(unsigned int &x,
 
   } else if constexpr (std::is_same_v<T, std::string>) {
 
-    std::cerr << "Can't SIMD on std::string\n";
-    return;
+    while (i2 < matr_idx[0].size()) {
+      if (x == matr_idx[0][i2]) {
+        break;
+      };
+      i2 += 1;
+    };
+
+    if (i2 == matr_idx[2].size()) {
+      std::cerr << "Error in (get_col), no column found\n";
+      return;
+    };
+
+    i2 = nrow * i2;
+
+    for (size_t i = 0; i < n_el; ++i) {
+      if (!mask[i]) {
+        continue;
+      }
+      rtn_v[i] = bool_v[i];
+    };
 
   } else if constexpr (std::is_same_v<T, char>) {
 
@@ -273,7 +310,7 @@ void get_col_filter_simd(unsigned int &x,
 
     #if defined(__AVX512F__)
 
-    for (; i + j <= nrow; i += j)
+    for (; i + j < n_el; i += j)
     {
         mask_t m(&mask[i], v2::element_aligned);
         simd_t vals(&chr_v[i2 + i], v2::element_aligned);
@@ -286,7 +323,7 @@ void get_col_filter_simd(unsigned int &x,
 
     #elif defined(__AVX2__)
 
-    for (; i + j <= nrow; i += j)
+    for (; i + j < n_el; i += j)
     {
         mask_t m(&mask[i], v2::element_aligned);
         simd_t vals(&chr_v[i2 + i], v2::element_aligned);
@@ -302,7 +339,7 @@ void get_col_filter_simd(unsigned int &x,
  
     #endif
 
-    for (; i < nrow; ++i) {
+    for (; i < n_el; ++i) {
         if (mask[i]) {
           rtn_v[out_idx] = chr_v[i2 + i];
           out_idx += 1;
