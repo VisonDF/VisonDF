@@ -17,10 +17,6 @@ void rm_col_range(std::vector<unsigned int> nbcolv) {
     };
 
     for (unsigned nbcol : nbcolv) {
-        if (nbcol >= ncol) {
-            std::cerr << "The column does not exist\n";
-            continue;
-        }
 
         size_t type_i = col_type[nbcol];
         size_t idx_in_type =
