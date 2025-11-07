@@ -40,7 +40,7 @@ void rm_col(unsigned int& nbcol) {
         type_refv.shrink_to_fit();
         matr_idx[type_i].shrink_to_fit();
 
-    } else {
+    } else if constexpr (!MemClean) {
 
         switch (type_i) {
             case 0: erase_block(str_v, offset); break;
