@@ -378,7 +378,7 @@ void get_dataframe_filter_idx_idx(const std::vector<int>& cols,
 
                             size_t j = 0;
 
-                            for (; j + width <= nrow; j += width) {
+                            for (; j + width < nrow; j += width) {
    
                                 v2::simd<unsigned int> idx(&mask[j], v2::element_aligned);
 
@@ -442,7 +442,7 @@ void get_dataframe_filter_idx_idx(const std::vector<int>& cols,
 
                             size_t j = 0;
 
-                            for (; j + width <= nrow; j += width) {
+                            for (; j + width < nrow; j += width) {
    
                                 v2::simd<unsigned int> idx(&mask[j], v2::element_aligned);
 
@@ -488,7 +488,7 @@ void get_dataframe_filter_idx_idx(const std::vector<int>& cols,
 
                             size_t j = 0;
 
-                            for (; j + width <= nrow; j += width) {
+                            for (; j + width < nrow; j += width) {
    
                                 v2::simd<unsigned int> idx(&mask[j], v2::element_aligned);
 
@@ -534,7 +534,7 @@ void get_dataframe_filter_idx_idx(const std::vector<int>& cols,
 
                             size_t j = 0;
 
-                            for (; j + width <= nrow; j += width) {
+                            for (; j + width < nrow; j += width) {
    
                                 v2::simd<unsigned int> idx(&mask[j], v2::element_aligned);
 
