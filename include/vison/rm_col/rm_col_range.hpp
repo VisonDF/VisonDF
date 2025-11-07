@@ -41,6 +41,20 @@ void rm_col_range(std::vector<unsigned int> nbcolv) {
         --ncol;
     }
 
+    if (!name_v.empty()) {
+
+          std::vector<unsigned int> keep(ncol, 1);
+          for (auto& rr : nbcolv) {
+            keep[rr] = 0;
+          }
+          size_t idx = 0;
+          auto beg = name_v.begin();
+          auto end = name_v.end();
+          auto it  = std::remove_if(beg, end, [&](auto&) mutable { return !keep[idx++]; });
+          name_v.erase(it, end);
+
+    }
+
     if constexpr (MemClean) {
        type_refv.shrink_to_fit();
        name_v.shrink_to_fit();
@@ -56,6 +70,7 @@ void rm_col_range(std::vector<unsigned int> nbcolv) {
        int_v.shrink_to_fit();
        uint_v.shrink_to_fit();
        dbl_v.shrink_to_fit();
+       name_v.shrink_to_fit();
     }
 
 }
