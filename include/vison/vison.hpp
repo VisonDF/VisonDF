@@ -213,15 +213,15 @@ namespace vison {
    
         #include "rep_col/rep_col.hpp"
         
-        #include "rep_col/vectorized/rep_col_simd.hpp"
+        #include "rep_col/batched/rep_col_batch.hpp"
 
         #include "rep_col/rep_col_filter.hpp"
 
-        #include "rep_col/vectorized/rep_col_filter_simd.hpp"
+        #include "rep_col/batched/rep_col_filter_batch.hpp"
 
         #include "rep_col/rep_col_filter_idx.hpp"
 
-        #include "rep_col/vectorized/rep_col_filter_idx_simd.hpp"
+        #include "rep_col/batched/rep_col_filter_idx_batch.hpp"
 
         #include "add_col/add_col.hpp"
         
