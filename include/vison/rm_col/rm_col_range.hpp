@@ -1,48 +1,48 @@
 #pragma once
 
-void rm_col(std::vector<unsigned int> &nbcolv) {
-  unsigned int i;
-  unsigned int i2;
-  bool is_found;
-  for (int nbcol : nbcolv) {
-    if (nbcol >= ncol) {
-      std::cout << "The column does not exist\n";
-      return;
+void rm_col_range(std::vector<unsigned int>& nbcolv) {
+    if (nbcolv.empty()) return;
+
+    std::sort(nbcolv.begin(), nbcolv.end());
+    std::reverse(nbcolv.begin(), nbcolv.end());
+
+    std::vector<size_t> col_type(ncol);
+    for (size_t type_i = 0; type_i < matr_idx.size(); ++type_i)
+        for (auto col : matr_idx[type_i])
+            col_type[col] = type_i;
+
+    auto erase_block = [&](auto& vec, size_t off){
+        vec.erase(vec.begin() + off, vec.begin() + off + nrow);
     };
-    i = 0;
-    is_found = 0;
-    while (!is_found) {
-      i2 = 0;
-      while (i2 < matr_idx[i].size()) {
-        if (nbcol == matr_idx[i][i2]) {
-          is_found = 1;
-          break;
-        };
-        i2 += 1;
-      };
-      i += 1;
-    };
-    i-= 1;
-    name_v.erase(name_v.begin() + nbcol);
-    matr_idx[i].erase(matr_idx[i].begin() + i2);
-    tmp_val_refv.erase(tmp_val_refv.begin() + nbcol);
-    type_refv.erase(type_refv.begin() + nbcol);
-    i2 = nrow * i2;
-    if (i == 0) {
-      str_v.erase(str_v.begin() + i2, str_v.begin() + i2 + nrow);
-    } else if (i == 1) {
-      chr_v.erase(chr_v.begin() + i2, chr_v.begin() + i2 + nrow);
-    } else if (i == 2) {
-      bool_v.erase(bool_v.begin() + i2, bool_v.begin() + i2 + nrow);
-    } else if (i == 3) {
-      int_v.erase(int_v.begin() + i2, int_v.begin() + i2 + nrow);
-    } else if (i == 4) {
-      uint_v.erase(uint_v.begin() + i2, uint_v.begin() + i2 + nrow);
-    } else if (i == 5) {
-      dbl_v.erase(dbl_v.begin() + i2, dbl_v.begin() + i2 + nrow);
-    };
-    ncol -= 1;
-  };
-};
+
+    for (unsigned nbcol : nbcolv) {
+        if (nbcol >= ncol) {
+            std::cerr << "The column does not exist\n";
+            continue;
+        }
+
+        size_t type_i = col_type[nbcol];
+        size_t idx_in_type =
+            std::find(matr_idx[type_i].begin(), matr_idx[type_i].end(), nbcol)
+            - matr_idx[type_i].begin();
+
+        name_v.erase(name_v.begin() + nbcol);
+        tmp_val_refv.erase(tmp_val_refv.begin() + nbcol);
+        type_refv.erase(type_refv.begin() + nbcol);
+        matr_idx[type_i].erase(matr_idx[type_i].begin() + idx_in_type);
+
+        size_t offset = idx_in_type * nrow;
+        switch (type_i) {
+            case 0: erase_block(str_v, offset); break;
+            case 1: erase_block(chr_v, offset); break;
+            case 2: erase_block(bool_v, offset); break;
+            case 3: erase_block(int_v, offset); break;
+            case 4: erase_block(uint_v, offset); break;
+            case 5: erase_block(dbl_v, offset); break;
+        }
+
+        --ncol;
+    }
+}
 
 
