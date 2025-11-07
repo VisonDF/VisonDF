@@ -12,11 +12,6 @@ void rm_col(unsigned int& nbcol) {
         vec.erase(vec.begin() + off, vec.begin() + off + nrow);
     };
 
-    if (nbcol >= ncol) {
-        std::cerr << "The column does not exist\n";
-        return;
-    }
-
     size_t type_i = col_type[nbcol];
     size_t idx_in_type =
         std::find(matr_idx[type_i].begin(), matr_idx[type_i].end(), nbcol)
