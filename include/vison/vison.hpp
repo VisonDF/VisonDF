@@ -225,14 +225,16 @@ namespace vison {
 
         #include "add_col/add_col.hpp"
         
-        #include "add_col/vectorized/add_col_simd.hpp"
+        #include "add_col/batched/add_col_batch.hpp"
 
         #include "rm_col/rm_col.hpp"
 
         #include "rm_col/rm_col_range.hpp"
     
         #include "rm_row/rm_row.hpp"
-   
+ 
+        #include "rm_row/batched/rm_row_batch.hpp"
+  
         #include "rm_row/rm_row_range.hpp"
 
         #include "rm_row/batched/rm_row_range_batch.hpp"
