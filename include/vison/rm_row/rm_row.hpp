@@ -1,5 +1,6 @@
 #pragma once
 
+template <bool MemClean = false>
 void rm_row(unsigned int x) 
 {
 
@@ -41,7 +42,22 @@ void rm_row(unsigned int x)
             auto it = std::remove_if(aux.begin(), aux.end(),
                                      [&](auto&) mutable { return idx++ == x; });
             aux.erase(it, aux.end());
+            if constexpr (MemClean) {
+              aux.shrink_to_fit();
+            }
         }
+
+        if constexpr (MemClean) {
+            switch (t) {
+                case 0: str_v.shrink_to_fit(); break;
+                case 1: chr_v.shrink_to_fit(); break;
+                case 2: bool_v.shrink_to_fit(); break;
+                case 3: int_v.shrink_to_fit(); break;
+                case 4: uint_v.shrink_to_fit(); break;
+                case 5: dbl_v.shrink_to_fit(); break;
+            }
+        }
+
     }
 
     nrow = old_nrow - 1; 
