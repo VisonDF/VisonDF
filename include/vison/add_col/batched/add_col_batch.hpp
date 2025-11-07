@@ -1,7 +1,7 @@
 #pragma once
 
 template <typename T>
-void add_col_simd(std::vector<T> &x, std::string name = "NA") {
+void add_col_batch(std::vector<T> &x, std::string name = "NA") {
   
     if (x.size() != nrow) {
       std::cerr << "Error: vector length (" << x.size()
