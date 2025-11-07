@@ -228,6 +228,8 @@ namespace vison {
         #include "add_col/vectorized/add_col_simd.hpp"
 
         #include "rm_col/rm_col.hpp"
+
+        #include "rm_col/rm_col_range.hpp"
     
         #include "rm_row/rm_row.hpp"
    
