@@ -1,6 +1,7 @@
 #pragma once
 
-template <typename T> void rep_col_simd(std::vector<T> &x, unsigned int &colnb) {
+template <typename T> 
+void rep_col_batch(std::vector<T> &x, unsigned int &colnb) {
 
   if (x.size() != nrow) {
     std::cerr << "Error: vector length (" << x.size()

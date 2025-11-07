@@ -1,6 +1,7 @@
 #pragma once
 
-template <typename T> void rep_col_filter_simd(std::vector<T> &x, 
+template <typename T> 
+void rep_col_filter_batch(std::vector<T> &x, 
                 unsigned int &colnb,
                 const std::vector<uint8_t>& mask) {
 
