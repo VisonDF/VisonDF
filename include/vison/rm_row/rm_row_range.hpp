@@ -1,15 +1,18 @@
 #pragma once
 
-void rm_row(unsigned int x) 
+void rm_row_range(std::vector<unsigned int> x) 
 {
 
     const size_t old_nrow = nrow;
+
+    std::vector<uint8_t> keep(old_nrow, 1);
+    for (unsigned int rr : x) keep[rr] = 0;
 
     auto compact_block = [&](auto& vec, size_t base) {
         size_t idx = 0;
         auto beg = vec.begin() + base;
         auto end = beg + old_nrow;
-        auto it  = std::remove_if(beg, end, [&](auto&) mutable { return idx++ == x; });
+        auto it  = std::remove_if(beg, end, [&](auto&) mutable { return !keep[idx++]; });
         vec.erase(it, end);
     };
 
@@ -39,12 +42,12 @@ void rm_row(unsigned int x)
             auto& aux = tmp_val_refv[matr_tmp[cpos]];
             size_t idx = 0;
             auto it = std::remove_if(aux.begin(), aux.end(),
-                                     [&](auto&) mutable { return idx++ == x; });
+                                     [&](auto&) mutable { return !keep[idx++]; });
             aux.erase(it, aux.end());
         }
     }
 
-    nrow = old_nrow - 1; 
+    nrow = old_nrow - x.size(); 
 
 };
 
