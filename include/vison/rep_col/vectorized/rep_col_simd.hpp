@@ -74,7 +74,7 @@ template <typename T> void rep_col_simd(std::vector<T> &x, unsigned int &colnb) 
 
     i2 = nrow * i2;
 
-    constexpr size_t BATCH = 8;
+    constexpr size_t BATCH = 512;
     constexpr size_t buf_size = max_chars_needed<T>();
     uint8_t lengths[BATCH];
 
@@ -123,7 +123,7 @@ template <typename T> void rep_col_simd(std::vector<T> &x, unsigned int &colnb) 
 
     i2 = nrow * i2;
 
-    constexpr size_t BATCH = 8;
+    constexpr size_t BATCH = 512;
     constexpr size_t buf_size = max_chars_needed<T>();
     uint8_t lengths[BATCH];
 
@@ -172,7 +172,7 @@ template <typename T> void rep_col_simd(std::vector<T> &x, unsigned int &colnb) 
 
     i2 = nrow * i2;
  
-    constexpr size_t BATCH = 8;
+    constexpr size_t BATCH = 256;
     constexpr size_t buf_size = max_chars_needed<T>();
     uint8_t lengths[BATCH];
 
