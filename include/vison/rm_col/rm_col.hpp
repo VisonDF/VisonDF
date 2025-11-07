@@ -1,6 +1,6 @@
 #pragma once
 
-void rm_col(unsigned int nbcol) {
+void rm_col(unsigned int& nbcol) {
 
     std::vector<size_t> col_type(ncol);
     for (size_t type_i = 0; type_i < 6; ++type_i)

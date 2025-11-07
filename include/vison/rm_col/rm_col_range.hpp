@@ -1,6 +1,6 @@
 #pragma once
 
-void rm_col_range(std::vector<unsigned int>& nbcolv) {
+void rm_col_range(std::vector<unsigned int> nbcolv) {
     if (nbcolv.empty()) return;
 
     std::sort(nbcolv.begin(), nbcolv.end());
