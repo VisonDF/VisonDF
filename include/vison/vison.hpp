@@ -243,6 +243,8 @@ namespace vison {
 
         #include "rm_row/rm_row_range_reconstruct.hpp"
 
+        #include "rm_row/vectorized/rm_row_range_reconstruct_simd.hpp"
+
         #include "transform/transform_inner.hpp"
          
         #include "transform/clean_memory/transform_inner_clean.hpp"
