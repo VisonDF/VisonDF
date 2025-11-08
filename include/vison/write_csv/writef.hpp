@@ -1,56 +1,68 @@
 #pragma once
 
-void writef(std::string &file_name, char delim = ',', bool header_name = 1, char str_context_bgn = '\'', char str_context_end = '\'') {
-  unsigned int i2;
-  unsigned int i3;
-  std::fstream outfile(file_name, std::ios::out);
-  std::string cur_str;
-  if (header_name) {
-    i2 = 0;
-    while (i2 + 1 < ncol) {
-      outfile << name_v[i2];
-      outfile << delim;
-      i2 += 1;
+void writef(const std::string& file_name,
+                    size_t target_chunk_bytes = 100'000'000,
+                    const char delim = ',',
+                    const bool header_name = true,
+                    const char str_context = '\'') {
+
+    if (nrow == 0) return;
+
+    std::ofstream outfile(file_name, std::ios::binary);
+    if (!outfile) throw std::runtime_error("Cannot open file");
+
+    if (header_name && ncol > 0) {
+        for (unsigned int j = 0; j < ncol; ++j) {
+            if (j) outfile.put(delim);
+            outfile.write(name_v[j].data(), name_v[j].size());
+        }
+        outfile.put('\n');
+    }
+
+    const size_t bytes_per_row = estimate_row_size(50);
+
+    size_t rows_per_chunk = std::max<size_t>(1, target_chunk_bytes / bytes_per_row);
+
+    std::string buffer;
+    buffer.reserve(std::min(target_chunk_bytes + 4096, static_cast<size_t>(256'000'000)));
+
+    size_t rows_in_buff = 0;
+
+    auto flush = [&]() {
+        if (!buffer.empty()) {
+            outfile.write(buffer.data(), buffer.size());
+            buffer.clear();
+        }
     };
-    outfile << name_v[i2];
-    outfile << "\n";
-  };
-  for (unsigned int i = 0; i < nrow; ++i) {
-    i2 = 0;
-    while (i2 + 1 < ncol) {
-      cur_str = tmp_val_refv[i2][i];
-      if (type_refv[i2] == 's') {
-        for (i3 = 0; i3 < cur_str.length(); ++i3) {
-          if (cur_str[i3] == delim) {
-            cur_str.insert(0, 1, str_context_bgn);
-            cur_str.push_back(str_context_end);
-            break;
-          };
-        };
-      } else if (cur_str[0] == delim) {
-        cur_str.insert(0, 1, str_context_bgn);
-        cur_str.push_back(str_context_end);
-      };
-      outfile << cur_str;
-      i2 += 1;
-      outfile << delim;
-    };
-    cur_str = tmp_val_refv[i2][i];
-    if (type_refv[i2] == 's') {
-      for (i3 = 0; i3 < cur_str.length(); ++i3) {
-        if (cur_str[i3] == delim) {
-          cur_str.insert(0, 1, str_context_bgn);
-          cur_str.push_back(str_context_end);
-          break;
-        };
-      };
-    } else if (cur_str[0] == delim) {
-      cur_str.insert(0, 1, str_context_bgn);
-      cur_str.push_back(str_context_end);
-    };
-    outfile << cur_str;
-    outfile << "\n";
-  };
-};
+
+    for (size_t i = 0; i < static_cast<size_t>(nrow); ++i) {
+        
+        for (unsigned int j = 0; j < ncol; ++j) {
+            const std::string& cell = tmp_val_refv[j][i];
+
+            if (type_refv[j] == 's') {
+                buffer.push_back(str_context);
+                buffer.append(cell);
+                buffer.push_back(str_context);
+            } else {
+                buffer.append(cell);
+            }
+
+            if (j + 1 < ncol) buffer.push_back(delim);
+        }
+
+        buffer.push_back('\n');
+        rows_in_buff += 1;
+
+        if (rows_in_buff >= rows_per_chunk) {
+            flush();
+            rows_in_buff = 0;
+        }
+    }
+
+    flush();
+}
+
+
 
 

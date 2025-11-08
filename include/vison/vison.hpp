@@ -139,6 +139,8 @@ namespace vison {
 
         #include "inlines/fapply/vectorized_hint/apply_numeric_simd_filter_idx.inl"
 
+        #include "inlines/write_csv/estimate_row_size.inl"
+
       public:
        
         #include "read_csv/readf.hpp"
