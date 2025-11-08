@@ -26,8 +26,8 @@ void rm_row_range_reconstruct(std::vector<unsigned int> x)
             if (keep[i]) new_name_v_row.push_back(std::move(name_v_row[i]));
     }
 
-    auto compact_block_pod_char = [&](std::vector<char>& dst, 
-                    const std::vector<char>& src, size_t base) {
+    auto compact_block_pod = [&]<typename T>(std::vector<T>& dst, 
+                    const std::vector<T>& src, size_t base) {
         const char* s = src.data() + base;
         const size_t base_out = dst.size();
         size_t written = 0, i = 0;
@@ -39,64 +39,7 @@ void rm_row_range_reconstruct(std::vector<unsigned int> x)
             const size_t len = i - start;
             if (len) {
                 dst.resize(base_out + written + len);
-                std::memcpy(dst.data() + base_out + written, s + start, len * sizeof(char));
-                written += len;
-            }
-        }
-    };
-
-    auto compact_block_pod_int = [&](std::vector<IntT>& dst, 
-                    const std::vector<IntT>& src, size_t base) {
-        const IntT* s = src.data() + base;
-        const size_t base_out = dst.size();
-        size_t written = 0, i = 0;
-        dst.reserve(base_out + new_nrow);
-        while (i < old_nrow) {
-            while (i < old_nrow && !keep[i]) ++i;
-            const size_t start = i;
-            while (i < old_nrow && keep[i]) ++i;
-            const size_t len = i - start;
-            if (len) {
-                dst.resize(base_out + written + len);
-                std::memcpy(dst.data() + base_out + written, s + start, len * sizeof(IntT));
-                written += len;
-            }
-        }
-    };
-
-    auto compact_block_pod_uint = [&](std::vector<UIntT>& dst, 
-                    const std::vector<UIntT>& src, size_t base) {
-        const UIntT* s = src.data() + base;
-        const size_t base_out = dst.size();
-        size_t written = 0, i = 0;
-        dst.reserve(base_out + new_nrow);
-        while (i < old_nrow) {
-            while (i < old_nrow && !keep[i]) ++i;
-            const size_t start = i;
-            while (i < old_nrow && keep[i]) ++i;
-            const size_t len = i - start;
-            if (len) {
-                dst.resize(base_out + written + len);
-                std::memcpy(dst.data() + base_out + written, s + start, len * sizeof(UIntT));
-                written += len;
-            }
-        }
-    };
-
-    auto compact_block_pod_flt = [&](std::vector<FloatT>& dst, 
-                    const std::vector<FloatT>& src, size_t base) {
-        const FloatT* s = src.data() + base;
-        const size_t base_out = dst.size();
-        size_t written = 0, i = 0;
-        dst.reserve(base_out + new_nrow);
-        while (i < old_nrow) {
-            while (i < old_nrow && !keep[i]) ++i;
-            const size_t start = i;
-            while (i < old_nrow && keep[i]) ++i;
-            const size_t len = i - start;
-            if (len) {
-                dst.resize(base_out + written + len);
-                std::memcpy(dst.data() + base_out + written, s + start, len * sizeof(FloatT));
+                std::memcpy(dst.data() + base_out + written, s + start, len * sizeof(T));
                 written += len;
             }
         }
@@ -139,7 +82,7 @@ void rm_row_range_reconstruct(std::vector<unsigned int> x)
                     break;
 
                 case 1: 
-                    compact_block_pod_char(new_chr_v,  chr_v,  base);
+                    compact_block_pod.template operator()<char>(new_chr_v,  chr_v,  base);
                     break;
 
                 case 2: 
@@ -150,15 +93,15 @@ void rm_row_range_reconstruct(std::vector<unsigned int> x)
                     break;
 
                 case 3: 
-                    compact_block_pod_int(new_int_v,  int_v,  base);
+                    compact_block_pod.template operator()<IntT>(new_int_v,  int_v,  base);
                     break;
 
                 case 4: 
-                    compact_block_pod_uint(new_uint_v, uint_v, base);
+                    compact_block_pod.template operator()<UIntT>(new_uint_v, uint_v, base);
                     break;
 
                 case 5: 
-                    compact_block_pod_flt(new_dbl_v,  dbl_v,  base);
+                    compact_block_pod.template operator()<FloatT>(new_dbl_v,  dbl_v,  base);
                     break;
             }
 
