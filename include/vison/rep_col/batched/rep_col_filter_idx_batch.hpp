@@ -258,11 +258,6 @@ void rep_col_filter_idx_batch(std::vector<T> &x,
     auto* __restrict dst = str_v.data() + i2;
     const auto* __restrict src = x.data();
     
-    #pragma unroll 32
-    for (size_t i = 0; i < end_mask; ++i) {
-      dst[mask[i]] = src[mask[i]];
-    };
-
     std::vector<std::string>& __restrict val_tmp = tmp_val_refv[colnb];
 
     constexpr size_t BATCH = 32;
@@ -274,8 +269,8 @@ void rep_col_filter_idx_batch(std::vector<T> &x,
         for (size_t j = i; j < end; ++j) {
 
             const size_t pos_idx = mask[j];
-
             const std::string& str_vl = src[pos_idx];
+            dst[pos_idx] = str_vl;
             buf[j - i].assign(str_vl);
             
         }
@@ -309,11 +304,6 @@ void rep_col_filter_idx_batch(std::vector<T> &x,
     auto* __restrict dst = chr_v.data() + i2;
     const auto* __restrict src = x.data();
     
-    #pragma unroll 32
-    for (size_t i = 0; i < end_mask; ++i) {
-      dst[mask[i]] = src[mask[i]];
-    };
-
     std::vector<std::string>& __restrict val_tmp = tmp_val_refv[colnb];
 
     constexpr size_t BATCH = 32;
@@ -325,8 +315,9 @@ void rep_col_filter_idx_batch(std::vector<T> &x,
         for (size_t j = i; j < end; ++j) {
             
             const size_t pos_idx = mask[j];
-
-            buf[j - i] = src[pos_idx];
+            const auto& vl = src[pos_idx];
+            dst[pos_idx] = vl;
+            buf[j - i] = vl;
 
         }
 
