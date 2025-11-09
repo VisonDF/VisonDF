@@ -15,15 +15,10 @@ void pivot_int(Dataframe &obj,
     unsigned int pos_val;
     const std::vector<int>& cur_int_v = obj.get_int_vec();
 
-    std::vector<IntT> tmp_int_v = {};
-
-    //std::string key;
     for (auto& el : matr_idx2[3]) {
       if (n3 == el) {
         pos_val = nrow2 * i;
-        tmp_int_v.insert(tmp_int_v.end(), 
-                        cur_int_v.begin() + pos_val, 
-                        cur_int_v.begin() + pos_val + nrow2);
+        break;
       };
       i += 1;
     };
@@ -49,7 +44,7 @@ void pivot_int(Dataframe &obj,
       std::string_view row_key = row_vec[i];
       auto [row_it, row_inserted] = idx_row.try_emplace(row_key, idx_row.size());
 
-      lookup[{col_key, row_key}] += tmp_int_v[i];
+      lookup[{col_key, row_key}] += cur_int_v[pos_val + i];
     };
     
     ncol = idx_row.size();
