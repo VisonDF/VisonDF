@@ -41,7 +41,7 @@ void rep_col_filter_range(std::vector<T> &x,
     alignas(64) char local_bufs[BATCH][buf_size];
     
     auto* __restrict dst = bool_v.data();
-    auto* __restrict src = x.data();
+    const auto* __restrict src = x.data();
     
     for (size_t i = 0; i < end_mask; i += BATCH) {
  
@@ -101,7 +101,7 @@ void rep_col_filter_range(std::vector<T> &x,
     alignas(64) char local_bufs[BATCH][buf_size];
     
     auto* __restrict dst = int_v.data() + i2;
-    auto* __restrict src = x.data();
+    const auto* __restrict src = x.data();
    
     for (size_t i = 0; i < end_mask; i += BATCH) {
         const size_t end = std::min(i + BATCH, static_cast<size_t>(end_mask));
@@ -160,7 +160,7 @@ void rep_col_filter_range(std::vector<T> &x,
     alignas(64) char local_bufs[BATCH][buf_size];
     
     auto* __restrict dst = uint_v.data() + i2;
-    auto* __restrict src = x.data();
+    const auto* __restrict src = x.data();
    
     for (size_t i = 0; i < end_mask; i += BATCH) {
         const size_t end = std::min(i + BATCH, static_cast<size_t>(end_mask));
@@ -219,7 +219,7 @@ void rep_col_filter_range(std::vector<T> &x,
     alignas(64) char local_bufs[BATCH][buf_size];
     
     auto* __restrict dst = dbl_v.data() + i2;
-    auto* __restrict src = x.data();
+    const auto* __restrict src = x.data();
    
     for (size_t i = 0; i < end_mask; i += BATCH) {
         const size_t end = std::min(i + BATCH, static_cast<size_t>(end_mask));
