@@ -282,7 +282,7 @@ void get_col_filter_simd(unsigned int &x,
       if (!mask[i]) {
         continue;
       }
-      rtn_v[i] = bool_v[i];
+      rtn_v[i] = str_v[i2 + i];
     };
 
   } else if constexpr (std::is_same_v<T, char>) {
