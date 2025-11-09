@@ -36,7 +36,7 @@ void rep_col_filter_range_batch(std::vector<T> &x,
     constexpr size_t buf_size = 2;
     uint8_t lengths[BATCH];
 
-    std::vector<std::string>& val_tmp = tmp_val_refv[colnb];
+    std::vector<std::string>& val_tmp = tmp_val_refv[colnb].data() + strt_vl;
     for (auto& el : val_tmp) el.reserve(buf_size);
     
     alignas(64) char local_bufs[BATCH][buf_size];
@@ -71,7 +71,7 @@ void rep_col_filter_range_batch(std::vector<T> &x,
 
             auto& cur_buf = local_bufs[j - i];
             const size_t len = lengths[j - i];
-            val_tmp[j + strt_vl].resize(len);
+            val_tmp[j].resize(len);
             std::memcpy(val_tmp[j].data(), cur_buf, len);
         }
     }
@@ -96,7 +96,7 @@ void rep_col_filter_range_batch(std::vector<T> &x,
     constexpr size_t buf_size = max_chars_needed<T>();
     uint8_t lengths[BATCH];
 
-    std::vector<std::string>& val_tmp = tmp_val_refv[colnb];
+    std::vector<std::string>& val_tmp = tmp_val_refv[colnb].data() + strt_vl;
     for (auto& el : val_tmp) el.reserve(buf_size);
     
     alignas(64) char local_bufs[BATCH][buf_size];
@@ -130,7 +130,7 @@ void rep_col_filter_range_batch(std::vector<T> &x,
 
             auto& cur_buf = local_bufs[j - i];
             const size_t len = lengths[j - i];
-            val_tmp[j + strt_vl].resize(len);
+            val_tmp[j].resize(len);
             std::memcpy(val_tmp[j].data(), cur_buf, len);
         }
     }
@@ -155,7 +155,7 @@ void rep_col_filter_range_batch(std::vector<T> &x,
     constexpr size_t buf_size = max_chars_needed<T>();
     uint8_t lengths[BATCH];
 
-    std::vector<std::string>& val_tmp = tmp_val_refv[colnb];
+    std::vector<std::string>& val_tmp = tmp_val_refv[colnb].data() + strt_vl;
     for (auto& el : val_tmp) el.reserve(buf_size);
     
     alignas(64) char local_bufs[BATCH][buf_size];
@@ -189,7 +189,7 @@ void rep_col_filter_range_batch(std::vector<T> &x,
 
             auto& cur_buf = local_bufs[j - i];
             const size_t len = lengths[j - i];
-            val_tmp[j + strt_vl].resize(len);
+            val_tmp[j].resize(len);
             std::memcpy(val_tmp[j].data(), cur_buf, len);
         }
     }
@@ -214,7 +214,7 @@ void rep_col_filter_range_batch(std::vector<T> &x,
     constexpr size_t buf_size = max_chars_needed<T>();
     uint8_t lengths[BATCH];
 
-    std::vector<std::string>& val_tmp = tmp_val_refv[colnb];
+    std::vector<std::string>& val_tmp = tmp_val_refv[colnb].data() + strt_vl;
     for (auto& el : val_tmp) el.reserve(buf_size);
     
     alignas(64) char local_bufs[BATCH][buf_size];
@@ -248,7 +248,7 @@ void rep_col_filter_range_batch(std::vector<T> &x,
 
             auto& cur_buf = local_bufs[j - i];
             const size_t len = lengths[j - i];
-            val_tmp[j + strt_vl].resize(len);
+            val_tmp[j].resize(len);
             std::memcpy(val_tmp[j].data(), cur_buf, len);
         }
     }
@@ -280,7 +280,7 @@ void rep_col_filter_range_batch(std::vector<T> &x,
       dst[i] = src[i];
     };
 
-    std::vector<std::string>& __restrict val_tmp = tmp_val_refv[colnb];
+    std::vector<std::string>& __restrict val_tmp = tmp_val_refv[colnb].data() + strt_vl;
 
     constexpr size_t BATCH = 32;
     alignas(64) std::string buf[BATCH];
@@ -305,7 +305,7 @@ void rep_col_filter_range_batch(std::vector<T> &x,
                 continue;
             }
 
-            val_tmp[j + strt_vl].assign(buf[j - i]);
+            val_tmp[j].assign(buf[j - i]);
         }
     }
 
@@ -336,7 +336,7 @@ void rep_col_filter_range_batch(std::vector<T> &x,
       dst[i] = src[i];
     };
 
-    std::vector<std::string>& __restrict val_tmp = tmp_val_refv[colnb];
+    std::vector<std::string>& __restrict val_tmp = tmp_val_refv[colnb].data() + strt_vl;
 
     constexpr size_t BATCH = 32;
     alignas(64) char buf[BATCH];
@@ -358,7 +358,7 @@ void rep_col_filter_range_batch(std::vector<T> &x,
               continue;
             }
 
-            val_tmp[j + strt_vl].assign(1, static_cast<char>(buf[j - i]));
+            val_tmp[j].assign(1, static_cast<char>(buf[j - i]));
         }
     }
 
