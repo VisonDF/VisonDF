@@ -267,7 +267,7 @@ namespace vison {
 
         #include "rm_row/vectorized/rm_row_range_reconstruct_simd.hpp"
 
-        #include "transform/transform_inner.hpp"
+        #include "transform/transform_inner/transform_inner.hpp"
          
         #include "transform/clean_memory/transform_inner_clean.hpp"
    
@@ -297,7 +297,11 @@ namespace vison {
 
         #include "transform/transform_left_join.hpp"
    
-        #include "transform/transform_filter.hpp"
+        #include "transform/transform_filter/transform_filter.hpp"
+
+        #ifdef _OPENMP
+        #include "transform/transform_filter/transform_filter_mt.hpp"
+        #endif
 
         #include "transform/transform_unique.hpp"
 
