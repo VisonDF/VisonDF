@@ -1,6 +1,6 @@
 #pragma once
 
-void get_dataframe_filter_simd(const std::vector<int>& cols, 
+void get_dataframe_filter_range_simd(const std::vector<int>& cols, 
                 Dataframe& cur_obj,
                 const std::vector<uint8_t>& mask,
                 unsigned int& strt_vl)
