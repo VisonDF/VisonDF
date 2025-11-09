@@ -4,7 +4,7 @@ template <typename T, bool MemClean = false>
 void get_col_filter_range(unsigned int &x, 
                 std::vector<T> &rtn_v,
                 std::vector<uint8_t> &mask,
-                unsigned int& strt_val) {
+                unsigned int& strt_vl) {
   
   rtn_v.reserve(nrow);
   unsigned int i;
