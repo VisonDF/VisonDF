@@ -34,7 +34,7 @@ void fapply_filter_range(void (&f)(T&),
               continue;
             }
             f(chr_v[strt_vl + i]);
-            val_tmp[i3].assign(1, chr_v[strt_vl + i]);
+            val_tmp[strt_vl + i3].assign(1, chr_v[strt_vl + i]);
         }
     }
 
@@ -51,7 +51,7 @@ void fapply_filter_range(void (&f)(T&),
               continue;
             }
             f(str_v[strt_vl + i]);
-            val_tmp[i3] = str_v[strt_vl + i];
+            val_tmp[strt_vl + i3] = str_v[strt_vl + i];
         }
     }
 }

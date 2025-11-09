@@ -36,7 +36,7 @@ inline void apply_numeric_filter_range(VecT& values,
         auto [ptr, ec] = std::to_chars(buf, buf + buf_size, values[strt_vl + i]);
 
         if (ec == std::errc{}) [[likely]] {
-            val_tmp[i3].assign(buf, ptr);
+            val_tmp[strt_vl + i3].assign(buf, ptr);
         } else [[unlikely]] {
             std::terminate();
         }
