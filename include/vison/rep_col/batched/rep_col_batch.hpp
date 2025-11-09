@@ -40,14 +40,16 @@ void rep_col_batch(std::vector<T> &x, unsigned int &colnb) {
     
     for (size_t i = 0; i < nrow; i += BATCH) {
         const size_t end = std::min(i + BATCH, static_cast<size_t>(nrow));
-    
+
         #pragma GCC ivdep
         for (size_t j = i; j < end; ++j) {
-            auto& vl = src[j];
+            dst[j] = src[j];
+        }
+
+        for (size_t j = i; j < end; ++j) {
             auto& cur_buf = local_bufs[j - i];
-            auto [ptr, ec] = std::to_chars(cur_buf, cur_buf + buf_size, vl);
+            auto [ptr, ec] = std::to_chars(cur_buf, cur_buf + buf_size, src[j]);
             if (ec != std::errc{}) [[unlikely]] std::terminate();
-            dst[j] = vl;
             lengths[j - i] = static_cast<size_t>(ptr - cur_buf);
         }
     
@@ -92,11 +94,13 @@ void rep_col_batch(std::vector<T> &x, unsigned int &colnb) {
     
         #pragma GCC ivdep
         for (size_t j = i; j < end; ++j) {
-            auto& vl = src[j];
+            dst[j] = src[j];
+        }
+
+        for (size_t j = i; j < end; ++j) {
             auto& cur_buf = local_bufs[j - i];
-            auto [ptr, ec] = std::to_chars(cur_buf, cur_buf + buf_size, vl);
+            auto [ptr, ec] = std::to_chars(cur_buf, cur_buf + buf_size, src[j]);
             if (ec != std::errc{}) [[unlikely]] std::terminate();
-            dst[j] = vl;
             lengths[j - i] = static_cast<size_t>(ptr - cur_buf);
         }
     
@@ -141,11 +145,13 @@ void rep_col_batch(std::vector<T> &x, unsigned int &colnb) {
     
         #pragma GCC ivdep
         for (size_t j = i; j < end; ++j) {
-            auto& vl = src[j];
+            dst[j] = src[j];
+        }
+
+        for (size_t j = i; j < end; ++j) {
             auto& cur_buf = local_bufs[j - i];
-            auto [ptr, ec] = std::to_chars(cur_buf, cur_buf + buf_size, vl);
+            auto [ptr, ec] = std::to_chars(cur_buf, cur_buf + buf_size, src[j]);
             if (ec != std::errc{}) [[unlikely]] std::terminate();
-            dst[j] = vl;
             lengths[j - i] = static_cast<size_t>(ptr - cur_buf);
         }
     
@@ -190,11 +196,13 @@ void rep_col_batch(std::vector<T> &x, unsigned int &colnb) {
     
         #pragma GCC ivdep
         for (size_t j = i; j < end; ++j) {
-            auto& vl = src[j];
+            dst[j] = src[j];
+        }
+
+        for (size_t j = i; j < end; ++j) {
             auto& cur_buf = local_bufs[j - i];
-            auto [ptr, ec] = std::to_chars(cur_buf, cur_buf + buf_size, vl);
+            auto [ptr, ec] = std::to_chars(cur_buf, cur_buf + buf_size, src[j]);
             if (ec != std::errc{}) [[unlikely]] std::terminate();
-            dst[j] = vl;
             lengths[j - i] = static_cast<size_t>(ptr - cur_buf);
         }
     
