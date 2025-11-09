@@ -39,9 +39,9 @@ void rep_col_filter_idx_batch(std::vector<T> &x,
     for (auto& el : val_tmp) el.reserve(buf_size);
     
     alignas(64) char local_bufs[BATCH][buf_size];
-    
-    auto* __restrict dst = x.data();
-    auto* __restrict src = bool_v.data();
+ 
+    auto* __restrict dst = bool_v.data();
+    const auto* __restrict src = x.data();
     
     for (size_t i = 0; i < end_mask; i += BATCH) {
  
@@ -56,7 +56,7 @@ void rep_col_filter_idx_batch(std::vector<T> &x,
             auto& cur_buf = local_bufs[j - i];
             auto [ptr, ec] = std::to_chars(cur_buf, cur_buf + buf_size, vl);
             if (ec != std::errc{}) [[unlikely]] std::terminate();
-            dst[pos_idx] = vl;
+            dst[i2 + pos_idx] = vl;
             lengths[j - i] = static_cast<size_t>(ptr - cur_buf);
         }
     
@@ -96,9 +96,9 @@ void rep_col_filter_idx_batch(std::vector<T> &x,
     for (auto& el : val_tmp) el.reserve(buf_size);
     
     alignas(64) char local_bufs[BATCH][buf_size];
-    
-    auto* __restrict dst = x.data();
-    auto* __restrict src = int_v.data();
+ 
+    auto* __restrict dst = int_v.data() + i2;
+    const auto* __restrict src = x.data();
     
     for (size_t i = 0; i < end_mask; i += BATCH) {
         const size_t end = std::min(i + BATCH, static_cast<size_t>(end_mask));
@@ -153,9 +153,9 @@ void rep_col_filter_idx_batch(std::vector<T> &x,
     
     alignas(64) char local_bufs[BATCH][buf_size];
     
-    auto* __restrict dst = x.data();
-    auto* __restrict src = uint_v.data();
-    
+    auto* __restrict dst = uint_v.data() + i2;
+    const auto* __restrict src = x.data();
+   
     for (size_t i = 0; i < end_mask; i += BATCH) {
         const size_t end = std::min(i + BATCH, static_cast<size_t>(end_mask));
     
@@ -209,9 +209,9 @@ void rep_col_filter_idx_batch(std::vector<T> &x,
     
     alignas(64) char local_bufs[BATCH][buf_size];
     
-    auto* __restrict dst = x.data();
-    auto* __restrict src = str_v.data();
-    
+    auto* __restrict dst = dbl_v.data() + i2;
+    const auto* __restrict src = x.data();
+   
     for (size_t i = 0; i < end_mask; i += BATCH) {
         const size_t end = std::min(i + BATCH, static_cast<size_t>(end_mask));
     
