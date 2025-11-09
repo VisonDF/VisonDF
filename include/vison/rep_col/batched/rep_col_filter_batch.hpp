@@ -49,16 +49,18 @@ void rep_col_filter_batch(std::vector<T> &x,
     
         #pragma GCC ivdep
         for (size_t j = i; j < end; ++j) {
+          dst[j] = src[j];
+        }
+
+        for (size_t j = i; j < end; ++j) {
 
             if (!mask[j]) {
               continue;
             }
 
-            auto& vl = src[j];
             auto& cur_buf = local_bufs[j - i];
-            auto [ptr, ec] = std::to_chars(cur_buf, cur_buf + buf_size, vl);
+            auto [ptr, ec] = std::to_chars(cur_buf, cur_buf + buf_size, src[j]);
             if (ec != std::errc{}) [[unlikely]] std::terminate();
-            dst[j + i2] = vl;
             lengths[j - i] = static_cast<size_t>(ptr - cur_buf);
         }
     
@@ -108,16 +110,18 @@ void rep_col_filter_batch(std::vector<T> &x,
     
         #pragma GCC ivdep
         for (size_t j = i; j < end; ++j) {
+          dst[j] = src[j];
+        }
+
+        for (size_t j = i; j < end; ++j) {
 
             if (!mask[j]) {
                 continue;
             }
 
-            auto& vl = src[j];
             auto& cur_buf = local_bufs[j - i];
-            auto [ptr, ec] = std::to_chars(cur_buf, cur_buf + buf_size, vl);
+            auto [ptr, ec] = std::to_chars(cur_buf, cur_buf + buf_size, src[j]);
             if (ec != std::errc{}) [[unlikely]] std::terminate();
-            dst[j] = vl;
             lengths[j - i] = static_cast<size_t>(ptr - cur_buf);
         }
     
@@ -167,16 +171,18 @@ void rep_col_filter_batch(std::vector<T> &x,
     
         #pragma GCC ivdep
         for (size_t j = i; j < end; ++j) {
+          dst[j] = src[j];
+        }
+
+        for (size_t j = i; j < end; ++j) {
 
             if (!mask[j]) {
                 continue;
             }
 
-            auto& vl = src[j];
             auto& cur_buf = local_bufs[j - i];
-            auto [ptr, ec] = std::to_chars(cur_buf, cur_buf + buf_size, vl);
+            auto [ptr, ec] = std::to_chars(cur_buf, cur_buf + buf_size, src[j]);
             if (ec != std::errc{}) [[unlikely]] std::terminate();
-            dst[j] = vl;
             lengths[j - i] = static_cast<size_t>(ptr - cur_buf);
         }
     
@@ -226,16 +232,18 @@ void rep_col_filter_batch(std::vector<T> &x,
     
         #pragma GCC ivdep
         for (size_t j = i; j < end; ++j) {
+          dst[j] = src[j];
+        }
+
+        for (size_t j = i; j < end; ++j) {
 
             if (!mask[j]) {
                 continue;
             }
 
-            auto& vl = src[j];
             auto& cur_buf = local_bufs[j - i];
-            auto [ptr, ec] = std::to_chars(cur_buf, cur_buf + buf_size, vl);
+            auto [ptr, ec] = std::to_chars(cur_buf, cur_buf + buf_size, src[j]);
             if (ec != std::errc{}) [[unlikely]] std::terminate();
-            dst[j] = vl;
             lengths[j - i] = static_cast<size_t>(ptr - cur_buf);
         }
     
