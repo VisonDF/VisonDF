@@ -141,6 +141,8 @@ namespace vison {
 
         #include "inlines/fapply/vectorized_hint/apply_numeric_simd_filter_idx.inl"
 
+        #include "inlines/fapply/vectorized_hint/apply_numeric_simd_filter_range.inl"
+
         #include "inlines/write_csv/estimate_row_size.inl"
 
       public:
@@ -170,6 +172,8 @@ namespace vison {
         #include "fapply/vectorized_hint/fapply_simd_hint_filter.hpp"
 
         #include "fapply/vectorized_hint/fapply_simd_hint_filter_idx.hpp"
+
+        #include "fapply/vectorized_hint/fapply_simd_hint_filter_range.hpp"
 
         #include "view_col/view_col.hpp"
         
