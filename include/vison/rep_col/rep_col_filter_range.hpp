@@ -1,9 +1,10 @@
 #pragma once
 
 template <typename T> 
-void rep_col_filter(std::vector<T> &x, 
+void rep_col_filter_range(std::vector<T> &x, 
                 unsigned int &colnb,
-                const std::vector<uint8_t>& mask) {
+                const std::vector<uint8_t>& mask,
+                const unsigned int& strt_vl) {
 
   if (x.size() != nrow) {
     std::cerr << "Error: vector length (" << x.size()
@@ -44,15 +45,15 @@ void rep_col_filter(std::vector<T> &x,
           continue;
         }
 
-        auto& vl = x[i];
-        bool_v[i2 + i] = vl;
+        auto& vl = x[strt_vl + i];
+        bool_v[strt_vl + i2 + i] = vl;
  
         char buf[buf_size];
         auto [ptr, ec] = std::to_chars(buf, buf + buf_size, 
                                        static_cast<int>(vl));
 
         if (ec == std::errc{}) [[likely]] {
-            val_tmp[i].assign(buf, ptr);
+            val_tmp[strt_vl + i].assign(buf, ptr);
         } else [[unlikely]] {
             std::terminate();
         }
@@ -88,14 +89,14 @@ void rep_col_filter(std::vector<T> &x,
           continue;
         }
 
-        auto& vl = x[i];
-        int_v[i2 + i] = vl;
+        auto& vl = x[strt_vl + i];
+        int_v[i2 + strt_vl + i] = vl;
  
         char buf[buf_size];
         auto [ptr, ec] = std::to_chars(buf, buf + buf_size, vl);
 
         if (ec == std::errc{}) [[likely]] {
-            val_tmp[i].assign(buf, ptr);
+            val_tmp[strt_vl + i].assign(buf, ptr);
         } else [[unlikely]] {
             std::terminate();
         }
@@ -131,14 +132,14 @@ void rep_col_filter(std::vector<T> &x,
           continue;
         }
 
-        auto& vl = x[i];
-        uint_v[i2 + i] = vl;
+        auto& vl = x[strt_vl + i];
+        uint_v[i2 + strt_vl + i] = vl;
  
         char buf[buf_size];
         auto [ptr, ec] = std::to_chars(buf, buf + buf_size, vl);
 
         if (ec == std::errc{}) [[likely]] {
-            val_tmp[i].assign(buf, ptr);
+            val_tmp[strt_vl + i].assign(buf, ptr);
         } else [[unlikely]] {
             std::terminate();
         }
@@ -174,14 +175,14 @@ void rep_col_filter(std::vector<T> &x,
           continue;
         }
 
-        auto& vl = x[i];
-        dbl_v[i2 + i] = vl;
+        auto& vl = x[strt_vl + i];
+        dbl_v[i2 + strt_vl + i] = vl;
  
         char buf[buf_size];
         auto [ptr, ec] = std::to_chars(buf, buf + buf_size, vl);
 
         if (ec == std::errc{}) [[likely]] {
-            val_tmp[i].assign(buf, ptr);
+            val_tmp[strt_vl + i].assign(buf, ptr);
         } else [[unlikely]] {
             std::terminate();
         }
@@ -212,9 +213,9 @@ void rep_col_filter(std::vector<T> &x,
         continue;
       }
 
-      const std::string& val = x[i];
-      str_v[i2 + i] = val;
-      val_tmp[i] = val;
+      const std::string& val = x[strt_vl + i];
+      str_v[i2 + strt_vl + i] = val;
+      val_tmp[strt_vl + i] = val;
     };
 
   } else if constexpr (std::is_same_v<T, char>) {
@@ -241,9 +242,9 @@ void rep_col_filter(std::vector<T> &x,
         continue;
       }
 
-      const char& val = x[i];
-      chr_v[i2 + i] = val;
-      val_tmp[i].assign(1, val);
+      const char& val = x[strt_vl + i];
+      chr_v[i2 + strt_vl + i] = val;
+      val_tmp[strt_vl + i].assign(1, val);
     };
 
   } else {

@@ -237,6 +237,8 @@ namespace vison {
 
         #include "rep_col/batched/rep_col_filter_batch.hpp"
 
+        #include "rep_col/rep_col_filter_range.hpp"
+
         #include "rep_col/rep_col_filter_idx.hpp"
 
         #include "rep_col/batched/rep_col_filter_idx_batch.hpp"
