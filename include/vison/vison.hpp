@@ -129,6 +129,8 @@ namespace vison {
 
         #include "inlines/fapply/apply_numeric.inl"
 
+        #include "inlines/fapply/apply_numeric_filter_range.inl"
+
         #include "inlines/fapply/apply_numeric_filter.inl"
 
         #include "inlines/fapply/apply_numeric_filter_idx.inl"
@@ -158,6 +160,8 @@ namespace vison {
         #include "fapply/fapply.hpp"
    
         #include "fapply/fapply_filter.hpp"
+
+        #include "fapply/fapply_filter_range.hpp"
 
         #include "fapply/fapply_filter_idx.hpp"
 
