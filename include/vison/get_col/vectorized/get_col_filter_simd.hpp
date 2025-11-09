@@ -24,11 +24,17 @@ void get_col_filter_simd(unsigned int &x,
 
     i2 = nrow * i2;
 
+    size_t active_count = 0;
+    for (size_t i = 0; i < nrow; ++i)
+        active_count += mask[i] != 0;
+
+    rtn_v.resize(active_count);
+
     for (size_t i = 0; i < n_el; ++i) {
       if (!mask[i]) {
         continue;
       }
-      rtn_v[i] = bool_v[i];
+      rtn_v[i] = bool_v[i2 + i];
     };
 
   } else if constexpr (std::is_same_v<T, IntT>) {
@@ -265,6 +271,12 @@ void get_col_filter_simd(unsigned int &x,
     };
 
     i2 = nrow * i2;
+
+    size_t active_count = 0;
+    for (size_t i = 0; i < nrow; ++i)
+        active_count += mask[i] != 0;
+
+    rtn_v.resize(active_count);
 
     for (size_t i = 0; i < n_el; ++i) {
       if (!mask[i]) {
