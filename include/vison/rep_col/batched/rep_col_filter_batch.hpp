@@ -49,7 +49,12 @@ void rep_col_filter_batch(std::vector<T> &x,
     
         #pragma GCC ivdep
         for (size_t j = i; j < end; ++j) {
-          dst[j] = src[j];
+
+            if (!mask[j]) {
+              continue;
+            }
+
+            dst[j] = src[j];
         }
 
         for (size_t j = i; j < end; ++j) {
@@ -110,7 +115,12 @@ void rep_col_filter_batch(std::vector<T> &x,
     
         #pragma GCC ivdep
         for (size_t j = i; j < end; ++j) {
-          dst[j] = src[j];
+
+            if (!mask[j]) {
+              continue;
+            }
+
+            dst[j] = src[j];
         }
 
         for (size_t j = i; j < end; ++j) {
@@ -171,7 +181,12 @@ void rep_col_filter_batch(std::vector<T> &x,
     
         #pragma GCC ivdep
         for (size_t j = i; j < end; ++j) {
-          dst[j] = src[j];
+
+            if (!mask[j]) {
+              continue;
+            }
+
+            dst[j] = src[j];
         }
 
         for (size_t j = i; j < end; ++j) {
@@ -232,7 +247,12 @@ void rep_col_filter_batch(std::vector<T> &x,
     
         #pragma GCC ivdep
         for (size_t j = i; j < end; ++j) {
-          dst[j] = src[j];
+
+            if (!mask[j]) {
+              continue;
+            }
+
+            dst[j] = src[j];
         }
 
         for (size_t j = i; j < end; ++j) {
