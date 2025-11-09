@@ -310,7 +310,11 @@ namespace vison {
         #include "transform/transform_group_by.hpp"
         
         #include "pivots/pivot_int.hpp"
-    
+
+        #ifdef _OPENMP
+        #include "pivots/pivot_int_mt.hpp"
+        #endif
+
         #include "pivots/pivot_uint.hpp"
 
         #include "pivots/pivot_dbl.hpp"
