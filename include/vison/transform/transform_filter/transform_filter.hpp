@@ -1,5 +1,6 @@
 #pragma once
 
+template <bool MemClean = false>
 void transform_filter(std::vector<uint8_t>& mask) 
 {
   
@@ -94,6 +95,32 @@ void transform_filter(std::vector<uint8_t>& mask)
         nrow_local += 1;
       }
     };
+
+    if (!name_v_row.empty()) {
+      nrow_local = 0;
+      for (size_t i = 0; i < mask.size(); ++i) {
+        if (!mask[i]) {
+          continue;
+        }
+        name_v_row[nrow_local] = name_v_row[i];
+        nrow_local += 1;
+      }
+    }
+
+    if constexpr (MemClean) {
+      for (auto& el : tmp_val_refv) {
+        el.shrink_to_fit();
+      }
+      
+      str_v.shrink_to_fit();
+      chr_v.shrink_to_fit();
+      bool_v.shrink_to_fit();
+      int_v.shrink_to_fit();
+      uint_v.shrink_to_fit();
+      dbl_v.shrink_to_fit();
+      name_v_row.shrink_to_fit();
+
+    }
 
     nrow = nrow_local;
 
