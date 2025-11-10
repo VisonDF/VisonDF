@@ -51,6 +51,8 @@ namespace vison {
     #include "inlines/fast_to_chars_no_dragonbox.inl"
     #endif
 
+    #include "custom_simd_hash/simd_hash.hpp"
+
     #include "inlines/read_csv/parse_rows_range_cached.inl"
 
     #include "inlines/read_csv/parse_rows_range.inl"
@@ -268,7 +270,11 @@ namespace vison {
         #include "rm_row/vectorized/rm_row_range_reconstruct_simd.hpp"
 
         #include "transform/transform_inner/transform_inner.hpp"
-         
+        
+        #ifdef _OPENMP
+        #include "transform/transform_inner/transform_inner_mt.hpp"
+        #endif
+
         #include "transform/clean_memory/transform_inner_clean.hpp"
    
         #include "transform/transform_excluding.hpp"

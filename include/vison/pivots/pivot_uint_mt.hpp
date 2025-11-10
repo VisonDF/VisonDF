@@ -1,6 +1,6 @@
 #pragma once
 
-template <unsigned int CORES = 4>
+template <unsigned int CORES = 4, bool SimdHash = true>
 void pivot_uint_mt(Dataframe &obj, 
                 unsigned int &n1, 
                 unsigned int& n2, 
@@ -28,10 +28,16 @@ void pivot_uint_mt(Dataframe &obj,
     ankerl::unordered_dense::map<std::pair<std::string_view, 
                                  std::string_view>, UIntT, PairHash> lookup;
 
+    using fast_str_map_t = std::conditional_t<
+        SimdHash,
+        ankerl::unordered_dense::map<std::string_view, int, simd_hash>,
+        ankerl::unordered_dense::map<std::string_view, int>
+    >;
+
     //std::unordered_map<std::string_view, int> idx_col; // standard map (slower)
-    ankerl::unordered_dense::map<std::string_view, int> idx_col;
+    fast_str_map_t idx_col;
     //std::unordered_map<std::string_view, int> idx_row;
-    ankerl::unordered_dense::map<std::string_view, int> idx_row;
+    fast_str_map_t idx_row;
     
     idx_col.reserve(nrow2);
     idx_row.reserve(nrow2);
