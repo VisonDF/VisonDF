@@ -13,8 +13,7 @@ void transform_filter_idx(std::vector<unsigned int>& mask)
       nrow_local = 0;
       auto* col = str_v.data() + nrow * i2;
       auto col2 = std::vector<std::string>(str_v.data() + nrow * i2, str_v.data() + nrow * (i2 + 1));
-      for (size_t i = 0; i < mask.size(); ++i) {
-        const unsigned int& pos_idx = mask[i];
+      for (auto& pos_idx : mask) {
         val_tmp[nrow_local] = val_tmp2[pos_idx];
         col[nrow_local] = col2[pos_idx];
         nrow_local += 1;
@@ -28,8 +27,7 @@ void transform_filter_idx(std::vector<unsigned int>& mask)
       nrow_local = 0;
       auto* col = chr_v.data() + nrow * i2;
       auto col2 = std::vector<char>(chr_v.data() + nrow * i2, chr_v.data() + nrow * (i2 + 1));
-      for (size_t i = 0; i < mask.size(); ++i) {
-        const unsigned int& pos_idx = mask[i];
+      for (auto& pos_idx : mask) {
         val_tmp[nrow_local] = val_tmp2[pos_idx];
         col[nrow_local] = col2[pos_idx];
         nrow_local += 1;
@@ -42,8 +40,7 @@ void transform_filter_idx(std::vector<unsigned int>& mask)
       std::vector<std::string> val_tmp2 = val_tmp;
       auto col2 = std::vector<bool>(bool_v.begin() + nrow * i2, bool_v.begin() + nrow * (i2 + 1));
       nrow_local = 0;
-      for (size_t i = 0; i < mask.size(); ++i) {
-        const unsigned int& pos_idx = mask[i];
+      for (auto& pos_idx : mask) {
         val_tmp[nrow_local] = val_tmp2[pos_idx];
         bool_v[nrow * i2 + nrow_local] = col2[pos_idx];
         nrow_local += 1;
@@ -57,8 +54,7 @@ void transform_filter_idx(std::vector<unsigned int>& mask)
       nrow_local = 0;
       auto* col = int_v.data() + nrow * i2;
       auto col2 = std::vector<IntT>(int_v.data() + nrow * i2, int_v.data() + nrow * (i2 + 1));
-      for (size_t i = 0; i < mask.size(); ++i) {
-        const unsigned int& pos_idx = mask[i];
+      for (auto& pos_idx : mask) {
         val_tmp[nrow_local] = val_tmp2[pos_idx];
         col[nrow_local] = col2[pos_idx];
         nrow_local += 1;
@@ -72,8 +68,7 @@ void transform_filter_idx(std::vector<unsigned int>& mask)
       nrow_local = 0;
       auto* col = uint_v.data() + nrow * i2;
       auto col2 = std::vector<UIntT>(uint_v.data() + nrow * i2, uint_v.data() + nrow * (i2 + 1));
-      for (size_t i = 0; i < mask.size(); ++i) {
-        const unsigned int& pos_idx = mask[i];
+      for (auto& pos_idx : mask) {
         val_tmp[nrow_local] = val_tmp2[pos_idx];
         col[nrow_local] = col2[pos_idx];
         nrow_local += 1;
@@ -88,8 +83,7 @@ void transform_filter_idx(std::vector<unsigned int>& mask)
       nrow_local = 0;
       auto* col = dbl_v.data() + nrow * i2;
       auto col2 = std::vector<FloatT>(dbl_v.data() + nrow * i2, dbl_v.data() + nrow * (i2 + 1));
-      for (size_t i = 0; i < mask.size(); ++i) {
-        const unsigned int& pos_idx = mask[i];
+      for (auto& pos_idx : mask) {
         val_tmp[nrow_local] = val_tmp2[pos_idx];
         col[nrow_local] = col2[pos_idx];
         nrow_local += 1;
@@ -99,8 +93,8 @@ void transform_filter_idx(std::vector<unsigned int>& mask)
     if (!name_v_row.empty()) {
       nrow_local = 0;
       std::vector<std::string> name_v_row2 = name_v_row;
-      for (size_t i = 0; i < mask.size(); ++i) {
-        name_v_row[nrow_local] = name_v_row2[mask[i]];
+      for (auto& pos_idx : mask) {
+        name_v_row[nrow_local] = name_v_row2[pos_idx];
         nrow_local += 1;
       }
     }
