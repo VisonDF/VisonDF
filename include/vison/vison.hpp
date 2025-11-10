@@ -275,25 +275,21 @@ namespace vison {
         #include "transform/transform_inner/transform_inner_mt.hpp"
         #endif
 
-        #include "transform/clean_memory/transform_inner_clean.hpp"
-   
-        #include "transform/transform_excluding.hpp"
-         
-        #include "transform/clean_memory/transform_excluding_clean.hpp"
-      
+        #include "transform/transform_excluding/transform_excluding.hpp"
+ 
+        #ifdef _OPENMP
+        #include "transform/transform_excluding/transform_excluding_mt.hpp"
+        #endif
+        
         #include "merge/merge_inner.hpp"
 
         #include "transform/merge/no_dupplicates/transform_merge_inner2.hpp"
         
-        #include "transform/merge/no_dupplicates/clean_memory/transform_merge_inner2_clean.hpp"
-
         #include "merge/no_dupplicates/merge_inner2.hpp"
 
         #include "merge/merge_excluding.hpp"
 
         #include "transform/merge/transform_merge_excluding.hpp"
-   
-        #include "transform/merge/clean_memory/transform_merge_excluding_clean.hpp"
    
         #include "merge/merge_excluding_both.hpp"
 
