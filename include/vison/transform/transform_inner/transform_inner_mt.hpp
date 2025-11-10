@@ -1,7 +1,7 @@
 #pragma once
 
-template <bool MemClean = false>
-void transform_inner(Dataframe &cur_obj, 
+template <unsigned int CORES = 4, bool MemClean = false>
+void transform_inner_mt(Dataframe &cur_obj, 
                 unsigned int &in_col, 
                 unsigned int &ext_col) 
 {
@@ -20,10 +20,12 @@ void transform_inner(Dataframe &cur_obj,
       lookup.insert(el);
 
     std::vector<uint8_t> mask(nrow2);
+
+    #pragma omp parallel for num_threads(CORES) schedule(static)
     for (unsigned int i = 0; i < nrow2; ++i)
         mask[i] = lookup.contains(in_colv[i]);
 
-    this->transform_filter<MemClean>(mask);
+    this->transform_filter_mt<CORES, MemClean>(mask);
     
 };
 
