@@ -301,6 +301,8 @@ namespace vison {
 
         #include "transform/transform_filter/transform_filter_range.hpp"
 
+        #include "transform/transform_filter/transform_filter_range_mt.hpp"
+
         #ifdef _OPENMP
         #include "transform/transform_filter/transform_filter_mt.hpp"
         #endif
@@ -318,6 +320,10 @@ namespace vison {
         #endif
 
         #include "pivots/pivot_uint.hpp"
+
+        #ifdef _OPENMP
+        #include "pivots/pivot_uint_mt.hpp"
+        #endif
 
         #include "pivots/pivot_dbl.hpp"
 

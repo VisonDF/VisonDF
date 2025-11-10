@@ -1,7 +1,7 @@
 #pragma once
 
 template <unsigned int CORES = 4>
-void pivot_int_mt(Dataframe &obj, 
+void pivot_uint_mt(Dataframe &obj, 
                 unsigned int &n1, 
                 unsigned int& n2, 
                 unsigned int& n3) 
@@ -14,9 +14,9 @@ void pivot_int_mt(Dataframe &obj,
     const std::vector<std::vector<unsigned int>>& matr_idx2 = obj.get_matr_idx();
     unsigned int i = 0;
     unsigned int pos_val;
-    const std::vector<int>& cur_int_v = obj.get_int_vec();
+    const std::vector<int>& cur_uint_v = obj.get_uint_vec();
 
-    for (auto& el : matr_idx2[3]) {
+    for (auto& el : matr_idx2[4]) {
       if (n3 == el) {
         pos_val = nrow2 * i;
         break;
@@ -26,7 +26,7 @@ void pivot_int_mt(Dataframe &obj,
 
     //std::unordered_map<std::pair<std::string_view, std::string_view>, int, PairHash> lookup; // standard map (slower)
     ankerl::unordered_dense::map<std::pair<std::string_view, 
-                                 std::string_view>, IntT, PairHash> lookup;
+                                 std::string_view>, UIntT, PairHash> lookup;
 
     //std::unordered_map<std::string_view, int> idx_col; // standard map (slower)
     ankerl::unordered_dense::map<std::string_view, int> idx_col;
@@ -45,12 +45,12 @@ void pivot_int_mt(Dataframe &obj,
       std::string_view row_key = row_vec[i];
       auto [row_it, row_inserted] = idx_row.try_emplace(row_key, idx_row.size());
 
-      lookup[{col_key, row_key}] += cur_int_v[pos_val + i];
+      lookup[{col_key, row_key}] += cur_uint_v[pos_val + i];
     };
     
     ncol = idx_row.size();
     nrow = idx_col.size();
-    int_v.resize(ncol * nrow);
+    uint_v.resize(ncol * nrow);
 
     std::vector<std::string> cur_vec_str(nrow);
     tmp_val_refv.resize(ncol, cur_vec_str);
@@ -63,20 +63,20 @@ void pivot_int_mt(Dataframe &obj,
         const int col_idx = idx_col.at(col_key);
         const int row_idx = idx_row.at(row_key);
     
-        int_v[col_idx * nrow + row_idx] = value;
+        uint_v[col_idx * nrow + row_idx] = value;
     
-        char buf[max_chars_needed<IntT>()];
+        char buf[max_chars_needed<UIntT>()];
         auto [ptr, ec] = std::to_chars(buf, buf + sizeof(buf), value);
         tmp_val_refv[col_idx][row_idx].assign(buf, ptr - buf);
     }
 
     name_v.resize(idx_col.size());
     i = 0;
-    matr_idx[3].resize(ncol);
+    matr_idx[4].resize(ncol);
     for (auto& [key_v, value] : idx_col) {
-      type_refv.push_back('i');
+      type_refv.push_back('u');
       name_v[value] = key_v;
-      matr_idx[3][i] = i;
+      matr_idx[4][i] = i;
       i += 1;
     };
     
