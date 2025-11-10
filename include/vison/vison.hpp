@@ -327,6 +327,10 @@ namespace vison {
 
         #include "pivots/pivot_dbl.hpp"
 
+        #ifdef _OPENMP
+        #include "pivots/pivot_dbl_mt.hpp"
+        #endif
+
         #include "transform/sort_by.hpp"
 
         #include "concat/concat.hpp"

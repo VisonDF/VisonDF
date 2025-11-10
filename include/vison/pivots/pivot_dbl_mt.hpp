@@ -1,6 +1,7 @@
 #pragma once
 
-void pivot_dbl(Dataframe &obj, 
+template <unsigned int CORES = 4>
+void pivot_dbl_mt(Dataframe &obj, 
                 unsigned int &n1, 
                 unsigned int& n2, 
                 unsigned int& n3) 
@@ -54,21 +55,21 @@ void pivot_dbl(Dataframe &obj,
     std::vector<std::string> cur_vec_str(nrow);
     tmp_val_refv.resize(ncol, cur_vec_str);
 
-    constexpr size_t buf_size = max_chars_needed<FloatT>();
-    char buf[buf_size];
-    
-    for (const auto& [key_pair, value] : lookup) {
+    #pragma omp parallel for schedule(static) num_threads(CORES)
+    for (auto it = lookup.begin(); it < lookup.end(); ++it) {
+        const auto& [key_pair, value] = *it;
         const auto& [col_key, row_key] = key_pair;
     
-        const int col_idx = idx_col[col_key];
-        const int row_idx = idx_row[row_key];
+        const int col_idx = idx_col.at(col_key);
+        const int row_idx = idx_row.at(row_key);
     
         dbl_v[col_idx * nrow + row_idx] = value;
     
+        char buf[max_chars_needed<FloatT>()];
         auto [ptr, ec] = std::to_chars(buf, buf + sizeof(buf), value);
         tmp_val_refv[col_idx][row_idx].assign(buf, ptr - buf);
     }
-    
+
     name_v.resize(idx_col.size());
     i = 0;
     matr_idx[5].resize(ncol);
