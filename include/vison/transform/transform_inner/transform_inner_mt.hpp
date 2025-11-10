@@ -1,6 +1,8 @@
 #pragma once
 
-template <unsigned int CORES = 4, bool MemClean = false>
+template <unsigned int CORES = 4, 
+        bool MemClean = false, 
+        bool SimdHash = true>
 void transform_inner_mt(Dataframe &cur_obj, 
                 unsigned int &in_col, 
                 unsigned int &ext_col) 
@@ -13,7 +15,14 @@ void transform_inner_mt(Dataframe &cur_obj,
     const unsigned int nrow2 = nrow;
 
     //std::unordered_set<std::string_view> lookup // standard set (slower);
-    ankerl::unordered_dense::set<std::string_view> lookup;
+    
+    using fast_str_set_t = std::conditional_t<
+        SimdHash,
+        ankerl::unordered_dense::set<std::string_view, simd_hash>,
+        ankerl::unordered_dense::set<std::string_view>
+    >;
+
+    fast_str_set_t lookup;
     lookup.reserve(ext_nrow);
 
     for (const auto& el : ext_colv)
