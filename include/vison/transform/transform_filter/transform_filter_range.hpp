@@ -16,7 +16,7 @@ void transform_filter_range(const std::vector<uint8_t>& mask,
         if (!mask[i]) {
           continue;
         }
-        val_tmp[nrow_local] = val_tmp[strt_vl + i];
+        val_tmp[nrow_local] = std::move(val_tmp[strt_vl + i]);
         col[nrow_local] = col[strt_vl + i];
         nrow_local += 1;
       }

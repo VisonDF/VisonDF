@@ -311,6 +311,10 @@ namespace vison {
  
         #include "transform/transform_filter/transform_filter_idx.hpp"
 
+        #ifdef _OPENMP
+        #include "transform/transform_filter/transform_filter_idx_mt.hpp"
+        #endif
+
         #include "transform/transform_unique.hpp"
 
         #include "transform/clean_memory/transform_unique_clean.hpp"
