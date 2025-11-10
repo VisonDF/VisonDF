@@ -1,6 +1,6 @@
 #pragma once
 
-template <bool SimdHash = true, bool MemClean = false>
+template <bool MemClean = false, bool SimdHash = true>
 void transform_unique(unsigned int& n) {
   
     //std::unordered_set<std::string> unic_v; // standard set (slower)
