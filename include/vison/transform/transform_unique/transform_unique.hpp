@@ -27,7 +27,7 @@ void transform_unique(unsigned int& n) {
         }
     }
 
-    this->transform_filter(mask);
+    this->transform_filter<MemClean>(mask);
 
 };
 
