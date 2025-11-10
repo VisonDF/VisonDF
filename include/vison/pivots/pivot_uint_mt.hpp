@@ -50,7 +50,7 @@ void pivot_uint_mt(Dataframe &obj,
     
     ncol = idx_row.size();
     nrow = idx_col.size();
-    uint_v.resize(ncol * nrow);
+    uint_v.resize(ncol * nrow, 0);
 
     std::vector<std::string> cur_vec_str(nrow);
     tmp_val_refv.resize(ncol, cur_vec_str);
