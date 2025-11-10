@@ -299,6 +299,8 @@ namespace vison {
    
         #include "transform/transform_filter/transform_filter.hpp"
 
+        #include "transform/transform_filter/transform_filter_range.hpp"
+
         #ifdef _OPENMP
         #include "transform/transform_filter/transform_filter_mt.hpp"
         #endif
