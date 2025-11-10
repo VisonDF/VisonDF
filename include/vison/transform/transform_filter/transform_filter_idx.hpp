@@ -9,10 +9,10 @@ void transform_filter_idx(std::vector<unsigned int>& mask)
     for (size_t i2 = 0 ; i2 < matr_idx[0].size(); i2 += 1) {
       const unsigned int& pos_vl = matr_idx[0][i2];
       std::vector<std::string>& val_tmp = tmp_val_refv[pos_vl];
-      std::vector<std::string> val_tmp2 = val_tmp;
+      const std::vector<std::string> val_tmp2 = val_tmp;
       nrow_local = 0;
       auto* col = str_v.data() + nrow * i2;
-      auto col2 = std::vector<std::string>(str_v.data() + nrow * i2, str_v.data() + nrow * (i2 + 1));
+      const auto col2 = std::vector<std::string>(str_v.data() + nrow * i2, str_v.data() + nrow * (i2 + 1));
       for (auto& pos_idx : mask) {
         val_tmp[nrow_local] = val_tmp2[pos_idx];
         col[nrow_local] = col2[pos_idx];
@@ -23,10 +23,10 @@ void transform_filter_idx(std::vector<unsigned int>& mask)
     for (size_t i2 = 0 ; i2 < matr_idx[1].size(); i2 += 1) {
       const unsigned int& pos_vl = matr_idx[1][i2];
       std::vector<std::string>& val_tmp = tmp_val_refv[pos_vl];
-      std::vector<std::string> val_tmp2 = val_tmp;
+      const std::vector<std::string> val_tmp2 = val_tmp;
       nrow_local = 0;
       auto* col = chr_v.data() + nrow * i2;
-      auto col2 = std::vector<char>(chr_v.data() + nrow * i2, chr_v.data() + nrow * (i2 + 1));
+      const auto col2 = std::vector<char>(chr_v.data() + nrow * i2, chr_v.data() + nrow * (i2 + 1));
       for (auto& pos_idx : mask) {
         val_tmp[nrow_local] = val_tmp2[pos_idx];
         col[nrow_local] = col2[pos_idx];
@@ -37,8 +37,8 @@ void transform_filter_idx(std::vector<unsigned int>& mask)
     for (size_t i2 = 0 ; i2 < matr_idx[2].size(); i2 += 1) {
       const unsigned int& pos_vl = matr_idx[2][i2];
       std::vector<std::string>& val_tmp = tmp_val_refv[pos_vl];
-      std::vector<std::string> val_tmp2 = val_tmp;
-      auto col2 = std::vector<bool>(bool_v.begin() + nrow * i2, bool_v.begin() + nrow * (i2 + 1));
+      const std::vector<std::string> val_tmp2 = val_tmp;
+      const auto col2 = std::vector<bool>(bool_v.begin() + nrow * i2, bool_v.begin() + nrow * (i2 + 1));
       nrow_local = 0;
       for (auto& pos_idx : mask) {
         val_tmp[nrow_local] = val_tmp2[pos_idx];
@@ -50,10 +50,10 @@ void transform_filter_idx(std::vector<unsigned int>& mask)
     for (size_t i2 = 0 ; i2 < matr_idx[3].size(); i2 += 1) {
       const unsigned int& pos_vl = matr_idx[3][i2];
       std::vector<std::string>& val_tmp = tmp_val_refv[pos_vl];
-      std::vector<std::string> val_tmp2 = val_tmp;
+      const std::vector<std::string> val_tmp2 = val_tmp;
       nrow_local = 0;
       auto* col = int_v.data() + nrow * i2;
-      auto col2 = std::vector<IntT>(int_v.data() + nrow * i2, int_v.data() + nrow * (i2 + 1));
+      const auto col2 = std::vector<IntT>(int_v.data() + nrow * i2, int_v.data() + nrow * (i2 + 1));
       for (auto& pos_idx : mask) {
         val_tmp[nrow_local] = val_tmp2[pos_idx];
         col[nrow_local] = col2[pos_idx];
@@ -64,10 +64,10 @@ void transform_filter_idx(std::vector<unsigned int>& mask)
     for (size_t i2 = 0 ; i2 < matr_idx[4].size(); i2 += 1) {
       const unsigned int& pos_vl = matr_idx[4][i2];
       std::vector<std::string>& val_tmp = tmp_val_refv[pos_vl];
-      std::vector<std::string> val_tmp2 = val_tmp;
+      const std::vector<std::string> val_tmp2 = val_tmp;
       nrow_local = 0;
       auto* col = uint_v.data() + nrow * i2;
-      auto col2 = std::vector<UIntT>(uint_v.data() + nrow * i2, uint_v.data() + nrow * (i2 + 1));
+      const auto col2 = std::vector<UIntT>(uint_v.data() + nrow * i2, uint_v.data() + nrow * (i2 + 1));
       for (auto& pos_idx : mask) {
         val_tmp[nrow_local] = val_tmp2[pos_idx];
         col[nrow_local] = col2[pos_idx];
@@ -79,10 +79,10 @@ void transform_filter_idx(std::vector<unsigned int>& mask)
     for (size_t i2 = 0 ; i2 < matr_idx[5].size(); i2 += 1) {
       const unsigned int& pos_vl = matr_idx[5][i2];
       std::vector<std::string>& val_tmp = tmp_val_refv[pos_vl];
-      std::vector<std::string> val_tmp2 = val_tmp;
+      const std::vector<std::string> val_tmp2 = val_tmp;
       nrow_local = 0;
       auto* col = dbl_v.data() + nrow * i2;
-      auto col2 = std::vector<FloatT>(dbl_v.data() + nrow * i2, dbl_v.data() + nrow * (i2 + 1));
+      const auto col2 = std::vector<FloatT>(dbl_v.data() + nrow * i2, dbl_v.data() + nrow * (i2 + 1));
       for (auto& pos_idx : mask) {
         val_tmp[nrow_local] = val_tmp2[pos_idx];
         col[nrow_local] = col2[pos_idx];
