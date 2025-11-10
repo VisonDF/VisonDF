@@ -1,7 +1,7 @@
 #pragma once
 
 template<unsigned int CORES = 4, bool MemClean = false>
-void transform_filter(std::vector<uint8_t>& mask) 
+void transform_filter_mt(std::vector<uint8_t>& mask) 
 {
     
     unsigned int nrow2 = nrow;
