@@ -25,8 +25,16 @@ void pivot_uint_mt(Dataframe &obj,
     };
 
     //std::unordered_map<std::pair<std::string_view, std::string_view>, int, PairHash> lookup; // standard map (slower)
-    ankerl::unordered_dense::map<std::pair<std::string_view, 
-                                 std::string_view>, UIntT, PairHash> lookup;
+
+    using fast_pair_str_map_t = std::conditional_t<
+        SimdHash,
+        ankerl::unordered_dense::map<std::pair<std::string_view, 
+                                 std::string_view>, IntT, SimdPairHash>,
+        ankerl::unordered_dense::map<std::pair<std::string_view, 
+                                 std::string_view>, IntT, PairHash>
+    >;
+
+    fast_pair_str_map_t lookup;
 
     using fast_str_map_t = std::conditional_t<
         SimdHash,
