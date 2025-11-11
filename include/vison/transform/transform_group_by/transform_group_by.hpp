@@ -13,7 +13,7 @@ void transform_group_by(std::vector<unsigned int>& x,
     map_t lookup;
     lookup.reserve(nrow);
 
-    std::vector<std::string> key_vec(nrow);
+    std::vector<std::string_view> key_vec(nrow);
 
     std::string key;
     key.reserve(128); 
