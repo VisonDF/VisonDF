@@ -13,11 +13,6 @@ void transform_group_by(std::vector<unsigned int>& x,
     map_t lookup;
     lookup.reserve(nrow);
 
-    std::vector<unsigned int> occ_v;
-    occ_v.reserve(nrow);
-    std::vector<std::string> occ_v_str;
-    occ_v_str.reserve(nrow);
-
     std::vector<std::string> key_vec(nrow);
 
     std::string key;
@@ -35,9 +30,9 @@ void transform_group_by(std::vector<unsigned int>& x,
         key_vec[i] = it->first;
     }
 
-    occ_v.resize(nrow);
-    occ_v_str.resize(nrow);
-    
+    std::vector<unsigned int> occ_v(nrow);
+    std::vector<std::string> occ_v_str(nrow);
+
     size_t i = 0;
     for (auto& key : key_vec) {
         unsigned int count = lookup[key];
