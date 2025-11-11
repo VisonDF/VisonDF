@@ -20,7 +20,7 @@ void transform_group_by_mt(std::vector<unsigned int>& x,
     {
         const int tid = omp_get_thread_num();
         map_t& local = thread_maps[tid];
-        local.reserve(rows_per_thread / 2);
+        local.reserve(rows_per_thread / 1.5);
 
         std::string key;
         key.reserve(128);
@@ -39,7 +39,7 @@ void transform_group_by_mt(std::vector<unsigned int>& x,
     }
 
     map_t lookup;
-    lookup.reserve(nrow);
+    lookup.reserve(nrow / 1.5);
     for (auto& local : thread_maps)
         for (auto& [key, count] : local)
             lookup[key] += count;
