@@ -29,6 +29,7 @@ void transform_group_by_mt(std::vector<unsigned int>& x,
         #pragma omp for schedule(static)
         for (size_t i = 0; i < nrow; ++i) {
 
+            key.clear();
             if (key.capacity() < total_key_len) {
                 key.reserve(total_key_len); 
             }
@@ -43,7 +44,7 @@ void transform_group_by_mt(std::vector<unsigned int>& x,
             const size_t used = dst - key.data();
             key.resize(used);  
 
-            auto [it, inserted] = local.try_emplace(key, 0);
+            auto [it, inserted] = local.try_emplace(std::move(key), 0);
             ++(it->second);
             key_vec[i] = it->first;
 
