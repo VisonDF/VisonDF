@@ -1,6 +1,6 @@
 #pragma once
 
-template <bool SimdHash = true>
+template <bool SimdHash = true, bool First = false>
 void transform_left_join_simd(Dataframe &obj, 
                 const unsigned int &key1, 
                 const unsigned int &key2,
@@ -84,7 +84,11 @@ void transform_left_join_simd(Dataframe &obj,
     map_t lookup;
     lookup.reserve(col2.size());
     for (size_t i = 0; i < col2.size(); i += 1) {
-      lookup.emplace(col2[i], i);
+      if constexpr (First) {
+          lookup.try_emplace(col2[i], i);
+      } else if constexpr (!First) {
+          lookup[col2[i]] = i;
+      }
     };
 
     const unsigned int& nrow2 = obj.get_nrow();
