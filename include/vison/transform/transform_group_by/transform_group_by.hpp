@@ -21,7 +21,6 @@ void transform_group_by(std::vector<unsigned int>& x,
 
     for (unsigned int i = 0; i < nrow; ++i) {
 
-        key.clear();
         if (key.capacity() < total_key_len) {
             key.reserve(total_key_len); 
         }
