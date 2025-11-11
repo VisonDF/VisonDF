@@ -23,15 +23,25 @@ void transform_group_by_mt(std::vector<unsigned int>& x,
         local.reserve(rows_per_thread / 1.5);
 
         std::string key;
-        key.reserve(128);
+        const size_t total_key_len = 128;
+        key.reserve(total_key_len);
 
         #pragma omp for schedule(static)
         for (size_t i = 0; i < nrow; ++i) {
-            key.clear();
-            for (size_t j = 0; j < x.size(); ++j) {
-                key += tmp_val_refv[x[j]][i];
-                key += '\x1F';
+
+            if (key.capacity() < total_key_len) {
+                key.reserve(total_key_len); 
             }
+            char* dst = key.data(); 
+            for (size_t j = 0; j < x.size(); ++j) { 
+                const auto& src = tmp_val_refv[x[j]][i]; 
+                memcpy(dst, src.data(), src.size()); 
+                dst += src.size(); 
+                *dst++ = '\x1F'; 
+            }
+
+            const size_t used = dst - key.data();
+            key.resize(used);  
 
             auto [it, inserted] = local.try_emplace(key, 0);
             ++(it->second);
