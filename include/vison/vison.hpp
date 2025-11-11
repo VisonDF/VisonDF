@@ -323,7 +323,7 @@ namespace vison {
         #include "transform/transform_unique/transform_unique_mt.hpp"
         #endif
 
-        #include "transform/transform_group_by.hpp"
+        #include "transform/transform_group_by/transform_group_by.hpp"
         
         #include "pivots/pivot_int.hpp"
 
