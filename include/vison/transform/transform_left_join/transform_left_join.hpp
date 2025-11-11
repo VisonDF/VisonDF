@@ -77,8 +77,8 @@ void transform_left_join(Dataframe &obj,
 
     using map_t = std::conditional_t<
         SimdHash,
-        std::unordered_map<std::string_view, size_t, simd_hash>,
-        std::unordered_map<std::string_view, size_t>
+        ankerl::unordered_map<std::string_view, size_t, simd_hash>,
+        ankerl::unordered_map<std::string_view, size_t>
     >;
 
     map_t lookup;
@@ -101,10 +101,10 @@ void transform_left_join(Dataframe &obj,
         size_t dst_col = ncol + src_col;
 
         std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
-        std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
+        const std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
 
         auto* dst_val = str_v.data() + nrow * (size_str + t);
-        auto* src_val = str_v2.data() + nrow2 * t;
+        const auto* src_val = str_v2.data() + nrow2 * t;
 
         for (size_t i = 0; i < nrow; ++i) {
             size_t j = match_idx[i];
@@ -120,10 +120,10 @@ void transform_left_join(Dataframe &obj,
         size_t dst_col = ncol + src_col;
 
         std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
-        std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
+        const std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
 
         auto* dst_val = chr_v.data() + nrow * (size_chr + t);
-        auto* src_val = chr_v2.data() + nrow2 * t;
+        const auto* src_val = chr_v2.data() + nrow2 * t;
 
         for (size_t i = 0; i < nrow; ++i) {
             size_t j = match_idx[i];
@@ -139,10 +139,10 @@ void transform_left_join(Dataframe &obj,
         size_t dst_col = ncol + src_col;
 
         std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
-        std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
+        const std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
 
         auto* dst_val = bool_v.begin() + nrow * (size_bool + t);
-        auto* src_val = bool_v2.begin() + nrow2 * t;
+        const auto* src_val = bool_v2.begin() + nrow2 * t;
 
         for (size_t i = 0; i < nrow; ++i) {
             size_t j = match_idx[i];
@@ -158,10 +158,10 @@ void transform_left_join(Dataframe &obj,
         size_t dst_col = ncol + src_col;
 
         std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
-        std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
+        const std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
 
         auto* dst_val = int_v.data() + nrow * (size_int + t);
-        auto* src_val = int_v2.data() + nrow2 * t;
+        const auto* src_val = int_v2.data() + nrow2 * t;
 
         for (size_t i = 0; i < nrow; ++i) {
             size_t j = match_idx[i];
@@ -177,10 +177,10 @@ void transform_left_join(Dataframe &obj,
         size_t dst_col = ncol + src_col;
 
         std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
-        std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
+        const std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
 
         auto* dst_val = uint_v.data() + nrow * (size_uint + t);
-        auto* src_val = uint_v2.data() + nrow2 * t;
+        const auto* src_val = uint_v2.data() + nrow2 * t;
 
         for (size_t i = 0; i < nrow; ++i) {
             size_t j = match_idx[i];
@@ -196,10 +196,10 @@ void transform_left_join(Dataframe &obj,
         size_t dst_col = ncol + src_col;
 
         std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
-        std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
+        const std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
 
         auto* dst_val = dbl_v.data() + nrow * (size_dbl + t);
-        auto* src_val = dbl_v2.data() + nrow2 * t;
+        const auto* src_val = dbl_v2.data() + nrow2 * t;
 
         for (size_t i = 0; i < nrow; ++i) {
             size_t j = match_idx[i];
