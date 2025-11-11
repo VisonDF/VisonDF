@@ -1,7 +1,7 @@
 #pragma once
 
 template <bool SimdHash = true>
-void transform_left_join(Dataframe &obj, 
+void transform_left_join_simd(Dataframe &obj, 
                 const unsigned int &key1, 
                 const unsigned int &key2,
                 const std::string default_str = "NA",
@@ -97,117 +97,163 @@ void transform_left_join(Dataframe &obj,
     }
 
     for (size_t t = 0; t < matr_idx2[0].size(); ++t) {
-        size_t src_col = matr_idx2[0][t];
-        size_t dst_col = ncol + src_col;
+        const size_t src_col = matr_idx2[0][t];
+        const size_t dst_col = ncol + src_col;
 
         std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
         const std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
 
-        auto* dst_val = str_v.data() + nrow * (size_str + t);
-        const auto* src_val = str_v2.data() + nrow2 * t;
+        auto* __restrict dst_val = str_v.data() + nrow * (size_str + t);
+        const auto* __restrict src_val = str_v2.data() + nrow2 * t;
 
         for (size_t i = 0; i < nrow; ++i) {
             size_t j = match_idx[i];
             if (j != SIZE_MAX) {
                 dst_val[i] = src_val[j];
+            }
+        }
+
+        for (size_t i = 0; i < nrow; ++i) {
+            size_t j = match_idx[i];
+            if (j != SIZE_MAX) {
                 val_tmp[i] = val_tmp2[j];
             }
         }
+
     }   
 
     for (size_t t = 0; t < matr_idx2[1].size(); ++t) {
-        size_t src_col = matr_idx2[1][t];
-        size_t dst_col = ncol + src_col;
+        const size_t src_col = matr_idx2[1][t];
+        const size_t dst_col = ncol + src_col;
 
         std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
         const std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
 
-        auto* dst_val = chr_v.data() + nrow * (size_chr + t);
-        const auto* src_val = chr_v2.data() + nrow2 * t;
+        auto* __restrict dst_val = chr_v.data() + nrow * (size_chr + t);
+        const auto* __restrict src_val = chr_v2.data() + nrow2 * t;
 
+        #pragma omp simd
         for (size_t i = 0; i < nrow; ++i) {
             size_t j = match_idx[i];
             if (j != SIZE_MAX) {
                 dst_val[i] = src_val[j];
+            }
+        }
+
+        for (size_t i = 0; i < nrow; ++i) {
+            size_t j = match_idx[i];
+            if (j != SIZE_MAX) {
                 val_tmp[i] = val_tmp2[j];
             }
         }
+
     }   
     
     for (size_t t = 0; t < matr_idx2[2].size(); ++t) {
-        size_t src_col = matr_idx2[2][t];
-        size_t dst_col = ncol + src_col;
+        const size_t src_col = matr_idx2[2][t];
+        const size_t dst_col = ncol + src_col;
 
         std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
         const std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
 
-        auto* dst_val = bool_v.begin() + nrow * (size_bool + t);
-        const auto* src_val = bool_v2.begin() + nrow2 * t;
+        auto dst_val = bool_v.begin() + nrow * (size_bool + t);
+        const auto src_val = bool_v2.begin() + nrow2 * t;
 
         for (size_t i = 0; i < nrow; ++i) {
             size_t j = match_idx[i];
             if (j != SIZE_MAX) {
                 dst_val[i] = src_val[j];
+            }
+        }
+
+        for (size_t i = 0; i < nrow; ++i) {
+            size_t j = match_idx[i];
+            if (j != SIZE_MAX) {
                 val_tmp[i] = val_tmp2[j];
             }
         }
+
     }   
     
     for (size_t t = 0; t < matr_idx2[3].size(); ++t) {
-        size_t src_col = matr_idx2[3][t];
-        size_t dst_col = ncol + src_col;
+        const size_t src_col = matr_idx2[3][t];
+        const size_t dst_col = ncol + src_col;
 
         std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
         const std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
 
-        auto* dst_val = int_v.data() + nrow * (size_int + t);
-        const auto* src_val = int_v2.data() + nrow2 * t;
+        auto* __restrict dst_val = int_v.data() + nrow * (size_int + t);
+        const auto* __restrict src_val = int_v2.data() + nrow2 * t;
 
+        #pragma omp simd
         for (size_t i = 0; i < nrow; ++i) {
             size_t j = match_idx[i];
             if (j != SIZE_MAX) {
                 dst_val[i] = src_val[j];
+            }
+        }
+
+        for (size_t i = 0; i < nrow; ++i) {
+            size_t j = match_idx[i];
+            if (j != SIZE_MAX) {
                 val_tmp[i] = val_tmp2[j];
             }
         }
+
     }
 
     for (size_t t = 0; t < matr_idx2[4].size(); ++t) {
-        size_t src_col = matr_idx2[4][t];
-        size_t dst_col = ncol + src_col;
+        const size_t src_col = matr_idx2[4][t];
+        const size_t dst_col = ncol + src_col;
 
         std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
         const std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
 
-        auto* dst_val = uint_v.data() + nrow * (size_uint + t);
-        const auto* src_val = uint_v2.data() + nrow2 * t;
+        auto* __restrict dst_val = uint_v.data() + nrow * (size_uint + t);
+        const auto* __restrict src_val = uint_v2.data() + nrow2 * t;
 
+        #pragma omp simd
         for (size_t i = 0; i < nrow; ++i) {
             size_t j = match_idx[i];
             if (j != SIZE_MAX) {
                 dst_val[i] = src_val[j];
+            }
+        }
+
+        for (size_t i = 0; i < nrow; ++i) {
+            size_t j = match_idx[i];
+            if (j != SIZE_MAX) {
                 val_tmp[i] = val_tmp2[j];
             }
         }
+
     }
 
     for (size_t t = 0; t < matr_idx2[5].size(); ++t) {
-        size_t src_col = matr_idx2[5][t];
-        size_t dst_col = ncol + src_col;
+        const size_t src_col = matr_idx2[5][t];
+        const size_t dst_col = ncol + src_col;
 
         std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
         const std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
 
-        auto* dst_val = dbl_v.data() + nrow * (size_dbl + t);
-        const auto* src_val = dbl_v2.data() + nrow2 * t;
+        auto* __restrict dst_val = dbl_v.data() + nrow * (size_dbl + t);
+        const auto* __restrict src_val = dbl_v2.data() + nrow2 * t;
 
+        #pragma omp simd
         for (size_t i = 0; i < nrow; ++i) {
             size_t j = match_idx[i];
             if (j != SIZE_MAX) {
                 dst_val[i] = src_val[j];
+            }
+        }
+
+        for (size_t i = 0; i < nrow; ++i) {
+            size_t j = match_idx[i];
+            if (j != SIZE_MAX) {
                 val_tmp[i] = val_tmp2[j];
             }
         }
+
     }   
 
     type_refv.insert(type_refv.end(), vec_type.begin(), vec_type.end());
