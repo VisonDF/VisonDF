@@ -14,7 +14,7 @@ void transform_group_by_mt(std::vector<unsigned int>& x,
     const size_t rows_per_thread = (nrow + n_threads - 1) / n_threads;
 
     std::vector<map_t> thread_maps(n_threads);
-    std::vector<std::string> key_vec(nrow); 
+    std::vector<std::string_view> key_vec(nrow); 
 
     #pragma omp parallel num_threads(n_threads)
     {
@@ -33,8 +33,10 @@ void transform_group_by_mt(std::vector<unsigned int>& x,
                 key += '\x1F';
             }
 
-            ++local[key];
-            key_vec[i] = key; 
+            auto [it, inserted] = local.try_emplace(key, 0);
+            ++(it->second);
+            key_vec[i] = it->first;
+
         }
     }
 
@@ -49,7 +51,7 @@ void transform_group_by_mt(std::vector<unsigned int>& x,
 
     #pragma omp parallel for schedule(static)
     for (size_t i = 0; i < nrow; ++i) {
-        const std::string& key = key_vec[i];
+        const std::string_view key = key_vec[i];
         unsigned int count = lookup[key];
         occ_v[i] = count;
 
@@ -67,4 +69,6 @@ void transform_group_by_mt(std::vector<unsigned int>& x,
     type_refv.push_back('u');
     ++ncol;
 }
+
+
 
