@@ -16,14 +16,25 @@ void transform_group_by(std::vector<unsigned int>& x,
     std::vector<std::string_view> key_vec(nrow);
 
     std::string key;
-    key.reserve(128); 
+    const size_t total_key_len = 128;
+    key.reserve(total_key_len); 
 
     for (unsigned int i = 0; i < nrow; ++i) {
+
         key.clear();
-        for (size_t j = 0; j < x.size(); ++j) {
-            key += tmp_val_refv[x[j]][i];
-            key += '\x1F';
+        if (key.capacity() < total_key_len) {
+            key.reserve(total_key_len); 
         }
+        char* dst = key.data(); 
+        for (size_t j = 0; j < x.size(); ++j) { 
+            const auto& src = tmp_val_refv[x[j]][i]; 
+            memcpy(dst, src.data(), src.size()); 
+            dst += src.size(); 
+            *dst++ = '\x1F'; 
+        }
+
+        const size_t used = dst - key.data();
+        key.resize(used);  
 
         auto [it, inserted] = lookup.try_emplace(key, 0);
         ++(it->second);
