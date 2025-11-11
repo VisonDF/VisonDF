@@ -297,7 +297,7 @@ namespace vison {
         
         #include "merge/no_dupplicates/merge_all2.hpp"
 
-        #include "transform/transform_left_join.hpp"
+        #include "transform/transform_left_join/transform_left_join.hpp"
    
         #include "transform/transform_filter/transform_filter.hpp"
 
