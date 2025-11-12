@@ -64,7 +64,11 @@ void type_classification() {
 
         std::move(r.str_v.begin(),  r.str_v.end(),  str_v.begin() + off_str[i]);
         std::move(r.chr_v.begin(),  r.chr_v.end(),  chr_v.begin() + off_chr[i]);
-        std::move(r.bool_v.begin(), r.bool_v.end(), bool_v.begin() + off_bool[i]);
+        #pragma omp critical(bool_move)
+        {
+            std::move(r.bool_v.begin(), r.bool_v.end(), bool_v.begin() + off_bool[i]);
+        }
+        //std::move(r.bool_v.begin(), r.bool_v.end(), bool_v.begin() + off_bool[i]);
         std::move(r.int_v.begin(),  r.int_v.end(),  int_v.begin()  + off_int[i]);
         std::move(r.uint_v.begin(), r.uint_v.end(), uint_v.begin() + off_uint[i]);
         std::move(r.dbl_v.begin(),  r.dbl_v.end(),  dbl_v.begin() + off_dbl[i]);
