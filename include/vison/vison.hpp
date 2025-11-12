@@ -313,11 +313,11 @@ namespace vison {
         #include "transform/transform_left_join/transform_left_join_aligned_mt.hpp"
         #endif
 
-        #include "transform/transform_left_join/one_to_many/transform_left_join_otm.hpp"
+        #include "one_to_many_join/otm.hpp"
 
         #ifdef _OPENMP
-        #include "transform/transform_left_join/one_to_many/transform_left_join_otm_simd.hpp"
-        #include "transform/transform_left_join/one_to_many/transform_left_join_otm_mt.hpp"
+        #include "one_to_many_join/otm_simd.hpp"
+        #include "one_to_many_join/otm_mt.hpp"
         #endif
 
         #include "transform/transform_filter/transform_filter.hpp"

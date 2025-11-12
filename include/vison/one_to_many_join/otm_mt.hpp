@@ -1,7 +1,7 @@
 #pragma once
 
 template <unsigned int CORES = 4, bool Nested = true, bool SimdHash = true>
-void transform_left_join_otm_mt(Dataframe &obj_l,
+void otm_mt(Dataframe &obj_l,
                              Dataframe &obj_r,
                              const unsigned int &key1, 
                              const unsigned int &key2,

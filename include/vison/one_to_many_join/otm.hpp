@@ -1,7 +1,7 @@
 #pragma once
 
 template <bool SimdHash = true>
-void transform_left_join_otm(Dataframe &obj_l,
+void otm(Dataframe &obj_l,
                              Dataframe &obj_r,
                              const unsigned int &key1, 
                              const unsigned int &key2,
