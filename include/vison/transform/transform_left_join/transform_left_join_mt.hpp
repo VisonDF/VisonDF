@@ -166,32 +166,61 @@ void transform_left_join_mt(Dataframe &obj,
 
         }   
  
+        //#pragma omp for schedule(static) nowait
+        //for (size_t t = 0; t < matr_idx2[2].size(); ++t) {
+        //    const size_t src_col = matr_idx2[2][t];
+        //    const size_t dst_col = ncol + src_col;
+
+        //    std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
+        //    const std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
+
+        //    auto dst_val = bool_v.begin() + nrow * (size_bool + t);
+        //    const auto src_val = bool_v2.begin() + nrow2 * t;
+
+        //    for (size_t i = 0; i < nrow; ++i) {
+        //        size_t j = match_idx[i];
+        //        if (j != SIZE_MAX) {
+        //            dst_val[i] = src_val[j];
+        //        }
+        //    }
+
+        //    for (size_t i = 0; i < nrow; ++i) {
+        //        size_t j = match_idx[i];
+        //        if (j != SIZE_MAX) {
+        //            val_tmp[i] = val_tmp2[j];
+        //        }
+        //    }
+
+        //}
+
         #pragma omp for schedule(static) nowait
         for (size_t t = 0; t < matr_idx2[2].size(); ++t) {
             const size_t src_col = matr_idx2[2][t];
             const size_t dst_col = ncol + src_col;
-
+        
             std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
             const std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
-
+        
             auto dst_val = bool_v.begin() + nrow * (size_bool + t);
             const auto src_val = bool_v2.begin() + nrow2 * t;
-
-            for (size_t i = 0; i < nrow; ++i) {
-                size_t j = match_idx[i];
-                if (j != SIZE_MAX) {
-                    dst_val[i] = src_val[j];
+        
+            #pragma omp critical(bool_write)
+            {
+                for (size_t i = 0; i < nrow; ++i) {
+                    size_t j = match_idx[i];
+                    if (j != SIZE_MAX) {
+                        dst_val[i] = src_val[j];
+                    }
                 }
             }
-
+        
             for (size_t i = 0; i < nrow; ++i) {
                 size_t j = match_idx[i];
                 if (j != SIZE_MAX) {
                     val_tmp[i] = val_tmp2[j];
                 }
             }
-
-        }   
+        }
  
         #pragma omp for schedule(static) nowait
         for (size_t t = 0; t < matr_idx2[3].size(); ++t) {
