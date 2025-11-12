@@ -253,6 +253,7 @@ void transform_left_join_otm(Dataframe &obj_l,
                     while (k + run_len < matches.size() && matches[k + run_len] == matches[k + run_len - 1] + 1)
                         ++run_len;
                     std::memcpy(dst_val + out, src_val + start, run_len * sizeof(char));
+                    std::copy_n(val_tmp2.begin() + start, run_len, val_tmp.begin() + out);
                     out += run_len;
                     k += run_len;
                 }
@@ -371,6 +372,7 @@ void transform_left_join_otm(Dataframe &obj_l,
                     while (k + run_len < matches.size() && matches[k + run_len] == matches[k + run_len - 1] + 1)
                         ++run_len;
                     std::memcpy(dst_val + out, src_val + start, run_len * sizeof(IntT));
+                    std::copy_n(val_tmp2.begin() + start, run_len, val_tmp.begin() + out);
                     out += run_len;
                     k += run_len;
                 }
@@ -437,6 +439,7 @@ void transform_left_join_otm(Dataframe &obj_l,
                     while (k + run_len < matches.size() && matches[k + run_len] == matches[k + run_len - 1] + 1)
                         ++run_len;
                     std::memcpy(dst_val + out, src_val + start, run_len * sizeof(UIntT));
+                    std::copy_n(val_tmp2.begin() + start, run_len, val_tmp.begin() + out);
                     out += run_len;
                     k += run_len;
                 }
@@ -503,6 +506,7 @@ void transform_left_join_otm(Dataframe &obj_l,
                     while (k + run_len < matches.size() && matches[k + run_len] == matches[k + run_len - 1] + 1)
                         ++run_len;
                     std::memcpy(dst_val + out, src_val + start, run_len * sizeof(FloatT));
+                    std::copy_n(val_tmp2.begin() + start, run_len, val_tmp.begin() + out);
                     out += run_len;
                     k += run_len;
                 }
