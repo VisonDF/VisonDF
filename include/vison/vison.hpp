@@ -308,6 +308,10 @@ namespace vison {
 
         #include "transform/transform_left_join/transform_left_join_aligned.hpp"
 
+        #ifdef _OPENMP
+        #include "transform/transform_left_join/transform_left_join_aligned_simd.hpp"
+        #endif
+
         #include "transform/transform_filter/transform_filter.hpp"
 
         #ifdef _OPENMP
