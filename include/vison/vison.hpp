@@ -69,6 +69,8 @@ namespace vison {
   
     #include "types/inference_type.hpp"
 
+    #include "inlines/transform_aligned/match_group.inl"
+
     template <typename Types = DefaultTypes>
     class Dataframe{
       private:
@@ -303,6 +305,8 @@ namespace vison {
         #include "transform/transform_left_join/transform_left_join_simd.hpp"
         #include "transform/transform_left_join/transform_left_join_mt.hpp"
         #endif
+
+        #include "transform/transform_left_join/transform_left_join_aligned.hpp"
 
         #include "transform/transform_filter/transform_filter.hpp"
 
