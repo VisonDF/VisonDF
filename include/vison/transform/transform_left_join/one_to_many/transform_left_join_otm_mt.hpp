@@ -1,7 +1,7 @@
 #pragma once
 
-template <bool SimdHash = true>
-void transform_left_join_otm(Dataframe &obj_l,
+template <unsigned int CORES = 4, bool Nested = true, bool SimdHash = true>
+void transform_left_join_otm_mt(Dataframe &obj_l,
                              Dataframe &obj_r,
                              const unsigned int &key1, 
                              const unsigned int &key2,
@@ -124,17 +124,24 @@ void transform_left_join_otm(Dataframe &obj_l,
 
     std::vector<std::vector<size_t>> match_idx(nrow1);
     std::vector<size_t> rep_v(nrow1);
-    for (size_t i = 0; i < nrow1; ++i) {
+    
+    #pragma omp parallel for schedule(static)
+    for (ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(nrow1); ++i) {
         auto it = lookup.find(col1[i]);
         if (it != lookup.end()) {
-            match_idx[i] = it->second;
-            nrow += it->second.size();
-            rep_v[i] = match_idx[i].size();
+            match_idx[i] = it->second;          
+            rep_v[i]     = match_idx[i].size(); 
         } else {
-            nrow += 1;
             rep_v[i] = 1;
         }
     }
+
+    // calculate the tot number of rows safely
+    std::vector<size_t> out_offset(nrow1, 0);
+    for (size_t i = 1; i < nrow1; ++i) {
+       out_offset[i] = out_offset[i-1] + rep_v[i-1];
+    }
+    size_t nrow = out_offset.back() + rep_v.back();
 
     str_v. resize(nrow * (size_str1  + size_str2),  default_str);
     chr_v. resize(nrow * (size_chr1  + size_chr2),  default_chr);
@@ -147,30 +154,45 @@ void transform_left_join_otm(Dataframe &obj_l,
     vec_str.resize(nrow, default_str);
     tmp_val_refv.insert(tmp_val_refv.end(), ncol1 + ncol2, vec_str);
 
-    for (size_t t = 0; t < matr_idx1[0].size(); ++t) {
+    #pragma omp parallel for schedule(static)
+    for (ptrdiff_t t = 0; t < static_cast<ptrdiff_t>(matr_idx1[0].size()); ++t) {
         size_t dst_col = matr_idx1[0][t];
-
         std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
         const std::vector<std::string>& val_tmp2 = tmp_val_refv1[dst_col];
-
+    
         auto*       dst_val = str_v.data()  + nrow  * t;
         const auto* src_val = str_v1.data() + nrow1 * t;
-        
-        size_t out = 0;
-        for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
-            const size_t repeat = rep_v[i_ref];
-        
-            const std::string& v1 = src_val[i_ref];
-            const std::string& v2 = val_tmp2[i_ref];
-        
-            for (size_t r = 0; r < repeat; ++r, ++out) {
-                dst_val[out] = v1;
-                val_tmp[out] = v2;
+   
+        if constexpr (Nested) {
+            #pragma omp parallel for schedule(static)
+            for (ptrdiff_t i_ref = 0; i_ref < static_cast<ptrdiff_t>(nrow1); ++i_ref) {
+                const size_t base = out_offset[i_ref];
+                const size_t repeat = rep_v[i_ref];
+                const std::string& v1 = src_val[i_ref];
+                const std::string& v2 = val_tmp2[i_ref];
+                for (size_t r = 0; r < repeat; ++r) {
+                    dst_val[base + r] = v1;
+                    val_tmp[base + r] = v2;
+                }
+            }
+        } else {
+            size_t out = 0;
+            for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
+                const size_t repeat = rep_v[i_ref];
+            
+                const std::string& v1 = src_val[i_ref];
+                const std::string& v2 = val_tmp2[i_ref];
+            
+                for (size_t r = 0; r < repeat; ++r, ++out) {
+                    dst_val[out] = v1;
+                    val_tmp[out] = v2;
+                }
             }
         }
     }
 
-    for (size_t t = 0; t < matr_idx2b[0].size(); ++t) {
+    #pragma omp parallel for schedule(static)
+    for (ptrdiff_t t = 0; t < static_cast<ptrdiff_t>(matr_idx2b[0].size()); ++t) {
         size_t dst_col = matr_idx2b[0][t];
         size_t src_col = matr_idx2[0][t];
 
@@ -180,25 +202,42 @@ void transform_left_join_otm(Dataframe &obj_l,
         auto*       dst_val = str_v.data()  + nrow  * (size_str1 + t);
         const auto* src_val = str_v2.data() + nrow2 * t;
 
-        size_t out = 0;  
-        for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
-            const auto& matches = match_idx[i_ref]; 
+        if constexpr (Nested) {
+            #pragma omp parallel for schedule(static)
+            for (ptrdiff_t i_ref = 0; i_ref < static_cast<ptrdiff_t>(nrow1); ++i_ref) {
+                size_t out = out_offset[i_ref];
+                const auto& matches = match_idx[i_ref]; 
 
-            if (!matches.empty()) {
-                for (size_t j_idx : matches) {
-                    dst_val[out] = src_val[j_idx];
-                    val_tmp[out] = val_tmp2[j_idx];
+                if (!matches.empty()) {
+                    for (size_t j_idx : matches) {
+                        dst_val[out] = src_val[j_idx];
+                        val_tmp[out] = val_tmp2[j_idx];
+                        ++out;
+                    }
+                } else {
                     ++out;
                 }
-            } else {
-                ++out;
+            }
+        } else if constexpr (!Nested) {
+            size_t out = 0;
+            for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
+                const auto& matches = match_idx[i_ref]; 
+
+                if (!matches.empty()) {
+                    for (size_t j_idx : matches) {
+                        dst_val[out] = src_val[j_idx];
+                        val_tmp[out] = val_tmp2[j_idx];
+                        ++out;
+                    }
+                } else {
+                    ++out;
+                }
             }
         }
-
     }
 
-
-    for (size_t t = 0; t < matr_idx1[1].size(); ++t) {
+    #pragma omp parallel for schedule(static)
+    for (ptrdiff_t t = 0; t < static_cast<ptrdiff_t>(matr_idx1[1].size()); ++t) {
         size_t dst_col = matr_idx1[1][t];
 
         std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
@@ -206,22 +245,56 @@ void transform_left_join_otm(Dataframe &obj_l,
 
         auto*       dst_val = chr_v.data()  + nrow  * t;
         const auto* src_val = chr_v1.data() + nrow1 * t;
-        
-        size_t out = 0;
-        for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
-            const size_t repeat = rep_v[i_ref];
-        
-            const char& v1 = src_val[i_ref];
-            const std::string& v2 = val_tmp2[i_ref];
-        
-            for (size_t r = 0; r < repeat; ++r, ++out) {
-                dst_val[out] = v1;
-                val_tmp[out] = v2;
+       
+        if constexpr (Nested) {
+            #pragma omp parallel for schedule(static)
+            for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
+                const size_t repeat = rep_v[i_ref];
+            
+                const char& v1 = src_val[i_ref];
+                const std::string& v2 = val_tmp2[i_ref];
+            
+                const size_t out = out_offset[i_ref];
+                size_t pre_out = out;
+
+                #pragma omp simd
+                for (size_t r = 0; r < repeat; ++r) {
+                    dst_val[pre_out + r] = v1;
+                }
+
+                for (size_t r = 0; r < repeat; ++r) {
+                    val_tmp[pre_out + r] = v2;
+                }
+
+            }
+        } else if constexpr (!Nested) {
+            size_t out = 0;
+            for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
+                const size_t repeat = rep_v[i_ref];
+            
+                const char& v1 = src_val[i_ref];
+                const std::string& v2 = val_tmp2[i_ref];
+            
+                size_t pre_out = out;
+
+                #pragma omp simd
+                for (size_t r = 0; r < repeat; ++r) {
+                    dst_val[pre_out + r] = v1;
+                }
+
+                out += repeat;
+                pre_out = out - repeat;
+
+                for (size_t r = 0; r < repeat; ++r) {
+                    val_tmp[pre_out + r] = v2;
+                }
+
             }
         }
     }
 
-    for (size_t t = 0; t < matr_idx2b[1].size(); ++t) {
+    #pragma omp parallel for schedule(static)
+    for (ptrdiff_t t = 0; t < static_cast<ptrdiff_t>(matr_idx2b[1].size()); ++t) {
         size_t dst_col = matr_idx2b[1][t];
         size_t src_col = matr_idx2[1][t];
 
@@ -231,34 +304,67 @@ void transform_left_join_otm(Dataframe &obj_l,
         auto*       dst_val = chr_v.data()  + nrow  * (size_chr1 + t);
         const auto* src_val = chr_v2.data() + nrow2 * t;
 
-        size_t out = 0;  
-        for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
-            const auto& matches = match_idx[i_ref]; 
+        if constexpr (Nested) {
+            #pragma omp parallel for schedule(static)
+            for (ptrdiff_t i_ref = 0; i_ref < static_cast<ptrdiff_t>(nrow1); ++i_ref) {
+                size_t out = out_offset[i_ref];
+                auto& matches = match_idx[i_ref]; 
 
-            if (!matches.empty()) {
+                if (!matches.empty()) {
 
-                if (matches.size() <= 4) {
-                    for (size_t j_idx : matches) {
-                        dst_val[out] = src_val[j_idx];
-                        val_tmp[out] = val_tmp2[j_idx];
-                        ++out;
+                    if (matches.size() <= 4) {
+                        for (size_t j_idx : matches) {
+                            dst_val[out] = src_val[j_idx];
+                            val_tmp[out] = val_tmp2[j_idx];
+                            ++out;
+                        }
+                        continue;
                     }
-                    continue;
-                }
 
-                std::sort(matches.begin(), matches.end());
-                for (size_t k = 0; k < matches.size();) {
-                    size_t start = matches[k];
-                    size_t run_len = 1;
-                    while (k + run_len < matches.size() && matches[k + run_len] == matches[k + run_len - 1] + 1)
-                        ++run_len;
-                    std::memcpy(dst_val + out, src_val + start, run_len * sizeof(char));
-                    out += run_len;
-                    k += run_len;
-                }
+                    std::sort(matches.begin(), matches.end());
+                    for (size_t k = 0; k < matches.size();) {
+                        size_t start = matches[k];
+                        size_t run_len = 1;
+                        while (k + run_len < matches.size() && matches[k + run_len] == matches[k + run_len - 1] + 1)
+                            ++run_len;
+                        std::memcpy(dst_val + out, src_val + start, run_len * sizeof(char));
+                        out += run_len;
+                        k += run_len;
+                    }
 
-            } else {
-                ++out;
+                }
+            }
+
+        } else if constexpr (!Nested) {
+            size_t out = 0;  
+            for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
+                const auto& matches = match_idx[i_ref]; 
+
+                if (!matches.empty()) {
+
+                    if (matches.size() <= 4) {
+                        for (size_t j_idx : matches) {
+                            dst_val[out] = src_val[j_idx];
+                            val_tmp[out] = val_tmp2[j_idx];
+                            ++out;
+                        }
+                        continue;
+                    }
+
+                    std::sort(matches.begin(), matches.end());
+                    for (size_t k = 0; k < matches.size();) {
+                        size_t start = matches[k];
+                        size_t run_len = 1;
+                        while (k + run_len < matches.size() && matches[k + run_len] == matches[k + run_len - 1] + 1)
+                            ++run_len;
+                        std::memcpy(dst_val + out, src_val + start, run_len * sizeof(char));
+                        out += run_len;
+                        k += run_len;
+                    }
+
+                } else {
+                    ++out;
+                }
             }
         }
 
@@ -332,11 +438,21 @@ void transform_left_join_otm(Dataframe &obj_l,
         
             const IntT& v1 = src_val[i_ref];
             const std::string& v2 = val_tmp2[i_ref];
-        
-            for (size_t r = 0; r < repeat; ++r, ++out) {
-                dst_val[out] = v1;
-                val_tmp[out] = v2;
+
+            size_t pre_out = out;
+
+            #pragma omp simd
+            for (size_t r = 0; r < repeat; ++r) {
+                dst_val[pre_out + r] = v1;
             }
+
+            out += repeat;
+            pre_out = out - repeat;
+
+            for (size_t r = 0; r < repeat; ++r) {
+                val_tmp[pre_out + r] = v2;
+            }
+            
         }
     }
 
@@ -352,7 +468,7 @@ void transform_left_join_otm(Dataframe &obj_l,
 
         size_t out = 0;  
         for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
-            auto& matches = match_idx[i_ref]; 
+            const auto& matches = match_idx[i_ref]; 
 
             if (!matches.empty()) {
 
@@ -365,6 +481,7 @@ void transform_left_join_otm(Dataframe &obj_l,
                     continue;
                 }
 
+                std::sort(matches.begin(), matches.end());
                 for (size_t k = 0; k < matches.size();) {
                     size_t start = matches[k];
                     size_t run_len = 1;
@@ -399,10 +516,20 @@ void transform_left_join_otm(Dataframe &obj_l,
             const UIntT& v1 = src_val[i_ref];
             const std::string& v2 = val_tmp2[i_ref];
         
-            for (size_t r = 0; r < repeat; ++r, ++out) {
-                dst_val[out] = v1;
-                val_tmp[out] = v2;
+            size_t pre_out = out;
+
+            #pragma omp simd
+            for (size_t r = 0; r < repeat; ++r) {
+                dst_val[pre_out + r] = v1;
             }
+
+            out += repeat;
+            pre_out = out - repeat;
+
+            for (size_t r = 0; r < repeat; ++r) {
+                val_tmp[pre_out + r] = v2;
+            }
+
         }
     }
 
@@ -418,7 +545,7 @@ void transform_left_join_otm(Dataframe &obj_l,
 
         size_t out = 0;  
         for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
-            auto& matches = match_idx[i_ref]; 
+            const auto& matches = match_idx[i_ref]; 
 
             if (!matches.empty()) {
 
@@ -431,6 +558,7 @@ void transform_left_join_otm(Dataframe &obj_l,
                     continue;
                 }
 
+                std::sort(matches.begin(), matches.end());
                 for (size_t k = 0; k < matches.size();) {
                     size_t start = matches[k];
                     size_t run_len = 1;
@@ -464,11 +592,21 @@ void transform_left_join_otm(Dataframe &obj_l,
         
             const FloatT& v1 = src_val[i_ref];
             const std::string& v2 = val_tmp2[i_ref];
-        
-            for (size_t r = 0; r < repeat; ++r, ++out) {
-                dst_val[out] = v1;
-                val_tmp[out] = v2;
+
+            size_t pre_out = out;
+
+            #pragma omp simd
+            for (size_t r = 0; r < repeat; ++r) {
+                dst_val[pre_out + r] = v1;
             }
+
+            out += repeat;
+            pre_out = out - repeat;
+
+            for (size_t r = 0; r < repeat; ++r) {
+                val_tmp[pre_out + r] = v2;
+            }
+        
         }
     }
 
@@ -479,12 +617,12 @@ void transform_left_join_otm(Dataframe &obj_l,
         std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
         const std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
 
-        auto*       dst_val = dbl_v.data()  + nrow  * (size_dbl1 + t);
-        const auto* src_val = dbl_v2.data() + nrow2 * t;
+        auto*       __restrict dst_val = dbl_v.data()  + nrow  * (size_dbl1 + t);
+        const auto* __restrict src_val = dbl_v2.data() + nrow2 * t;
 
         size_t out = 0;  
         for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
-            auto& matches = match_idx[i_ref]; 
+            const auto& matches = match_idx[i_ref];
 
             if (!matches.empty()) {
 
@@ -497,6 +635,7 @@ void transform_left_join_otm(Dataframe &obj_l,
                     continue;
                 }
 
+                std::sort(matches.begin(), matches.end());
                 for (size_t k = 0; k < matches.size();) {
                     size_t start = matches[k];
                     size_t run_len = 1;
