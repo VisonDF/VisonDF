@@ -352,7 +352,7 @@ void transform_left_join_otm(Dataframe &obj_l,
 
         size_t out = 0;  
         for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
-            const auto& matches = match_idx[i_ref]; 
+            auto& matches = match_idx[i_ref]; 
 
             if (!matches.empty()) {
 
@@ -419,7 +419,7 @@ void transform_left_join_otm(Dataframe &obj_l,
 
         size_t out = 0;  
         for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
-            const auto& matches = match_idx[i_ref]; 
+            auto& matches = match_idx[i_ref]; 
 
             if (!matches.empty()) {
 
@@ -486,7 +486,7 @@ void transform_left_join_otm(Dataframe &obj_l,
 
         size_t out = 0;  
         for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
-            const auto& matches = match_idx[i_ref]; 
+            auto& matches = match_idx[i_ref]; 
 
             if (!matches.empty()) {
 
