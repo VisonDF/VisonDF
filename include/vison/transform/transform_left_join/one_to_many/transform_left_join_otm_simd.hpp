@@ -385,7 +385,6 @@ void transform_left_join_otm_simd(Dataframe &obj_l,
                     continue;
                 }
 
-                std::sort(matches.begin(), matches.end());
                 for (size_t k = 0; k < matches.size();) {
                     size_t start = matches[k];
                     size_t run_len = 1;
@@ -462,7 +461,6 @@ void transform_left_join_otm_simd(Dataframe &obj_l,
                     continue;
                 }
 
-                std::sort(matches.begin(), matches.end());
                 for (size_t k = 0; k < matches.size();) {
                     size_t start = matches[k];
                     size_t run_len = 1;
@@ -539,7 +537,6 @@ void transform_left_join_otm_simd(Dataframe &obj_l,
                     continue;
                 }
 
-                std::sort(matches.begin(), matches.end());
                 for (size_t k = 0; k < matches.size();) {
                     size_t start = matches[k];
                     size_t run_len = 1;
