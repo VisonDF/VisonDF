@@ -123,22 +123,19 @@ void transform_left_join_otm_simd(Dataframe &obj_l,
     nrow = 0;
 
     std::vector<std::vector<size_t>> match_idx(nrow1);
+    std::vector<size_t> rep_v(nrow1);
     for (size_t i = 0; i < nrow1; ++i) {
         auto it = lookup.find(col1[i]);
         if (it != lookup.end()) {
             match_idx[i] = it->second;
             nrow += it->second.size();
+            rep_v[i] = match_idx[i].size();
         } else {
             nrow += 1;
+            rep_v[i] = 1;
         }
     }
-
-    std::vector<size_t> rep_v(nrow1);
-    for (size_t i = 0; i < nrow1; ++i) {
-        const auto& matches = match_idx[i];
-        rep_v[i] = matches.empty() ? 1 : matches.size();
-    }
-
+    
     str_v. resize(nrow * (size_str1  + size_str2),  default_str);
     chr_v. resize(nrow * (size_chr1  + size_chr2),  default_chr);
     bool_v.resize(nrow * (size_bool1 + size_bool2),  default_bool);
