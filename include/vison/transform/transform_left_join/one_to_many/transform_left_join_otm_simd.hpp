@@ -1,7 +1,7 @@
 #pragma once
 
 template <bool SimdHash = true>
-void transform_left_join_otm(Dataframe &obj_l,
+void transform_left_join_otm_simd(Dataframe &obj_l,
                              Dataframe &obj_r,
                              const unsigned int &key1, 
                              const unsigned int &key2,
@@ -217,10 +217,20 @@ void transform_left_join_otm(Dataframe &obj_l,
             const char& v1 = src_val[i_ref];
             const std::string& v2 = val_tmp2[i_ref];
         
-            for (size_t r = 0; r < repeat; ++r, ++out) {
-                dst_val[out] = v1;
-                val_tmp[out] = v2;
+            size_t pre_out = out;
+
+            #pragma omp simd
+            for (size_t r = 0; r < repeat; ++r) {
+                dst_val[pre_out + r] = v1;
             }
+
+            out += repeat;
+            pre_out = out - repeat;
+
+            for (size_t r = 0; r < repeat; ++r) {
+                val_tmp[pre_out + r] = v2;
+            }
+
         }
     }
 
@@ -335,11 +345,21 @@ void transform_left_join_otm(Dataframe &obj_l,
         
             const IntT& v1 = src_val[i_ref];
             const std::string& v2 = val_tmp2[i_ref];
-        
-            for (size_t r = 0; r < repeat; ++r, ++out) {
-                dst_val[out] = v1;
-                val_tmp[out] = v2;
+
+            size_t pre_out = out;
+
+            #pragma omp simd
+            for (size_t r = 0; r < repeat; ++r) {
+                dst_val[pre_out + r] = v1;
             }
+
+            out += repeat;
+            pre_out = out - repeat;
+
+            for (size_t r = 0; r < repeat; ++r) {
+                val_tmp[pre_out + r] = v2;
+            }
+            
         }
     }
 
@@ -403,10 +423,20 @@ void transform_left_join_otm(Dataframe &obj_l,
             const UIntT& v1 = src_val[i_ref];
             const std::string& v2 = val_tmp2[i_ref];
         
-            for (size_t r = 0; r < repeat; ++r, ++out) {
-                dst_val[out] = v1;
-                val_tmp[out] = v2;
+            size_t pre_out = out;
+
+            #pragma omp simd
+            for (size_t r = 0; r < repeat; ++r) {
+                dst_val[pre_out + r] = v1;
             }
+
+            out += repeat;
+            pre_out = out - repeat;
+
+            for (size_t r = 0; r < repeat; ++r) {
+                val_tmp[pre_out + r] = v2;
+            }
+
         }
     }
 
@@ -469,11 +499,21 @@ void transform_left_join_otm(Dataframe &obj_l,
         
             const FloatT& v1 = src_val[i_ref];
             const std::string& v2 = val_tmp2[i_ref];
-        
-            for (size_t r = 0; r < repeat; ++r, ++out) {
-                dst_val[out] = v1;
-                val_tmp[out] = v2;
+
+            size_t pre_out = out;
+
+            #pragma omp simd
+            for (size_t r = 0; r < repeat; ++r) {
+                dst_val[pre_out + r] = v1;
             }
+
+            out += repeat;
+            pre_out = out - repeat;
+
+            for (size_t r = 0; r < repeat; ++r) {
+                val_tmp[pre_out + r] = v2;
+            }
+        
         }
     }
 
@@ -484,12 +524,12 @@ void transform_left_join_otm(Dataframe &obj_l,
         std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
         const std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
 
-        auto*       dst_val = dbl_v.data()  + nrow  * (size_dbl1 + t);
-        const auto* src_val = dbl_v2.data() + nrow2 * t;
+        auto*       __restrict dst_val = dbl_v.data()  + nrow  * (size_dbl1 + t);
+        const auto* __restrict src_val = dbl_v2.data() + nrow2 * t;
 
         size_t out = 0;  
         for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
-            const auto& matches = match_idx[i_ref]; 
+            const auto& matches = match_idx[i_ref];
 
             if (!matches.empty()) {
 

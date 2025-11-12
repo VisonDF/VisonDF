@@ -315,6 +315,10 @@ namespace vison {
 
         #include "transform/transform_left_join/one_to_many/transform_left_join_otm.hpp"
 
+        #ifdef _OPENMP
+        #include "transform/transform_left_join/one_to_many/transform_left_join_otm_simd.hpp"
+        #endif
+
         #include "transform/transform_filter/transform_filter.hpp"
 
         #ifdef _OPENMP
