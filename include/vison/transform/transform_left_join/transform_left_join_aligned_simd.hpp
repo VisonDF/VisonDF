@@ -30,8 +30,6 @@ void transform_left_join_aligned_simd(Dataframe &obj,
     const unsigned int size_uint = matr_idx[4].size();
     const unsigned int size_dbl  = matr_idx[5].size();
     
-    unsigned int i2;
-    
     std::vector<std::string> vec_str(nrow, default_str);
     tmp_val_refv.insert(tmp_val_refv.end(), ncol2, vec_str);
 
