@@ -41,20 +41,36 @@ void transform_filter_mt(std::vector<uint8_t>& mask)
         }
       };
 
+      //#pragma omp for schedule(static) nowait
+      //for (size_t i2 = 0 ; i2 < matr_idx[2].size(); i2 += 1) {
+      //  const unsigned int& pos_vl = matr_idx[2][i2];
+      //  std::vector<std::string>& val_tmp = tmp_val_refv[pos_vl];
+      //  unsigned int nrow_local = 0;
+      //  for (size_t i = 0; i < mask.size(); ++i) {
+      //    if (!mask[i]) {
+      //      continue;
+      //    }
+      //    val_tmp[nrow_local] = val_tmp[i];
+      //    bool_v[nrow2 * i2 + nrow_local] = bool_v[nrow2 * i2 + i];
+      //    nrow_local += 1;
+      //  }
+      //};
+
       #pragma omp for schedule(static) nowait
-      for (size_t i2 = 0 ; i2 < matr_idx[2].size(); i2 += 1) {
-        const unsigned int& pos_vl = matr_idx[2][i2];
-        std::vector<std::string>& val_tmp = tmp_val_refv[pos_vl];
-        unsigned int nrow_local = 0;
-        for (size_t i = 0; i < mask.size(); ++i) {
-          if (!mask[i]) {
-            continue;
+      for (size_t i2 = 0 ; i2 < matr_idx[2].size(); i2++) {
+          const unsigned int& pos_vl = matr_idx[2][i2];
+          std::vector<std::string>& val_tmp = tmp_val_refv[pos_vl];
+          unsigned int nrow_local = 0;
+          for (size_t i = 0; i < mask.size(); ++i) {
+              if (!mask[i]) continue;
+              val_tmp[nrow_local] = val_tmp[i];
+              #pragma omp critical(bool_write)
+              {
+                  bool_v[nrow2 * i2 + nrow_local] = bool_v[nrow2 * i2 + i];
+              }
+              nrow_local += 1;
           }
-          val_tmp[nrow_local] = val_tmp[i];
-          bool_v[nrow2 * i2 + nrow_local] = bool_v[nrow2 * i2 + i];
-          nrow_local += 1;
-        }
-      };
+      }
 
       #pragma omp for schedule(static) nowait
       for (size_t i2 = 0 ; i2 < matr_idx[3].size(); i2 += 1) {
