@@ -24,7 +24,7 @@ inline void histogram_pass_u32_avx512_16buckets(
     // SIMD main loop: process 16 keys per iteration
     for (; i + 16 <= n; i += 16) {
         // optional prefetch ahead
-        __builtin_prefetch(tkeys + i + 64, 0, 1);
+        __builtin_prefetch(tkeys + i + 128, 0, 1);
 
         __m512i v = _mm512_loadu_si512(
             reinterpret_cast<const void*>(tkeys + i)

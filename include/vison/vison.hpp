@@ -80,6 +80,7 @@ namespace vison {
     #include "inlines/radix_sorts/details/scatter_pass_u32_avx512.inl"
 
     #include "inlines/radix_sorts/radix_sort_int32.inl"
+    #include "inlines/radix_sorts/radix_sort_int32_mt.inl"
     #include "inlines/radix_sorts/radix_sort_int64.inl"
     #include "inlines/radix_sorts/radix_sort_uint32.inl"
     #include "inlines/radix_sorts/radix_sort_uint32.inl"

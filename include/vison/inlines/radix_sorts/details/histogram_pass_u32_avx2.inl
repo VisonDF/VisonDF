@@ -14,6 +14,8 @@ inline void histogram_pass_u32_avx2(
 
     // Process 8 keys per iteration
     for (; i + 8 <= n; i += 8) {
+   
+        __builtin_prefetch(tkeys + i + 64, 0, 1);
         // Load 8 x uint32_t
         __m256i v = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(tkeys + i));
 
