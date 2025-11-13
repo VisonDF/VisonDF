@@ -71,6 +71,18 @@ namespace vison {
 
     #include "inlines/transform_aligned/match_group.inl"
 
+    #include "inlines/transform/sort_by/permute_block_bool.inl"
+    #include "inlines/transform/sort_by/permute_block.inl"
+    #include "inlines/transform/sort_by/sort_idx_bool.inl"
+    #include "inlines/transform/sort_by/sort_idx_using_span.inl"
+    #include "inlines/transform/sort_by/sort_idx_using_span_string.inl"
+
+    #include "inlines/radix_sorts/radix_sort_int32.inl"
+    #include "inlines/radix_sorts/radix_sort_int64.inl"
+    #include "inlines/radix_sorts/radix_sort_uint32.inl"
+    #include "inlines/radix_sorts/radix_sort_uint32.inl"
+    #include "inlines/radix_sorts/radix_sort_uint8.inl"
+
     template <typename Types = DefaultTypes>
     class Dataframe{
       private:
@@ -368,7 +380,7 @@ namespace vison {
         #include "pivots/pivot_dbl_mt.hpp"
         #endif
 
-        #include "transform/sort_by.hpp"
+        #include "transform/sort_by/sort_by.hpp"
 
         #include "concat/concat.hpp"
             
