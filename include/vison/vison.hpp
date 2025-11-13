@@ -71,17 +71,25 @@ namespace vison {
 
     #include "inlines/transform_aligned/match_group.inl"
 
-    #include "inlines/transform/sort_by/permute_block_bool.inl"
-    #include "inlines/transform/sort_by/permute_block.inl"
-    #include "inlines/transform/sort_by/sort_idx_bool.inl"
-    #include "inlines/transform/sort_by/sort_idx_using_span.inl"
-    #include "inlines/transform/sort_by/sort_idx_using_span_string.inl"
+    #include "inlines/radix_sorts/details/constants.inl"
+    #include "inlines/radix_sorts/details/get_local_histogram_16x.inl"
+    #include "inlines/radix_sorts/details/get_local_histogram_8x.inl"
+    #include "inlines/radix_sorts/details/histogram_pass_u32_avx2_8buckets.inl"
+    #include "inlines/radix_sorts/details/histogram_pass_u32_avx2.inl"
+    #include "inlines/radix_sorts/details/histogram_pass_u32_avx512_16buckets.inl"
+    #include "inlines/radix_sorts/details/scatter_pass_u32_avx512.inl"
 
     #include "inlines/radix_sorts/radix_sort_int32.inl"
     #include "inlines/radix_sorts/radix_sort_int64.inl"
     #include "inlines/radix_sorts/radix_sort_uint32.inl"
     #include "inlines/radix_sorts/radix_sort_uint32.inl"
     #include "inlines/radix_sorts/radix_sort_uint8.inl"
+
+    #include "inlines/transform/sort_by/permute_block_bool.inl"
+    #include "inlines/transform/sort_by/permute_block.inl"
+    #include "inlines/transform/sort_by/sort_idx_bool.inl"
+    #include "inlines/transform/sort_by/sort_idx_using_span.inl"
+    #include "inlines/transform/sort_by/sort_idx_using_span_string.inl"
 
     template <typename Types = DefaultTypes>
     class Dataframe{
