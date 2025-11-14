@@ -23,10 +23,6 @@ inline void radix_sort_int16_mt(const int16_t* keys,
     for (size_t i = 0; i < n; i++)
         tkeys[i] = uint16_t(keys[i]) ^ 0x8000u;
 
-    #pragma omp parallel for num_threads(THREADS)
-    for (size_t i = 0; i < n; i++)
-        idx[i] = i;
-
     auto range = [&](int t) {
         size_t chunk = n / THREADS;
         size_t rem   = n % THREADS;
