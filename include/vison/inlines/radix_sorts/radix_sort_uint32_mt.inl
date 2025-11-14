@@ -89,8 +89,9 @@ inline void radix_sort_int32_mt(const uint32_t* keys,
                 for (unsigned t = 0; t < CORES; t++)
                     sum += hist[t][b];
             } else if constexpr (CORES < 16) {
-                sum = hist[0][b] + hist[1][b] + hist[2][b] + hist[3][b]
-                    + hist[4][b] + hist[5][b] + hist[6][b] + hist[7][b];
+                for (unsigned t = 0; t < CORES; t++)
+                    sum += hist[t][b];
+
             }
             bucket_size[b] = sum;
         }
