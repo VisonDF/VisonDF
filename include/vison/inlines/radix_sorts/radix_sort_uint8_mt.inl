@@ -118,6 +118,6 @@ inline void radix_sort_uint8_mt(const uint8_t* keys,
         }
     }
 
- }
+}
 
 
