@@ -6,8 +6,8 @@ inline void histogram_pass_u8_avx2(
     size_t* count
 )
 {
-    alignas(64) size_t local[RADIX_KI8];
-    memset(local, 0, sizeof(local));
+    //alignas(64) size_t local[RADIX_KI8];
+    //memset(local, 0, sizeof(local));
 
     size_t i = 0;
 
@@ -21,21 +21,21 @@ inline void histogram_pass_u8_avx2(
         alignas(32) uint8_t b[32];
         _mm256_store_si256((__m256i*)b, v);
 
-        local[b[0]]++;  local[b[1]]++;  local[b[2]]++;  local[b[3]]++;
-        local[b[4]]++;  local[b[5]]++;  local[b[6]]++;  local[b[7]]++;
-        local[b[8]]++;  local[b[9]]++;  local[b[10]]++; local[b[11]]++;
-        local[b[12]]++; local[b[13]]++; local[b[14]]++; local[b[15]]++;
-        local[b[16]]++; local[b[17]]++; local[b[18]]++; local[b[19]]++;
-        local[b[20]]++; local[b[21]]++; local[b[22]]++; local[b[23]]++;
-        local[b[24]]++; local[b[25]]++; local[b[26]]++; local[b[27]]++;
-        local[b[28]]++; local[b[29]]++; local[b[30]]++; local[b[31]]++;
+        count[b[0]]++;  count[b[1]]++;  count[b[2]]++;  count[b[3]]++;
+        count[b[4]]++;  count[b[5]]++;  count[b[6]]++;  count[b[7]]++;
+        count[b[8]]++;  count[b[9]]++;  count[b[10]]++; count[b[11]]++;
+        count[b[12]]++; count[b[13]]++; count[b[14]]++; count[b[15]]++;
+        count[b[16]]++; count[b[17]]++; count[b[18]]++; count[b[19]]++;
+        count[b[20]]++; count[b[21]]++; count[b[22]]++; count[b[23]]++;
+        count[b[24]]++; count[b[25]]++; count[b[26]]++; count[b[27]]++;
+        count[b[28]]++; count[b[29]]++; count[b[30]]++; count[b[31]]++;
     }
 
     for (; i < n; i++)
-        local[data[i]]++;
+        count[data[i]]++;
 
-    for (size_t b = 0; b < RADIX_KI8; b++)
-        count[b] = local[b];
+    //for (size_t b = 0; b < RADIX_KI8; b++)
+    //    count[b] = local[b];
 }
 
 

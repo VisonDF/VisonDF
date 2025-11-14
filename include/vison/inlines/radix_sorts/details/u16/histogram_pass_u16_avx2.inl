@@ -6,8 +6,8 @@ inline void histogram_pass_u16_avx2(
     size_t* count
 )
 {
-    alignas(64) size_t local[RADIX_KI16];
-    memset(local, 0, sizeof(local));
+    //alignas(64) size_t local[RADIX_KI16];
+    //memset(local, 0, sizeof(local));
 
     size_t i = 0;
 
@@ -23,17 +23,17 @@ inline void histogram_pass_u16_avx2(
         _mm256_store_si256((__m256i*)b, v);
 
         // Increment buckets
-        local[b[0]]++;  local[b[1]]++;  local[b[2]]++;  local[b[3]]++;
-        local[b[4]]++;  local[b[5]]++;  local[b[6]]++;  local[b[7]]++;
-        local[b[8]]++;  local[b[9]]++;  local[b[10]]++; local[b[11]]++;
-        local[b[12]]++; local[b[13]]++; local[b[14]]++; local[b[15]]++;
+        count[b[0]]++;  count[b[1]]++;  count[b[2]]++;  count[b[3]]++;
+        count[b[4]]++;  count[b[5]]++;  count[b[6]]++;  count[b[7]]++;
+        count[b[8]]++;  count[b[9]]++;  count[b[10]]++; count[b[11]]++;
+        count[b[12]]++; count[b[13]]++; count[b[14]]++; count[b[15]]++;
     }
 
     for (; i < n; i++)
-        local[data[i]]++;
+        count[data[i]]++;
 
-    for (size_t k = 0; k < RADIX_KI16; k++)
-        count[k] = local[k];
+    //for (size_t k = 0; k < RADIX_KI16; k++)
+    //    count[k] = local[k];
     
 }
 
