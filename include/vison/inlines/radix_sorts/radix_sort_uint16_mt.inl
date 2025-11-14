@@ -57,7 +57,6 @@ inline void radix_sort_uint16_mt(const uint16_t* keys,
         } else
 #endif
         {
-            std::memset(h, 0, RADIX_KI16 * sizeof(size_t));
             for (size_t i = beg; i < end; i++)
                 h[keys[i]]++;
         }
@@ -66,11 +65,11 @@ inline void radix_sort_uint16_mt(const uint16_t* keys,
     // ====================================================
     // 2) COMBINE HISTOGRAMS
     // ====================================================
-    #pragma omp parallel for num_threads(CORES)
+    #pragma omp parallel for num_threads(THREADS)
     for (size_t b = 0; b < RADIX_KI16; b++) {
         size_t sum = 0;
 
-        if constexpr (CORES >= 16) {
+        if constexpr (THREADS >= 16) {
             #pragma unroll
             for (unsigned t = 0; t < THREADS; t++)
                 sum += hist[t][b];
@@ -93,7 +92,7 @@ inline void radix_sort_uint16_mt(const uint16_t* keys,
     // ====================================================
     // 4) PER-THREAD BUCKET OFFSETS
     // ====================================================
-    #pragma omp parallel for num_threads(CORES)
+    #pragma omp parallel for num_threads(THREADS)
     for (size_t b = 0; b < RADIX_KI16; b++) {
         size_t base = bucket_base[b];
         for (unsigned t = 0; t < THREADS; t++) {
