@@ -54,13 +54,11 @@ void sort_by(unsigned int& n) {
           }
           case 'i':
           {
-              auto values = std::span<const IntT>(int_v.data() + col_id * nrow, nrow);
               sort_idx_using_span_integers<ASC>(idx, nrow, col_id);
               break;
           }
           case 'u':
           {
-              auto values = std::span<const UIntT>(uint_v.data() + col_id * nrow, nrow);
               sort_idx_using_span_uintegers<ASC>(idx, nrow, col_id);
               break;
           }
