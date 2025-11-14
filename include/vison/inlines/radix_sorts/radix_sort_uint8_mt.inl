@@ -66,11 +66,11 @@ inline void radix_sort_uint8_mt(const uint8_t* keys,
     // ====================================================
     // 2) COMBINE HISTOGRAMS
     // ====================================================
-    #pragma omp parallel for num_threads(CORES)
+    #pragma omp parallel for num_threads(THREADS)
     for (size_t b = 0; b < RADIX_KI8; b++) {
         size_t sum = 0;
 
-        if constexpr (CORES >= 16) {
+        if constexpr (THREADS >= 16) {
             #pragma unroll
             for (unsigned t = 0; t < THREADS; t++)
                 sum += hist[t][b];
@@ -93,7 +93,7 @@ inline void radix_sort_uint8_mt(const uint8_t* keys,
     // ====================================================
     // 4) PER-THREAD BUCKET OFFSETS
     // ====================================================
-    #pragma omp parallel for num_threads(CORES)
+    #pragma omp parallel for num_threads(THREADS)
     for (size_t b = 0; b < RADIX_KI8; b++) {
         size_t base = bucket_base[b];
         for (unsigned t = 0; t < THREADS; t++) {
