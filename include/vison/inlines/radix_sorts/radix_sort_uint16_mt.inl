@@ -19,10 +19,6 @@ inline void radix_sort_uint16_mt(const uint16_t* keys,
     std::vector<std::vector<size_t>>
         thread_off(THREADS, std::vector<size_t>(RADIX_KI16));
 
-    #pragma omp parallel for num_threads(THREADS)
-    for (size_t i = 0; i < n; i++)
-        idx[i] = i;
-
     auto range = [&](int t) {
         size_t chunk = n / THREADS;
         size_t rem   = n % THREADS;
