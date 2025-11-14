@@ -106,11 +106,22 @@ inline void radix_sort_uint8_mt(const uint8_t* keys,
     // 5) PARALLEL STABLE SCATTER
     // ====================================================
     #pragma omp parallel num_threads(THREADS)
-    //#if defined(__AVX512F__) 
-    //if constexpr (Simd) {
-    //    scatter_pass_u8_avx512(keys, idx, n);
-    //} else
-    //#endif
+    #if defined(__AVX512F__) 
+    if constexpr (Simd) {
+        int t = omp_get_thread_num();
+        auto [beg, end] = range(t);
+        size_t len = end - beg;
+        size_t* off = thread_off[t].data();
+        
+        scatter_pass_u8_avx512_mt(
+            keys + beg,   
+            idx,          
+            beg,          
+            len,
+            off           
+        );
+    } else
+    #endif
         {
             int t = omp_get_thread_num();
             auto [beg, end] = range(t);
