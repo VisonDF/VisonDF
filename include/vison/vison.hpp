@@ -95,6 +95,7 @@ namespace vison {
     #include "inlines/radix_sorts/details/u32/histogram_pass_u32_avx2.inl"
     #include "inlines/radix_sorts/details/u32/histogram_pass_u32_avx512_16buckets.inl"
     #include "inlines/radix_sorts/details/u32/scatter_pass_u32_avx512.inl"
+    #include "inlines/radix_sorts/details/u32/scatter_pass_u32_avx512_mt.inl"
 
     #include "inlines/radix_sorts/radix_sort_uint8.inl"
     #include "inlines/radix_sorts/radix_sort_uint8_mt.inl"
