@@ -101,6 +101,7 @@ namespace vison {
     #include "inlines/radix_sorts/details/u64/get_local_histogram_16x.inl"
     #include "inlines/radix_sorts/details/u64/get_local_histogram_8x.inl" 
     #include "inlines/radix_sorts/details/u64/histogram_pass_u64_avx2.inl"
+    #include "inlines/radix_sorts/details/u64/histogram_pass_u64_avx2_8x.inl"
 
 
     #include "inlines/radix_sorts/radix_sort_uint8.inl"
