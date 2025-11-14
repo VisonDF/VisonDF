@@ -11,7 +11,7 @@ inline void histogram_pass_u32_avx2_8buckets(
 {
     const __m256i mask = _mm256_set1_epi32(0xFFFF);
 
-    size_t* __restrict local = get_local_histogram_8x();
+    size_t* __restrict local = get_local_histogram_8x_u32();
     memset(local, 0, RADIX_LANES * RADIX_KI32 * sizeof(size_t));
 
     size_t* lanes[RADIX_LANES] = {

@@ -10,7 +10,7 @@ inline void histogram_pass_u32_avx512_16buckets(
     const __m512i mask = _mm512_set1_epi32(0xFFFF);
 
     // 16 independent histograms: [lane][bucket]
-    size_t* __restrict local = get_local_histogram_16x();
+    size_t* __restrict local = get_local_histogram_16x_u32();
     memset(local, 0, RADIX_LANES_AVX512 * RADIX_KI32 * sizeof(size_t));
 
     // Precompute lane pointers: lanes[lane][bucket]
