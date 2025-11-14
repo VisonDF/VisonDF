@@ -57,7 +57,6 @@ inline void radix_sort_uint8_mt(const uint8_t* keys,
         } else
 #endif
         {
-            std::memset(h, 0, RADIX_KI8 * sizeof(size_t));
             for (size_t i = beg; i < end; i++)
                 h[keys[i]]++;
         }
