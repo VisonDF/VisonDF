@@ -13,9 +13,8 @@ inline void radix_sort_uint32(const uint32_t* keys,
     std::vector<size_t> tmp(n);
     std::vector<size_t> count(RADIX_KI32);
 
-    // signed → unsigned transform
     for (size_t i = 0; i < n; i++)
-        tkeys[i] = keys[idx[i]];
+        tkeys[i] = keys[i];
 
     // 2 passes, each processing 16 bits of the 32-bit key.
     // pass = 0 → least significant 16 bits

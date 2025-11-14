@@ -15,7 +15,7 @@ inline void radix_sort_int32(const int32_t* keys,
 
     // signed → unsigned transform
     for (size_t i = 0; i < n; i++)
-        tkeys[i] = U(keys[idx[i]]) ^ 0x80000000u;
+        tkeys[i] = U(keys[i]) ^ 0x80000000u;
 
     // 2 passes, each processing 16 bits of the 32-bit key.
     // pass = 0 → least significant 16 bits

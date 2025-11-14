@@ -17,7 +17,7 @@ inline void radix_sort_int32_mt(const uint32_t* keys,
     // Pre-build transformed keys
     #pragma omp parallel for num_threads(THREADS)
     for (size_t i = 0; i < n; i++)
-        tkeys[i] = keys[idx[i]];
+        tkeys[i] = keys[i];
 
     // Per-thread histograms
     std::vector<std::vector<size_t>>
