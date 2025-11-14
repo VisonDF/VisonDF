@@ -8,7 +8,7 @@ inline void histogram_pass_u8_avx2_8buckets(
 {
 
     size_t* __restrict local = get_local_histogram_8x_u8();
-    memset(local, 0, RADIX_LANES * RADIX_KI32 * sizeof(size_t));
+    memset(local, 0, RADIX_LANES * RADIX_KI8 * sizeof(size_t));
 
     // lane pointers
     size_t* lane0 = local + 0 * RADIX_KI8;
