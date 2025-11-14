@@ -138,7 +138,7 @@ inline void radix_sort_int32_mt(const uint32_t* keys,
         // ----------------------------------------------------
         #pragma omp parallel for num_threads(THREADS)
         for (size_t i = 0; i < n; i++)
-            tkeys[i] = (uint32_t(keys[idx[i]]) ^ 0x80000000u);
+            tkeys[i] = keys[idx[i]];
     }
 }
 

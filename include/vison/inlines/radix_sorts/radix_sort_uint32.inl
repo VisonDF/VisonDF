@@ -82,7 +82,7 @@ inline void radix_sort_uint32(const uint32_t* keys,
 
         // Rebuild transformed keys in the new order for the next pass.
         for (size_t i = 0; i < n; i++)
-            tkeys[i] = (uint32_t(keys[idx[i]]) ^ 0x80000000u);
+            tkeys[i] = keys[idx[i]];
     }
 }
 
