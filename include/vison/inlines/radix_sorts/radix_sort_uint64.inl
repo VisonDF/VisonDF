@@ -1,38 +1,73 @@
 #pragma once
 
+template <bool Simd = true>
 inline void radix_sort_uint64(const uint64_t* keys, size_t* idx, size_t n)
 {
-    constexpr size_t K = 1 << 16;      
-    size_t* count = new size_t[K];
-    size_t* tmp_idx = new size_t[n];
+    if (n == 0) return;
+
+    std::vector<size_t> count(RADIX_KI64);
+    std::vector<size_t> tmp_idx(n);
+    std::vector<uint64_t> tkeys(n);
+
+    for (size_t i = 0; i < n; i++) {
+        idx[i] = i;
+        tkeys[i] = keys[i];
+    }
 
     for (size_t pass = 0; pass < 4; pass++)
     {
-        memset(count, 0, K * sizeof(size_t));
         size_t shift = pass * 16;
 
+        if constexpr (Simd) {
         
-        for (size_t i = 0; i < n; i++)
-            count[(keys[idx[i]] >> shift) & 0xFFFF]++;
+        #if defined(__AVX512F__)
+            histogram_pass_u64_avx512_16buckets(tkeys.data(), n, shift, count.data());
+            
+        #elif defined(__AVX2__)
+            if (n < 200'000) {
+                memset(count.data(), 0, RADIX_KI64 * sizeof(size_t));
+                histogram_pass_u64_avx2(tkeys.data(), n, shift, count.data());
+            } else {
+                histogram_pass_u64_avx2_8buckets(tkeys.data(), n, shift, count.data());
+            }
+        #endif
+        
+        } else {
+            memset(count.data(), 0, RADIX_KI64 * sizeof(size_t));
+            for (size_t i = 0; i < n; ++i)
+                count[(tkeys[i] >> shift) & 0xFFFF]++;
+        }
 
         size_t sum = 0;
-        for (size_t i = 0; i < K; i++) {
-            size_t tmp = count[i];
+        for (size_t i = 0; i < RADIX_KI64; i++) {
+            size_t c = count[i];
             count[i] = sum;
-            sum += tmp;
+            sum += c;
         }
 
-        for (size_t i = 0; i < n; i++) {
-            uint64_t key = keys[idx[i]];
-            uint32_t bucket = (key >> shift) & 0xFFFF;
-            tmp_idx[count[bucket]++] = idx[i];
-        }
+        #if defined(__AVX512F__)
+            if constexpr (Simd) {
+                scatter_pass_u64_avx512(tkeys.data(), 
+                                        idx, 
+                                        n, 
+                                        shift, 
+                                        count.data(), 
+                                        tmp_idx.data());
+            } else
+        #endif
+            {
+                for (size_t i = 0; i < n; i++) {
+                    uint64_t key = tkeys[i];
+                    size_t b = (key >> shift) & 0xFFFF;   
+                    tmp_idx[count[b]++] = idx[i]; 
+                }
+            }
 
-        memcpy(idx, tmp_idx, n * sizeof(size_t));
+        memcpy(idx, tmp_idx.data(), n * sizeof(size_t));
+
+        for (size_t i = 0; i < n; i++)
+            tkeys[i] = keys[idx[i]];
     }
-
-    delete[] count;
-    delete[] tmp_idx;
 }
 
 
