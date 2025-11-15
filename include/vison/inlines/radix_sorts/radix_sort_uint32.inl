@@ -10,6 +10,7 @@ inline void radix_sort_uint32(const uint32_t* keys,
     constexpr size_t PASSES = 2;      
 
     std::vector<U> tkeys(n);
+    std::vector<U> tmp_keys(n);
     std::vector<size_t> tmp(n);
     std::vector<size_t> count(RADIX_KI32);
 
@@ -61,31 +62,31 @@ inline void radix_sort_uint32(const uint32_t* keys,
         // Place each index into its correct bucket position in tmp[].
         #if defined(__AVX512F__)
             if constexpr (Simd) {
-                scatter_pass_u32_avx512(tkeys.data(), 
-                                        idx, 
-                                        n, 
-                                        shift, 
-                                        count.data(), 
-                                        tmp.data());
+                scatter_pass_u32_avx512(
+                    tkeys.data(),
+                    idx,
+                    n,
+                    shift,
+                    count.data(),
+                    tmp.data(),
+                    tmp_keys.data()
+                );
             } else
         #endif
             {
                 for (size_t i = 0; i < n; i++) {
                     U key = tkeys[i];
-                    size_t b = (key >> shift) & 0xFFFF; // same index than for 
-                                                        // the histogram construction
-                    tmp[count[b]++] = idx[i]; 
+                    U b   = (key >> shift) & 0xFFFF;
+                    size_t   pos = count[b]++;
+
+                    tmp[pos]  = idx[i];
+                    tmp_keys[pos] = key;
                 }
             }
 
+        std::swap(tmp_keys, tkeys);
         memcpy(idx, tmp.data(), n * sizeof(size_t));
 
-        // Rebuild transformed keys in the new order for the next pass.
-        for (size_t i = 0; i < n; i++)
-            tkeys[i] = keys[idx[i]];
     }
 }
-
-
-
 

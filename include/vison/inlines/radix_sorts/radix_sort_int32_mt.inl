@@ -11,6 +11,7 @@ inline void radix_sort_int32_mt(const int32_t* keys,
     constexpr size_t PASSES = 2;
 
     // Storage
+    std::vector<uint32_t> tmp_keys(n);
     std::vector<uint32_t> tkeys(n);
     std::vector<size_t>   tmp(n);
 
@@ -121,15 +122,17 @@ inline void radix_sort_int32_mt(const int32_t* keys,
             auto [beg, end] = range(t);
             size_t len = end - beg;
             size_t* off = thread_off[t].data();
-            
+
             scatter_pass_u32_avx512(
-                tkeys + beg,   // local keys
-                idx   + beg,   // local slice of current permutation
-                len,
+                tkeys.data() + beg, // per-thread input keys
+                idx     + beg,      // per-thread input indices
+                len,                // size of chunk
                 shift,
-                off,            // per-thread offsets
-                tmp
+                off, // per-thread offsets
+                tmp.data(),           // global output idx
+                tmp_keys.data()       // global output keys
             );
+
         } else
         #endif
         {
@@ -138,19 +141,17 @@ inline void radix_sort_int32_mt(const int32_t* keys,
             size_t* off = thread_off[t].data();
 
             for (size_t i = beg; i < end; i++) {
-                uint32_t b = (tkeys[i] >> shift) & 0xFFFFu;
-                tmp[ off[b]++ ] = idx[i];
+                uint32_t key = tkeys[i];
+                uint32_t b   = (key >> shift) & 0xFFFF;
+                size_t pos = off[b]++;
+                tmp[pos]      = idx[i];
+                tmp_keys[pos] = key;
             }
         }
 
+        std::swap(tmp_keys, tkeys);
         std::memcpy(idx, tmp.data(), n * sizeof(size_t));
 
-        // ----------------------------------------------------
-        // Rebuild transformed keys
-        // ----------------------------------------------------
-        #pragma omp parallel for num_threads(THREADS)
-        for (size_t i = 0; i < n; i++)
-            tkeys[i] = (uint32_t(keys[idx[i]]) ^ 0x80000000u);
     }
 }
 
