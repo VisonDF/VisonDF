@@ -8,6 +8,7 @@ inline void radix_sort_uint64(const uint64_t* keys, size_t* idx, size_t n)
     std::vector<size_t> count(RADIX_KI64);
     std::vector<size_t> tmp_idx(n);
     std::vector<uint64_t> tkeys(n);
+    std::vector<uint64_t> tmp_keys(n);
 
     for (size_t i = 0; i < n; i++) {
         tkeys[i] = keys[i];
@@ -46,26 +47,31 @@ inline void radix_sort_uint64(const uint64_t* keys, size_t* idx, size_t n)
 
         #if defined(__AVX512F__)
             if constexpr (Simd) {
-                scatter_pass_u64_avx512(tkeys.data(), 
-                                        idx, 
-                                        n, 
-                                        shift, 
-                                        count.data(), 
-                                        tmp_idx.data());
+                scatter_pass_u64_avx512(
+                    tkeys.data(),
+                    idx,
+                    n,
+                    shift,
+                    count.data(),
+                    tmp_idx.data(),
+                    tmp_keys.data()
+                );
             } else
         #endif
             {
                 for (size_t i = 0; i < n; i++) {
                     uint64_t key = tkeys[i];
-                    size_t b = (key >> shift) & 0xFFFF;   
-                    tmp_idx[count[b]++] = idx[i]; 
+                    uint64_t b   = (key >> shift) & 0xFFFF;
+                    size_t   pos = count[b]++;
+
+                    tmp_idx[pos]  = idx[i];
+                    tmp_keys[pos] = key;
                 }
             }
 
+        std::swap(tmp_keys, tkeys);
         memcpy(idx, tmp_idx.data(), n * sizeof(size_t));
 
-        for (size_t i = 0; i < n; i++)
-            tkeys[i] = keys[idx[i]];
     }
 }
 
