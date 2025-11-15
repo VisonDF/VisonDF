@@ -10,7 +10,6 @@ inline void radix_sort_uint64(const uint64_t* keys, size_t* idx, size_t n)
     std::vector<uint64_t> tkeys(n);
 
     for (size_t i = 0; i < n; i++) {
-        idx[i] = i;
         tkeys[i] = keys[i];
     }
 
