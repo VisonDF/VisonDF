@@ -65,14 +65,9 @@ inline void radix_sort_uint16_mt(const uint16_t* keys,
     for (size_t b = 0; b < RADIX_KI16; b++) {
         size_t sum = 0;
 
-        if constexpr (THREADS >= 16) {
-            #pragma unroll
-            for (unsigned t = 0; t < THREADS; t++)
-                sum += hist[t][b];
-        } else {
-            for (unsigned t = 0; t < THREADS; t++)
-                sum += hist[t][b];
-        }
+        #pragma unroll
+        for (unsigned t = 0; t < THREADS; t++)
+            sum += hist[t][b];
         bucket_size[b] = sum;
     }
 
