@@ -23,7 +23,7 @@ inline void scatter_pass_u32_avx512(
         );
 
         alignas(64) uint32_t b[16];
-        _mm512_storeu_si512(reinterpret_cast<__m512i*>(b), buckets);
+        _mm512_storeu_si512(b, buckets);
 
         // Build scatter offsets via prefix sums of count[b[k]]
         size_t offsets[16];
