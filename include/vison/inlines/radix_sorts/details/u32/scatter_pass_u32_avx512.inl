@@ -30,12 +30,18 @@ inline void scatter_pass_u32_avx512(
         for (int k = 0; k < 16; ++k)
             offsets[k] = count[b[k]]++;
 
-        // Load indices to scatter
-        __m512i idxv = _mm512_loadu_si512(reinterpret_cast<const void*>(idx + i));
-        __m512i offv = _mm512_loadu_si512(reinterpret_cast<const void*>(offsets));
+       // Load indices to scatter
+       __m512i off0 = _mm512_loadu_si512(reinterpret_cast<const void*>(offsets)); 
+       __m512i off1 = _mm512_loadu_si512(reinterpret_cast<const void*>(offsets + 8));
+
+       // extract the higher 256 and lower 256 bits
+       __m512i idxv0 = _mm512_castsi256_si512(_mm512_extracti64x4_epi64(idxv, 0)); 
+       __m512i idxv1 = _mm512_castsi256_si512(_mm512_extracti64x4_epi64(idxv, 1));
 
         // Scatter 16 indices
-        _mm512_i64scatter_epi64(tmp, offv, idxv, 8);
+        _mm512_i64scatter_epi64(tmp, off0, idx0, 8);
+        _mm512_i64scatter_epi64(tmp, off1, idx1, 8);
+
     }
 
     // Remainder – scalar
