@@ -114,6 +114,7 @@ inline void radix_sort_uint64_mt(const uint64_t* keys,
         // ----------------------------------------------------
         // Parallel scatter
         // ----------------------------------------------------
+        // safe to parallelize because no dupplicates in counts / offs
         #pragma omp parallel num_threads(THREADS)
         #if defined(__AVX512F__) 
         if constexpr (Simd) {
@@ -128,7 +129,7 @@ inline void radix_sort_uint64_mt(const uint64_t* keys,
                 len,
                 shift,
                 off,            // per-thread offsets
-                tmp
+                tmp             // global index
             );
         } else
         #endif
