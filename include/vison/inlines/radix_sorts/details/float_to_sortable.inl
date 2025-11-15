@@ -1,6 +1,6 @@
 #pragma once
 
-uint32_t float_to_sortable(float f) {
+inline uint32_t float_to_sortable(float f) {
     uint32_t bits;
     memcpy(&bits, &f, sizeof(bits));   
 

@@ -1,6 +1,6 @@
 #pragma once
 
-uint64_t double_to_sortable(double x) {
+inline uint64_t double_to_sortable(double x) {
     uint64_t bits;
     memcpy(&bits, &x, sizeof(bits));
 
