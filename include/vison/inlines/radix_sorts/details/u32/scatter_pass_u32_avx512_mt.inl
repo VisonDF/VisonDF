@@ -36,13 +36,13 @@ inline void scatter_pass_u32_avx512_mt(
         for (int k = 0; k < 16; ++k)
             offsets[k] = count[b[k]]++;
 
-        // Load 16 input indices (size_t) in two 8-lane chunks
-        __m512i idxv0 = _mm512_loadu_si512(reinterpret_cast<const void*>(idx_in + i));
-        __m512i idxv1 = _mm512_loadu_si512(reinterpret_cast<const void*>(idx_in + i + 8));
-
         // Load offsets as 2 × 8-lane vectors
         __m512i off0 = _mm512_loadu_si512(reinterpret_cast<const void*>(offsets + 0)); // 0..7
         __m512i off1 = _mm512_loadu_si512(reinterpret_cast<const void*>(offsets + 8)); // 8..15
+
+        // Load 16 input indices (size_t) in two 8-lane chunks
+        __m512i idxv0 = _mm512_loadu_si512(reinterpret_cast<const void*>(idx_in + i));
+        __m512i idxv1 = _mm512_loadu_si512(reinterpret_cast<const void*>(idx_in + i + 8));
 
         // Scatter: tmp[offsets[k]] = idx_in[i+k]
         _mm512_i64scatter_epi64(tmp, off0, idxv0, 8);
