@@ -35,8 +35,8 @@ inline void scatter_pass_u32_avx512(
        __m512i off1 = _mm512_loadu_si512(reinterpret_cast<const void*>(offsets + 8));
 
        // extract the higher 256 and lower 256 bits
-       __m512i idxv0 = _mm512_castsi256_si512(_mm512_extracti64x4_epi64(idxv, 0)); 
-       __m512i idxv1 = _mm512_castsi256_si512(_mm512_extracti64x4_epi64(idxv, 1));
+       __m512i idxv0 = _mm512_castsi256_si512(_mm512_extracti64x4_epi64(idx, 0)); 
+       __m512i idxv1 = _mm512_castsi256_si512(_mm512_extracti64x4_epi64(idx, 1));
 
         // Scatter 16 indices
         _mm512_i64scatter_epi64(tmp, off0, idx0, 8);
