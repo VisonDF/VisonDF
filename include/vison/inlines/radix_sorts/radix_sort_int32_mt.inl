@@ -115,6 +115,23 @@ inline void radix_sort_int32_mt(const int32_t* keys,
         // Parallel scatter
         // ----------------------------------------------------
         #pragma omp parallel num_threads(THREADS)
+        #if defined(__AVX512F__) 
+        if constexpr (Simd) {
+            int t = omp_get_thread_num();
+            auto [beg, end] = range(t);
+            size_t len = end - beg;
+            size_t* off = thread_off[t].data();
+            
+            scatter_pass_u32_avx512(
+                tkeys + beg,   // local keys
+                idx   + beg,   // local slice of current permutation
+                len,
+                shift,
+                off,            // per-thread offsets
+                tmp
+            );
+        } else
+        #endif
         {
             int t = omp_get_thread_num();
             auto [beg, end] = range(t);

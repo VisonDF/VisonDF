@@ -122,13 +122,13 @@ inline void radix_sort_uint32_mt(const uint32_t* keys,
             size_t len = end - beg;
             size_t* off = thread_off[t].data();
             
-            scatter_pass_u32_avx512_mt(
+            scatter_pass_u32_avx512(
                 tkeys + beg,   // local keys
                 idx   + beg,   // local slice of current permutation
-                tmp,           // global tmp
                 len,
                 shift,
-                off            // per-thread offsets
+                off,            // per-thread offsets
+                tmp
             );
         } else
         #endif
