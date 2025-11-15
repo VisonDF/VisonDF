@@ -23,7 +23,7 @@ inline void histogram_pass_u64_avx2(
         __m256i v2 = _mm256_loadu_si256((const __m256i*)(tkeys + i +  8));
         __m256i v3 = _mm256_loadu_si256((const __m256i*)(tkeys + i + 12));
 
-        // -------- SHIFT right --------
+        // -------- SHIFT --------
         __m256i s0 = _mm256_srli_epi64(v0, shift);
         __m256i s1 = _mm256_srli_epi64(v1, shift);
         __m256i s2 = _mm256_srli_epi64(v2, shift);
