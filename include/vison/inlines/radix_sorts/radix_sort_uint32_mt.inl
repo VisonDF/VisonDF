@@ -1,7 +1,7 @@
 #pragma once
 
 template <unsigned int CORES = 4, bool Simd = true>
-inline void radix_sort_int32_mt(const uint32_t* keys,
+inline void radix_sort_uint32_mt(const uint32_t* keys,
                                 size_t* idx,
                                 size_t n)
 {
@@ -80,19 +80,13 @@ inline void radix_sort_int32_mt(const uint32_t* keys,
         // ----------------------------------------------------
         // Combine histograms
         // ----------------------------------------------------
-        #pragma omp parallel for num_threads(CORES)
+        #pragma omp parallel for num_threads(THREADS)
         for (size_t b = 0; b < RADIX_KI32; b++) {
             size_t sum = 0;
 
-            if constexpr (CORES > 16) {
-                #pragma unroll
-                for (unsigned t = 0; t < CORES; t++)
-                    sum += hist[t][b];
-            } else if constexpr (CORES < 16) {
-                for (unsigned t = 0; t < CORES; t++)
-                    sum += hist[t][b];
-
-            }
+            #pragma unroll
+            for (unsigned t = 0; t < THREADS; t++)
+                sum += hist[t][b];
             bucket_size[b] = sum;
         }
 
@@ -108,10 +102,10 @@ inline void radix_sort_int32_mt(const uint32_t* keys,
         // ----------------------------------------------------
         // Thread offsets per bucket
         // ----------------------------------------------------
-        #pragma omp parallel for num_threads(CORES)
+        #pragma omp parallel for num_threads(THREADS)
         for (size_t b = 0; b < RADIX_KI32; b++) {
             size_t base = bucket_base[b];
-            for (unsigned t = 0; t < CORES; t++) {
+            for (unsigned t = 0; t < THREADS; t++) {
                 thread_off[t][b] = base;
                 base += hist[t][b];
             }
