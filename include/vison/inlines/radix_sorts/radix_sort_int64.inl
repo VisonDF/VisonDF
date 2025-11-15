@@ -67,6 +67,7 @@ inline void radix_sort_int64(const int64_t* keys, size_t* idx, size_t n)
 
         for (size_t i = 0; i < n; i++)
             tkeys[i] = (uint64_t(keys[idx[i]]) ^ 0x8000000000000000ULL);
+
     }
 }
 
