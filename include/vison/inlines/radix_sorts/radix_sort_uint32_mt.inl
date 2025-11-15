@@ -143,8 +143,7 @@ inline void radix_sort_uint32_mt(const uint32_t* keys,
             }
         }
 
-        //std::memcpy(idx, tmp.data(), n * sizeof(size_t));
-        std::swap(idx, tmp);
+        std::memcpy(idx, tmp.data(), n * sizeof(size_t));
 
         // ----------------------------------------------------
         // Rebuild transformed keys
