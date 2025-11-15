@@ -119,6 +119,7 @@ namespace vison {
     #include "inlines/radix_sorts/radix_sort_uint32_mt.inl"
 
     #include "inlines/radix_sorts/radix_sort_int64.inl"
+    #include "inlines/radix_sorts/radix_sort_int64_mt.inl"
     #include "inlines/radix_sorts/radix_sort_uint64.inl"
     #include "inlines/radix_sorts/radix_sort_uint64_mt.inl"
 
