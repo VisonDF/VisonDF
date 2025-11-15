@@ -123,6 +123,8 @@ namespace vison {
     #include "inlines/radix_sorts/radix_sort_uint64.inl"
     #include "inlines/radix_sorts/radix_sort_uint64_mt.inl"
 
+    #include "inlines/radix_sorts/details/float_to_sortable.inl"
+    #include "inlines/radix_sorts/details/double_to_sortable.inl"
 
     #include "inlines/transform/sort_by/permute_block_bool.inl"
     #include "inlines/transform/sort_by/permute_block.inl"
