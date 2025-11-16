@@ -126,6 +126,12 @@ namespace vison {
     #include "inlines/radix_sorts/details/float_to_sortable.inl"
     #include "inlines/radix_sorts/details/double_to_sortable.inl"
 
+    #include "inlines/radix_sorts/radix_sort_float.inl"
+    #include "inlines/radix_sorts/radix_sort_float_mt.inl"
+    #include "inlines/radix_sorts/radix_sort_double.inl"
+    #include "inlines/radix_sorts/radix_sort_double_mt.inl"
+
+
     #include "inlines/transform/sort_by/permute_block_bool.inl"
     #include "inlines/transform/sort_by/permute_block.inl"
     #include "inlines/transform/sort_by/sort_idx_bool.inl"
