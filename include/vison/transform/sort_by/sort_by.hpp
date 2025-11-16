@@ -37,35 +37,35 @@ void sort_by(unsigned int& n) {
           case 's':
           {
               auto values = std::span<const std::string>(str_v.data() + col_id * nrow, nrow);
-              sort_idx_using_span_string<ASC>(idx, values);
+              sort_string<ASC>(idx, values);
               break;
           }
           case 'c':
           {
               auto values = std::span<const char>(chr_v.data() + col_id * nrow, nrow);
-              sort_idx_using_span<ASC>(idx, values);
+              radix_sort_uintegers<ASC>(idx, values);
               break;
           }
           case 'b':
           {
               size_t base = col_id * nrow;
-              sort_idx_bool<ASC>(idx, bool_v, base);
+              sort_bool<ASC>(idx, bool_v, base);
               break;
           }
           case 'i':
           {
-              sort_idx_using_span_integers<ASC>(idx, nrow, col_id);
+              radix_sort_integers<ASC>(idx, nrow, col_id);
               break;
           }
           case 'u':
           {
-              sort_idx_using_span_uintegers<ASC>(idx, nrow, col_id);
+              radix_sort_uintegers<ASC>(idx, nrow, col_id);
               break;
           }
           case 'd':
           {
               auto values = std::span<const FloatT>(dbl_v.data() + col_id * nrow, nrow);
-              sort_idx_using_span<ASC>(idx, values);
+              radix_sort_flt<ASC>(idx, values);
               break;
           }
       }
