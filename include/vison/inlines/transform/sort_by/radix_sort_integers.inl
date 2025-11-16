@@ -8,7 +8,7 @@ inline void radix_sort_integers(
 )
 {
 
-    if constexpr (std::is_same_v<IntT, int16_t>) {
+    if constexpr (std::is_same_v<IntT, int8_t>) {
 
         const int8_t* col = int_v.data() + col_id * nrow;
 
