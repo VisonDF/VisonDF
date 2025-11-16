@@ -43,7 +43,7 @@ void sort_by_mt(unsigned int& n) {
           case 'c':
           {
               auto values = std::span<const char>(chr_v.data() + col_id * nrow, nrow);
-              radix_sort_uintegers<ASC, CORES, Simd>(idx, values);
+              radix_sort_char<ASC, CORES, Simd>(idx, values);
               break;
           }
           case 'b':

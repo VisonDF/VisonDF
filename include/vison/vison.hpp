@@ -220,6 +220,7 @@ namespace vison {
         #include "inlines/transform/sort_by/permute_block_bool.inl"
         #include "inlines/transform/sort_by/permute_block.inl"
         #include "inlines/transform/sort_by/sort_string.inl"
+        #include "inlines/transform/sort_by/radix_sort_char.inl"
         #include "inlines/transform/sort_by/sort_bool.inl"
         #include "inlines/transform/sort_by/radix_sort_integers.inl"
         #include "inlines/transform/sort_by/radix_sort_uintegers.inl"
