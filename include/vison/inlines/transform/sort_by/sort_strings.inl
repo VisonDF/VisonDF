@@ -1,7 +1,7 @@
 #pragma once
 
 template <bool ASC, class SpanT>
-inline void sort_idx_using_span_string(
+inline void sort_string(
     std::vector<size_t>& idx, 
     const SpanT& values)
 {
