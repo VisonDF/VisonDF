@@ -104,6 +104,10 @@ namespace vison {
     #include "inlines/radix_sorts/details/u64/histogram_pass_u64_avx512_16x.inl"
     #include "inlines/radix_sorts/details/u64/scatter_pass_u64_avx512.inl"
 
+    #include "inlines/radix_sorts/details/bool/avx2_bool_compressed.inl"
+    #include "inlines/radix_sorts/details/bool/avx2_bool_u8.inl"
+    #include "inlines/radix_sorts/details/bool/avx512_bool_compressed.inl"
+    #include "inlines/radix_sorts/details/bool/avx512_bool_u8.inl"
 
     #include "inlines/radix_sorts/radix_sort_uint8.inl"
     #include "inlines/radix_sorts/radix_sort_uint8_mt.inl"
@@ -132,6 +136,8 @@ namespace vison {
     #include "inlines/radix_sorts/radix_sort_float_mt.inl"
     #include "inlines/radix_sorts/radix_sort_double.inl"
     #include "inlines/radix_sorts/radix_sort_double_mt.inl"
+
+    #include "inlines/radix_sorts/radix_sort_bool_u8.inl" 
 
     template <typename Types = DefaultTypes>
     class Dataframe{
@@ -213,7 +219,8 @@ namespace vison {
 
         #include "inlines/transform/sort_by/permute_block_bool.inl"
         #include "inlines/transform/sort_by/permute_block.inl"
-        #include "inlines/transform/sort_by/sort_strings.inl"
+        #include "inlines/transform/sort_by/sort_string.inl"
+        #include "inlines/transform/sort_by/sort_bool.inl"
         #include "inlines/transform/sort_by/radix_sort_integers.inl"
         #include "inlines/transform/sort_by/radix_sort_uintegers.inl"
         #include "inlines/transform/sort_by/radix_sort_flt.inl"

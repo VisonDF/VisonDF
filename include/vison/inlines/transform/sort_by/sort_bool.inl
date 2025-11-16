@@ -1,7 +1,7 @@
 #pragma once
 
 template <bool ASC>
-inline void sort_idx_bool(
+inline void sort_bool(
     std::vector<size_t>& idx,
     const std::vector<bool>& col,
     size_t base)
