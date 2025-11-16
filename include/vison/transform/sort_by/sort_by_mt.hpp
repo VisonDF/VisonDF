@@ -1,7 +1,7 @@
 #pragma once
 
-template <bool ASC = 1, bool Simd = true>
-void sort_by(unsigned int& n) {
+template <bool ASC = 1, unsigned int CORES = 1, bool Simd = true>
+void sort_by_mt(unsigned int& n) {
 
       std::vector<size_t> idx(nrow);
       std::iota(idx.begin(), idx.end(), 0);
@@ -43,7 +43,7 @@ void sort_by(unsigned int& n) {
           case 'c':
           {
               auto values = std::span<const char>(chr_v.data() + col_id * nrow, nrow);
-              radix_sort_uintegers<ASC, 1, Simd>(idx, values);
+              radix_sort_uintegers<ASC, CORES, Simd>(idx, values);
               break;
           }
           case 'b':
@@ -54,18 +54,18 @@ void sort_by(unsigned int& n) {
           }
           case 'i':
           {
-              radix_sort_integers<ASC, 1, Simd>(idx, nrow, col_id);
+              radix_sort_integers<ASC, CORES, Simd>(idx, nrow, col_id);
               break;
           }
           case 'u':
           {
-              radix_sort_uintegers<ASC, 1, Simd>(idx, nrow, col_id);
+              radix_sort_uintegers<ASC, CORES, Simd>(idx, nrow, col_id);
               break;
           }
           case 'd':
           {
               auto values = std::span<const FloatT>(dbl_v.data() + col_id * nrow, nrow);
-              radix_sort_flt<ASC, 1, Simd>(idx, values);
+              radix_sort_flt<ASC, CORES, Simd>(idx, values);
               break;
           }
       }

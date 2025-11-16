@@ -446,6 +446,7 @@ namespace vison {
         #endif
 
         #include "transform/sort_by/sort_by.hpp"
+        #include "transform/sort_by/sort_by_mt.hpp"
 
         #include "concat/concat.hpp"
             

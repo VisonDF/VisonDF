@@ -1,9 +1,9 @@
 #pragma once
 
-template <bool ASC, class SpanT>
+template <bool ASC> //, bool MT = true>
 inline void sort_string(
     std::vector<size_t>& idx, 
-    const SpanT& values)
+    const std::string& values)
 {
     auto cmp = [&](size_t a, size_t b) {
         if constexpr (ASC)
@@ -12,5 +12,14 @@ inline void sort_string(
             return values[a] > values[b];
     };
 
-    std::stable_sort(idx.begin(), idx.end(), cmp);
+    //if constexpr (MT) {
+
+        //std::stable_sort(idx.begin(), idx.end(), cmp);
+
+    //} else if constexpr (!MT) {
+
+        std::stable_sort(idx.begin(), idx.end(), cmp);
+
+    //}
+
 }
