@@ -35,3 +35,5 @@ inline void permute_block(
 
     storage.swap(tmp_storage);
 }
+
+

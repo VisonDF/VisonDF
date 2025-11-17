@@ -233,9 +233,9 @@ namespace vison {
         //#include "inlines/transform/sort_by/sort_string.inl"
         #include "inlines/transform/sort_by/sort_char.inl"
         //#include "inlines/transform/sort_by/sort_bool.inl"
-        //#include "inlines/transform/sort_by/sort_integers.inl"
-        //#include "inlines/transform/sort_by/sort_uintegers.inl"
-        //#include "inlines/transform/sort_by/sort_flt.inl"
+        #include "inlines/transform/sort_by/sort_integers.inl"
+        #include "inlines/transform/sort_by/sort_uintegers.inl"
+        #include "inlines/transform/sort_by/sort_flt.inl"
 
 
       public:

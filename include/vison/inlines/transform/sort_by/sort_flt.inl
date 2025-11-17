@@ -4,16 +4,20 @@ template <bool ASC,
     unsigned int CORES = 4, 
     bool Simd = true,
     SortType S = SortType::Radix,
-    Comparator Cmp = std::less<size_t>>
+    typename ComparatorFactory = DefaultComparatorFactory>
 inline void sort_flt(
     std::vector<size_t>& idx,
     unsigned int nrow,
     unsigned int col_id,
-    Cmp cmp = Cmp{}
+    ComparatorFactory make_cmp = ComparatorFactory{}
 )
 {
 
     const FloatT* col = int_v.data() + col_id * nrow;
+
+    auto cmp = make_cmp.template operator()<ASC, FloatT>(col);
+    static_assert(IndexComparator<decltype(cmp)>,
+              "Comparator must be cmp(size_t,size_t)->bool");
 
     if constexpr (S == SortType::Radix) {
 
@@ -58,8 +62,8 @@ inline void sort_flt(
                
                 // precomputation of the chunks
                 for (size_t t = 0; t < CORES; t++) {
-                    size_t start = n * t / CORES;
-                    size_t end   = n * (t + 1) / CORES;
+                    size_t start = nrow * t / CORES;
+                    size_t end   = nrow * (t + 1) / CORES;
                     chunks[t] = {start, end};
                 }
                 
@@ -71,7 +75,7 @@ inline void sort_flt(
                     std::sort(col.begin() + start, col.begin() + end, cmp);
                 }
 
-                std::vector<int> tmp(n);
+                std::vector<FloatT> tmp(nrow);
                 bool flip = false;
                 
                 while (chunks.size() > 1) {
@@ -79,24 +83,43 @@ inline void sort_flt(
                     std::vector<std::pair<size_t,size_t>> next;
                     next.resize(chunks.size() / 2);   
                 
-                    #pragma omp parallel for
-                    for (size_t i = 0; i + 1 < chunks.size(); i += 2) {
+                    const size_t end_loop = chunks.size() - 1;
+
+                    #pragma omp parallel for num_threads(CORES)
+                    for (size_t i = 0; i < end_loop; i += 2) {
                         auto [s1, e1] = chunks[i];
                         auto [s2, e2] = chunks[i + 1];
-                
+
+                        size_t* A1;
+                        size_t* A2;
+                        size_t* B1;
+                        size_t* B2;
+                        size_t* Out;
+                        
                         if (!flip) {
-                            parallel_merge<CORES>(&col[s1], e1 - s1,
-                                                  &col[e1], e2 - e1,
-                                                  &tmp[s1]);
-                        } else {
-                            parallel_merge<CORES>(&tmp[s1], e1 - s1,
-                                                  &tmp[e1], e2 - e1,
-                                                  &col[s1]);
+                            A1 = idx.data() + s1;
+                            A2 = A1 + (e1 - s1);
+                        
+                            B1 = idx.data() + e1;
+                            B2 = B1 + (e2 - e1);
+                        
+                            Out = tmp.data() + s1;
                         }
+                        else {
+                            A1 = tmp.data() + s1;
+                            A2 = A1 + (e1 - s1);
+                        
+                            B1 = tmp.data() + e1;
+                            B2 = B1 + (e2 - e1);
+                        
+                            Out = idx.data() + s1;
+                        }
+                        
+                        std::merge(A1, A2, B1, B2, Out, cmp);
                 
-                        next[i/2] = {s1, e2};
+                        next[i / 2] = {s1, e2};
                     }
-                
+
                     if (chunks.size() % 2 == 1) {
                         next.push_back(chunks.back());
                     }
