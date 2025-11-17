@@ -51,6 +51,8 @@ namespace vison {
     #include "inlines/fast_to_chars_no_dragonbox.inl"
     #endif
 
+    #include "types/supported_types.inl"
+
     #include "custom_simd_hash/simd_hash.hpp"
 
     #include "inlines/read_csv/parse_rows_range_cached.inl"
