@@ -1,7 +1,12 @@
 #pragma once
 
-template <bool ASC = 1, bool Simd = true>
+template <bool ASC = 1, 
+          bool Simd = true,
+          SortType S = SortType::Radix>
 void sort_by(unsigned int& n) {
+
+      static_assert(is_supported_sort<S>::value, 
+                      "Sorting Method Not Supported");
 
       std::vector<size_t> idx(nrow);
       std::iota(idx.begin(), idx.end(), 0);
@@ -42,27 +47,27 @@ void sort_by(unsigned int& n) {
           }
           case 'c':
           {
-              radix_sort_char<ASC, 1, Simd>(idx, nrow, col_id);
+              sort_char<ASC, 1, Simd, S>(idx, nrow, col_id);
               break;
           }
           case 'b':
           {
-              sort_bool<ASC>(idx, nrow, col_id);
+              sort_bool<ASC>(idx, nrow, col_id); //TODO, add u8 variant when ready
               break;
           }
           case 'i':
           {
-              radix_sort_integers<ASC, 1, Simd>(idx, nrow, col_id);
+              sort_integers<ASC, 1, Simd, S>(idx, nrow, col_id);
               break;
           }
           case 'u':
           {
-              radix_sort_uintegers<ASC, 1, Simd>(idx, nrow, col_id);
+              sort_uintegers<ASC, 1, Simd, S>(idx, nrow, col_id);
               break;
           }
           case 'd':
           {
-              radix_sort_flt<ASC, 1, Simd>(idx, nrow, col_id);
+              sort_flt<ASC, 1, Simd, S>(idx, nrow, col_id);
               break;
           }
       }
