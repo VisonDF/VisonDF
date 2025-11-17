@@ -3,14 +3,17 @@
 template <bool ASC>
 inline void sort_bool(
     std::vector<size_t>& idx,
-    const std::vector<bool>& col,
-    size_t base)
+    size_t n,
+    size_t col_id)
 {
+
+    const size_t base = n * col_id;
+
     auto cmp = [&](size_t a, size_t b) {
         if constexpr (ASC)
-            return col[base + a] < col[base + b];
+            return bool_v[base + a] < bool_v[base + b];
         else
-            return col[base + a] > col[base + b];
+            return bool_v[base + a] > bool_v[base + b];
     };
 
     std::sort(idx.begin(), idx.end(), cmp);

@@ -42,13 +42,12 @@ void sort_by(unsigned int& n) {
           }
           case 'c':
           {
-              radix_sort_uintegers<ASC, 1, Simd>(idx, nrow, col_id);
+              radix_sort_char<ASC, 1, Simd>(idx, nrow, col_id);
               break;
           }
           case 'b':
           {
-              size_t base = col_id * nrow;
-              sort_bool<ASC>(idx, bool_v, base);
+              sort_bool<ASC>(idx, nrow, col_id);
               break;
           }
           case 'i':
@@ -63,8 +62,7 @@ void sort_by(unsigned int& n) {
           }
           case 'd':
           {
-              auto values = std::span<const FloatT>(dbl_v.data() + col_id * nrow, nrow);
-              radix_sort_flt<ASC, 1, Simd>(idx, values);
+              radix_sort_flt<ASC, 1, Simd>(idx, nrow, col_id);
               break;
           }
       }
