@@ -108,6 +108,10 @@ namespace vison {
     #include "inlines/radix_sorts/details/bool/avx2_bool_u8.inl"
     #include "inlines/radix_sorts/details/bool/avx512_bool_compressed.inl"
     #include "inlines/radix_sorts/details/bool/avx512_bool_u8.inl"
+    #include "inlines/radix_sorts/details/bool/avx2_bool_compressed_mt.inl"
+    #include "inlines/radix_sorts/details/bool/avx2_bool_u8_mt.inl"
+    #include "inlines/radix_sorts/details/bool/avx512_bool_compressed_mt.inl"
+    #include "inlines/radix_sorts/details/bool/avx512_bool_u8_mt.inl"
 
     #include "inlines/radix_sorts/radix_sort_uint8.inl"
     #include "inlines/radix_sorts/radix_sort_uint8_mt.inl"

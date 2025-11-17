@@ -1,18 +1,18 @@
 #pragma once
 
-inline void avx2_bool_u8(const uint8_t* keys,
-                                   size_t n,
-                                   size_t* idx)
+inline void avx2_bool_u8_mt(const uint8_t* keys,
+                                   size_t end,
+                                   size_t* idx,
+                                   size_t lo,
+                                   size_t hi,
+                                   size_t start
+                                   )
 {
-    size_t lo = 0;
-    size_t hi = n;
-
-    size_t i = 0;
 
     const __m256i zero = _mm256_setzero_si256();
 
-    while (i + 32 <= n) {
-        __m256i v = _mm256_loadu_si256((const __m256i*)(keys + i));
+    while (start + 32 <= end) {
+        __m256i v = _mm256_loadu_si256((const __m256i*)(keys + start));
 
         // Compare each byte with zero: 0 -> 0xFF, nonzero -> 0x00
         __m256i cmp = _mm256_cmpeq_epi8(v, zero);
@@ -24,7 +24,7 @@ inline void avx2_bool_u8(const uint8_t* keys,
         
         // Scatter 32 indices according to the mask
         #define HANDLE(J) do { \
-            size_t logical = i + (J); \
+            size_t logical = start + (J); \
             if (false_mask & (1u << (J))) \
                 idx[lo++] = logical; \
             else \
@@ -42,13 +42,13 @@ inline void avx2_bool_u8(const uint8_t* keys,
 
         #undef HANDLE
 
-        i += 32;
+        start += 32;
     }
 
     // scalar tail
-    for (; i < n; ++i) {
-        if (!keys[i]) idx[lo++] = i;
-        else          idx[--hi] = i;
+    for (; start < end; ++start) {
+        if (!keys[start]) idx[lo++] = start;
+        else          idx[--hi] = start;
     }
 }
 
