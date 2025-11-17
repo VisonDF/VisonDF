@@ -16,6 +16,7 @@
 #include <thread>
 #include <variant>
 #include <vector>
+#include <concepts>
 
 #if __has_include(<simd>)
   #include <simd>
@@ -52,6 +53,8 @@ namespace vison {
     #endif
 
     #include "types/supported_types.inl"
+    #include "types/supported_sorting_methods.inl"
+    #include "types/comparator.inl"
 
     #include "custom_simd_hash/simd_hash.hpp"
 
@@ -225,12 +228,13 @@ namespace vison {
 
         #include "inlines/transform/sort_by/permute_block_bool.inl"
         #include "inlines/transform/sort_by/permute_block.inl"
+
         #include "inlines/transform/sort_by/sort_string.inl"
-        #include "inlines/transform/sort_by/radix_sort_char.inl"
+        #include "inlines/transform/sort_by/sort_char.inl"
         #include "inlines/transform/sort_by/sort_bool.inl"
-        #include "inlines/transform/sort_by/radix_sort_integers.inl"
-        #include "inlines/transform/sort_by/radix_sort_uintegers.inl"
-        #include "inlines/transform/sort_by/radix_sort_flt.inl"
+        #include "inlines/transform/sort_by/sort_integers.inl"
+        #include "inlines/transform/sort_by/sort_uintegers.inl"
+        #include "inlines/transform/sort_by/sort_flt.inl"
 
 
       public:

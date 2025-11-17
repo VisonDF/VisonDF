@@ -1,25 +1,18 @@
 #pragma once
 
-template <bool ASC> //, bool MT = true>
+template <bool ASC, 
+          typename T, 
+          Comparator Cmp = std::less<size_t>>
 inline void sort_string(
     std::vector<size_t>& idx, 
-    const std::string& values)
+    const std::string& values,
+    Cmp cmp = Cmp{})
 {
-    auto cmp = [&](size_t a, size_t b) {
-        if constexpr (ASC)
-            return values[a] < values[b];
-        else
-            return values[a] > values[b];
-    };
 
-    //if constexpr (MT) {
+    std::stable_sort(idx.begin(), idx.end(), cmp);
 
-        //std::stable_sort(idx.begin(), idx.end(), cmp);
-
-    //} else if constexpr (!MT) {
-
-        std::stable_sort(idx.begin(), idx.end(), cmp);
-
-    //}
+    if constexpr (!ASC) {
+        std::reverse(idx.begin(), idx.end());
+    }
 
 }

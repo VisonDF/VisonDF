@@ -1,16 +1,18 @@
 #pragma once
 
-template <bool ASC, unsigned int CORES = 1, bool Simd = true>
-inline void radix_sort_uintegers(
+template <bool ASC, 
+         unsigned int CORES = 1, 
+         bool Simd = true>
+inline void sort_uintegers(
     std::vector<size_t>& idx,
     unsigned int nrow,
     unsigned int col_id
 )
 {
 
-    if constexpr (std::is_same_v<UIntT, uint8_t>) {
+    const UIntT* col = uint_v.data() + col_id * nrow;
 
-        const uint8_t* col = uint_v.data() + col_id * nrow;
+    if constexpr (std::is_same_v<UIntT, uint8_t>) {
 
         if constexpr (CORES == 1) {
 
@@ -24,8 +26,6 @@ inline void radix_sort_uintegers(
 
     } else if constexpr (std::is_same_v<UIntT, uint16_t>) {
 
-        const uint16_t* col = int_v.data() + col_id * nrow;
-
         if constexpr (CORES == 1) {
 
             radix_sort_uint16<Simd>(col, idx.data(), nrow);
@@ -38,8 +38,6 @@ inline void radix_sort_uintegers(
 
     } else if constexpr (std::is_same_v<UIntT, uint32_t>) {
 
-        const uint32_t* col = int_v.data() + col_id * nrow;
-
         if constexpr (CORES == 1) {
 
             radix_sort_uint32<Simd>(col, idx.data(), nrow);
@@ -51,8 +49,6 @@ inline void radix_sort_uintegers(
         }
 
     } else if constexpr (std::is_same_v<UIntT, uint64_t>) {
-
-        const uint64_t* col = int_v.data() + col_id * nrow;
 
         if constexpr (CORES == 1) {
 

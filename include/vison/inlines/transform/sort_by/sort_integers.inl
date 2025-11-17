@@ -1,16 +1,16 @@
 #pragma once
 
 template <bool ASC, unsigned int CORES = 4, bool Simd = true>
-inline void radix_sort_integers(
+inline void sort_integers(
     std::vector<size_t>& idx,
     unsigned int nrow,
     unsigned int col_id
 )
 {
 
-    if constexpr (std::is_same_v<IntT, int8_t>) {
+    const IntT* col = int_v.data() + col_id * nrow;
 
-        const int8_t* col = int_v.data() + col_id * nrow;
+    if constexpr (std::is_same_v<IntT, int8_t>) {
 
         if constexpr (CORES == 1) {
 
@@ -24,8 +24,6 @@ inline void radix_sort_integers(
 
     } else if constexpr (std::is_same_v<IntT, int16_t>) {
 
-        const int16_t* col = int_v.data() + col_id * nrow;
-
         if constexpr (CORES == 1) {
 
             radix_sort_int16<Simd>(col, idx.data(), nrow);
@@ -38,8 +36,6 @@ inline void radix_sort_integers(
 
     } else if constexpr (std::is_same_v<IntT, int32_t>) {
 
-        const int32_t* col = int_v.data() + col_id * nrow;
-
         if constexpr (CORES == 1) {
 
             radix_sort_int32<Simd>(col, idx.data(), nrow);
@@ -51,8 +47,6 @@ inline void radix_sort_integers(
         }
 
     } else if constexpr (std::is_same_v<IntT, int64_t>) {
-
-        const int64_t* col = int_v.data() + col_id * nrow;
 
         if constexpr (CORES == 1) {
 
