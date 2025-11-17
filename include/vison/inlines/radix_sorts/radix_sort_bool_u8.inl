@@ -34,6 +34,12 @@ inline void radix_sort_bool_u8(uint8_t* keys,
 
     } else {
 
+
+            if constexpr (IsBoolCompressed) {
+              std::cerr << "Error, IsBoolCompressed must be aplied with SIMD";
+              return;
+            }
+
             size_t lo = 0;
             size_t hi = n;
             
