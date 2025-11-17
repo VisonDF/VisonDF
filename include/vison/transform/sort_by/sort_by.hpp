@@ -42,8 +42,7 @@ void sort_by(unsigned int& n) {
           }
           case 'c':
           {
-              auto values = std::span<const char>(chr_v.data() + col_id * nrow, nrow);
-              radix_sort_uintegers<ASC, 1, Simd>(idx, values);
+              radix_sort_uintegers<ASC, 1, Simd>(idx, nrow, col_id);
               break;
           }
           case 'b':
