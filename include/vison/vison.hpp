@@ -55,6 +55,7 @@ namespace vison {
     #include "types/supported_types.inl"
     #include "types/supported_sorting_methods.inl"
     #include "types/comparator.inl"
+    #include "types/comparator_assertion.inl"
 
     #include "custom_simd_hash/simd_hash.hpp"
 
@@ -229,12 +230,12 @@ namespace vison {
         #include "inlines/transform/sort_by/permute_block_bool.inl"
         #include "inlines/transform/sort_by/permute_block.inl"
 
-        #include "inlines/transform/sort_by/sort_string.inl"
+        //#include "inlines/transform/sort_by/sort_string.inl"
         #include "inlines/transform/sort_by/sort_char.inl"
-        #include "inlines/transform/sort_by/sort_bool.inl"
-        #include "inlines/transform/sort_by/sort_integers.inl"
-        #include "inlines/transform/sort_by/sort_uintegers.inl"
-        #include "inlines/transform/sort_by/sort_flt.inl"
+        //#include "inlines/transform/sort_by/sort_bool.inl"
+        //#include "inlines/transform/sort_by/sort_integers.inl"
+        //#include "inlines/transform/sort_by/sort_uintegers.inl"
+        //#include "inlines/transform/sort_by/sort_flt.inl"
 
 
       public:
