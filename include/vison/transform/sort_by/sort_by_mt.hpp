@@ -1,7 +1,16 @@
 #pragma once
 
-template <bool ASC = 1, unsigned int CORES = 1, bool Simd = true>
-void sort_by_mt(unsigned int& n) {
+template <bool ASC = 1, 
+          unsigned int CORES = 4,
+          bool Simd = true,
+          SortType S = SortType::Radix,
+          typename ComparatorFactory = DefaultComparatorFactory>
+void sort_by(unsigned int& n) {
+
+      static_assert(is_supported_sort<S>::value, 
+                      "Sorting Method Not Supported");
+
+      //auto cmp = make_cmp.template operator()<ASC, UIntT>(col);
 
       std::vector<size_t> idx(nrow);
       std::iota(idx.begin(), idx.end(), 0);
@@ -36,33 +45,32 @@ void sort_by_mt(unsigned int& n) {
       {
           case 's':
           {
-              auto values = std::span<const std::string>(str_v.data() + col_id * nrow, nrow);
-              sort_string<ASC>(idx, values);
+              sort_string<ASC, CORES, Simd, S, ComparatorFactory>(idx, nrow, col_id);
               break;
           }
           case 'c':
           {
-              radix_sort_char<ASC, CORES, Simd>(idx, nrow, col_id);
+              sort_char<ASC, CORES, Simd, S, ComparatorFactory>(idx, nrow, col_id);
               break;
           }
           case 'b':
           {
-              sort_bool<ASC>(idx, nrow, col_id);
+              sort_bool<ASC, CORES, Simd, S, ComparatorFactory>(idx, nrow, col_id); 
               break;
           }
           case 'i':
           {
-              radix_sort_integers<ASC, CORES, Simd>(idx, nrow, col_id);
+              sort_integers<ASC, CORES, Simd, S, ComparatorFactory>(idx, nrow, col_id);
               break;
           }
           case 'u':
           {
-              radix_sort_uintegers<ASC, CORES, Simd>(idx, nrow, col_id);
+              sort_uintegers<ASC, CORES, Simd, S, ComparatorFactory>(idx, nrow, col_id);
               break;
           }
           case 'd':
           {
-              radix_sort_flt<ASC, CORES, Simd>(idx, nrow, col_id);
+              sort_flt<ASC, CORES, Simd, S, ComparatorFactory>(idx, nrow, col_id);
               break;
           }
       }
