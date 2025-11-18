@@ -9,8 +9,6 @@ void sort_by(unsigned int& n) {
       static_assert(is_supported_sort<S>::value, 
                       "Sorting Method Not Supported");
 
-      //auto cmp = make_cmp.template operator()<ASC, UIntT>(col);
-
       std::vector<size_t> idx(nrow);
       std::iota(idx.begin(), idx.end(), 0);
     

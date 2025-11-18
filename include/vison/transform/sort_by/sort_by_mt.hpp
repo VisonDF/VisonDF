@@ -3,14 +3,16 @@
 template <bool ASC = 1, 
           unsigned int CORES = 4,
           bool Simd = true,
+          bool InnerThreads = false,
           SortType S = SortType::Radix,
           typename ComparatorFactory = DefaultComparatorFactory>
-void sort_by(unsigned int& n) {
+void sort_by_mt(unsigned int& n) {
 
       static_assert(is_supported_sort<S>::value, 
                       "Sorting Method Not Supported");
-
-      //auto cmp = make_cmp.template operator()<ASC, UIntT>(col);
+ 
+     int prev_nested = omp_get_nested();
+     omp_set_nested(InnerThreads);
 
       std::vector<size_t> idx(nrow);
       std::iota(idx.begin(), idx.end(), 0);
@@ -75,57 +77,67 @@ void sort_by(unsigned int& n) {
           }
       }
 
-      std::vector<std::string> str_v2(nrow);
-      
-      permute_block<std::string>(
+      permute_block_mt<std::string, CORES, Simd, InnerThreads>(
           str_v,
           tmp_val_refv,
-          str_v2,
           matr_idx[0],
           idx,
           nrow);
 
-      permute_block<char>(
+      permute_block_mt<char, CORES, Simd, InnerThreads>(
           chr_v,
           tmp_val_refv,
-          str_v2,
           matr_idx[1],
           idx,
           nrow);
-      
-     permute_block_bool(
-         bool_v,
-         tmp_val_refv,
-         str_v2,
-         matr_idx[2],
-         idx,
-         nrow);
-      
-      permute_block<IntT>(
+     
+     if constexpr (std::is_same_v<BoolT, bool>) {
+
+         std::vector<std::string> str_v2(nrow);
+         permute_block_bool(
+             bool_v,
+             tmp_val_refv,
+             str_v2,
+             matr_idx[2],
+             idx,
+             nrow);
+
+     } else if constexpr (std::is_same_v<BoolT, uint8_t>) {
+
+             permute_block_mt<uint8_t, CORES, Simd, InnerThreads>(
+                bool_v,
+                tmp_val_refv,
+                matr_idx[2],
+                idx,
+                nrow);
+
+     }
+
+      permute_block_mt<IntT, CORES, Simd, InnerThreads>(
           int_v,
           tmp_val_refv,
-          str_v2,
           matr_idx[3],
           idx,
           nrow);
       
-      permute_block<UIntT>(
+      permute_block_mt<UIntT, CORES, Simd, InnerThreads>(
           uint_v,
           tmp_val_refv,
-          str_v2,
           matr_idx[4],
           idx,
           nrow);
       
-      permute_block<FloatT>(
+      permute_block_mt<FloatT, CORES, Simd, InnerThreads>(
           dbl_v,
           tmp_val_refv,
-          str_v2,
           matr_idx[5],
           idx,
           nrow);
 
-      
+    omp_set_nested(prev_nested);
+
 };
+
+
 
 

@@ -155,7 +155,8 @@ namespace vison {
     template <typename Types = DefaultTypes>
     class Dataframe{
       private:
- 
+
+        using BoolT = typename Types::BoolT;
         using IntT = typename Types::IntT;
         using UIntT = typename Types::UIntT;
         using FloatT = typename Types::FloatT;
@@ -224,6 +225,7 @@ namespace vison {
 
         #include "inlines/transform/sort_by/permute_block_bool.inl"
         #include "inlines/transform/sort_by/permute_block.inl"
+        #include "inlines/transform/sort_by/permute_block_mt.inl"
 
         //#include "inlines/transform/sort_by/sort_string.inl"
         #include "inlines/transform/sort_by/sort_char.inl"
@@ -389,7 +391,7 @@ namespace vison {
         #endif
 
         #include "transform/sort_by/sort_by.hpp"
-        //#include "transform/sort_by/sort_by_mt.hpp"
+        #include "transform/sort_by/sort_by_mt.hpp"
 
         #include "concat/concat.hpp"
             
