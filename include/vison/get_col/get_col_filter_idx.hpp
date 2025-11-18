@@ -1,6 +1,6 @@
 #pragma once
 
-template <typename T>
+template <typename T, bool IsBool = false>
 void get_col_filter_idx(unsigned int &x, 
                 std::vector<T> &rtn_v,
                 std::vector<unsigned int> &mask) {
@@ -10,7 +10,7 @@ void get_col_filter_idx(unsigned int &x,
   unsigned int i;
   unsigned int i2 = 0;
 
-  if constexpr (std::is_same_v<T, bool>) {
+  if constexpr (IsBool) {
 
     while (i2 < matr_idx[2].size()) {
       if (x == matr_idx[2][i2]) {
