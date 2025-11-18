@@ -13,7 +13,7 @@ inline void sort_flt(
 )
 {
 
-    const FloatT* col = int_v.data() + col_id * nrow;
+    const FloatT* col = dbl_v.data() + col_id * nrow;
 
     auto cmp = make_cmp.template operator()<ASC, FloatT>(col);
     static_assert(IndexComparator<decltype(cmp)>,
