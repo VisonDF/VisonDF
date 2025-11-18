@@ -1,13 +1,16 @@
 #pragma once
 
-template <typename T>
-void fapply_simd_filter_range(void (&f)(T&), 
+template <typename F>
+requires FapplyFn<F, first_arg_t<F>>
+void fapply_simd_filter_range(F f, 
                 unsigned int& n, 
                 const std::vector<uint8_t>& mask,
                 const unsigned int& strt_vl) 
 {
 
     assert(mask.size() <= nrow);
+
+    using T = first_arg_t<F>;
 
     if constexpr (std::is_same_v<T, bool>)
         apply_numeric_simd_filter_range<decltype(bool_v), bool>(bool_v, n, 0, f, mask);

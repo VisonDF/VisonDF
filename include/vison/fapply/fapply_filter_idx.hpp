@@ -1,10 +1,13 @@
 #pragma once
 
-template <typename T>
-void fapply_filter_idx(void (&f)(T&), 
+template <typename F>
+requires FapplyFn<F, first_arg_t<F>>
+void fapply_filter_idx(F f, 
                 unsigned int& n, 
                 const std::vector<unsigned int>& mask) 
 {
+
+    using T = first_arg_t<F>;
 
     if constexpr (std::is_same_v<T, bool>)
         apply_numeric_filter_idx<decltype(bool_v), bool>(bool_v, n, 0, f, mask);

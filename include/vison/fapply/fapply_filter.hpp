@@ -1,10 +1,13 @@
 #pragma once
 
-template <typename T>
-void fapply_filter(void (&f)(T&), 
+template <typename F>
+requires FapplyFn<F, first_arg_t<F>>
+void fapply_filter(F f, 
                 unsigned int& n, 
                 const std::vector<uint8_t>& mask) 
 {
+
+    using T = first_arg_t<F>;
 
     assert(mask.size() <= nrow);
 

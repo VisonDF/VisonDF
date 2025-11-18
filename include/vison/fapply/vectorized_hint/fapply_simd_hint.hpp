@@ -1,7 +1,10 @@
 #pragma once
 
-template <typename T>
-void fapply_simd(void (&f)(T&), unsigned int& n) {
+template <typename F>
+requires FapplyFn<F, first_arg_t<F>>
+void fapply_simd(F f, unsigned int& n) {
+
+    using T = first_arg_t<F>;
 
     if constexpr (std::is_same_v<T, bool>)
         apply_numeric_simd<decltype(bool_v), bool>(bool_v, n, 0, f);

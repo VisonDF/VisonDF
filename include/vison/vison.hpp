@@ -17,6 +17,7 @@
 #include <variant>
 #include <vector>
 #include <concepts>
+#include <type_traits>
 
 #if __has_include(<simd>)
   #include <simd>
@@ -56,6 +57,8 @@ namespace vison {
     #include "types/supported_sorting_methods.inl"
     #include "types/comparator.inl"
     #include "types/comparator_assertion.inl"
+    #include "types/fapply_assertion.inl"
+
 
     #include "custom_simd_hash/simd_hash.hpp"
 
@@ -206,23 +209,15 @@ namespace vison {
         #include "inlines/classify_column.inl"
      
         #include "detail/longest_determine.hpp"
-    
+
         #include "inlines/fapply/max_chars_needed.inl"
-
         #include "inlines/fapply/apply_numeric.inl"
-
         #include "inlines/fapply/apply_numeric_filter_range.inl"
-
         #include "inlines/fapply/apply_numeric_filter.inl"
-
         #include "inlines/fapply/apply_numeric_filter_idx.inl"
-
         #include "inlines/fapply/vectorized_hint/apply_numeric_simd.inl"
-
         #include "inlines/fapply/vectorized_hint/apply_numeric_simd_filter.inl"
-
         #include "inlines/fapply/vectorized_hint/apply_numeric_simd_filter_idx.inl"
-
         #include "inlines/fapply/vectorized_hint/apply_numeric_simd_filter_range.inl"
 
         #include "inlines/write_csv/estimate_row_size.inl"
@@ -252,46 +247,28 @@ namespace vison {
 
         #include "reinitiate.hpp"
          
-        #include "fapply/fapply.hpp"
-   
+        #include "fapply/fapply.hpp" 
         #include "fapply/fapply_filter.hpp"
-
         #include "fapply/fapply_filter_range.hpp"
-
         #include "fapply/fapply_filter_idx.hpp"
-
         #include "fapply/vectorized_hint/fapply_simd_hint.hpp"
-
         #include "fapply/vectorized_hint/fapply_simd_hint_filter.hpp"
-
         #include "fapply/vectorized_hint/fapply_simd_hint_filter_idx.hpp"
-
         #include "fapply/vectorized_hint/fapply_simd_hint_filter_range.hpp"
 
-        #include "view_col/view_col.hpp"
-        
+        #include "view_col/view_col.hpp" 
         #include "view_col/view_colstr.hpp"
-    
         #include "view_col/view_colchr.hpp"
-
         #include "view_col/view_colint.hpp"
-         
         #include "view_col/view_coluint.hpp"
-       
         #include "view_col/view_colflt.hpp"
        
         #include "get_col/get_col_filter.hpp"
-
         #include "get_col/vectorized/get_col_filter_simd.hpp"
-
         #include "get_col/get_col_filter_idx.hpp"
-
         #include "get_col/vectorized/get_col_filter_idx_simd.hpp"
-
         #include "get_col/get_col_filter_range.hpp"
-
         #include "get_col/vectorized/get_col_filter_range_simd.hpp"
-
         #include "get_col/vectorized/get_col.hpp" 
         
         [[nodiscard]] const std::vector<std::vector<std::string>>& get_tmp_val_refv() const {
@@ -306,68 +283,45 @@ namespace vison {
           return ncol;
         };
    
-        #include "get_dataframe/get_dataframe.hpp"
-    
+        #include "get_dataframe/get_dataframe.hpp" 
         #include "get_dataframe/get_dataframe_filter.hpp"
-         
         #include "get_dataframe/get_dataframe_filter_range.hpp"
-
         #include "get_dataframe/vectorized/get_dataframe_filter_simd.hpp"
-
         #include "get_dataframe/vectorized/get_dataframe_filter_range_simd.hpp"
-
         #include "get_dataframe/get_dataframe_filter_idx.hpp"
-  
         #include "get_dataframe/vectorized/get_dataframe_filter_idx_simd.hpp"
 
         #include "write_csv/writef.hpp"
    
         #include "rep_col/rep_col.hpp"
-        
         #include "rep_col/batched/rep_col_batch.hpp"
-
         #include "rep_col/rep_col_filter.hpp"
-
         #include "rep_col/batched/rep_col_filter_batch.hpp"
-
         #include "rep_col/rep_col_filter_range.hpp"
-
         #include "rep_col/rep_col_filter_idx.hpp"
-
         #include "rep_col/batched/rep_col_filter_idx_batch.hpp"
-
         #include "rep_col/batched/rep_col_filter_range_batch.hpp"
 
         #include "add_col/add_col.hpp"
-        
         #include "add_col/batched/add_col_batch.hpp"
 
         #include "rm_col/rm_col.hpp"
-
         #include "rm_col/rm_col_range.hpp"
-    
         #include "rm_col/rm_col_range_reconstruct.hpp"
 
         #include "rm_row/rm_row.hpp"
- 
         #include "rm_row/batched/rm_row_batch.hpp"
-  
         #include "rm_row/rm_row_range.hpp"
- 
         #include "rm_row/batched/rm_row_range_batch.hpp"
-
         #include "rm_row/rm_row_range_reconstruct.hpp"
-
         #include "rm_row/vectorized/rm_row_range_reconstruct_simd.hpp"
 
-        #include "transform/transform_inner/transform_inner.hpp"
-        
+        #include "transform/transform_inner/transform_inner.hpp" 
         #ifdef _OPENMP
         #include "transform/transform_inner/transform_inner_mt.hpp"
         #endif
 
         #include "transform/transform_excluding/transform_excluding.hpp"
- 
         #ifdef _OPENMP
         #include "transform/transform_excluding/transform_excluding_mt.hpp"
         #endif
