@@ -5,7 +5,7 @@ template <bool ASC,
           bool Simd = true,
           SortType S = SortType::Radix,
           typename ComparatorFactory = DefaultComparatorFactory>
-inline void radix_sort_char(
+inline void sort_char(
     std::vector<size_t>& idx,
     unsigned int nrow,
     unsigned int col_id,
