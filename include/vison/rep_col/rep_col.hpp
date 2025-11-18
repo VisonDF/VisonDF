@@ -1,6 +1,6 @@
 #pragma once
 
-template <typename T, bool Large = false> 
+template <typename T, bool Large = false, bool IsBool = false> 
 void rep_col(std::vector<T> &x, unsigned int &colnb) {
 
   if (x.size() != nrow) {
@@ -11,7 +11,7 @@ void rep_col(std::vector<T> &x, unsigned int &colnb) {
  
   unsigned int i;
   unsigned int i2 = 0;
-  if constexpr (std::is_same_v<T, bool>) {
+  if constexpr (IsBool) {
 
     while (i2 < matr_idx[2].size()) {
       if (colnb == matr_idx[2][i2]) {
@@ -28,7 +28,7 @@ void rep_col(std::vector<T> &x, unsigned int &colnb) {
     i2 = nrow * i2;
 
     std::vector<std::string>& val_tmp = tmp_val_refv[colnb]; 
-    constexpr size_t buf_size = 2;
+    constexpr size_t buf_size = max_chars_needed<uint8_t>();
 
     for (auto& el : val_tmp) {
       el.reserve(buf_size);
