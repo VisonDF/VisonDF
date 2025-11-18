@@ -49,9 +49,10 @@ void transform_filter_idx_mt(std::vector<unsigned int>& mask)
         unsigned int nrow_local = 0;
         const auto col2 = std::vector<bool>(bool_v.begin() + nrow * i2, 
                         bool_v.begin() + nrow * (i2 + 1));
+        auto* col = bool_v.data() + nrow2 * i2;
         for (const auto& pos_idx : mask) {
           val_tmp[nrow_local] = val_tmp2[pos_idx];
-          bool_v[nrow2 * i2 + nrow_local] = col2[pos_idx];
+          col[nrow2 * i2 + nrow_local] = col2[pos_idx];
           nrow_local += 1;
         }
       };

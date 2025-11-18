@@ -1,46 +1,42 @@
 #pragma once
 
 template <bool ASC, 
-          unsigned int CORES = 1,
+          unsigned int CORES = 4, 
           bool Simd = true,
           SortType S = SortType::Radix,
-          bool IsBoolCompressed = false,
           typename ComparatorFactory = DefaultComparatorFactory>
-inline void sort_bool(
+inline void sort_char_ext(
     std::vector<size_t>& idx,
-    const* uint8_t col,
+    const char* col,
+    unsigned int nrow,
     ComparatorFactory make_cmp = ComparatorFactory{}
-    )
-{ 
+)
+{
 
-    auto cmp = make_cmp.template operator()<ASC, UIntT>(col);
+    auto cmp = make_cmp.template operator()<ASC, int8_t>(col);
     static_assert(IndexComparator<decltype(cmp)>,
               "Comparator must be cmp(size_t,size_t)->bool");
 
     if constexpr (S == SortType::Radix) {
 
-        static_assert(std::is_same_v<BoolT, uint8_t> && ,
-              "Comparator must be cmp(size_t,size_t)->bool");
-
-
         if constexpr (CORES == 1) {
 
-                radix_sort_bool_u8<Simd, IsBoolCompressed>(col, idx.data(), nrow);
+            radix_sort_int8<Simd>(col, idx.data(), nrow);
 
         } else if constexpr (CORES > 1) {
 
-                radix_sort_bool_u8<CORES, Simd, IsBoolCompressed>(col, idx.data(), nrow);
+            radix_sort_int8_mt<CORES, Simd>(col, idx.data(), nrow);
 
         }
 
-    } else if constexpr (S == SorType::Standard) {
+    } else if constexpr (S == SortType::Standard) {
 
-        if constexpr (CORES == 1) {
+            if constexpr (CORES == 1) {
 
-                std::sort(idx.begin(), idx.end(), cmp);
+                    std::sort(idx.begin(), idx.end(), cmp);
 
-        } else if constexpr (CORES > 1) {
- 
+            } else if constexpr (CORES > 1) {
+                
                 std::vector<std::pair<size_t, size_t>> chunks(CORES);
                
                 // precomputation of the chunks
@@ -55,15 +51,15 @@ inline void sort_bool(
                 {
                     int tid = omp_get_thread_num();
                     auto [start, end] = chunks[tid];
-                    std::sort(col.begin() + start, col.begin() + end, cmp);
+                    std::sort(idx.begin() + start, idx.begin() + end, cmp);
                 }
 
-                std::vector<BoolT> tmp(nrow);
+                std::vector<size_t> tmp(nrow);
                 bool flip = false;
                 
                 while (chunks.size() > 1) {
                 
-                    std::vector<std::pair<size_t, size_t>> next;
+                    std::vector<std::pair<size_t,size_t>> next;
                     next.resize(chunks.size() / 2);   
                 
                     const size_t end_loop = chunks.size() - 1;
@@ -112,19 +108,16 @@ inline void sort_bool(
                 }
                 
                 if (flip)
-                    col = tmp;
+                    idx = tmp;
 
             }
-
-        }
 
     }
 
     if constexpr (!ASC) {
-        std:reverse(idx.begin(), idx.end());
+      std::reverse(idx.begin(), idx.end());
     }
 
 }
-
 
 

@@ -47,12 +47,13 @@ void transform_filter_range_mt(const std::vector<uint8_t>& mask,
         const unsigned int& pos_vl = matr_idx[2][i2];
         std::vector<std::string>& val_tmp = tmp_val_refv[pos_vl];
         unsigned int nrow_local = 0;
+        auto* col = bool_v.data() + nrow2 * i2;
         for (size_t i = 0; i < mask.size(); ++i) {
           if (!mask[i]) {
             continue;
           }
           val_tmp[nrow_local] = val_tmp[i + strt_vl];
-          bool_v[nrow2 * i2 + nrow_local] = bool_v[nrow2 * i2 + i + strt_vl];
+          col[nrow_local] = col[i + strt_vl];
           nrow_local += 1;
         }
       };

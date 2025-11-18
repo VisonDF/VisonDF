@@ -18,7 +18,7 @@ void transform_left_join_aligned(Dataframe &obj,
 
     const std::vector<std::string>& str_v2 = obj.get_str_vec();
     const std::vector<char>& chr_v2 = obj.get_chr_vec();
-    const std::vector<bool>& bool_v2 = obj.get_bool_vec();
+    const std::vector<uint8_t>& bool_v2 = obj.get_bool_vec();
     const std::vector<int>& int_v2 = obj.get_int_vec();
     const std::vector<unsigned int>& uint_v2 = obj.get_uint_vec();
     const std::vector<double>& dbl_v2 = obj.get_dbl_vec();
@@ -145,8 +145,8 @@ void transform_left_join_aligned(Dataframe &obj,
         std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
         const std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
 
-        auto* dst_val = bool_v.begin() + nrow * (size_bool + t);
-        const auto* src_val = bool_v2.begin() + nrow2 * t;
+        auto* dst_val = bool_v.data() + nrow * (size_bool + t);
+        const auto* src_val = bool_v2.data() + nrow2 * t;
 
         for (size_t i = 0; i < nrow; ++i) {
             size_t j = match_idx[i];

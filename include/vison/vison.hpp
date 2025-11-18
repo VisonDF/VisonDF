@@ -156,7 +156,6 @@ namespace vison {
     class Dataframe{
       private:
 
-        using BoolT = typename Types::BoolT;
         using IntT = typename Types::IntT;
         using UIntT = typename Types::UIntT;
         using FloatT = typename Types::FloatT;
@@ -166,7 +165,7 @@ namespace vison {
       
         std::vector<std::string> str_v = {};
         std::vector<char> chr_v = {};
-        std::vector<bool> bool_v = {};
+        std::vector<uint8_t> bool_v = {};
         std::vector<IntT> int_v = {};
         std::vector<UIntT> uint_v = {};
         std::vector<FloatT> dbl_v = {};
@@ -187,7 +186,7 @@ namespace vison {
           return chr_v;
         };
     
-        [[nodiscard]] inline const std::vector<bool>& get_bool_vec() const {
+        [[nodiscard]] inline const std::vector<uint8_t>& get_bool_vec() const {
           return bool_v;
         };
     

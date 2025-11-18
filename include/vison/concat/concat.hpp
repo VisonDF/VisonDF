@@ -90,7 +90,7 @@ void concat(Dataframe& obj)
  
     chr_v.swap(new_chr_v);
 
-    std::vector<bool> new_bool_v;
+    std::vector<uint8_t> new_bool_v;
     new_bool_v.reserve(bool_v.size() + bool_v2.size());
  
     for (size_t el = 0; el < matr_idx[2].size(); el += 1) {

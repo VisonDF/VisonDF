@@ -47,32 +47,38 @@ void sort_by_mt(unsigned int& n) {
       {
           case 's':
           {
-              sort_string<ASC, CORES, Simd, S, ComparatorFactory>(idx, nrow, col_id);
+              const std::string* keys = str_v.data() + nrow * col_id;
+              sort_string<ASC, CORES, Simd, S, ComparatorFactory>(idx, keys);
               break;
           }
           case 'c':
           {
-              sort_char<ASC, CORES, Simd, S, ComparatorFactory>(idx, nrow, col_id);
+              const int8_t* keys = reinterpret_cast<const int8_t*>(chr_v.data()) + nrow * col_id;
+              sort_char<ASC, CORES, Simd, S, ComparatorFactory>(idx, keys);
               break;
           }
           case 'b':
           {
-              sort_bool<ASC, CORES, Simd, S, ComparatorFactory>(idx, nrow, col_id); 
+              const uint8_t* keys = dbl_v.data() + nrow * col_id;
+              sort_bool<ASC, CORES, Simd, S, false, ComparatorFactory>(idx, keys); 
               break;
           }
           case 'i':
           {
-              sort_integers<ASC, CORES, Simd, S, ComparatorFactory>(idx, nrow, col_id);
+              const IntT* keys = int_v.data() + nrow * col_id;
+              sort_integers<ASC, CORES, Simd, S, ComparatorFactory>(idx, keys);
               break;
           }
           case 'u':
           {
-              sort_uintegers<ASC, CORES, Simd, S, ComparatorFactory>(idx, nrow, col_id);
+              const UIntT* keys = uint_v.data() + nrow * col_id;
+              sort_uintegers<ASC, CORES, Simd, S, ComparatorFactory>(idx, keys);
               break;
           }
           case 'd':
           {
-              sort_flt<ASC, CORES, Simd, S, ComparatorFactory>(idx, nrow, col_id);
+              const FloatT* keys = dbl_v.data() + nrow * col_id;
+              sort_flt<ASC, CORES, Simd, S, ComparatorFactory>(idx, keys);
               break;
           }
       }
@@ -91,27 +97,12 @@ void sort_by_mt(unsigned int& n) {
           idx,
           nrow);
      
-     if constexpr (std::is_same_v<BoolT, bool>) {
-
-         std::vector<std::string> str_v2(nrow);
-         permute_block_bool(
-             bool_v,
-             tmp_val_refv,
-             str_v2,
-             matr_idx[2],
-             idx,
-             nrow);
-
-     } else if constexpr (std::is_same_v<BoolT, uint8_t>) {
-
-             permute_block_mt<uint8_t, CORES, Simd, InnerThreads>(
-                bool_v,
-                tmp_val_refv,
-                matr_idx[2],
-                idx,
-                nrow);
-
-     }
+      permute_block_mt<uint8_t, CORES, Simd, InnerThreads>(
+         bool_v,
+         tmp_val_refv,
+         matr_idx[2],
+         idx,
+         nrow);
 
       permute_block_mt<IntT, CORES, Simd, InnerThreads>(
           int_v,

@@ -1,7 +1,6 @@
 template<typename T>
 struct is_supported_bool 
     : std::bool_constant<
-          std::is_same_v<T, bool> ||
           std::is_same_v<T, uint8_t>
       > {};
 

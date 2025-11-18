@@ -32,7 +32,7 @@ void rm_col_range_reconstruct(std::vector<unsigned int> rm_cols) {
 
     std::vector<std::string> new_str_v;  new_str_v .reserve(kept_per_type[0] * rows);
     std::vector<char>        new_chr_v;  new_chr_v .reserve(kept_per_type[1] * rows);
-    std::vector<bool>        new_bool_v; new_bool_v.reserve(kept_per_type[2] * rows);
+    std::vector<uint8_t>     new_bool_v; new_bool_v.reserve(kept_per_type[2] * rows);
     std::vector<IntT>        new_int_v;  new_int_v .reserve(kept_per_type[3] * rows);
     std::vector<UIntT>       new_uint_v; new_uint_v.reserve(kept_per_type[4] * rows);
     std::vector<FloatT>      new_dbl_v;  new_dbl_v .reserve(kept_per_type[5] * rows);

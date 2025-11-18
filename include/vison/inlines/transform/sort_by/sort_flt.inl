@@ -7,13 +7,10 @@ template <bool ASC,
     typename ComparatorFactory = DefaultComparatorFactory>
 inline void sort_flt(
     std::vector<size_t>& idx,
-    unsigned int nrow,
-    unsigned int col_id,
+    const FloatT* col,
     ComparatorFactory make_cmp = ComparatorFactory{}
 )
 {
-
-    const FloatT* col = dbl_v.data() + col_id * nrow;
 
     auto cmp = make_cmp.template operator()<ASC, FloatT>(col);
     static_assert(IndexComparator<decltype(cmp)>,

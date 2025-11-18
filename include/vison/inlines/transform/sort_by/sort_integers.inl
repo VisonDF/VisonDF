@@ -7,13 +7,11 @@ template <bool ASC,
         typename ComparatorFactory = DefaultComparatorFactory>
 inline void sort_integers(
     std::vector<size_t>& idx,
-    unsigned int nrow,
+    const IntT* col,
     unsigned int col_id,
     ComparatorFactory make_cmp = ComparatorFactory{}
 )
 {
-
-    const IntT* col = int_v.data() + col_id * nrow;
 
     auto cmp = make_cmp.template operator()<ASC, IntT>(col);
     static_assert(IndexComparator<decltype(cmp)>,

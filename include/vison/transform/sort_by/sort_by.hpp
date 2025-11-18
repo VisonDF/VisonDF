@@ -42,32 +42,38 @@ void sort_by(unsigned int& n) {
       {
           case 's':
           {
-              sort_string<ASC, 1, Simd, S, ComparatorFactory>(idx, nrow, col_id);
+              const std::string* keys = str_v.data() + nrow * col_id;
+              sort_string<ASC, 1, Simd, S, ComparatorFactory>(idx, keys);
               break;
           }
           case 'c':
           {
-              sort_char<ASC, 1, Simd, S, ComparatorFactory>(idx, nrow, col_id);
+              const int8_t* keys = reinterpret_cast<const int8_t*>(chr_v.data()) + nrow * col_id;
+              sort_char<ASC, 1, Simd, S, ComparatorFactory>(idx, keys);
               break;
           }
           case 'b':
           {
-              sort_bool<ASC, 1, Simd, S, ComparatorFactory>(idx, nrow, col_id); 
+              const uint8_t* keys = bool_v.data() + nrow * col_id;
+              sort_bool<ASC, 1, Simd, S, ComparatorFactory>(idx, keys); 
               break;
           }
           case 'i':
           {
-              sort_integers<ASC, 1, Simd, S, ComparatorFactory>(idx, nrow, col_id);
+              const IntT* keys = int_v.data() + nrow * col_id;
+              sort_integers<ASC, 1, Simd, S, ComparatorFactory>(idx, keys);
               break;
           }
           case 'u':
           {
-              sort_uintegers<ASC, 1, Simd, S, ComparatorFactory>(idx, nrow, col_id);
+              const UIntT* keys = uint_v.data() + nrow * col_id;
+              sort_uintegers<ASC, 1, Simd, S, ComparatorFactory>(idx, keys);
               break;
           }
           case 'd':
           {
-              sort_flt<ASC, 1, Simd, S, ComparatorFactory>(idx, nrow, col_id);
+              const FloatT* keys = dbl_v.data() + nrow * col_id;
+              sort_flt<ASC, 1, Simd, S, ComparatorFactory>(idx, keys);
               break;
           }
       }
@@ -90,7 +96,7 @@ void sort_by(unsigned int& n) {
           idx,
           nrow);
       
-     permute_block_bool(
+     permute_block<uint8_t>(
          bool_v,
          tmp_val_refv,
          str_v2,

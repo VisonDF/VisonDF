@@ -61,13 +61,11 @@ void transform_filter_mt(std::vector<uint8_t>& mask)
           const unsigned int& pos_vl = matr_idx[2][i2];
           std::vector<std::string>& val_tmp = tmp_val_refv[pos_vl];
           unsigned int nrow_local = 0;
+          auto* col = bool_v.data() + nrow2 * i2;
           for (size_t i = 0; i < mask.size(); ++i) {
               if (!mask[i]) continue;
               val_tmp[nrow_local] = val_tmp[i];
-              #pragma omp critical(bool_write)
-              {
-                  bool_v[nrow2 * i2 + nrow_local] = bool_v[nrow2 * i2 + i];
-              }
+              col[nrow_local] = col[i];
               nrow_local += 1;
           }
       }

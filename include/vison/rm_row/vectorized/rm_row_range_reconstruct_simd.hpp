@@ -13,7 +13,7 @@ void rm_row_range_reconstruct_simd(std::vector<unsigned int> x)
 
     std::vector<std::string> new_str_v;  new_str_v .reserve(matr_idx[0].size() * new_nrow);
     std::vector<char>        new_chr_v;  new_chr_v .reserve(matr_idx[1].size() * new_nrow);
-    std::vector<bool>        new_bool_v; new_bool_v.reserve(matr_idx[2].size() * new_nrow);
+    std::vector<uint8_t>     new_bool_v; new_bool_v.reserve(matr_idx[2].size() * new_nrow);
     std::vector<IntT>        new_int_v;  new_int_v .reserve(matr_idx[3].size() * new_nrow);
     std::vector<UIntT>       new_uint_v; new_uint_v.reserve(matr_idx[4].size() * new_nrow);
     std::vector<FloatT>      new_dbl_v;  new_dbl_v .reserve(matr_idx[5].size() * new_nrow);
@@ -157,10 +157,11 @@ void rm_row_range_reconstruct_simd(std::vector<unsigned int> x)
                     break;
 
                 case 2: 
-                    if constexpr (LowDensity)
-                        compact_block_low_dense(new_bool_v, bool_v, base);
-                    else
-                        compact_block_scalar     (new_bool_v, bool_v, base);
+                    //if constexpr (LowDensity)
+                    //    compact_block_low_dense(new_bool_v, bool_v, base);
+                    //else
+                    //    compact_block_scalar     (new_bool_v, bool_v, base);
+                    compact_block_pod_simd.template operator()<uint8_t>(new_bool_v,  int_v,  base);
                     break;
 
                 case 3: 
