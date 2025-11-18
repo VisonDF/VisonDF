@@ -78,7 +78,7 @@ namespace vison {
   
     #include "types/inference_type.hpp"
 
-    #include "inlines/transform_aligned/match_group.inl"
+    #include "inlines/transform/transform_aligned/match_group.inl"
 
 
     #include "inlines/radix_sorts/details/constants.inl"
@@ -326,87 +326,64 @@ namespace vison {
         #include "transform/transform_excluding/transform_excluding_mt.hpp"
         #endif
         
-        #include "merge/merge_inner.hpp"
-
-        #include "transform/merge/no_dupplicates/transform_merge_inner2.hpp"
-        
-        #include "merge/no_dupplicates/merge_inner2.hpp"
-
-        #include "merge/merge_excluding.hpp"
-
+        #include "transform/merge/no_dupplicates/transform_merge_inner2.hpp" 
         #include "transform/merge/transform_merge_excluding.hpp"
    
+        #include "merge/merge_inner.hpp"
+        #include "merge/no_dupplicates/merge_inner2.hpp"
+        #include "merge/merge_excluding.hpp"
         #include "merge/merge_excluding_both.hpp"
-
         #include "merge/merge_all.hpp"
-        
         #include "merge/no_dupplicates/merge_all2.hpp"
 
         #include "transform/transform_left_join/transform_left_join.hpp"
-
         #ifdef _OPENMP
         #include "transform/transform_left_join/transform_left_join_simd.hpp"
         #include "transform/transform_left_join/transform_left_join_mt.hpp"
         #endif
-
         #include "transform/transform_left_join/transform_left_join_aligned.hpp"
-
         #ifdef _OPENMP
         #include "transform/transform_left_join/transform_left_join_aligned_simd.hpp"
         #include "transform/transform_left_join/transform_left_join_aligned_mt.hpp"
         #endif
-
         #include "one_to_many_join/otm.hpp"
-
         #ifdef _OPENMP
         #include "one_to_many_join/otm_simd.hpp"
         #include "one_to_many_join/otm_mt.hpp"
         #endif
 
         #include "transform/transform_filter/transform_filter.hpp"
-
         #ifdef _OPENMP
         #include "transform/transform_filter/transform_filter_mt.hpp"
         #endif
-
         #include "transform/transform_filter/transform_filter_range.hpp"
- 
         #ifdef _OPENMP
         #include "transform/transform_filter/transform_filter_range_mt.hpp"
         #endif
- 
         #include "transform/transform_filter/transform_filter_idx.hpp"
-
         #ifdef _OPENMP
         #include "transform/transform_filter/transform_filter_idx_mt.hpp"
         #endif
 
         #include "transform/transform_unique/transform_unique.hpp"
-
         #ifdef _OPENMP
         #include "transform/transform_unique/transform_unique_mt.hpp"
         #endif
 
         #include "transform/transform_group_by/transform_group_by.hpp"
-
         #ifdef _OPENMP
         #include "transform/transform_group_by/transform_group_by_mt.hpp"
         #endif
         
         #include "pivots/pivot_int.hpp"
-
         #ifdef _OPENMP
         #include "pivots/pivot_int_mt.hpp"
         #endif
-
         #include "pivots/pivot_uint.hpp"
-
         #ifdef _OPENMP
         #include "pivots/pivot_uint_mt.hpp"
         #endif
-
         #include "pivots/pivot_dbl.hpp"
-
         #ifdef _OPENMP
         #include "pivots/pivot_dbl_mt.hpp"
         #endif
@@ -417,7 +394,6 @@ namespace vison {
         #include "concat/concat.hpp"
             
         #include "set_colname.hpp"
-
         #include "set_rowname.hpp"
             
         [[nodiscard]] inline const std::vector<std::string>& get_colname() const {
