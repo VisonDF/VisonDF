@@ -2,11 +2,14 @@
 
 template <bool ASC = 1, 
           bool Simd = true,
-          SortType S = SortType::Radix>
+          SortType S = SortType::Radix,
+          typename ComparatorFactory = DefaultComparatorFactory>
 void sort_by(unsigned int& n) {
 
       static_assert(is_supported_sort<S>::value, 
                       "Sorting Method Not Supported");
+
+      //auto cmp = make_cmp.template operator()<ASC, UIntT>(col);
 
       std::vector<size_t> idx(nrow);
       std::iota(idx.begin(), idx.end(), 0);
@@ -41,33 +44,32 @@ void sort_by(unsigned int& n) {
       {
           case 's':
           {
-              auto values = std::span<const std::string>(str_v.data() + col_id * nrow, nrow);
-              sort_string<ASC>(idx, values);
+              sort_string<ASC, 1, Simd, S, ComparatorFactory>(idx, nrow, col_id);
               break;
           }
           case 'c':
           {
-              sort_char<ASC, 1, Simd, S>(idx, nrow, col_id);
+              sort_char<ASC, 1, Simd, S, ComparatorFactory>(idx, nrow, col_id);
               break;
           }
           case 'b':
           {
-              sort_bool<ASC>(idx, nrow, col_id); //TODO, add u8 variant when ready
+              sort_bool<ASC, 1, Simd, S, ComparatorFactory>(idx, nrow, col_id); 
               break;
           }
           case 'i':
           {
-              sort_integers<ASC, 1, Simd, S>(idx, nrow, col_id);
+              sort_integers<ASC, 1, Simd, S, ComparatorFactory>(idx, nrow, col_id);
               break;
           }
           case 'u':
           {
-              sort_uintegers<ASC, 1, Simd, S>(idx, nrow, col_id);
+              sort_uintegers<ASC, 1, Simd, S, ComparatorFactory>(idx, nrow, col_id);
               break;
           }
           case 'd':
           {
-              sort_flt<ASC, 1, Simd, S>(idx, nrow, col_id);
+              sort_flt<ASC, 1, Simd, S, ComparatorFactory>(idx, nrow, col_id);
               break;
           }
       }
