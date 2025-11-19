@@ -2,15 +2,15 @@
 
 template <unsigned int CORES = 4, bool Nested = true, bool SimdHash = true>
 void otm_mt(Dataframe &obj_l,
-                             Dataframe &obj_r,
-                             const unsigned int &key1, 
-                             const unsigned int &key2,
-                             const std::string default_str = "NA",
-                             const char default_chr = ' ',
-                             const bool default_bool = 0,
-                             const int default_int = 0,
-                             const unsigned int default_uint = 0,
-                             const double default_dbl = 0) 
+            Dataframe &obj_r,
+            const unsigned int &key1, 
+            const unsigned int &key2,
+            const std::string default_str = "NA",
+            const char default_chr = ' ',
+            const bool default_bool = 0,
+            const int default_int = 0,
+            const unsigned int default_uint = 0,
+            const double default_dbl = 0) 
 {
   
     const unsigned int& ncol1 = obj_l.get_ncol();
@@ -24,17 +24,17 @@ void otm_mt(Dataframe &obj_l,
 
     const std::vector<std::string>& str_v2   = obj_r.get_str_vec();
     const std::vector<char>& chr_v2          = obj_r.get_chr_vec();
-    const std::vector<bool>& bool_v2         = obj_r.get_bool_vec();
-    const std::vector<int>& int_v2           = obj_r.get_int_vec();
-    const std::vector<unsigned int>& uint_v2 = obj_r.get_uint_vec();
-    const std::vector<double>& dbl_v2        = obj_r.get_dbl_vec();
+    const std::vector<uint8_t>& bool_v2         = obj_r.get_bool_vec();
+    const std::vector<IntT>& int_v2           = obj_r.get_int_vec();
+    const std::vector<UIntT>& uint_v2 = obj_r.get_uint_vec();
+    const std::vector<FloatT>& dbl_v2        = obj_r.get_dbl_vec();
  
     const std::vector<std::string>& str_v1   = obj_l.get_str_vec();
     const std::vector<char>& chr_v1          = obj_l.get_chr_vec();
-    const std::vector<bool>& bool_v1         = obj_l.get_bool_vec();
-    const std::vector<int>& int_v1           = obj_l.get_int_vec();
-    const std::vector<unsigned int>& uint_v1 = obj_l.get_uint_vec();
-    const std::vector<double>& dbl_v1        = obj_l.get_dbl_vec();
+    const std::vector<uint8_t>& bool_v1         = obj_l.get_bool_vec();
+    const std::vector<IntT>& int_v1           = obj_l.get_int_vec();
+    const std::vector<UIntT>& uint_v1 = obj_l.get_uint_vec();
+    const std::vector<FloatT>& dbl_v1        = obj_l.get_dbl_vec();
    
     const unsigned int size_str1  = matr_idx1[0].size();
     const unsigned int size_chr1  = matr_idx1[1].size();
@@ -391,65 +391,60 @@ void otm_mt(Dataframe &obj_l,
         }
 
     }
-    
+
     #pragma omp parallel for num_threads(outer_threads) schedule(static)
     for (ptrdiff_t t = 0; t < static_cast<ptrdiff_t>(matr_idx1[2].size()); ++t) {
         size_t dst_col = matr_idx1[2][t];
-    
+
         std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
         const std::vector<std::string>& val_tmp2 = tmp_val_refv1[dst_col];
-    
-        auto&       dst_vec = bool_v;
-        const auto& src_vec = bool_v1;
-   
-        if constexpr (Nested) {
 
-            #pragma omp parallel num_threads(inner_threads)
-            {
-                thread_local std::vector<std::pair<size_t, bool>> thread_local_bools;
-                thread_local_bools.clear();
-    
-                #pragma omp for schedule(static)
-                for (ptrdiff_t i_ref = 0; i_ref < static_cast<ptrdiff_t>(nrow1); ++i_ref) {
-                    const size_t repeat = rep_v[i_ref];
-                    const size_t out = out_offset[i_ref];
-                    const bool v1 = src_vec[i_ref];
-                    const std::string& v2 = val_tmp2[i_ref];
-    
-                    thread_local_bools.reserve(thread_local_bools.size() + repeat);
-    
-                    for (size_t r = 0; r < repeat; ++r) {
-                        thread_local_bools.emplace_back(out + r, v1);
-                        val_tmp[out + r] = v2;
-                    }
+        auto*       dst_val = bool_v.data()  + nrow  * t;
+        const auto* src_val = bool_v1.data() + nrow1 * t;
+       
+        if constexpr (Nested) {
+            #pragma omp parallel for num_threads(inner_threads) schedule(static)
+            for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
+                const size_t repeat = rep_v[i_ref];
+            
+                const char& v1 = src_val[i_ref];
+                const std::string& v2 = val_tmp2[i_ref];
+            
+                const size_t out = out_offset[i_ref];
+
+                #pragma omp simd
+                for (size_t r = 0; r < repeat; ++r) {
+                    dst_val[out + r] = v1;
                 }
-    
-                #pragma omp critical
-                {
-                    for (auto [idx, val] : thread_local_bools)
-                        dst_vec[idx] = val;
+
+                for (size_t r = 0; r < repeat; ++r) {
+                    val_tmp[out + r] = v2;
                 }
-    
+
             }
         } else if constexpr (!Nested) {
-            std::vector<std::pair<size_t, bool>> local_bools;
-            local_bools.reserve(nrow1);
-
             size_t out = 0;
             for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
                 const size_t repeat = rep_v[i_ref];
-                const bool v1 = src_vec[i_ref];
+            
+                const char& v1 = src_val[i_ref];
                 const std::string& v2 = val_tmp2[i_ref];
+            
+                size_t pre_out = out;
 
-                for (size_t r = 0; r < repeat; ++r, ++out) {
-                    local_bools.emplace_back(out, v1);
-                    val_tmp[out] = v2;
+                #pragma omp simd
+                for (size_t r = 0; r < repeat; ++r) {
+                    dst_val[pre_out + r] = v1;
                 }
+
+                out += repeat;
+                pre_out = out - repeat;
+
+                for (size_t r = 0; r < repeat; ++r) {
+                    val_tmp[pre_out + r] = v2;
+                }
+
             }
-
-            for (auto [idx, val] : local_bools)
-                dst_vec[idx] = val;
-
         }
     }
 
@@ -457,66 +452,77 @@ void otm_mt(Dataframe &obj_l,
     for (ptrdiff_t t = 0; t < static_cast<ptrdiff_t>(matr_idx2b[2].size()); ++t) {
         size_t dst_col = matr_idx2b[2][t];
         size_t src_col = matr_idx2[2][t];
-    
+
         std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
         const std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
-    
-        auto&       dst_vec = bool_v;
-        const auto& src_vec = bool_v2;
+
+        auto*       dst_val = bool_v.data()  + nrow  * (size_chr1 + t);
+        const auto* src_val = bool_v2.data() + nrow2 * t;
 
         if constexpr (Nested) {
+            #pragma omp parallel for num_threads(inner_threads) schedule(static)
+            for (ptrdiff_t i_ref = 0; i_ref < static_cast<ptrdiff_t>(nrow1); ++i_ref) {
+                size_t out = out_offset[i_ref];
+                auto& matches = match_idx[i_ref]; 
 
-            #pragma omp parallel num_threads(inner_threads)
-            {
-                thread_local std::vector<std::pair<size_t, bool>> thread_local_bools;
-                thread_local_bools.clear();
-    
-                #pragma omp for schedule(static)
-                for (ptrdiff_t i_ref = 0; i_ref < static_cast<ptrdiff_t>(nrow1); ++i_ref) {
-                    size_t out = out_offset[i_ref];
-                    const auto& matches = match_idx[i_ref];
-    
-                    if (!matches.empty()) {
-                        thread_local_bools.reserve(thread_local_bools.size() + matches.size());
+                if (!matches.empty()) {
+
+                    if (matches.size() <= 4) {
                         for (size_t j_idx : matches) {
-                            thread_local_bools.emplace_back(out, src_vec[j_idx]);
+                            dst_val[out] = src_val[j_idx];
                             val_tmp[out] = val_tmp2[j_idx];
                             ++out;
                         }
-                    } else {
-                        ++out;
+                        continue;
                     }
-                }
-    
-                #pragma omp critical
-                {
-                    for (auto [idx, val] : thread_local_bools)
-                        dst_vec[idx] = val;
-                }
-    
-            }
-        } else if constexpr (!Nested) {
-            std::vector<std::pair<size_t, bool>> local_bools;
-            local_bools.reserve(nrow1);
+                
+                    for (size_t k = 0; k < matches.size();) {
+                        size_t start = matches[k];
+                        size_t run_len = 1;
+                        while (k + run_len < matches.size() && matches[k + run_len] == matches[k + run_len - 1] + 1)
+                            ++run_len;
+                        std::memcpy(dst_val + out, src_val + start, run_len * sizeof(uint8_t));
+                        std::copy_n(val_tmp2.begin() + start, run_len, val_tmp.begin() + out);
+                        out += run_len;
+                        k += run_len;
+                    }
 
-            size_t out = 0;
+                }
+            }
+
+        } else if constexpr (!Nested) {
+            size_t out = 0;  
             for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
-                const auto& matches = match_idx[i_ref];
+                const auto& matches = match_idx[i_ref]; 
 
                 if (!matches.empty()) {
-                    for (size_t j_idx : matches) {
-                        local_bools.emplace_back(out, src_vec[j_idx]);
-                        val_tmp[out] = val_tmp2[j_idx];
-                        ++out;
+
+                    if (matches.size() <= 4) {
+                        for (size_t j_idx : matches) {
+                            dst_val[out] = src_val[j_idx];
+                            val_tmp[out] = val_tmp2[j_idx];
+                            ++out;
+                        }
+                        continue;
                     }
+
+                    for (size_t k = 0; k < matches.size();) {
+                        size_t start = matches[k];
+                        size_t run_len = 1;
+                        while (k + run_len < matches.size() && matches[k + run_len] == matches[k + run_len - 1] + 1)
+                            ++run_len;
+                        std::memcpy(dst_val + out, src_val + start, run_len * sizeof(uint8_t));
+                        std::copy_n(val_tmp2.begin() + start, run_len, val_tmp.begin() + out);
+                        out += run_len;
+                        k += run_len;
+                    }
+
                 } else {
                     ++out;
                 }
             }
-
-            for (auto [idx, val] : local_bools)
-                dst_vec[idx] = val;
         }
+
     }
 
     #pragma omp parallel for num_threads(outer_threads) schedule(static)
