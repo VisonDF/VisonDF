@@ -152,19 +152,24 @@ namespace vison {
 
     #include "inlines/radix_sorts/radix_sort_bool_u8.inl" 
 
+    #include "inlines/array_length.inl"
+
     template <typename Types = DefaultTypes>
     class Dataframe{
       private:
 
+        using CharT = typename Types::CharT;
         using IntT = typename Types::IntT;
         using UIntT = typename Types::UIntT;
         using FloatT = typename Types::FloatT;
-    
+   
+        static constexpr std::size_t df_charbuf_size = array_length<CharT>::value;
+
         unsigned int nrow = 0;
         unsigned int ncol = 0;
       
         std::vector<std::string> str_v = {};
-        std::vector<char> chr_v = {};
+        std::vector<char[df_charbuf_size]> chr_v = {};
         std::vector<uint8_t> bool_v = {};
         std::vector<IntT> int_v = {};
         std::vector<UIntT> uint_v = {};
@@ -182,7 +187,7 @@ namespace vison {
           return str_v;
         };
     
-        [[nodiscard]] inline const std::vector<char>& get_chr_vec() const {
+        [[nodiscard]] inline const std::vector<char[df_charbuf_size]>& get_chr_vec() const {
           return chr_v;
         };
     
