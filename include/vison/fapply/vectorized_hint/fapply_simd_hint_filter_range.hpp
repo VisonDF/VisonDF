@@ -1,6 +1,6 @@
 #pragma once
 
-template <typename F>
+template <typename F, bool IsBool = false>
 requires FapplyFn<F, first_arg_t<F>>
 void fapply_simd_filter_range(F f, 
                 unsigned int& n, 
@@ -12,17 +12,23 @@ void fapply_simd_filter_range(F f,
 
     using T = first_arg_t<F>;
 
-    if constexpr (std::is_same_v<T, bool>)
-        apply_numeric_simd_filter_range<decltype(bool_v), bool>(bool_v, n, 0, f, mask);
+    if constexpr (IsBool) {
+        
+        if constexpr (!(std::is_same_v<T, uint8_t>)) {
+          std::cerr << "A bool must be uint8_t\n";
+          return;
+        }
+        
+        apply_numeric_simd_filter_range<uint8_t>(bool_v, n, 0, f, mask);
 
-    else if constexpr (std::is_same_v<T, IntT>)
-        apply_numeric_simd_filter_range<decltype(int_v), IntT>(int_v, n, 3, f, mask);
+    } else if constexpr (std::is_same_v<T, IntT>)
+        apply_numeric_simd_filter_range<IntT>(int_v, n, 3, f, mask);
 
     else if constexpr (std::is_same_v<T, UIntT>)
-        apply_numeric_simd_filter_range<decltype(uint_v), UIntT>(uint_v, n, 4, f, mask);
+        apply_numeric_simd_filter_range<UIntT>(uint_v, n, 4, f, mask);
 
     else if constexpr (std::is_same_v<T, FloatT>)
-        apply_numeric_simd_filter_range<decltype(dbl_v), FloatT>(dbl_v, n, 5, f, mask);
+        apply_numeric_simd_filter_range<FloatT>(dbl_v, n, 5, f, mask);
 
     else if constexpr (std::is_same_v<T, char>) {
         unsigned int i2 = 0;

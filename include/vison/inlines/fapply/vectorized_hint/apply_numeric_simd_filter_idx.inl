@@ -1,8 +1,8 @@
 #pragma once
 
-template <typename VecT, typename T, typename F>
+template <typename T, typename F>
 inline void apply_numeric_simd_filter_idx(
-    VecT& values,
+    std::vector<T>& values,
     unsigned int n,
     size_t idx_type,
     F&& f,

@@ -1,7 +1,7 @@
 #pragma once
 
-template <typename VecT, typename T, typename F>
-inline void apply_numeric(VecT& values, unsigned int n, size_t idx_type, F&& f) {
+template <typename T, typename F>
+inline void apply_numeric(std::vector<T>& values, unsigned int n, size_t idx_type, F&& f) {
     constexpr auto buf_size = max_chars_needed<T>();
     for (auto& s : tmp_val_refv[n])
         s.reserve(buf_size);
