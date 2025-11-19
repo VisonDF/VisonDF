@@ -151,22 +151,46 @@ void get_dataframe_filter_simd(const std::vector<int>& cols,
 
           switch (type_refv[i]) {
                 case 's': {
-                            process_string(str_vec2,  str_v,  str_idx, cur_tmp2, refv_tmp); break;
+                            process_string(str_vec2,  
+                                           str_v,  
+                                           str_idx, 
+                                           cur_tmp2, 
+                                           refv_tmp); break;
                           }
                 case 'c': {
-                            process_block(chr_vec2,  chr_v,  chr_idx, cur_tmp2, refv_tmp); break;
+                            process_block(chr_vec2,  
+                                          chr_v,  
+                                          chr_idx, 
+                                          cur_tmp2, 
+                                          refv_tmp); break;
                           }
                 case 'b': {
-                            process_block(bool_vec2,  bool_v,  bool_idx, cur_tmp2, refv_tmp); break;
+                            process_block(bool_vec2,  
+                                          bool_v,  
+                                          bool_idx, 
+                                          cur_tmp2, 
+                                          refv_tmp); break;
                           }
                 case 'i': {
-                            process_block(int_vec2,  int_v,  int_idx, cur_tmp2, refv_tmp); break;
+                            process_block(int_vec2,  
+                                          int_v,  
+                                          int_idx, 
+                                          cur_tmp2, 
+                                          refv_tmp); break;
                           }
                case 'u': {
-                            process_block(uint_vec2,  uint_v,  uint_idx, cur_tmp2, refv_tmp); break;
+                            process_block(uint_vec2,  
+                                          uint_v,  
+                                          uint_idx, 
+                                          cur_tmp2, 
+                                          refv_tmp); break;
                           }
                 case 'd': {
-                            process_block(dbl_vec2,  dbl_v,  dbl_idx, cur_tmp2, refv_tmp); break;
+                            process_block(dbl_vec2,  
+                                          dbl_v,  
+                                          dbl_idx, 
+                                          cur_tmp2, 
+                                          refv_tmp); break;
                           }
           }
         }
@@ -215,22 +239,46 @@ void get_dataframe_filter_simd(const std::vector<int>& cols,
 
             switch (type_refv1[i]) {
                 case 's': {
-                            process_string(str_vec2,  str_v,  str_idx, cur_tmp2, refv_tmp); break;
+                            process_string(str_vec2,  
+                                           str_v,  
+                                           str_idx, 
+                                           cur_tmp2, 
+                                           refv_tmp); break;
                           }
                 case 'c': {
-                            process_block(chr_vec2,  chr_v,  chr_idx, cur_tmp2, refv_tmp); break;
+                            process_block(chr_vec2,  
+                                          chr_v,  
+                                          chr_idx, 
+                                          cur_tmp2, 
+                                          refv_tmp); break;
                           }
                 case 'b': {
-                            process_block(bool_vec2,  bool_v,  bool_idx, cur_tmp2, refv_tmp); break;
+                            process_block(bool_vec2,  
+                                          bool_v,  
+                                          bool_idx, 
+                                          cur_tmp2, 
+                                          refv_tmp); break;
                           }
                 case 'i': {
-                            process_block(int_vec2,  int_v,  int_idx, cur_tmp2, refv_tmp); break;
+                            process_block(int_vec2,  
+                                          int_v,  
+                                          int_idx, 
+                                          cur_tmp2, 
+                                          refv_tmp); break;
                           }
                case 'u': {
-                            process_block(uint_vec2,  uint_v,  uint_idx, cur_tmp2, refv_tmp); break;
+                            process_block(uint_vec2,  
+                                          uint_v,  
+                                          uint_idx, 
+                                          cur_tmp2, 
+                                          refv_tmp); break;
                           }
                case 'd': {
-                            process_block(dbl_vec2,  dbl_v,  dbl_idx, cur_tmp2, refv_tmp); break;
+                            process_block(dbl_vec2,  
+                                          dbl_v,  
+                                          dbl_idx, 
+                                          cur_tmp2, 
+                                          refv_tmp); break;
                           }
             }
                 
