@@ -153,14 +153,10 @@ void rm_row_range_reconstruct_simd(std::vector<unsigned int> x)
                     break;
 
                 case 1: 
-                    compact_block_pod_simd.template operator()<char>(new_chr_v,  chr_v,  base);
+                    compact_block_pod_simd.template operator()<CharT>(new_chr_v,  chr_v,  base);
                     break;
 
                 case 2: 
-                    //if constexpr (LowDensity)
-                    //    compact_block_low_dense(new_bool_v, bool_v, base);
-                    //else
-                    //    compact_block_scalar     (new_bool_v, bool_v, base);
                     compact_block_pod_simd.template operator()<uint8_t>(new_bool_v,  int_v,  base);
                     break;
 

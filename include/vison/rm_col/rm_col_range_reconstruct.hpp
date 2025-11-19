@@ -31,7 +31,7 @@ void rm_col_range_reconstruct(std::vector<unsigned int> rm_cols) {
     for (unsigned g : keep) kept_per_type[col_type[g]]++;
 
     std::vector<std::string> new_str_v;  new_str_v .reserve(kept_per_type[0] * rows);
-    std::vector<char>        new_chr_v;  new_chr_v .reserve(kept_per_type[1] * rows);
+    std::vector<CharT>       new_chr_v;  new_chr_v .reserve(kept_per_type[1] * rows);
     std::vector<uint8_t>     new_bool_v; new_bool_v.reserve(kept_per_type[2] * rows);
     std::vector<IntT>        new_int_v;  new_int_v .reserve(kept_per_type[3] * rows);
     std::vector<UIntT>       new_uint_v; new_uint_v.reserve(kept_per_type[4] * rows);
@@ -67,7 +67,7 @@ void rm_col_range_reconstruct(std::vector<unsigned int> rm_cols) {
                         new_chr_v.resize(new_chr_v.size() + rows);
                         std::memcpy(new_chr_v.data() + new_chr_v.size() - rows,
                                     chr_v.data() + base,
-                                    rows * sizeof(char));
+                                    rows * sizeof(CharT));
                         break;
                     }
             case 2:

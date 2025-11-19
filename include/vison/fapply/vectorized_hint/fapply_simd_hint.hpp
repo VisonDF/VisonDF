@@ -33,7 +33,7 @@ void fapply_simd(F f, unsigned int& n) {
         std::vector<std::string>& val_tmp = tmp_val_refv[n];
         for (size_t i = start; i < start + nrow; ++i, ++i3) {
             f(chr_v[i]);
-            val_tmp[i3].assign(1, chr_v[i]);
+            val_tmp[i3].assign(chr_v[i], df_charbuf_size);
         }
     }
 

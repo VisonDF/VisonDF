@@ -99,11 +99,11 @@ void get_col_filter_idx_simd(unsigned int &x,
 
     } else if constexpr (std::is_same_v<T, IntT>) {
 
-        gather_simd_u8(int_v, matr_idx[3]);
+        gather_simd_general(int_v, matr_idx[3]);
 
     } else if constexpr (std::is_same_v<T, UIntT>) {
 
-        gather_simd_u8(uint_v, matr_idx[4]);
+        gather_simd_general(uint_v, matr_idx[4]);
 
     } else if constexpr (std::is_same_v<T, FloatT>) {
 
@@ -173,7 +173,7 @@ void get_col_filter_idx_simd(unsigned int &x,
 
     } else if constexpr (std::is_same_v<T, char>) {
  
-        gather_simd_u8(chr_v, matr_idx[1]);
+        gather_simd_general(chr_v, matr_idx[1]);
 
     } else {
       std::cerr << "Error in (get_col), unsupported type\n";

@@ -42,7 +42,7 @@ void fapply_filter(F f,
               continue;
             }
             f(chr_v[i]);
-            val_tmp[i3].assign(1, chr_v[i]);
+            val_tmp[i3].assign(chr_v[i], df_charbuf_size);
         }
     }
 

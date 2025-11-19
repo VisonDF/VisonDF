@@ -43,7 +43,7 @@ void fapply_filter_range(F f,
               continue;
             }
             f(chr_v[strt_vl + i]);
-            val_tmp[strt_vl + i3].assign(1, chr_v[strt_vl + i]);
+            val_tmp[strt_vl + i3].assign(chr_v[strt_vl + i], df_charbuf_size);
         }
     }
 

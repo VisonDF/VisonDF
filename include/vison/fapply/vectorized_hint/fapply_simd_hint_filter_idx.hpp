@@ -45,7 +45,7 @@ void fapply_simd_filter_idx(F f,
         for (unsigned int& pos_idx : mask) {
             const unsigned int abs_idx = start + pos_idx;
             f(chr_v[abs_idx]);
-            val_tmp[pos_idx].assign(1, chr_v[abs_idx]);
+            val_tmp[pos_idx].assign(chr_v[abs_idx], df_charbuf_size);
         }
 
     }
