@@ -1,6 +1,6 @@
 #pragma once
 
-template <typename T> 
+template <typename T, bool IsBool = false> 
 void rep_col_filter_range_batch(std::vector<T> &x, 
                 unsigned int &colnb,
                 const std::vector<uint8_t>& mask,
@@ -16,7 +16,7 @@ void rep_col_filter_range_batch(std::vector<T> &x,
   unsigned int i2 = 0;
   const unsigned int end_mask = mask.size();
   
-  if constexpr (std::is_same_v<T, bool>) {
+  if constexpr (IsBool) {
 
     while (i2 < matr_idx[2].size()) {
       if (colnb == matr_idx[2][i2]) {
@@ -33,7 +33,7 @@ void rep_col_filter_range_batch(std::vector<T> &x,
     i2 = nrow * i2;
 
     constexpr size_t BATCH = 8;
-    constexpr size_t buf_size = 2;
+    constexpr size_t buf_size = max_chars_needed<uint8_t>();
     uint8_t lengths[BATCH];
 
     std::vector<std::string>& val_tmp = tmp_val_refv[colnb].data() + strt_vl;
