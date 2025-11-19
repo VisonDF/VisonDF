@@ -28,6 +28,88 @@ void get_dataframe_filter_simd(const std::vector<int>& cols,
     size_t str_idx = 0, chr_idx = 0, bool_idx = 0;
     size_t int_idx = 0, uint_idx = 0, dbl_idx = 0;
 
+    auto process_string = [&](const auto& src_vec2,
+                              auto& dst_vec,
+                              size_t& idx_counter,
+                              const std::vector<std::string>& cur_tmp2,
+                              std::vector<std::string>& refv_tmp)
+    {
+        const size_t pos_idx  = idx_counter * tot_nrow;
+        const size_t base_idx = dst_vec.size();
+        dst_vec.resize(base_idx + nrow);
+    
+        const std::string* __restrict src = src_vec2.data() + pos_idx;
+        std::string* __restrict dst       = dst_vec.data() + base_idx;
+    
+        for (size_t j = 0; j < nrow; ++j) {
+            const size_t act = active_rows[j];
+            dst[j]     = src[act];
+            refv_tmp[j] = cur_tmp2[act];
+        }
+    
+        ++idx_counter;
+    };
+
+    auto process_block = [&](auto& src_vec2,
+                             auto& dst_vec,
+                             size_t& idx_counter,
+                             const std::vector<std::string>& cur_tmp2,
+                             std::vector<std::string>& refv_tmp) 
+    {
+       
+        using T = typename std::remove_reference_t<decltype(dst_vec)>::value_type;
+    
+        const size_t pos_idx  = idx_counter * tot_nrow;
+        const size_t base_idx = dst_vec.size();
+        dst_vec.resize(base_idx + nrow);
+    
+        const T* __restrict src = src_vec2.data() + pos_idx;
+        T* __restrict dst       = dst_vec.data() + base_idx;
+    
+    #if defined(__ARM_FEATURE_SVE) || defined(__riscv_vector)
+        const size_t width = v2::simd_size<unsigned int>();
+    #else
+        constexpr size_t width = v2::simd_size<unsigned int>();
+    #endif
+    
+        size_t j = 0;
+    
+        for (; j + width < nrow; j += width) {
+    
+            v2::simd<unsigned int> idx(&active_rows[j], v2::element_aligned);
+    
+            v2::simd<T> vals_src;
+    
+            for (size_t k = 0; k < width; ++k) {
+                const size_t act_row = idx[k];
+                vals_src[k] = src[act_row];
+            }
+    
+            vals_src.copy_to(&dst[j], v2::element_aligned);
+        }
+    
+        for (; j < nrow; ++j) {
+            const size_t act_row = active_rows[j];
+            dst[j] = src[act_row];
+        }
+    
+        for (j = 0; j < nrow; j++) {
+            const size_t act_row = active_rows[j];
+            refv_tmp[j] = cur_tmp2[act_row];
+        }
+    
+        idx_counter += 1;
+    };
+
+    const auto& cur_tmp   = cur_obj.get_tmp_val_refv();
+
+    const auto& str_vec2  = cur_obj.get_str_vec();
+    const auto& chr_vec2  = cur_obj.get_chr_vec();
+    const auto& bool_vec2 = cur_obj.get_bool_vec();
+    const auto& int_vec2  = cur_obj.get_int_vec();
+    const auto& uint_vec2 = cur_obj.get_uint_vec();
+    const auto& dbl_vec2  = cur_obj.get_dbl_vec();
+
     if (cols.empty() || cols[0] == -1) {
         matr_idx     = cur_obj.get_matr_idx();
         ncol         = cur_obj.get_ncol();
@@ -55,15 +137,6 @@ void get_dataframe_filter_simd(const std::vector<int>& cols,
         str_idx = 0, chr_idx = 0, bool_idx = 0;
         int_idx = 0, uint_idx = 0, dbl_idx = 0;
 
-        const auto& cur_tmp   = cur_obj.get_tmp_val_refv();
-
-        const auto& str_vec2  = cur_obj.get_str_vec();
-        const auto& chr_vec2  = cur_obj.get_chr_vec();
-        const auto& bool_vec2 = cur_obj.get_bool_vec();
-        const auto& int_vec2  = cur_obj.get_int_vec();
-        const auto& uint_vec2 = cur_obj.get_uint_vec();
-        const auto& dbl_vec2  = cur_obj.get_dbl_vec();
-        
         name_v    = cur_obj.get_colname();
        
         tmp_val_refv.resize(ncol);
@@ -77,246 +150,29 @@ void get_dataframe_filter_simd(const std::vector<int>& cols,
           std::vector<std::string>& refv_tmp = tmp_val_refv[i];
 
           switch (type_refv[i]) {
-            case 's': {
-
-                        const size_t pos_idx  = str_idx * tot_nrow;
-
-                        const size_t base_idx = str_v.size();
-                        str_v.resize(base_idx + nrow);
-
-                        const std::string* __restrict src = str_vec2.data() + pos_idx;
-                        std::string* __restrict dst       = str_v.data() + base_idx;
-
-                        for (size_t j = 0; j < nrow; ++j) [[likely]] {
-                            const size_t act_row = active_rows[j];
-                            dst[j] = src[act_row];  
-                            refv_tmp[j] = cur_tmp2[act_row];
-                        }
-
-                        ++str_idx;
-                        break;
-
+                case 's': {
+                            process_string(str_vec2,  str_v,  str_idx, cur_tmp2, refv_tmp); break;
                           }
                 case 'c': {
-
-                            const size_t pos_idx  = chr_idx * tot_nrow;
-                            const size_t base_idx = chr_v.size();
-                            chr_v.resize(base_idx + nrow);
-
-                            const double* __restrict src = chr_vec2.data() + pos_idx;
-                            double* __restrict dst       = chr_v.data() + base_idx;
-
-                            #if defined(__ARM_FEATURE_SVE) || defined(__riscv_vector)
-                            const size_t width = v2::simd_size<unsigned int>();
-                            #else
-                            constexpr size_t width = v2::simd_size<unsigned int>();
-                            #endif
-
-                            size_t j = 0;
-
-                            for (; j + width < nrow; j += width) {
-
-                                v2::simd<unsigned int> idx(&active_rows[j], 
-                                                v2::element_aligned);
-
-                                v2::simd<FloatT> vals_src;
-
-                                for (size_t k = 0; k < width; ++k) {
-                                    const size_t act_row = idx[k];
-                                    vals_src[k] = src[act_row];
-                                }
-
-                                vals_src.copy_to(&dst[j], v2::element_aligned);
-
-                            }
-
-                            for (; j < nrow; ++j) {
-                                const size_t act_row = active_rows[j];
-                                dst[j] = src[act_row];
-                            }
-
-                            for (j = 0; j < nrow; j += 1) {
-                              const size_t act_row = active_rows[j];
-                              refv_tmp[j] = cur_tmp2[act_row];
-                            }
-
-                            chr_idx += 1;
-                            break;
-
+                            process_block(chr_vec2,  chr_v,  chr_idx, cur_tmp2, refv_tmp); break;
                           }
                 case 'b': {
-
-                                size_t pos_idx = bool_idx * tot_nrow;
-                                
-                                const size_t base_idx = bool_v.size();
-                                bool_v.resize(base_idx + nrow);
-                                
-                                for (size_t j = 0; j < nrow; ++j) [[likely]] {
-                                    const size_t act_row = active_rows[j];
-                                    bool_v[base_idx + j] = bool_vec2[pos_idx + act_row];
-                                    refv_tmp[j] = cur_tmp2[act_row];
-                                }
-
-                                bool_idx += 1;
-
-                                break;
-
+                            process_block(bool_vec2,  bool_v,  bool_idx, cur_tmp2, refv_tmp); break;
                           }
                 case 'i': {
-
-                            const size_t pos_idx  = int_idx * tot_nrow;
-                            const size_t base_idx = int_v.size();
-                            int_v.resize(base_idx + nrow);
-
-                            const double* __restrict src = int_vec2.data() + pos_idx;
-                            double* __restrict dst       = int_v.data() + base_idx;
-
-                            #if defined(__ARM_FEATURE_SVE) || defined(__riscv_vector)
-                            const size_t width = v2::simd_size<unsigned int>();
-                            #else
-                            constexpr size_t width = v2::simd_size<unsigned int>();
-                            #endif
-
-                            size_t j = 0;
-
-                            for (; j + width < nrow; j += width) {
-
-                                v2::simd<unsigned int> idx(&active_rows[j], 
-                                                v2::element_aligned);
-
-                                v2::simd<FloatT> vals_src;
-
-                                for (size_t k = 0; k < width; ++k) {
-                                    const size_t act_row = idx[k];
-                                    vals_src[k] = src[act_row];
-                                }
-
-                                vals_src.copy_to(&dst[j], v2::element_aligned);
-
-                            }
-
-                            for (; j < nrow; ++j) {
-                                const size_t act_row = active_rows[j];
-                                dst[j] = src[act_row];
-                            }
-
-                            for (j = 0; j < nrow; j += 1) {
-                              const size_t act_row = active_rows[j];
-                              refv_tmp[j] = cur_tmp2[act_row];
-                            }
-
-                            int_idx += 1;
-                            break;
-
+                            process_block(int_vec2,  int_v,  int_idx, cur_tmp2, refv_tmp); break;
                           }
                case 'u': {
-
-                            const size_t pos_idx  = uint_idx * tot_nrow;
-                            const size_t base_idx = uint_v.size();
-                            uint_v.resize(base_idx + nrow);
-
-                            const double* __restrict src = uint_vec2.data() + pos_idx;
-                            double* __restrict dst       = uint_v.data() + base_idx;
-
-                            #if defined(__ARM_FEATURE_SVE) || defined(__riscv_vector)
-                            const size_t width = v2::simd_size<unsigned int>();
-                            #else
-                            constexpr size_t width = v2::simd_size<unsigned int>();
-                            #endif
-
-                            size_t j = 0;
-
-                            for (; j + width < nrow; j += width) {
-
-                                v2::simd<unsigned int> idx(&active_rows[j], 
-                                                v2::element_aligned);
-
-                                v2::simd<FloatT> vals_src;
-
-                                for (size_t k = 0; k < width; ++k) {
-                                    const size_t act_row = idx[k];
-                                    vals_src[k] = src[act_row];
-                                }
-
-                                vals_src.copy_to(&dst[j], v2::element_aligned);
-
-                            }
-
-                            for (; j < nrow; ++j) {
-                                const size_t act_row = active_rows[j];
-                                dst[j] = src[act_row];
-                            }
-
-                            for (j = 0; j < nrow; j += 1) {
-                              const size_t act_row = active_rows[j];
-                              refv_tmp[j] = cur_tmp2[act_row];
-                            }
-
-                            uint_idx += 1;
-                            break;
-
+                            process_block(uint_vec2,  uint_v,  uint_idx, cur_tmp2, refv_tmp); break;
                           }
                 case 'd': {
-
-                            const size_t pos_idx  = dbl_idx * tot_nrow;
-                            const size_t base_idx = dbl_v.size();
-                            dbl_v.resize(base_idx + nrow);
-
-                            const double* __restrict src = dbl_vec2.data() + pos_idx;
-                            double* __restrict dst       = dbl_v.data() + base_idx;
-
-                            #if defined(__ARM_FEATURE_SVE) || defined(__riscv_vector)
-                            const size_t width = v2::simd_size<unsigned int>();
-                            #else
-                            constexpr size_t width = v2::simd_size<unsigned int>();
-                            #endif
-
-                            size_t j = 0;
-
-                            for (; j + width < nrow; j += width) {
-
-                                v2::simd<unsigned int> idx(&active_rows[j], 
-                                                v2::element_aligned);
-
-                                v2::simd<FloatT> vals_src;
-
-                                for (size_t k = 0; k < width; ++k) {
-                                    const size_t act_row = idx[k];
-                                    vals_src[k] = src[act_row];
-                                }
-
-                                vals_src.copy_to(&dst[j], v2::element_aligned);
-
-                            }
-
-                            for (; j < nrow; ++j) {
-                                const size_t act_row = active_rows[j];
-                                dst[j] = src[act_row];
-                            }
-
-                            for (j = 0; j < nrow; j += 1) {
-                              const size_t act_row = active_rows[j];
-                              refv_tmp[j] = cur_tmp2[act_row];
-                            }
-                            dbl_idx += 1;
-                            break;
-
+                            process_block(dbl_vec2,  dbl_v,  dbl_idx, cur_tmp2, refv_tmp); break;
                           }
           }
         }
 
-    }
-    else {
+    } else {
         ncol = cols.size();
-
-        const auto& cur_tmp   = cur_obj.get_tmp_val_refv();
-
-        const auto& str_vec2  = cur_obj.get_str_vec();
-        const auto& chr_vec2  = cur_obj.get_chr_vec();
-        const auto& bool_vec2 = cur_obj.get_bool_vec();
-        const auto& int_vec2  = cur_obj.get_int_vec();
-        const auto& uint_vec2 = cur_obj.get_uint_vec();
-        const auto& dbl_vec2  = cur_obj.get_dbl_vec();
 
         const auto& name_v1    = cur_obj.get_colname();
         const auto& type_refv1 = cur_obj.get_typecol();
@@ -359,232 +215,23 @@ void get_dataframe_filter_simd(const std::vector<int>& cols,
 
             switch (type_refv1[i]) {
                 case 's': {
-
-                        const size_t pos_idx  = str_idx * tot_nrow;
-
-                        const size_t base_idx = str_v.size();
-                        str_v.resize(base_idx + nrow);
-
-                        const std::string* __restrict src = str_vec2.data() + pos_idx;
-                        std::string* __restrict dst       = str_v.data() + base_idx;
-
-                        for (size_t j = 0; j < nrow; ++j) [[likely]] {
-                            const size_t act_row = active_rows[j];
-                            dst[j] = src[act_row];  
-                            refv_tmp[j] = cur_tmp2[act_row];
-                        }
-
-                        ++str_idx;
-                        break;
-
+                            process_string(str_vec2,  str_v,  str_idx, cur_tmp2, refv_tmp); break;
                           }
                 case 'c': {
-
-                            const size_t pos_idx  = chr_idx * tot_nrow;
-                            const size_t base_idx = chr_v.size();
-                            chr_v.resize(base_idx + nrow);
-
-                            const double* __restrict src = chr_vec2.data() + pos_idx;
-                            double* __restrict dst       = chr_v.data() + base_idx;
-
-                            #if defined(__ARM_FEATURE_SVE) || defined(__riscv_vector)
-                            const size_t width = v2::simd_size<unsigned int>();
-                            #else
-                            constexpr size_t width = v2::simd_size<unsigned int>();
-                            #endif
-
-                            size_t j = 0;
-
-                            for (; j + width <= nrow; j += width) {
-
-                                v2::simd<unsigned int> idx(&active_rows[j], 
-                                                v2::element_aligned);
-
-                                v2::simd<FloatT> vals_src;
-
-                                for (size_t k = 0; k < width; ++k) {
-                                    const size_t act_row = idx[k];
-                                    vals_src[k] = src[act_row];
-                                }
-
-                                vals_src.copy_to(&dst[j], v2::element_aligned);
-
-                            }
-
-                            for (; j < nrow; ++j) {
-                                const size_t act_row = active_rows[j];
-                                dst[j] = src[act_row];
-                            }
-
-                            for (j = 0; j < nrow; j += 1) {
-                              const size_t act_row = active_rows[j];
-                              refv_tmp[j] = cur_tmp2[act_row];
-                            }
-                            chr_idx += 1;
-                            
-                            break;
-
+                            process_block(chr_vec2,  chr_v,  chr_idx, cur_tmp2, refv_tmp); break;
                           }
                 case 'b': {
-
-                                size_t pos_idx = bool_idx * tot_nrow;
-                                
-                                const size_t base_idx = bool_v.size();
-                                bool_v.resize(base_idx + nrow);
-                                
-                                for (size_t j = 0; j < nrow; ++j) [[likely]] {
-                                    const size_t act_row = active_rows[j];
-                                    bool_v[base_idx + j] = bool_vec2[pos_idx + act_row];
-                                    refv_tmp[j] = cur_tmp2[act_row];
-                                }
-
-                                bool_idx += 1;
-
-                                break;
-
+                            process_block(bool_vec2,  bool_v,  bool_idx, cur_tmp2, refv_tmp); break;
                           }
                 case 'i': {
-
-                            const size_t pos_idx  = int_idx * tot_nrow;
-                            const size_t base_idx = int_v.size();
-                            int_v.resize(base_idx + nrow);
-
-                            const double* __restrict src = int_vec2.data() + pos_idx;
-                            double* __restrict dst       = int_v.data() + base_idx;
-
-                            #if defined(__ARM_FEATURE_SVE) || defined(__riscv_vector)
-                            const size_t width = v2::simd_size<unsigned int>();
-                            #else
-                            constexpr size_t width = v2::simd_size<unsigned int>();
-                            #endif
-
-                            size_t j = 0;
-
-                            for (; j + width <= nrow; j += width) {
-
-                                v2::simd<unsigned int> idx(&active_rows[j], 
-                                                v2::element_aligned);
-
-                                v2::simd<FloatT> vals_src;
-
-                                for (size_t k = 0; k < width; ++k) {
-                                    const size_t act_row = idx[k];
-                                    vals_src[k] = src[act_row];
-                                }
-
-                                vals_src.copy_to(&dst[j], v2::element_aligned);
-
-                            }
-
-                            for (; j < nrow; ++j) {
-                                const size_t act_row = active_rows[j];
-                                dst[j] = src[act_row];
-                            }
-
-                            for (j = 0; j < nrow; j += 1) {
-                              const size_t act_row = active_rows[j];
-                              refv_tmp[j] = cur_tmp2[act_row];
-                            }
-
-                            int_idx += 1;
-                            break;
-
+                            process_block(int_vec2,  int_v,  int_idx, cur_tmp2, refv_tmp); break;
                           }
                case 'u': {
-
-                            const size_t pos_idx  = uint_idx * tot_nrow;
-                            const size_t base_idx = uint_v.size();
-                            uint_v.resize(base_idx + nrow);
-
-                            const double* __restrict src = uint_vec2.data() + pos_idx;
-                            double* __restrict dst       = uint_v.data() + base_idx;
-
-                            #if defined(__ARM_FEATURE_SVE) || defined(__riscv_vector)
-                            const size_t width = v2::simd_size<unsigned int>();
-                            #else
-                            constexpr size_t width = v2::simd_size<unsigned int>();
-                            #endif
-
-                            size_t j = 0;
-
-                            for (; j + width <= nrow; j += width) {
-
-                                v2::simd<unsigned int> idx(&active_rows[j], 
-                                                v2::element_aligned);
-
-                                v2::simd<FloatT> vals_src;
-
-                                for (size_t k = 0; k < width; ++k) {
-                                    const size_t act_row = idx[k];
-                                    vals_src[k] = src[act_row];
-                                }
-
-                                vals_src.copy_to(&dst[j], v2::element_aligned);
-
-                            }
-
-                            for (; j < nrow; ++j) {
-                                const size_t act_row = active_rows[j];
-                                dst[j] = src[act_row];
-                            }
-
-                            for (j = 0; j < nrow; j += 1) {
-                              const size_t act_row = active_rows[j];
-                              refv_tmp[j] = cur_tmp2[act_row];
-                            }
-
-                            uint_idx += 1;
-                            break;
-
+                            process_block(uint_vec2,  uint_v,  uint_idx, cur_tmp2, refv_tmp); break;
                           }
-                case 'd': {
-
-                            const size_t pos_idx  = dbl_idx * tot_nrow;
-                            const size_t base_idx = dbl_v.size();
-                            dbl_v.resize(base_idx + nrow);
-
-                            const double* __restrict src = dbl_vec2.data() + pos_idx;
-                            double* __restrict dst       = dbl_v.data() + base_idx;
-
-                            #if defined(__ARM_FEATURE_SVE) || defined(__riscv_vector)
-                            const size_t width = v2::simd_size<unsigned int>();
-                            #else
-                            constexpr size_t width = v2::simd_size<unsigned int>();
-                            #endif
-
-                            size_t j = 0;
-
-                            for (; j + width <= nrow; j += width) {
-
-                                v2::simd<unsigned int> idx(&active_rows[j], 
-                                                v2::element_aligned);
-
-                                v2::simd<FloatT> vals_src;
-
-                                for (size_t k = 0; k < width; ++k) {
-                                    const size_t act_row = idx[k];
-                                    vals_src[k] = src[act_row];
-                                }
-
-                                vals_src.copy_to(&dst[j], v2::element_aligned);
-
-                            }
-
-                            for (; j < nrow; ++j) {
-                                const size_t act_row = active_rows[j];
-                                dst[j] = src[act_row];
-                            }
-
-                            for (j = 0; j < nrow; j += 1) {
-                              const size_t act_row = active_rows[j];
-                              refv_tmp[j] = cur_tmp2[act_row];
-                            }
-
-                            dbl_idx += 1;
-                            break;
-
+               case 'd': {
+                            process_block(dbl_vec2,  dbl_v,  dbl_idx, cur_tmp2, refv_tmp); break;
                           }
-
             }
                 
             name_v[dst_col]    = name_v1[i];
