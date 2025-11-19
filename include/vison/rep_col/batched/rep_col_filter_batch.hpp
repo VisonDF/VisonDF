@@ -1,399 +1,190 @@
 #pragma once
 
-template <typename T, bool IsBool = false> 
-void rep_col_filter_batch(std::vector<T> &x, 
-                unsigned int &colnb,
-                const std::vector<uint8_t>& mask) {
+template <typename T,
+          bool IsBool = false,
+          size_t BATCH = 32>
+void rep_col_filter_batch(std::vector<T>& x,
+                          unsigned int& colnb,
+                          const std::vector<uint8_t>& mask)
+{
+    static_assert(BATCH > 0, "BATCH must be > 0");
 
-  if (x.size() != nrow) {
-    std::cerr << "Error: vector length (" << x.size()
-              << ") does not match nrow (" << nrow << ")\n";
-    return;
-  }
- 
-  unsigned int i;
-  unsigned int i2 = 0;
-  const unsigned int end_mask = mask.size();
-  
-  if constexpr (IsBool) {
-
-    while (i2 < matr_idx[2].size()) {
-      if (colnb == matr_idx[2][i2]) {
-        break;
-      };
-      i2 += 1;
-    };
-
-    if (i2 == matr_idx[2].size()) {
-        std::cerr << "Error: column " << colnb << " not found for this type in (replace_col)\n";
+    if (x.size() != nrow) {
+        std::cerr << "Error: vector length (" << x.size()
+                  << ") does not match nrow (" << nrow << ")\n";
         return;
     }
 
-    i2 = nrow * i2;
-
-    constexpr size_t BATCH = 8;
-    constexpr size_t buf_size = max_chars_needed<uint8_t>();
-    uint8_t lengths[BATCH];
-
-    std::vector<std::string>& val_tmp = tmp_val_refv[colnb];
-    for (auto& el : val_tmp) el.reserve(buf_size);
-    
-    alignas(64) char local_bufs[BATCH][buf_size];
-    
-    auto* __restrict dst = bool_v.data();
-    const auto* __restrict src = x.data();
-    
-    for (size_t i = 0; i < end_mask; i += BATCH) {
- 
-        const size_t end = std::min(i + BATCH, static_cast<size_t>(end_mask));
-    
-        #pragma GCC ivdep
-        for (size_t j = i; j < end; ++j) {
-
-            if (!mask[j]) {
-              continue;
-            }
-
-            dst[j] = src[j];
-        }
-
-        for (size_t j = i; j < end; ++j) {
-
-            if (!mask[j]) {
-              continue;
-            }
-
-            auto& cur_buf = local_bufs[j - i];
-            auto [ptr, ec] = std::to_chars(cur_buf, cur_buf + buf_size, src[j]);
-            if (ec != std::errc{}) [[unlikely]] std::terminate();
-            lengths[j - i] = static_cast<size_t>(ptr - cur_buf);
-        }
-    
-        for (size_t j = i; j < end; ++j) {
-
-            if (!mask[j]) {
-              continue;
-            }
-
-            auto& cur_buf = local_bufs[j - i];
-            const size_t len = lengths[j - i];
-            val_tmp[j].resize(len);
-            std::memcpy(val_tmp[j].data(), cur_buf, len);
-        }
-    }
-    
-  } else if constexpr (std::is_same_v<T, IntT>) {
-
-    while (i2 < matr_idx[3].size()) {
-      if (colnb == matr_idx[3][i2]) {
-        break;
-      };
-      i2 += 1;
-    };
-    
-    if (i2 == matr_idx[3].size()) {
-        std::cerr << "Error: column " << colnb << " not found for this type in (replace_col)\n";
+    const size_t end_mask = mask.size();
+    if (end_mask > nrow) {
+        std::cerr << "Error: mask size (" << end_mask
+                  << ") exceeds nrow (" << nrow << ")\n";
         return;
     }
 
-    i2 = nrow * i2;
+    // -------------------------------------------------
+    // helper: find col index
+    // -------------------------------------------------
+    auto find_col_base = [&](auto& idx_vec) -> size_t {
+        size_t pos = 0;
+        while (pos < idx_vec.size() && idx_vec[pos] != colnb)
+            ++pos;
 
-    constexpr size_t BATCH = 8;
-    constexpr size_t buf_size = max_chars_needed<T>();
-    uint8_t lengths[BATCH];
-
-    std::vector<std::string>& val_tmp = tmp_val_refv[colnb];
-    for (auto& el : val_tmp) el.reserve(buf_size);
-    
-    alignas(64) char local_bufs[BATCH][buf_size];
-    
-    auto* __restrict dst = int_v.data() + i2;
-    const auto* __restrict src = x.data();
-   
-    for (size_t i = 0; i < end_mask; i += BATCH) {
-        const size_t end = std::min(i + BATCH, static_cast<size_t>(end_mask));
-    
-        #pragma GCC ivdep
-        for (size_t j = i; j < end; ++j) {
-
-            if (!mask[j]) {
-              continue;
-            }
-
-            dst[j] = src[j];
+        if (pos == idx_vec.size()) {
+            std::cerr << "Error: column " << colnb
+                      << " not found for this type in (replace_col)\n";
+            return size_t(-1);
         }
-
-        for (size_t j = i; j < end; ++j) {
-
-            if (!mask[j]) {
-                continue;
-            }
-
-            auto& cur_buf = local_bufs[j - i];
-            auto [ptr, ec] = std::to_chars(cur_buf, cur_buf + buf_size, src[j]);
-            if (ec != std::errc{}) [[unlikely]] std::terminate();
-            lengths[j - i] = static_cast<size_t>(ptr - cur_buf);
-        }
-    
-        for (size_t j = i; j < end; ++j) {
-            
-            if (!mask[j]) {
-                continue;
-            }
-
-            auto& cur_buf = local_bufs[j - i];
-            const size_t len = lengths[j - i];
-            val_tmp[j].resize(len);
-            std::memcpy(val_tmp[j].data(), cur_buf, len);
-        }
-    }
-
-  } else if constexpr (std::is_same_v<T, UIntT>) {
-
-    while (i2 < matr_idx[4].size()) {
-      if (colnb == matr_idx[4][i2]) {
-        break;
-      };
-      i2 += 1;
-    };
-    
-    if (i2 == matr_idx[4].size()) {
-        std::cerr << "Error: column " << colnb << " not found for this type in (replace_col)\n";
-        return;
-    }
-
-    i2 = nrow * i2;
-
-    constexpr size_t BATCH = 8;
-    constexpr size_t buf_size = max_chars_needed<T>();
-    uint8_t lengths[BATCH];
-
-    std::vector<std::string>& val_tmp = tmp_val_refv[colnb];
-    for (auto& el : val_tmp) el.reserve(buf_size);
-    
-    alignas(64) char local_bufs[BATCH][buf_size];
-    
-    auto* __restrict dst = uint_v.data() + i2;
-    const auto* __restrict src = x.data();
-   
-    for (size_t i = 0; i < end_mask; i += BATCH) {
-        const size_t end = std::min(i + BATCH, static_cast<size_t>(end_mask));
-    
-        #pragma GCC ivdep
-        for (size_t j = i; j < end; ++j) {
-
-            if (!mask[j]) {
-              continue;
-            }
-
-            dst[j] = src[j];
-        }
-
-        for (size_t j = i; j < end; ++j) {
-
-            if (!mask[j]) {
-                continue;
-            }
-
-            auto& cur_buf = local_bufs[j - i];
-            auto [ptr, ec] = std::to_chars(cur_buf, cur_buf + buf_size, src[j]);
-            if (ec != std::errc{}) [[unlikely]] std::terminate();
-            lengths[j - i] = static_cast<size_t>(ptr - cur_buf);
-        }
-    
-        for (size_t j = i; j < end; ++j) {
-
-            if (!mask[j]) {
-                continue;
-            }
-
-            auto& cur_buf = local_bufs[j - i];
-            const size_t len = lengths[j - i];
-            val_tmp[j].resize(len);
-            std::memcpy(val_tmp[j].data(), cur_buf, len);
-        }
-    }
-
-  } else if constexpr (std::is_same_v<T, FloatT>) {
-
-    while (i2 < matr_idx[5].size()) {
-      if (colnb == matr_idx[5][i2]) {
-        break;
-      };
-      i2 += 1;
-    };
-    
-    if (i2 == matr_idx[5].size()) {
-        std::cerr << "Error: column " << colnb << " not found for this type in (replace_col)\n";
-        return;
-    }
-
-    i2 = nrow * i2;
-    
-    constexpr size_t BATCH = 8;
-    constexpr size_t buf_size = max_chars_needed<T>();
-    uint8_t lengths[BATCH];
-
-    std::vector<std::string>& val_tmp = tmp_val_refv[colnb];
-    for (auto& el : val_tmp) el.reserve(buf_size);
-    
-    alignas(64) char local_bufs[BATCH][buf_size];
-    
-    auto* __restrict dst = dbl_v.data() + i2;
-    const auto* __restrict src = x.data();
-   
-    for (size_t i = 0; i < end_mask; i += BATCH) {
-        const size_t end = std::min(i + BATCH, static_cast<size_t>(end_mask));
-    
-        #pragma GCC ivdep
-        for (size_t j = i; j < end; ++j) {
-
-            if (!mask[j]) {
-              continue;
-            }
-
-            dst[j] = src[j];
-        }
-
-        for (size_t j = i; j < end; ++j) {
-
-            if (!mask[j]) {
-                continue;
-            }
-
-            auto& cur_buf = local_bufs[j - i];
-            auto [ptr, ec] = std::to_chars(cur_buf, cur_buf + buf_size, src[j]);
-            if (ec != std::errc{}) [[unlikely]] std::terminate();
-            lengths[j - i] = static_cast<size_t>(ptr - cur_buf);
-        }
-    
-        for (size_t j = i; j < end; ++j) {
-
-            if (!mask[j]) {
-                continue;
-            }
-
-            auto& cur_buf = local_bufs[j - i];
-            const size_t len = lengths[j - i];
-            val_tmp[j].resize(len);
-            std::memcpy(val_tmp[j].data(), cur_buf, len);
-        }
-    }
-
-  } else if constexpr (std::is_same_v<T, std::string>) {
-
-    while (i2 < matr_idx[0].size()) {
-      if (colnb == matr_idx[0][i2]) {
-        break;
-      };
-      i2 += 1;
-    };
-   
-    if (i2 == matr_idx[0].size()) {
-        std::cerr << "Error: column " << colnb << " not found for std::string in (replace_col)\n";
-        return;
-    }
-
-    i2 = nrow * i2;
-
-    auto* __restrict dst = str_v.data() + i2;
-    const auto* __restrict src = x.data();
-    
-    #pragma unroll 32
-    for (size_t i = 0; i < end_mask; ++i) {
-      if (!mask[i]) {
-        continue;
-      }
-      dst[i] = src[i];
+        return pos * nrow;
     };
 
-    std::vector<std::string>& __restrict val_tmp = tmp_val_refv[colnb];
+    // -------------------------------------------------
+    // unified NUMERIC lambda (Bool / IntT / UIntT / FloatT)
+    // -------------------------------------------------
+    auto replace_numeric = [&](auto& col_vec, auto& idx_vec)
+    {
 
-    constexpr size_t BATCH = 32;
-    alignas(64) std::string buf[BATCH];
+        constexpr size_t buf_size = max_chars_needed<T>();
 
-    for (size_t i = 0; i < end_mask; i += BATCH) {
-        const size_t end = std::min(i + BATCH, static_cast<size_t>(end_mask));
-   
-        for (size_t j = i; j < end; ++j) {
+        size_t base = find_col_base(idx_vec);
+        if (base == size_t(-1)) return;
 
-            if (!mask[j]) {
-                continue;
+        T*          __restrict dst = col_vec.data() + base;
+        const T*    __restrict src = x.data();
+        auto&       val_tmp        = tmp_val_refv[colnb];
+
+        for (auto& el : val_tmp) el.reserve(buf_size);
+
+        alignas(64) char   local_bufs[BATCH][buf_size];
+        uint8_t            lengths[BATCH];
+
+        for (size_t i = 0; i < end_mask; i += BATCH) {
+            const size_t end = std::min(i + BATCH, end_mask);
+
+            // write underlying column (masked)
+            #pragma GCC ivdep
+            for (size_t j = i; j < end; ++j) {
+                if (!mask[j]) continue;
+                dst[j] = src[j];
             }
 
-            const std::string& str_vl = src[j];
-            buf[j - i].assign(str_vl);
-        }
-
-        #pragma unroll 32 
-        for (size_t j = i; j < end; ++j) {
-
-            if (!mask[j]) {
-                continue;
+            // format into char buffers (masked)
+            for (size_t j = i; j < end; ++j) {
+                if (!mask[j]) continue;
+                auto& cur_buf = local_bufs[j - i];
+                auto [ptr, ec] = std::to_chars(
+                    cur_buf,
+                    cur_buf + buf_size,
+                    src[j]
+                );
+                if (ec != std::errc{}) [[unlikely]]
+                    std::terminate();
+                lengths[j - i] = static_cast<uint8_t>(ptr - cur_buf);
             }
 
-            val_tmp[j].assign(buf[j - i]);
+            // copy formatted text back into val_tmp (masked)
+            for (size_t j = i; j < end; ++j) {
+                if (!mask[j]) continue;
+                auto& cur_buf = local_bufs[j - i];
+                const size_t len = lengths[j - i];
+                val_tmp[j].resize(len);
+                std::memcpy(val_tmp[j].data(), cur_buf, len);
+            }
         }
-    }
-
-  } else if constexpr (std::is_same_v<T, char>) {
-
-    while (i2 < matr_idx[1].size()) {
-      if (colnb == matr_idx[1][i2]) {
-        break;
-      };
-      i2 += 1;
-    }; 
-
-    if (i2 == matr_idx[1].size()) {
-        std::cerr << "Error: column " << colnb << " not found for this type in (replace_col)\n";
-        return;
-    }
-
-    i2 = nrow * i2;
-
-    auto* __restrict dst = chr_v.data() + i2;
-    const auto* __restrict src = x.data();
-    
-    #pragma unroll 32
-    for (size_t i = 0; i < end_mask; ++i) {
-      if (!mask[i]) {
-        continue;
-      }
-      dst[i] = src[i];
     };
 
-    std::vector<std::string>& __restrict val_tmp = tmp_val_refv[colnb];
+    auto replace_string = [&]()
+    {
+        size_t base = find_col_base(matr_idx[0]);
+        if (base == size_t(-1)) return;
 
-    constexpr size_t BATCH = 32;
-    alignas(64) char buf[BATCH];
+        auto*       __restrict dst = str_v.data() + base;
+        const auto* __restrict src = x.data();
 
-    for (size_t i = 0; i < end_mask; i += BATCH) {
-        const size_t end = std::min(i + BATCH, static_cast<size_t>(end_mask));
-    
-        for (size_t j = i; j < end; ++j) {
-            if (!mask[j]) {
-              continue;
-            }
-            buf[j - i] = src[j];
+        #pragma unroll 32
+        for (size_t i = 0; i < end_mask; ++i) {
+            if (!mask[i]) continue;
+            dst[i] = src[i];
         }
 
-        #pragma unroll 32 
-        for (size_t j = i; j < end; ++j) {
+        auto& val_tmp = tmp_val_refv[colnb];
+        alignas(64) std::string buf[BATCH];
 
-            if (!mask[j]) {
-              continue;
+        for (size_t i = 0; i < end_mask; i += BATCH) {
+            const size_t end = std::min(i + BATCH, end_mask);
+
+            for (size_t j = i; j < end; ++j) {
+                if (!mask[j]) continue;
+                buf[j - i].assign(src[j]);
             }
 
-            val_tmp[j].assign(1, static_cast<char>(buf[j - i]));
+            #pragma unroll 32
+            for (size_t j = i; j < end; ++j) {
+                if (!mask[j]) continue;
+                val_tmp[j].assign(buf[j - i]);
+            }
         }
+    };
+
+    auto replace_charbuf = [&]()
+    {
+        size_t base = find_col_base(matr_idx[1]);
+        if (base == size_t(-1)) return;
+
+        CharT*       __restrict dst = chr_v.data() + base;
+        const CharT* __restrict src = x.data();
+
+        #pragma unroll 32
+        for (size_t i = 0; i < end_mask; ++i) {
+            if (!mask[i]) continue;
+            dst[i] = src[i];
+        }
+
+        auto& val_tmp = tmp_val_refv[colnb];
+        for (auto& s : val_tmp) s.reserve(df_charbuf_size);
+
+        alignas(64) CharT buf[BATCH];
+
+        for (size_t i = 0; i < end_mask; i += BATCH) {
+            const size_t end = std::min(i + BATCH, end_mask);
+
+            for (size_t j = i; j < end; ++j) {
+                if (!mask[j]) continue;
+                buf[j - i] = src[j];
+            }
+
+            #pragma unroll 32
+            for (size_t j = i; j < end; ++j) {
+                if (!mask[j]) continue;
+                val_tmp[j].assign(buf[j - i], df_charbuf_size);
+            }
+        }
+    };
+
+    // -------------------------------------------------
+    // DISPATCH
+    // -------------------------------------------------
+    if constexpr (IsBool) {
+        replace_numeric(bool_v, matr_idx[2]);
+
+    } else if constexpr (std::is_same_v<T, IntT>) {
+        replace_numeric(int_v,  matr_idx[3]);
+
+    } else if constexpr (std::is_same_v<T, UIntT>) {
+        replace_numeric(uint_v, matr_idx[4]);
+
+    } else if constexpr (std::is_same_v<T, FloatT>) {
+        replace_numeric(dbl_v,  matr_idx[5]);
+
+    } else if constexpr (std::is_same_v<T, std::string>) {
+        replace_string();
+
+    } else if constexpr (std::is_same_v<T, CharT>) {
+        replace_charbuf();
+
+    } else {
+        std::cerr << "Error unsupported type in (replace_col_filter)\n";
     }
-
-  } else {
-    std::cerr << "Error unsupported type in (replace_col)\n";
-  };
-};
-
-
+}
 
 

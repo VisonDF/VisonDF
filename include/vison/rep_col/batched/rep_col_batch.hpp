@@ -34,13 +34,12 @@ void rep_col_batch(std::vector<T>& x, unsigned int& colnb)
     // -------------------------------------------------
     auto replace_numeric = [&](auto& col_vec, auto& idx_vec)
     {
-        using ColT = std::decay_t<decltype(col_vec[0])>;
         constexpr size_t buf_size = max_chars_needed<T>();
 
         size_t base = find_col_base(idx_vec);
         if (base == size_t(-1)) return;
 
-        ColT*       __restrict dst = col_vec.data() + base;
+        T*          __restrict dst = col_vec.data() + base;
         const T*    __restrict src = x.data();
         auto&       val_tmp        = tmp_val_refv[colnb];
 
