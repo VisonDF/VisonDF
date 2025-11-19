@@ -17,6 +17,8 @@ inline ColumnResult classify_column(
     ColumnResult result;
     bool is_bool = true;
     bool is_unsigned = true;
+    bool is_nb = true;
+    bool is_bufchar = true;
 
     size_t check_count = std::min<size_t>(col_values.size(), 10);
 
@@ -24,21 +26,12 @@ inline ColumnResult classify_column(
         const std::string_view& s = col_values[i];
 
         if (!simd_can_be_nb(s.data(), s.size())) {
-            if (s.size() > 1) {
-                result.matr_idx[0].push_back(col_idx);
-                result.str_v.reserve(nrow);
-                result.str_v.insert(result.str_v.end(),
-                                    col_values.begin(), col_values.end());
-                result.type = 's';
-                return result;
-            } else {
-                result.matr_idx[1].push_back(col_idx);
-                result.chr_v.reserve(nrow);
-                for (const auto& el : col_values)
-                    result.chr_v.emplace_back(el.front());
-                result.type = 'c';
-                return result;
+            is_nb = false;
+            if (s.size() > df_charbuf_size) {
+                is_bufchar = false;
+                break;
             }
+            continue;
         }
 
         if (has_dot(s)) {
@@ -73,6 +66,28 @@ inline ColumnResult classify_column(
     }
 
     // After scanning 10 rows → decide final type
+
+    if (!is_nb) {
+        if (!is_bufchar) {
+            result.matr_idx[0].push_back(col_idx);
+            result.str_v.reserve(nrow);
+            result.str_v.insert(result.str_v.end(),
+                                col_values.begin(), col_values.end());
+            result.type = 's';
+            return result;
+        } else {
+            result.matr_idx[1].push_back(col_idx);
+            result.chr_v.reserve(nrow);
+            for (const auto& el : col_values) {
+                char buf[df_charbuf_size];
+                std::memcpy(buf, el.data(), el.size());
+                result.chr_v.emplace_back(buf);
+            }
+            result.type = 'c';
+            return result;
+        }
+    }
+
     if (is_bool) {
         result.matr_idx[2].push_back(col_idx);
         result.bool_v.reserve(nrow);
