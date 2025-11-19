@@ -9,9 +9,6 @@ void rep_col(std::vector<T> &x, unsigned int &colnb) {
       return;
     }
  
-    unsigned int i;
-    unsigned int i2 = 0;
-
     auto find_col_index = [&](auto& idx_vec) -> size_t {
         size_t pos = 0;
         while (pos < idx_vec.size() && idx_vec[pos] != colnb)
@@ -31,6 +28,7 @@ void rep_col(std::vector<T> &x, unsigned int &colnb) {
     
         size_t pos  = find_col_index(idx_vec);
         size_t base = pos * nrow;
+        U* dst = col_vec.data() + base;
     
         auto& val_tmp = tmp_val_refv[colnb];
         for (auto& s: val_tmp)
@@ -39,11 +37,11 @@ void rep_col(std::vector<T> &x, unsigned int &colnb) {
         // write raw values
         if constexpr (Large) {
             for (size_t i = 0; i < nrow; ++i)
-                col_vec[base + i] = x[i];
+                dst[i] = x[i];
         } else {
             for (size_t i = 0; i < nrow; ++i) {
                 auto& v = x[i];
-                col_vec[base + i] = v;
+                dst[i] = v;
             }
         }
     
@@ -63,16 +61,17 @@ void rep_col(std::vector<T> &x, unsigned int &colnb) {
     
         size_t pos = find_col_index(matr_idx[0]);
         size_t base = pos * nrow;
+        std::string* dst = str_v.data() + base;
         auto& val_tmp = tmp_val_refv[colnb];
     
         if constexpr (Large) {
             for (size_t i = 0; i < nrow; ++i)
-                str_v[base + i] = x[i];
+                dst[i] = x[i];
             for (size_t i = 0; i < nrow; ++i)
                 val_tmp[i] = x[i];
         } else {
             for (size_t i = 0; i < nrow; ++i) {
-                str_v[base + i] = x[i];
+                dst[i] = x[i];
                 val_tmp[i]       = x[i];
             }
         }
@@ -82,12 +81,13 @@ void rep_col(std::vector<T> &x, unsigned int &colnb) {
     
         size_t pos = find_col_index(matr_idx[1]);
         size_t base = pos * nrow;
+        CharT* dst = chr_v.data() + base;
         auto& val_tmp = tmp_val_refv[colnb];
     
         if constexpr (!Large) {
     
             for (size_t i = 0; i < nrow; ++i) {
-                chr_v[base + i] = x[i];
+                dst[i] = x[i];
     
                 val_tmp[i].assign(x[i], df_charbuf_size);
             }
@@ -96,7 +96,7 @@ void rep_col(std::vector<T> &x, unsigned int &colnb) {
     
             // First pass: update underlying column data
             for (size_t i = 0; i < nrow; ++i)
-                chr_v[base + i] = x[i];
+                dst[i] = x[i];
     
             // Second pass: update temporary string values
             for (size_t i = 0; i < nrow; ++i)

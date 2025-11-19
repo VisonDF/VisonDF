@@ -5,250 +5,116 @@ void rep_col_filter(std::vector<T> &x,
                 unsigned int &colnb,
                 const std::vector<uint8_t>& mask) {
 
-  if (x.size() != nrow) {
-    std::cerr << "Error: vector length (" << x.size()
-              << ") does not match nrow (" << nrow << ")\n";
-    return;
-  }
- 
-  unsigned int i;
-  unsigned int i2 = 0;
-  const unsigned int end_mask = mask.size();
-
-  if constexpr (IsBool) {
-
-    while (i2 < matr_idx[2].size()) {
-      if (colnb == matr_idx[2][i2]) {
-        break;
-      };
-      i2 += 1;
-    };
-
-    if (i2 == matr_idx[2].size()) {
-        std::cerr << "Error: column " << colnb << " not found for this type in (replace_col)\n";
-        return;
+    if (x.size() != nrow) {
+      std::cerr << "Error: vector length (" << x.size()
+                << ") does not match nrow (" << nrow << ")\n";
+      return;
     }
-
-    i2 = nrow * i2;
-
-    std::vector<std::string>& val_tmp = tmp_val_refv[colnb]; 
-    constexpr size_t buf_size = max_chars_needed<uint8_t>();
-
-    for (auto& el : val_tmp) {
-      el.reserve(buf_size);
-    }
-
-    for (i = 0; i < end_mask; ++i) {
-     
-        if (!mask[i]) {
-          continue;
-        }
-
-        auto& vl = x[i];
-        bool_v[i2 + i] = vl;
  
-        char buf[buf_size];
-        auto [ptr, ec] = std::to_chars(buf, buf + buf_size, 
-                                       static_cast<int>(vl));
+    const unsigned int end_mask = mask.size();
 
-        if (ec == std::errc{}) [[likely]] {
-            val_tmp[i].assign(buf, ptr);
-        } else [[unlikely]] {
-            std::terminate();
+    auto find_col_index = [&](auto& vec) -> size_t {
+        size_t pos = 0;
+        while (pos < vec.size() && vec[pos] != colnb)
+            ++pos;
+        if (pos == vec.size()) {
+            std::cerr << "Error: column " << colnb << " not found in (replace_col)\n";
+            return size_t(-1);
         }
-
+        return pos;
     };
 
-  } else if constexpr (std::is_same_v<T, IntT>) {
-
-    while (i2 < matr_idx[3].size()) {
-      if (colnb == matr_idx[3][i2]) {
-        break;
-      };
-      i2 += 1;
-    };
+    auto replace_numeric = [&](auto& column_vec, auto& idxvec) {
     
-    if (i2 == matr_idx[3].size()) {
-        std::cerr << "Error: column " << colnb << " not found for this type in (replace_col)\n";
-        return;
-    }
-
-    i2 = nrow * i2;
-
-    std::vector<std::string>& val_tmp = tmp_val_refv[colnb]; 
-    constexpr size_t buf_size = max_chars_needed<T>();
-
-    for (auto& el : val_tmp) {
-      el.reserve(buf_size);
-    }
-
-    for (i = 0; i < end_mask; ++i) {
-
-        if (!mask[i]) {
-          continue;
-        }
-
-        auto& vl = x[i];
-        int_v[i2 + i] = vl;
- 
-        char buf[buf_size];
-        auto [ptr, ec] = std::to_chars(buf, buf + buf_size, vl);
-
-        if (ec == std::errc{}) [[likely]] {
-            val_tmp[i].assign(buf, ptr);
-        } else [[unlikely]] {
-            std::terminate();
-        }
-
-    };
-
-  } else if constexpr (std::is_same_v<T, UIntT>) {
-
-    while (i2 < matr_idx[4].size()) {
-      if (colnb == matr_idx[4][i2]) {
-        break;
-      };
-      i2 += 1;
-    };
+        using U = std::decay_t<decltype(column_vec[0])>;
+        constexpr size_t buf_size = max_chars_needed<U>();
     
-    if (i2 == matr_idx[4].size()) {
-        std::cerr << "Error: column " << colnb << " not found for this type in (replace_col)\n";
-        return;
-    }
-
-    i2 = nrow * i2;
-
-    std::vector<std::string>& val_tmp = tmp_val_refv[colnb]; 
-    constexpr size_t buf_size = max_chars_needed<T>();
-
-    for (auto& el : val_tmp) {
-      el.reserve(buf_size);
-    }
-
-    for (i = 0; i < end_mask; ++i) {
-
-        if (!mask[i]) {
-          continue;
-        }
-
-        auto& vl = x[i];
-        uint_v[i2 + i] = vl;
- 
-        char buf[buf_size];
-        auto [ptr, ec] = std::to_chars(buf, buf + buf_size, vl);
-
-        if (ec == std::errc{}) [[likely]] {
-            val_tmp[i].assign(buf, ptr);
-        } else [[unlikely]] {
-            std::terminate();
-        }
-
-    };
-
-  } else if constexpr (std::is_same_v<T, FloatT>) {
-
-    while (i2 < matr_idx[5].size()) {
-      if (colnb == matr_idx[5][i2]) {
-        break;
-      };
-      i2 += 1;
-    };
+        size_t pos = find_col_index(idxvec);
+        if (pos == size_t(-1)) return;
     
-    if (i2 == matr_idx[5].size()) {
-        std::cerr << "Error: column " << colnb << " not found for this type in (replace_col)\n";
-        return;
-    }
-
-    i2 = nrow * i2;
+        size_t base = pos * nrow;
+        U* dst = column_vec.data() + base;
+        auto& val_tmp = tmp_val_refv[colnb];
     
-    std::vector<std::string>& val_tmp = tmp_val_refv[colnb]; 
-    constexpr size_t buf_size = max_chars_needed<T>();
-
-    for (auto& el : val_tmp) {
-      el.reserve(buf_size);
-    }
-
-    for (i = 0; i < end_mask; ++i) {
-
-        if (!mask[i]) {
-          continue;
+        // reserve output strings
+        for (auto& s : val_tmp)
+            s.reserve(buf_size);
+    
+        // masked assignment
+        for (size_t i = 0; i < end_mask; ++i) {
+    
+            if (!mask[i]) continue;
+    
+            const U& v = x[i];
+            dst[i] = v;
+    
+            char buf[buf_size];
+            auto [ptr, ec] = std::to_chars(buf, buf + buf_size, v);
+    
+            if (ec == std::errc{}) [[likely]] {
+                val_tmp[i].assign(buf, ptr);
+            } else [[unlikely]] {
+                std::terminate();
+            }
         }
+    };
 
-        auto& vl = x[i];
-        dbl_v[i2 + i] = vl;
- 
-        char buf[buf_size];
-        auto [ptr, ec] = std::to_chars(buf, buf + buf_size, vl);
-
-        if (ec == std::errc{}) [[likely]] {
-            val_tmp[i].assign(buf, ptr);
-        } else [[unlikely]] {
-            std::terminate();
+    auto replace_string = [&]() {
+    
+        size_t pos = find_col_index(matr_idx[0]);
+        if (pos == size_t(-1)) return;
+    
+        size_t base = pos * nrow;
+        std::string* dst = str_v.data() + base;
+        auto& val_tmp = tmp_val_refv[colnb];
+    
+        for (size_t i = 0; i < end_mask; ++i) {
+            if (!mask[i]) continue;
+    
+            const std::string& v = x[i];
+            dst[i] = v;
+            val_tmp[i] = v;
         }
-
     };
 
-  } else if constexpr (std::is_same_v<T, std::string>) {
-
-    while (i2 < matr_idx[0].size()) {
-      if (colnb == matr_idx[0][i2]) {
-        break;
-      };
-      i2 += 1;
-    };
-   
-    if (i2 == matr_idx[0].size()) {
-        std::cerr << "Error: column " << colnb << " not found for std::string in (replace_col)\n";
-        return;
-    }
-
-    i2 = nrow * i2;
-
-    std::vector<std::string>& val_tmp = tmp_val_refv[colnb];
-
-    for (i = 0; i < end_mask; ++i) {
-     
-      if (!mask[i]) {
-        continue;
-      }
-
-      const std::string& val = x[i];
-      str_v[i2 + i] = val;
-      val_tmp[i] = val;
+    auto replace_charbuf = [&]() {
+    
+        size_t pos = find_col_index(matr_idx[1]);
+        if (pos == size_t(-1)) return;
+    
+        size_t base = pos * nrow;
+        CharT* dst = chr_v.data() + base;
+        auto& val_tmp = tmp_val_refv[colnb];
+    
+        for (size_t i = 0; i < end_mask; ++i) {
+            if (!mask[i]) continue;
+    
+            dst[i] = x[i];
+            val_tmp[i].assign(x[i], df_charbuf_size);
+        }
     };
 
-  } else if constexpr (std::is_same_v<T, char>) {
+    if constexpr (IsBool)
+        replace_numeric(bool_v, matr_idx[2]);
+    
+    else if constexpr (std::is_same_v<T, IntT>)
+        replace_numeric(int_v, matr_idx[3]);
+    
+    else if constexpr (std::is_same_v<T, UIntT>)
+        replace_numeric(uint_v, matr_idx[4]);
+    
+    else if constexpr (std::is_same_v<T, FloatT>)
+        replace_numeric(dbl_v, matr_idx[5]);
+    
+    else if constexpr (std::is_same_v<T, std::string>)
+        replace_string();
+    
+    else if constexpr (std::is_same_v<T, CharT>)
+        replace_charbuf();
+    
+    else
+        static_assert(!sizeof(T*), "Unsupported type");
 
-    while (i2 < matr_idx[1].size()) {
-      if (colnb == matr_idx[1][i2]) {
-        break;
-      };
-      i2 += 1;
-    }; 
-
-    if (i2 == matr_idx[1].size()) {
-        std::cerr << "Error: column " << colnb << " not found for this type in (replace_col)\n";
-        return;
-    }
-
-    i2 = nrow * i2;
-
-    std::vector<std::string>& val_tmp = tmp_val_refv[colnb];
-
-    for (i = 0; i < end_mask; ++i) {
-
-      if (!mask[i]) {
-        continue;
-      }
-
-      const char& val = x[i];
-      chr_v[i2 + i] = val;
-      val_tmp[i].assign(1, val);
-    };
-
-  } else {
-    std::cerr << "Error unsupported type in (replace_col)\n";
-  };
 };
 
 
