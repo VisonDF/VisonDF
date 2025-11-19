@@ -147,6 +147,103 @@ void otm(Dataframe &obj_l,
     vec_str.resize(nrow, default_str);
     tmp_val_refv.insert(tmp_val_refv.end(), ncol1 + ncol2, vec_str);
 
+    auto expand_repeats = [&](auto& dst_vec,
+                              auto& src_vec,
+                              auto& idx_list,
+                              auto& tmp_val_refv,
+                              auto& tmp_val_refv1)
+    {
+        using T = typename std::remove_reference_t<decltype(dst_vec)>::value_type;
+    
+        for (size_t t = 0; t < idx_list.size(); ++t) {
+            size_t dst_col = idx_list[t];
+    
+            auto& val_tmp  = tmp_val_refv[dst_col];
+            const auto& val_tmp2 = tmp_val_refv1[dst_col];
+    
+            T*       dst_val = dst_vec.data()  + nrow  * t;
+            const T* src_val = src_vec.data() + nrow1 * t;
+    
+            size_t out = 0;
+            for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
+                size_t repeat = rep_v[i_ref];
+                const T& v1 = src_val[i_ref];
+                const std::string& v2 = val_tmp2[i_ref];
+    
+                for (size_t r = 0; r < repeat; ++r, ++out) {
+                    dst_val[out] = v1;
+                    val_tmp[out] = v2;
+                }
+            }
+        }
+    };
+
+    auto expand_matches = [&](auto& dst_vec,
+                              auto& src_vec,
+                              auto& idx_list_b,
+                              auto& idx_list,
+                              auto& tmp_val_refv,
+                              auto& tmp_val_refv2,
+                              size_t offset)
+    {
+        using T = typename std::remove_reference_t<decltype(dst_vec)>::value_type;
+    
+        for (size_t t = 0; t < idx_list_b.size(); ++t) {
+    
+            size_t dst_col = idx_list_b[t];
+            size_t src_col = idx_list[t];
+    
+            auto& val_tmp  = tmp_val_refv[dst_col];
+            const auto& val_tmp2 = tmp_val_refv2[src_col];
+    
+            T*       dst_val = dst_vec.data()  + nrow * (offset + t);
+            const T* src_val = src_vec.data() + nrow2 * t;
+    
+            size_t out = 0;
+    
+            for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
+                auto& matches = match_idx[i_ref];
+    
+                if (matches.empty()) {
+                    ++out;
+                    continue;
+                }
+    
+                if (matches.size() <= 4) {
+                    for (size_t idx : matches) {
+                        dst_val[out] = src_val[idx];
+                        val_tmp[out] = val_tmp2[idx];
+                        ++out;
+                    }
+                    continue;
+                }
+    
+                std::sort(matches.begin(), matches.end());
+    
+                for (size_t k = 0; k < matches.size();) {
+    
+                    size_t start = matches[k];
+                    size_t run_len = 1;
+    
+                    while (k + run_len < matches.size() &&
+                           matches[k + run_len] == matches[k + run_len - 1] + 1)
+                        ++run_len;
+    
+                    std::memcpy(dst_val + out,
+                                src_val + start,
+                                run_len * sizeof(T));
+    
+                    std::copy_n(val_tmp2.begin() + start,
+                                run_len,
+                                val_tmp.begin() + out);
+    
+                    out += run_len;
+                    k += run_len;
+                }
+            }
+        }
+    };
+
     for (size_t t = 0; t < matr_idx1[0].size(); ++t) {
         size_t dst_col = matr_idx1[0][t];
 
@@ -197,341 +294,26 @@ void otm(Dataframe &obj_l,
 
     }
 
-
-    for (size_t t = 0; t < matr_idx1[1].size(); ++t) {
-        size_t dst_col = matr_idx1[1][t];
-
-        std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
-        const std::vector<std::string>& val_tmp2 = tmp_val_refv1[dst_col];
-
-        auto*       dst_val = chr_v.data()  + nrow  * t;
-        const auto* src_val = chr_v1.data() + nrow1 * t;
-        
-        size_t out = 0;
-        for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
-            const size_t repeat = rep_v[i_ref];
-        
-            const char& v1 = src_val[i_ref];
-            const std::string& v2 = val_tmp2[i_ref];
-        
-            for (size_t r = 0; r < repeat; ++r, ++out) {
-                dst_val[out] = v1;
-                val_tmp[out] = v2;
-            }
-        }
-    }
-
-    for (size_t t = 0; t < matr_idx2b[1].size(); ++t) {
-        size_t dst_col = matr_idx2b[1][t];
-        size_t src_col = matr_idx2[1][t];
-
-        std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
-        const std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
-
-        auto*       dst_val = chr_v.data()  + nrow  * (size_chr1 + t);
-        const auto* src_val = chr_v2.data() + nrow2 * t;
-
-        size_t out = 0;  
-        for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
-            const auto& matches = match_idx[i_ref]; 
-
-            if (!matches.empty()) {
-
-                if (matches.size() <= 4) {
-                    for (size_t j_idx : matches) {
-                        dst_val[out] = src_val[j_idx];
-                        val_tmp[out] = val_tmp2[j_idx];
-                        ++out;
-                    }
-                    continue;
-                }
-
-                std::sort(matches.begin(), matches.end());
-                for (size_t k = 0; k < matches.size();) {
-                    size_t start = matches[k];
-                    size_t run_len = 1;
-                    while (k + run_len < matches.size() && matches[k + run_len] == matches[k + run_len - 1] + 1)
-                        ++run_len;
-                    std::memcpy(dst_val + out, src_val + start, run_len * sizeof(char));
-                    std::copy_n(val_tmp2.begin() + start, run_len, val_tmp.begin() + out);
-                    out += run_len;
-                    k += run_len;
-                }
-
-            } else {
-                ++out;
-            }
-        }
-
-    }
-
-    for (size_t t = 0; t < matr_idx1[2].size(); ++t) {
-        size_t dst_col = matr_idx1[2][t];
-
-        std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
-        const std::vector<std::string>& val_tmp2 = tmp_val_refv1[dst_col];
-
-        auto*       dst_val = bool_v.data()  + nrow  * t;
-        const auto* src_val = bool_v1.data() + nrow1 * t;
-        
-        size_t out = 0;
-        for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
-            const size_t repeat = rep_v[i_ref];
-        
-            const char& v1 = src_val[i_ref];
-            const std::string& v2 = val_tmp2[i_ref];
-        
-            for (size_t r = 0; r < repeat; ++r, ++out) {
-                dst_val[out] = v1;
-                val_tmp[out] = v2;
-            }
-        }
-    }
-
-    for (size_t t = 0; t < matr_idx2b[2].size(); ++t) {
-        size_t dst_col = matr_idx2b[2][t];
-        size_t src_col = matr_idx2[2][t];
-
-        std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
-        const std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
-
-        auto*       dst_val = bool_v.data()  + nrow  * (size_chr1 + t);
-        const auto* src_val = bool_v2.data() + nrow2 * t;
-
-        size_t out = 0;  
-        for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
-            const auto& matches = match_idx[i_ref]; 
-
-            if (!matches.empty()) {
-
-                if (matches.size() <= 4) {
-                    for (size_t j_idx : matches) {
-                        dst_val[out] = src_val[j_idx];
-                        val_tmp[out] = val_tmp2[j_idx];
-                        ++out;
-                    }
-                    continue;
-                }
-
-                std::sort(matches.begin(), matches.end());
-                for (size_t k = 0; k < matches.size();) {
-                    size_t start = matches[k];
-                    size_t run_len = 1;
-                    while (k + run_len < matches.size() && matches[k + run_len] == matches[k + run_len - 1] + 1)
-                        ++run_len;
-                    std::memcpy(dst_val + out, src_val + start, run_len * sizeof(uint8_t));
-                    std::copy_n(val_tmp2.begin() + start, run_len, val_tmp.begin() + out);
-                    out += run_len;
-                    k += run_len;
-                }
-
-            } else {
-                ++out;
-            }
-        }
-
-    }
-
-    for (size_t t = 0; t < matr_idx1[3].size(); ++t) {
-        size_t dst_col = matr_idx1[3][t];
-
-        std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
-        const std::vector<std::string>& val_tmp2 = tmp_val_refv1[dst_col];
-
-        auto*       dst_val = int_v.data()  + nrow  * t;
-        const auto* src_val = int_v1.data() + nrow1 * t;
-        
-        size_t out = 0;
-        for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
-            const size_t repeat = rep_v[i_ref];
-        
-            const IntT& v1 = src_val[i_ref];
-            const std::string& v2 = val_tmp2[i_ref];
-        
-            for (size_t r = 0; r < repeat; ++r, ++out) {
-                dst_val[out] = v1;
-                val_tmp[out] = v2;
-            }
-        }
-    }
-
-    for (size_t t = 0; t < matr_idx2b[3].size(); ++t) {
-        size_t dst_col = matr_idx2b[3][t];
-        size_t src_col = matr_idx2[3][t];
-
-        std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
-        const std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
-
-        auto*       dst_val = int_v.data()  + nrow  * (size_int1 + t);
-        const auto* src_val = int_v2.data() + nrow2 * t;
-
-        size_t out = 0;  
-        for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
-            auto& matches = match_idx[i_ref]; 
-
-            if (!matches.empty()) {
-
-                if (matches.size() <= 4) {
-                    for (size_t j_idx : matches) {
-                        dst_val[out] = src_val[j_idx];
-                        val_tmp[out] = val_tmp2[j_idx];
-                        ++out;
-                    }
-                    continue;
-                }
-
-                for (size_t k = 0; k < matches.size();) {
-                    size_t start = matches[k];
-                    size_t run_len = 1;
-                    while (k + run_len < matches.size() && matches[k + run_len] == matches[k + run_len - 1] + 1)
-                        ++run_len;
-                    std::memcpy(dst_val + out, src_val + start, run_len * sizeof(IntT));
-                    std::copy_n(val_tmp2.begin() + start, run_len, val_tmp.begin() + out);
-                    out += run_len;
-                    k += run_len;
-                }
-
-            } else {
-                ++out;
-            }
-        }
-
-    }
-
-
-    for (size_t t = 0; t < matr_idx1[4].size(); ++t) {
-        size_t dst_col = matr_idx1[4][t];
-
-        std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
-        const std::vector<std::string>& val_tmp2 = tmp_val_refv1[dst_col];
-
-        auto*       dst_val = uint_v.data()  + nrow  * t;
-        const auto* src_val = uint_v1.data() + nrow1 * t;
-        
-        size_t out = 0;
-        for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
-            const size_t repeat = rep_v[i_ref];
-        
-            const UIntT& v1 = src_val[i_ref];
-            const std::string& v2 = val_tmp2[i_ref];
-        
-            for (size_t r = 0; r < repeat; ++r, ++out) {
-                dst_val[out] = v1;
-                val_tmp[out] = v2;
-            }
-        }
-    }
-
-    for (size_t t = 0; t < matr_idx2b[4].size(); ++t) {
-        size_t dst_col = matr_idx2b[4][t];
-        size_t src_col = matr_idx2[4][t];
-
-        std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
-        const std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
-
-        auto*       dst_val = uint_v.data()  + nrow  * (size_uint1 + t);
-        const auto* src_val = uint_v2.data() + nrow2 * t;
-
-        size_t out = 0;  
-        for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
-            auto& matches = match_idx[i_ref]; 
-
-            if (!matches.empty()) {
-
-                if (matches.size() <= 4) {
-                    for (size_t j_idx : matches) {
-                        dst_val[out] = src_val[j_idx];
-                        val_tmp[out] = val_tmp2[j_idx];
-                        ++out;
-                    }
-                    continue;
-                }
-
-                for (size_t k = 0; k < matches.size();) {
-                    size_t start = matches[k];
-                    size_t run_len = 1;
-                    while (k + run_len < matches.size() && matches[k + run_len] == matches[k + run_len - 1] + 1)
-                        ++run_len;
-                    std::memcpy(dst_val + out, src_val + start, run_len * sizeof(UIntT));
-                    std::copy_n(val_tmp2.begin() + start, run_len, val_tmp.begin() + out);
-                    out += run_len;
-                    k += run_len;
-                }
-
-            } else {
-                ++out;
-            }
-        }
-
-    }
-
-
-    for (size_t t = 0; t < matr_idx1[5].size(); ++t) {
-        size_t dst_col = matr_idx1[5][t];
-
-        std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
-        const std::vector<std::string>& val_tmp2 = tmp_val_refv1[dst_col];
-
-        auto*       dst_val = dbl_v.data()  + nrow  * t;
-        const auto* src_val = dbl_v1.data() + nrow1 * t;
-        
-        size_t out = 0;
-        for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
-            const size_t repeat = rep_v[i_ref];
-        
-            const FloatT& v1 = src_val[i_ref];
-            const std::string& v2 = val_tmp2[i_ref];
-        
-            for (size_t r = 0; r < repeat; ++r, ++out) {
-                dst_val[out] = v1;
-                val_tmp[out] = v2;
-            }
-        }
-    }
-
-    for (size_t t = 0; t < matr_idx2b[5].size(); ++t) {
-        size_t dst_col = matr_idx2b[5][t];
-        size_t src_col = matr_idx2[5][t];
-
-        std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
-        const std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
-
-        auto*       dst_val = dbl_v.data()  + nrow  * (size_dbl1 + t);
-        const auto* src_val = dbl_v2.data() + nrow2 * t;
-
-        size_t out = 0;  
-        for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
-            auto& matches = match_idx[i_ref]; 
-
-            if (!matches.empty()) {
-
-                if (matches.size() <= 4) {
-                    for (size_t j_idx : matches) {
-                        dst_val[out] = src_val[j_idx];
-                        val_tmp[out] = val_tmp2[j_idx];
-                        ++out;
-                    }
-                    continue;
-                }
-
-                for (size_t k = 0; k < matches.size();) {
-                    size_t start = matches[k];
-                    size_t run_len = 1;
-                    while (k + run_len < matches.size() && matches[k + run_len] == matches[k + run_len - 1] + 1)
-                        ++run_len;
-                    std::memcpy(dst_val + out, src_val + start, run_len * sizeof(FloatT));
-                    std::copy_n(val_tmp2.begin() + start, run_len, val_tmp.begin() + out);
-                    out += run_len;
-                    k += run_len;
-                }
-
-            } else {
-                ++out;
-            }
-        }
-
-    }
-
+    expand_repeats(chr_v,  chr_v1,  matr_idx1[1], tmp_val_refv, tmp_val_refv1);
+    expand_matches(chr_v,  chr_v2,  matr_idx2b[1], matr_idx2[1],
+                   tmp_val_refv, tmp_val_refv2, size_chr1);
+    
+    expand_repeats(bool_v, bool_v1, matr_idx1[2], tmp_val_refv, tmp_val_refv1);
+    expand_matches(bool_v, bool_v2, matr_idx2b[2], matr_idx2[2],
+                   tmp_val_refv, tmp_val_refv2, size_bool1);
+    
+    expand_repeats(int_v,  int_v1,  matr_idx1[3], tmp_val_refv, tmp_val_refv1);
+    expand_matches(int_v,  int_v2,  matr_idx2b[3], matr_idx2[3],
+                   tmp_val_refv, tmp_val_refv2, size_int1);
+    
+    expand_repeats(uint_v, uint_v1, matr_idx1[4], tmp_val_refv, tmp_val_refv1);
+    expand_matches(uint_v, uint_v2, matr_idx2b[4], matr_idx2[4],
+                   tmp_val_refv, tmp_val_refv2, size_uint1);
+    
+    expand_repeats(dbl_v, dbl_v1, matr_idx1[5], tmp_val_refv, tmp_val_refv1);
+    expand_matches(dbl_v, dbl_v2, matr_idx2b[5], matr_idx2[5],
+               tmp_val_refv, tmp_val_refv2, size_dbl1);
+    
     type_refv.insert(type_refv.end(), vec_type1.begin(), vec_type1.end());
     type_refv.insert(type_refv.end(), vec_type2.begin(), vec_type2.end());
 
