@@ -70,9 +70,12 @@ void rm_col_range_reconstruct(std::vector<unsigned int> rm_cols) {
                                     rows * sizeof(CharT));
                         break;
                     }
-            case 2:
-                new_bool_v.insert(new_bool_v.end(), 
-                                bool_v.begin() + base, bool_v.begin() + base + rows); break;
+            case 2: {
+                        new_bool_v.resize(new_bool_v.size() + rows);
+                        std::memcpy(new_bool_v.data() + new_bool_v.size() - rows,
+                                    bool_v.data() + base,
+                                    rows * sizeof(uint8_t));
+                    }
             case 3: {
                         new_int_v.resize(new_int_v.size() + rows);
                         std::memcpy(new_int_v.data() + new_int_v.size() - rows,
