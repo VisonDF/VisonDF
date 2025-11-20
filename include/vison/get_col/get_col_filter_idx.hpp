@@ -1,146 +1,58 @@
 #pragma once
 
 template <typename T, bool IsBool = false>
-void get_col_filter_idx(unsigned int &x, 
-                std::vector<T> &rtn_v,
-                std::vector<unsigned int> &mask) {
-  
-  const unsigned int n_el = mask.size();
-  rtn_v.resize(n_el);
-  unsigned int i;
-  unsigned int i2 = 0;
+void get_col_filter_idx(unsigned int &x,
+                        std::vector<T> &rtn_v,
+                        const std::vector<unsigned int> &mask)
+{
+    const size_t n_el = mask.size();
+    rtn_v.resize(n_el);
 
-  if constexpr (IsBool) {
+    auto find_col_base = [&](auto &idx_vec) -> size_t {
+        size_t pos = 0;
+        while (pos < idx_vec.size() && idx_vec[pos] != x)
+            ++pos;
 
-    while (i2 < matr_idx[2].size()) {
-      if (x == matr_idx[2][i2]) {
-        break;
-      };
-      i2 += 1;
+        if (pos == idx_vec.size()) {
+            std::cerr << "Error in (get_col), no column found\n";
+            return size_t(-1);
+        }
+        return pos * nrow;
     };
 
-    if (i2 == matr_idx[2].size()) {
-      std::cerr << "Error in (get_col), no column found\n";
-      return;
+    auto extract_idx_masked = [&](const auto *__restrict col_ptr, const auto* idx_vec) {
+        const size_t base = find_col_base(idx_vec);
+        if (base == size_t(-1)) return;
+        const auto *__restrict src = col_ptr + base;
+        for (size_t i = 0; i < n_el; ++i) {
+            rtn_v[i] = src[mask[i]];
+        }
     };
 
-    i2 = nrow * i2;
+    if constexpr (IsBool) {
+        extract_idx_masked(bool_v.data(), matr_idx[2]);
 
-    for (i = 0; i < n_el; ++i) {
-      const size_t pos_idx = i2 + mask[i];
-      rtn_v[i] = bool_v[pos_idx];
-    };
+    } else if constexpr (std::is_same_v<T, IntT>) {
+        extract_idx_masked(int_v.data(), matr_idx[3]);
 
-  } else if constexpr (std::is_same_v<T, IntT>) {
+    } else if constexpr (std::is_same_v<T, UIntT>) {
+        extract_idx_masked(uint_v.data(), matr_idx[4]);
 
-    while (i2 < matr_idx[3].size()) {
-      if (x == matr_idx[3][i2]) {
-        break;
-      };
-      i2 += 1;
-    };
+    } else if constexpr (std::is_same_v<T, FloatT>) {
+        extract_idx_masked(dbl_v.data(), matr_idx[5]);
 
-    if (i2 == matr_idx[3].size()) {
-      std::cerr << "Error in (get_col), no column found\n";
-      return;
-    };
+    } else if constexpr (std::is_same_v<T, std::string>) {
+        extract_idx_masked(str_v.data(), matr_idx[0]);
 
-    i2 = nrow * i2;
-    
-    for (i = 0; i < n_el; ++i) {
-      const size_t pos_idx = i2 + mask[i];
-      rtn_v[i] = int_v[pos_idx];
-    };
-    
-  } else if constexpr (std::is_same_v<T, UIntT>) {
+    } else if constexpr (std::is_same_v<T, CharT>) {
+        extract_idx_masked(chr_v.data(), matr_idx[1]);
 
-    while (i2 < matr_idx[4].size()) {
-      if (x == matr_idx[4][i2]) {
-        break;
-      };
-      i2 += 1;
-    };
+    } else {
+        std::cerr << "Error in (get_col), unsupported type\n";
+        return;
+    }
+}
 
-    if (i2 == matr_idx[4].size()) {
-      std::cerr << "Error in (get_col), no column found\n";
-      return;
-    };
 
-    i2 = nrow * i2;
-
-    for (i = 0; i < n_el; ++i) {
-      const size_t pos_idx = i2 + mask[i];
-      rtn_v[i] = uint_v[pos_idx];
-    };
-
-  } else if constexpr (std::is_same_v<T, FloatT>) {
-
-    while (i2 < matr_idx[5].size()) {
-      if (x == matr_idx[5][i2]) {
-        break;
-      };
-      i2 += 1;
-    };
-
-    if (i2 == matr_idx[5].size()) {
-      std::cerr << "Error in (get_col), no column found\n";
-      return;
-    };
-
-    i2 = nrow * i2;
-
-    for (i = 0; i < n_el; ++i) {
-      const size_t pos_idx = i2 + mask[i];
-      rtn_v[i] = dbl_v[pos_idx];
-    };
-
-  } else if constexpr (std::is_same_v<T, std::string>) {
-
-    while (i2 < matr_idx[0].size()) {
-      if (x == matr_idx[0][i2]) {
-        break;
-      };
-      i2 += 1;
-    };
-
-    if (i2 == matr_idx[0].size()) {
-      std::cerr << "Error in (get_col), no column found\n";
-      return;
-    };
-
-    i2 = nrow * i2;
-
-    for (i = 0; i < n_el; ++i) {
-      const size_t pos_idx = i2 + mask[i];
-      rtn_v[i] = str_v[pos_idx];
-    };
-
-  } else if constexpr (std::is_same_v<T, char>) {
-
-    while (i2 < matr_idx[1].size()) {
-      if (x == matr_idx[1][i2]) {
-        break;
-      };
-      i2 += 1;
-    };
-
-    if (i2 == matr_idx[1].size()) {
-      std::cerr << "Error in (get_col), no column found\n";
-      return;
-    };
-
-    i2 = nrow * i2;
-
-    for (i = 0; i < n_el; ++i) {
-      const size_t pos_idx = i2 + mask[i];
-      rtn_v[i] = chr_v[pos_idx];
-    };
-
-  } else {
-    std::cerr << "Error in (get_col), unsupported type\n";
-    return;
-  };
-
-};
 
 
