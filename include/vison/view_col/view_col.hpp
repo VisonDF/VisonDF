@@ -2,7 +2,8 @@
 
 using ColumnView = std::variant<
     std::span<const std::string>,
-    std::span<const char>,
+    std::span<const CharT>,
+    std::span<const uint8_t>,
     std::span<const IntT>,
     std::span<const UIntT>,
     std::span<const FloatT>
@@ -20,10 +21,9 @@ ColumnView view_col(unsigned int &x) const {
                     case 0:
                         return std::span<const std::string>(str_v.data() + offset, nrow);
                     case 1:
-                        return std::span<const char>(chr_v.data() + offset, nrow);
+                        return std::span<const CharT>(chr_v.data() + offset, nrow);
                     case 2:
-                        std::cerr << "Can't view boolean column\n";
-                        break;
+                        return std::span<const uint8_t>(bool_v.data() + offset, nrow);
                     case 3:
                         return std::span<const IntT>(int_v.data() + offset, nrow);
                     case 4:

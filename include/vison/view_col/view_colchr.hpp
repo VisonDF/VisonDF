@@ -1,6 +1,6 @@
 #pragma once
 
-std::span<const char> view_colchr(unsigned int &x) const {
+std::span<const CharT> view_colchr(unsigned int &x) const {
   unsigned int i2 = 0;
 
   while (i2 < matr_idx[1].size()) {
