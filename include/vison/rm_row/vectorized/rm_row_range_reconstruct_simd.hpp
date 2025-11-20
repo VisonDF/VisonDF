@@ -157,7 +157,7 @@ void rm_row_range_reconstruct_simd(std::vector<unsigned int> x)
                     break;
 
                 case 2: 
-                    compact_block_pod_simd.template operator()<uint8_t>(new_bool_v,  int_v,  base);
+                    compact_block_pod_simd.template operator()<uint8_t>(new_bool_v,  bool_v,  base);
                     break;
 
                 case 3: 

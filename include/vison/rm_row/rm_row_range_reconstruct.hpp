@@ -87,7 +87,7 @@ void rm_row_range_reconstruct(std::vector<unsigned int> x)
 
                 case 2: 
 
-                    compact_block_pod.template operator()<uint8_t>(new_bool_v,  int_v,  base);
+                    compact_block_pod.template operator()<uint8_t>(new_bool_v,  bool_v,  base);
 
                     break;
 
