@@ -12,21 +12,12 @@ inline void sort_char(
 )
 {
 
-    auto cmp = make_cmp.template operator()<ASC, int8_t>(col);
+    auto cmp = make_cmp.template operator()<ASC, CharT>(col);
     static_assert(IndexComparator<decltype(cmp)>,
               "Comparator must be cmp(size_t,size_t)->bool");
 
     if constexpr (S == SortType::Radix) {
 
-        if constexpr (CORES == 1) {
-
-            radix_sort_int8<Simd>(col, idx.data(), nrow);
-
-        } else if constexpr (CORES > 1) {
-
-            radix_sort_int8_mt<CORES, Simd>(col, idx.data(), nrow);
-
-        }
 
     } else if constexpr (S == SortType::Standard) {
 

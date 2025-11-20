@@ -21,49 +21,65 @@ inline void sort_integers(
 
         if constexpr (std::is_same_v<IntT, int8_t>) {
 
+            std::vector<uint8_t> tkeys(nrow);
+            for (size_t i = 0; i < nrow; ++i)
+                tkeys[i] = uint8_t(col[i]) ^ 0x80u;
+
             if constexpr (CORES == 1) {
 
-                radix_sort_int8<Simd>(col, idx.data(), nrow);
+                radix_sort_uint8<Simd>          (tkeys.data(), idx.data(), nrow);
 
             } else if constexpr (CORES > 1) {
 
-                radix_sort_int8_mt<CORES, Simd>(col, idx.data(), nrow);
+                radix_sort_uint8_mt<CORES, Simd>(tkeys.data(), idx.data(), nrow);
 
             }
 
         } else if constexpr (std::is_same_v<IntT, int16_t>) {
 
+            std::vector<uint16_t> tkeys(nrow);
+            for (size_t i = 0; i < nrow; i++)
+                tkeys[i] = uint16_t(col[i]) ^ 0x8000u;
+
             if constexpr (CORES == 1) {
 
-                radix_sort_int16<Simd>(col, idx.data(), nrow);
+                radix_sort_uint16<Simd>          (tkeys.data(), idx.data(), nrow);
 
             } else if constexpr (CORES > 1) {
 
-                radix_sort_int16_mt<CORES, Simd>(col, idx.data(), nrow);
+                radix_sort_uint16_mt<CORES, Simd>(tkeys.data(), idx.data(), nrow);
 
             }
 
         } else if constexpr (std::is_same_v<IntT, int32_t>) {
 
+            std::vector<uint32_t> tkeys(nrow);
+            for (size_t i = 0; i < nrow; i++)
+                tkeys[i] = uint32_t(col[i]) ^ 0x80000000u;
+
             if constexpr (CORES == 1) {
 
-                radix_sort_int32<Simd>(col, idx.data(), nrow);
+                radix_sort_uint32<Simd>          (tkeys.data(), idx.data(), nrow);
 
             } else if constexpr (CORES > 1) {
 
-                radix_sort_int32_mt<CORES, Simd>(col, idx.data(), nrow);
+                radix_sort_uint32_mt<CORES, Simd>(tkeys.data(), idx.data(), nrow);
 
             }
 
         } else if constexpr (std::is_same_v<IntT, int64_t>) {
 
+            std::vector<uint64_t> tkeys(nrow);
+            for (size_t i = 0; i < nrow; i++)
+                tkeys[i] = uint64_t(col[idx[i]]) ^ 0x8000000000000000ULL;
+
             if constexpr (CORES == 1) {
 
-                radix_sort_int64<Simd>(col, idx.data(), nrow);
+                radix_sort_uint64<Simd>          (tkeys.data(), idx.data(), nrow);
 
             } else if constexpr (CORES > 1) {
 
-                radix_sort_int64_mt<CORES, Simd>(col, idx.data(), nrow);
+                radix_sort_uint64_mt<CORES, Simd>(tkeys.data(), idx.data(), nrow);
 
             }
             
