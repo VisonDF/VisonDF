@@ -202,7 +202,9 @@ namespace vison {
         [[nodiscard]] inline const std::vector<std::vector<unsigned int>>& get_matr_idx() const {
           return matr_idx;
         };
-   
+
+        #include "inlines/radix_sorts/radix_sort_charbuf.inl"
+
         #include "inlines/classify_column.inl"
      
         #include "detail/longest_determine.hpp"
