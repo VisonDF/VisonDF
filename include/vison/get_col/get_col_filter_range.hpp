@@ -1,161 +1,61 @@
 #pragma once
 
 template <typename T, bool MemClean = false, bool IsBool = false>
-void get_col_filter_range(unsigned int &x, 
-                std::vector<T> &rtn_v,
-                std::vector<uint8_t> &mask,
-                unsigned int& strt_vl) {
-  
-  rtn_v.reserve(nrow);
-  unsigned int i;
-  unsigned int i2 = 0;
+void get_col_filter_range(unsigned int &x,
+                          std::vector<T> &rtn_v,
+                          const std::vector<uint8_t> &mask,
+                          const unsigned int &strt_vl)
+{
+    rtn_v.reserve(nrow);
 
-  if constexpr (IsBool) {
+    auto extract_range_masked =
+    [&](const auto *__restrict col_ptr, const auto &idx_vec)
+    {
+        size_t pos = 0;
+        while (pos < idx_vec.size() && idx_vec[pos] != x)
+            ++pos;
 
-    while (i2 < matr_idx[2].size()) {
-      if (x == matr_idx[2][i2]) {
-        break;
-      };
-      i2 += 1;
+        if (pos == idx_vec.size()) {
+            std::cerr << "Error in (get_col), no column found\n";
+            return;     
+        }
+
+        const size_t base = pos * nrow;
+        const auto *__restrict src = col_ptr + base;
+
+        for (size_t i = 0; i < nrow; ++i) {
+            if (mask[i]) {
+                rtn_v.push_back(src[strt_vl + i]);
+            }
+        }
     };
 
-    if (i2 == matr_idx[2].size()) {
-      std::cerr << "Error in (get_col), no column found\n";
-      return;
-    };
+    if constexpr (IsBool) {
+        extract_range_masked(bool_v.data(), matr_idx[2]);
 
-    i2 = nrow * i2;
+    } else if constexpr (std::is_same_v<T, IntT>) {
+        extract_range_masked(int_v.data(), matr_idx[3]);
 
-    for (i = 0; i < nrow; ++i, ++i2) {
-      if (mask[i]) {
-        rtn_v.push_back(bool_v[strt_vl + i2]);
-      };
-    };
+    } else if constexpr (std::is_same_v<T, UIntT>) {
+        extract_range_masked(uint_v.data(), matr_idx[4]);
 
-  } else if constexpr (std::is_same_v<T, IntT>) {
+    } else if constexpr (std::is_same_v<T, FloatT>) {
+        extract_range_masked(dbl_v.data(), matr_idx[5]);
 
-    while (i2 < matr_idx[3].size()) {
-      if (x == matr_idx[3][i2]) {
-        break;
-      };
-      i2 += 1;
-    };
+    } else if constexpr (std::is_same_v<T, std::string>) {
+        extract_range_masked(str_v.data(), matr_idx[0]);
 
-    if (i2 == matr_idx[3].size()) {
-      std::cerr << "Error in (get_col), no column found\n";
-      return;
-    };
+    } else if constexpr (std::is_same_v<T, CharT>) {
+        extract_range_masked(chr_v.data(), matr_idx[1]);
 
-    i2 = nrow * i2;
+    } else {
+        std::cerr << "Error in (get_col), unsupported type\n";
+        return;
+    }
 
-    for (i = 0; i < nrow; ++i, ++i2) {
-      if (mask[i]) {
-        rtn_v.push_back(int_v[strt_vl + i2]);
-      };
-    };
-
-  } else if constexpr (std::is_same_v<T, UIntT>) {
-
-    while (i2 < matr_idx[4].size()) {
-      if (x == matr_idx[4][i2]) {
-        break;
-      };
-      i2 += 1;
-    };
-
-    if (i2 == matr_idx[4].size()) {
-      std::cerr << "Error in (get_col), no column found\n";
-      return;
-    };
-
-    i2 = nrow * i2;
-
-    for (i = 0; i < nrow; ++i, ++i2) {
-      if (mask[i]) {
-        rtn_v.push_back(uint_v[strt_vl + i2]);
-      };
-    };
-
-  } else if constexpr (std::is_same_v<T, FloatT>) {
-
-    while (i2 < matr_idx[5].size()) {
-      if (x == matr_idx[5][i2]) {
-        break;
-      };
-      i2 += 1;
-    };
-
-    if (i2 == matr_idx[5].size()) {
-      std::cerr << "Error in (get_col), no column found\n";
-      return;
-    };
-
-    i2 = nrow * i2;
-
-    for (i = 0; i < nrow; ++i, ++i2) {
-      if (mask[i]) {
-        rtn_v.push_back(dbl_v[strt_vl + i2]);
-      };
-    };
-
-  } else if constexpr (std::is_same_v<T, std::string>) {
-
-    while (i2 < matr_idx[0].size()) {
-      if (x == matr_idx[0][i2]) {
-        break;
-      };
-      i2 += 1;
-    };
-
-    if (i2 == matr_idx[0].size()) {
-      std::cerr << "Error in (get_col), no column found\n";
-      return;
-    };
-
-    i2 = nrow * i2;
-
-    for (i = 0; i < nrow; ++i, ++i2) {
-      if (mask[i]) {
-        rtn_v.push_back(str_v[strt_vl + i2]);
-      };
-    };
-
-  } else if constexpr (std::is_same_v<T, char>) {
-
-    while (i2 < matr_idx[1].size()) {
-      if (x == matr_idx[1][i2]) {
-        break;
-      };
-      i2 += 1;
-    };
-
-    if (i2 == matr_idx[1].size()) {
-      std::cerr << "Error in (get_col), no column found\n";
-      return;
-    };
-
-    i2 = nrow * i2;
-
-    for (i = 0; i < nrow; ++i, ++i2) {
-      if (mask[i]) {
-        rtn_v.push_back(chr_v[strt_vl + i2]);
-      };
-    };
-
-  } else {
-    std::cerr << "Error in (get_col), unsupported type\n";
-    return;
-  };
-
-  if constexpr (MemClean) {
-
-    rtn_v.shrink_to_fit();
-
-  }
-
-};
-
-
+    if constexpr (MemClean)
+        rtn_v.shrink_to_fit();
+}
 
 
 

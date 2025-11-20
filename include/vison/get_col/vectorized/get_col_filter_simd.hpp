@@ -11,9 +11,6 @@ void get_col_filter_simd(unsigned int &x,
   auto get_filtered_col = [&](auto& column_vec,
                               const std::vector<unsigned int>& col_index_vec)
   {
-      using simd_t = v2::simd<T>;
-      using abi_t  = typename simd_t::abi_type;
-      using mask_t = v2::simd<uint8_t, abi_t>;
   
       size_t idx = 0;
       while (idx < col_index_vec.size() && x != col_index_vec[idx])
@@ -23,6 +20,10 @@ void get_col_filter_simd(unsigned int &x,
           std::cerr << "Error in (get_col), no column found\n";
           return;
       }
+
+      using simd_t = v2::simd<T>;
+      using abi_t  = typename simd_t::abi_type;
+      using mask_t = v2::simd<uint8_t, abi_t>;
   
       size_t base = idx * nrow;
   

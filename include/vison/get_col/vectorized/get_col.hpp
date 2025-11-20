@@ -10,7 +10,6 @@ void get_col(unsigned int &x,
 
     auto load_column = [&](auto& col_vec, const auto& idx_vec)
     {
-        // 1. Find the column index
         size_t idx = 0;
         while (idx < idx_vec.size() && x != idx_vec[idx])
             ++idx;
@@ -20,10 +19,8 @@ void get_col(unsigned int &x,
             return;
         }
     
-        // 2. Compute column start
         size_t offset = idx * nrow;
     
-        // 3. Copy data
         #pragma GCC ivdep
         for (size_t r = 0; r < nrow; ++r)
             rtn_v[r] = col_vec[offset + r];

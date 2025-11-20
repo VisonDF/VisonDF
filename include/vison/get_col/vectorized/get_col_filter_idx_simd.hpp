@@ -13,10 +13,6 @@ void get_col_filter_idx_simd(unsigned int &x,
     auto gather_simd_general = [&](auto& col_vec,
                            const auto& col_index_vec)
     {
-        using col_t  = typename std::decay_t<decltype(col_vec)>::value_type;
-        using simd_t = v2::simd<col_t>;
-        using abi_t  = typename simd_t::abi_type;
-        using mask_t = v2::simd<unsigned int, abi_t>;
     
         size_t idx = 0;
         while (idx < col_index_vec.size() && x != col_index_vec[idx])
@@ -26,13 +22,17 @@ void get_col_filter_idx_simd(unsigned int &x,
             std::cerr << "Error in (get_col), no column found\n";
             return;
         }
-    
+
+        using simd_t = v2::simd<T>;
+        using abi_t  = typename simd_t::abi_type;
+        using mask_t = v2::simd<unsigned int, abi_t>;
+
         size_t base = idx * nrow;
     
     #if defined(__ARM_FEATURE_SVE) || defined(__riscv_vector)
-        const size_t W = v2::simd_size<col_t>();
+        const size_t W = v2::simd_size<T>();
     #else
-        constexpr size_t W = v2::simd_size<col_t>();
+        constexpr size_t W = v2::simd_size<T>();
     #endif
     
         for (; i + W < n_el; i += W)
@@ -171,7 +171,7 @@ void get_col_filter_idx_simd(unsigned int &x,
           rtn_v[i] = str_v[pos_idx];
         };
 
-    } else if constexpr (std::is_same_v<T, char>) {
+    } else if constexpr (std::is_same_v<T, CharT>) {
  
         gather_simd_general(chr_v, matr_idx[1]);
 
