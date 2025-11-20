@@ -29,6 +29,38 @@ void get_dataframe_filter_range(const std::vector<int>& cols,
     size_t str_idx = 0, chr_idx = 0, bool_idx = 0;
     size_t int_idx = 0, uint_idx = 0, dbl_idx = 0;
 
+    auto insert_column = [&](auto &dst_vec,
+                             const auto &src_vec2,
+                             size_t    &type_idx,
+                             std::vector<std::string>& refv_tmp,
+                             const std::vector<std::string>& cur_tmp2)
+    {
+        const size_t pos_idx  = type_idx * tot_nrow;
+        const size_t base_idx = dst_vec.size();
+    
+        dst_vec.resize(base_idx + nrow);
+    
+        const auto *__restrict src = src_vec2.data() + pos_idx;
+        auto       *__restrict dst = dst_vec.data() + base_idx;
+    
+        for (size_t j = 0; j < nrow; ++j) [[likely]] {
+            const size_t act_row = active_rows[j];
+            dst[j] = src[act_row];
+            refv_tmp[j] = cur_tmp2[act_row];
+        }
+    
+        type_idx++;
+    };
+
+    const auto& cur_tmp   = cur_obj.get_tmp_val_refv();
+
+    const auto& str_vec2  = cur_obj.get_str_vec();
+    const auto& chr_vec2  = cur_obj.get_chr_vec();
+    const auto& bool_vec2 = cur_obj.get_bool_vec();
+    const auto& int_vec2  = cur_obj.get_int_vec();
+    const auto& uint_vec2 = cur_obj.get_uint_vec();
+    const auto& dbl_vec2  = cur_obj.get_dbl_vec();
+
     if (cols.empty() || cols[0] == -1) {
         matr_idx     = cur_obj.get_matr_idx();
         ncol         = cur_obj.get_ncol();
@@ -55,15 +87,6 @@ void get_dataframe_filter_range(const std::vector<int>& cols,
 
         str_idx = 0, chr_idx = 0, bool_idx = 0;
         int_idx = 0, uint_idx = 0, dbl_idx = 0;
-
-        const auto& cur_tmp   = cur_obj.get_tmp_val_refv();
-
-        const auto& str_vec2  = cur_obj.get_str_vec();
-        const auto& chr_vec2  = cur_obj.get_chr_vec();
-        const auto& bool_vec2 = cur_obj.get_bool_vec();
-        const auto& int_vec2  = cur_obj.get_int_vec();
-        const auto& uint_vec2 = cur_obj.get_uint_vec();
-        const auto& dbl_vec2  = cur_obj.get_dbl_vec();
         
         name_v    = cur_obj.get_colname();
        
@@ -74,143 +97,40 @@ void get_dataframe_filter_range(const std::vector<int>& cols,
 
         for (size_t i = 0; i < type_refv.size(); i += 1) {
 
-          const std::vector<std::string>& cur_tmp2 = cur_tmp[i];
-          std::vector<std::string>& refv_tmp = tmp_val_refv[i];
+                const std::vector<std::string>& cur_tmp2 = cur_tmp[i];
+                std::vector<std::string>& refv_tmp = tmp_val_refv[i];
 
-          switch (type_refv[i]) {
-            case 's': {
+                switch (type_refv[i]) {
+                      case 's':
+                          insert_column(str_v, str_vec2, str_idx, refv_tmp, cur_tmp2);
+                          break;
 
-                        const size_t pos_idx  = str_idx * tot_nrow;
+                      case 'c':
+                          insert_column(chr_v, chr_vec2, chr_idx, refv_tmp, cur_tmp2);
+                          break;
 
-                        const size_t base_idx = str_v.size();
-                        str_v.resize(base_idx + nrow);
+                      case 'b':
+                          insert_column(bool_v, bool_vec2, bool_idx, refv_tmp, cur_tmp2);
+                          break;
 
-                        const std::string* __restrict src = str_vec2.data() + pos_idx;
-                        std::string* __restrict dst       = str_v.data() + base_idx;
+                      case 'i':
+                          insert_column(int_v, int_vec2, int_idx, refv_tmp, cur_tmp2);
+                          break;
 
-                        for (size_t j = 0; j < nrow; ++j) [[likely]] {
-                            const size_t act_row = active_rows[j];
-                            dst[j] = src[act_row];  
-                            refv_tmp[j] = cur_tmp2[act_row];
-                        }
+                      case 'u':
+                          insert_column(uint_v, uint_vec2, uint_idx, refv_tmp, cur_tmp2);
+                          break;
 
-                        ++str_idx;
-                        break;
+                      case 'd':
+                          insert_column(dbl_v, dbl_vec2, dbl_idx, refv_tmp, cur_tmp2);
+                          break;
+                }
 
-                          }
-                case 'c': {
-
-                            size_t pos_idx = chr_idx * tot_nrow;
-
-                            const size_t base_idx = chr_v.size();
-                            chr_v.resize(base_idx + nrow);
-
-                            const auto* __restrict src = chr_vec2.data() + pos_idx;
-                            auto* __restrict dst = chr_v.data() + base_idx;
-                            
-                            for (size_t j = 0; j < nrow; ++j) [[likely]] {
-                                const size_t act_row = active_rows[j];
-                                dst[j] = src[act_row];
-                                refv_tmp[j] = cur_tmp2[act_row];
-                            }
-
-                            chr_idx += 1;
-                            break;
-
-                          }
-                case 'b': {
-
-                                size_t pos_idx = bool_idx * tot_nrow;
-                                
-                                const size_t base_idx = bool_v.size();
-                                bool_v.resize(base_idx + nrow);
-                                
-                                for (size_t j = 0; j < nrow; ++j) [[likely]] {
-                                    const size_t act_row = active_rows[j];
-                                    bool_v[base_idx + j] = bool_vec2[pos_idx + act_row];
-                                    refv_tmp[j] = cur_tmp2[act_row];
-                                }
-
-                                bool_idx += 1;
-
-                                break;
-
-                          }
-                case 'i': {
-
-                            size_t pos_idx = int_idx * tot_nrow;
-
-                            const size_t base_idx = int_v.size();
-                            int_v.resize(base_idx + nrow);
-
-                            const auto* __restrict src = int_vec2.data() + pos_idx;
-                            auto* __restrict dst = int_v.data() + base_idx;
-                            
-                            for (size_t j = 0; j < nrow; ++j) [[likely]] {
-                                const size_t act_row = active_rows[j];
-                                dst[j] = src[act_row];
-                                refv_tmp[j] = cur_tmp2[act_row];
-                            }
-
-                            int_idx += 1;
-                            break;
-
-                          }
-               case 'u': {
-
-                            size_t pos_idx = uint_idx * tot_nrow;
-
-                            const size_t base_idx = uint_v.size();
-                            uint_v.resize(base_idx + nrow);
-
-                            const auto* __restrict src = uint_vec2.data() + pos_idx;
-                            auto* __restrict dst = uint_v.data() + base_idx;
-                            
-                            for (size_t j = 0; j < nrow; ++j) [[likely]] {
-                                const size_t act_row = active_rows[j];
-                                dst[j] = src[act_row];
-                                refv_tmp[j] = cur_tmp2[act_row];
-                            }
-
-                            uint_idx += 1;
-                            break;
-
-                          }
-                case 'd': {
-
-                            size_t pos_idx = dbl_idx * tot_nrow;
-
-                            const size_t base_idx = dbl_v.size();
-                            dbl_v.resize(base_idx + nrow);
-
-                            const auto* __restrict src = dbl_vec2.data() + pos_idx;
-                            auto* __restrict dst = dbl_v.data() + base_idx;
-                            
-                            for (size_t j = 0; j < nrow; ++j) [[likely]] {
-                                const size_t act_row = active_rows[j];
-                                dst[j] = src[act_row];
-                                refv_tmp[j] = cur_tmp2[act_row];
-                            }
-
-                            dbl_idx += 1;
-                            break;
-
-                          }
-          }
         }
 
     }
     else {
         ncol = cols.size();
-
-        const auto& cur_tmp   = cur_obj.get_tmp_val_refv();
-
-        const auto& str_vec2  = cur_obj.get_str_vec();
-        const auto& chr_vec2  = cur_obj.get_chr_vec();
-        const auto& bool_vec2 = cur_obj.get_bool_vec();
-        const auto& int_vec2  = cur_obj.get_int_vec();
-        const auto& uint_vec2 = cur_obj.get_uint_vec();
-        const auto& dbl_vec2  = cur_obj.get_dbl_vec();
 
         const auto& name_v1    = cur_obj.get_colname();
         const auto& type_refv1 = cur_obj.get_typecol();
@@ -248,135 +168,39 @@ void get_dataframe_filter_range(const std::vector<int>& cols,
 
         for (int i : cols) {
 
-            const std::vector<std::string>& cur_tmp2 = cur_tmp[i];
-            std::vector<std::string>& refv_tmp = tmp_val_refv[dst_col];
+                const std::vector<std::string>& cur_tmp2 = cur_tmp[i];
+                std::vector<std::string>& refv_tmp = tmp_val_refv[dst_col];
 
-            switch (type_refv1[i]) {
-                case 's': {
+                switch (type_refv[i]) {
+                      case 's':
+                          insert_column(str_v, str_vec2, str_idx, refv_tmp, cur_tmp2);
+                          break;
 
-                        const size_t pos_idx  = str_idx * tot_nrow;
+                      case 'c':
+                          insert_column(chr_v, chr_vec2, chr_idx, refv_tmp, cur_tmp2);
+                          break;
 
-                        const size_t base_idx = str_v.size();
-                        str_v.resize(base_idx + nrow);
+                      case 'b':
+                          insert_column(bool_v, bool_vec2, bool_idx, refv_tmp, cur_tmp2);
+                          break;
 
-                        const std::string* __restrict src = str_vec2.data() + pos_idx;
-                        std::string* __restrict dst       = str_v.data() + base_idx;
+                      case 'i':
+                          insert_column(int_v, int_vec2, int_idx, refv_tmp, cur_tmp2);
+                          break;
 
-                        for (size_t j = 0; j < nrow; ++j) [[likely]] {
-                            const size_t act_row = active_rows[j];
-                            dst[j] = src[act_row];  
-                            refv_tmp[j] = cur_tmp2[act_row];
-                        }
+                      case 'u':
+                          insert_column(uint_v, uint_vec2, uint_idx, refv_tmp, cur_tmp2);
+                          break;
 
-                        ++str_idx;
-                        break;
+                      case 'd':
+                          insert_column(dbl_v, dbl_vec2, dbl_idx, refv_tmp, cur_tmp2);
+                          break;
+                }
+                    
+                name_v[dst_col]    = name_v1[i];
+                type_refv[dst_col] = type_refv1[i];
 
-                          }
-                case 'c': {
-
-                            size_t pos_idx = chr_idx * tot_nrow;
-
-                            const size_t base_idx = chr_v.size();
-                            chr_v.resize(base_idx + nrow);
-
-                            const auto* __restrict src = chr_vec2.data() + pos_idx;
-                            auto* __restrict dst = chr_v.data() + base_idx;
-                            
-                            for (size_t j = 0; j < nrow; ++j) [[likely]] {
-                                const size_t act_row = active_rows[j];
-                                dst[j] = src[act_row];
-                                refv_tmp[j] = cur_tmp2[act_row];
-                            }
-
-                            chr_idx += 1;
-                            break;
-
-                          }
-                case 'b': {
-
-                                size_t pos_idx = bool_idx * tot_nrow;
-                                
-                                const size_t base_idx = bool_v.size();
-                                bool_v.resize(base_idx + nrow);
-                                
-                                for (size_t j = 0; j < nrow; ++j) [[likely]] {
-                                    const size_t act_row = active_rows[j];
-                                    bool_v[base_idx + j] = bool_vec2[pos_idx + act_row];
-                                    refv_tmp[j] = cur_tmp2[act_row];
-                                }
-
-                                bool_idx += 1;
-
-                                break;
-
-                          }
-                case 'i': {
-
-                            size_t pos_idx = int_idx * tot_nrow;
-
-                            const size_t base_idx = int_v.size();
-                            int_v.resize(base_idx + nrow);
-
-                            const auto* __restrict src = int_vec2.data() + pos_idx;
-                            auto* __restrict dst = int_v.data() + base_idx;
-                            
-                            for (size_t j = 0; j < nrow; ++j) [[likely]] {
-                                const size_t act_row = active_rows[j];
-                                dst[j] = src[act_row];
-                                refv_tmp[j] = cur_tmp2[act_row];
-                            }
-
-                            int_idx += 1;
-                            break;
-
-                          }
-               case 'u': {
-
-                            size_t pos_idx = uint_idx * tot_nrow;
-
-                            const size_t base_idx = uint_v.size();
-                            uint_v.resize(base_idx + nrow);
-
-                            const auto* __restrict src = uint_vec2.data() + pos_idx;
-                            auto* __restrict dst = uint_v.data() + base_idx;
-                            
-                            for (size_t j = 0; j < nrow; ++j) [[likely]] {
-                                const size_t act_row = active_rows[j];
-                                dst[j] = src[act_row];
-                                refv_tmp[j] = cur_tmp2[act_row];
-                            }
-
-                            uint_idx += 1;
-                            break;
-
-                          }
-                case 'd': {
-
-                            size_t pos_idx = dbl_idx * tot_nrow;
-
-                            const size_t base_idx = dbl_v.size();
-                            dbl_v.resize(base_idx + nrow);
-
-                            const auto* __restrict src = dbl_vec2.data() + pos_idx;
-                            auto* __restrict dst = dbl_v.data() + base_idx;
-                            
-                            for (size_t j = 0; j < nrow; ++j) [[likely]] {
-                                const size_t act_row = active_rows[j];
-                                dst[j] = src[act_row];
-                                refv_tmp[j] = cur_tmp2[act_row];
-                            }
-
-                            dbl_idx += 1;
-                            break;
-
-                          }
-
-            }
-                
-            name_v[dst_col]    = name_v1[i];
-            type_refv[dst_col] = type_refv1[i];
-
-            dst_col += 1;
+                dst_col += 1;
 
         }
 
