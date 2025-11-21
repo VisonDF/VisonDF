@@ -1,7 +1,12 @@
 #pragma once
 
-template <unsigned int strt_row = 0, unsigned int end_row = 0, unsigned int CORES = 1, bool WARMING = 0, bool CLEAN = 0, bool MEM_CLEAN = 0>
-        void readf(std::string &file_name, char delim = ',', bool header_name = 1, char str_context = '\'') {
+template <unsigned int strt_row = 0, 
+          unsigned int end_row = 0, 
+          unsigned int CORES = 1, 
+          bool WARMING = 0, 
+          bool MEM_CLEAN = 0,
+          char TrailingChar = '0'>
+void readf(std::string &file_name, char delim = ',', bool header_name = 1, char str_context = '\'') {
             
           int fd = open(file_name.c_str(), O_RDONLY);
           if (fd == -1) {
@@ -1084,7 +1089,7 @@ template <unsigned int strt_row = 0, unsigned int end_row = 0, unsigned int CORE
             };
           };
     
-          type_classification<CORES>();
+          type_classification<CORES, TrailingChar>();
 };
 
 

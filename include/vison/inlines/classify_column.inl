@@ -9,6 +9,7 @@ struct ColumnResult {
     std::vector<unsigned int> matr_idx[6];
 };
 
+template <char TrailingChar = '0'>
 inline ColumnResult classify_column(
     const std::vector<std::string>& col_values,
     unsigned int col_idx,
@@ -80,7 +81,9 @@ inline ColumnResult classify_column(
             result.chr_v.reserve(nrow);
             for (const auto& el : col_values) {
                 char buf[df_charbuf_size];
-                std::memcpy(buf, el.data(), el.size());
+                const size_t len = el.size();
+                std::memcpy(buf, el.data(), len);
+                std::memcpy(buf + len, TrailingChar, df_charbuf_size - len);
                 result.chr_v.emplace_back(buf);
             }
             result.type = 'c';

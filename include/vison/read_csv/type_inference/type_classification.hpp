@@ -1,6 +1,6 @@
 #pragma once
 
-template <unsigned int CORES = 1>
+template <unsigned int CORES = 1, char TrailingChar = '0'>
 void type_classification() {
     
     type_refv.resize(ncol);                
@@ -11,7 +11,7 @@ void type_classification() {
 
     #pragma omp parallel for num_threads(CORES)
     for (int i = 0; i < ncol; ++i) {
-        results[i] = classify_column(tmp_val_refv[i], i, nrow);
+        results[i] = classify_column<TrailingChar>(tmp_val_refv[i], i, nrow);
     }
     
     size_t total_str=0, total_chr=0, total_bool=0, total_int=0, total_uint=0, total_dbl=0;
