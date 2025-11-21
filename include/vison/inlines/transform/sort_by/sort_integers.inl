@@ -91,7 +91,7 @@ inline void sort_integers(
 
             if constexpr (CORES == 1) {
 
-                    std::sort(col.begin(), col.end(), cmp);
+                    std::sort(idx.begin(), idx.end(), cmp);
 
             } else if constexpr (CORES > 1) {
                 
@@ -109,10 +109,10 @@ inline void sort_integers(
                 {
                     int tid = omp_get_thread_num();
                     auto [start, end] = chunks[tid];
-                    std::sort(col.begin() + start, col.begin() + end, cmp);
+                    std::sort(idx.begin() + start, idx.begin() + end, cmp);
                 }
 
-                std::vector<IntT> tmp(nrow);
+                std::vector<size_t> tmp(nrow);
                 bool flip = false;
                 
                 while (chunks.size() > 1) {
@@ -166,7 +166,7 @@ inline void sort_integers(
                 }
                 
                 if (flip)
-                    col = tmp;
+                    idx = tmp;
 
             }
 
