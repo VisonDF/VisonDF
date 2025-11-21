@@ -10,6 +10,11 @@ inline void radix_sort_bool_u8(uint8_t* keys,
         "Simd=true requires AVX2, but AVX2 is not available on this CPU/compiler.");
     #endif
 
+    if (n == 0) {
+        warn("0 rows in radix_sort_bool_u8");
+        return;
+    }
+
     if constexpr (Simd) {
     #if defined(__AVX512F__)
 

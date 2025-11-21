@@ -5,7 +5,16 @@ inline void radix_sort_uint16(const uint16_t* keys,
                               size_t* idx,
                               size_t n)
 {
-    if (n == 0) return;
+
+    #if !defined(__AVX2__)
+    static_assert(!Simd, 
+        "Simd=true requires AVX2, but AVX2 is not available on this CPU/compiler.");
+    #endif
+
+    if (n == 0) {
+        warn("0 rows in radix_sort_uint16");
+        return;
+    }
 
     std::vector<size_t> count(RADIX_KI16, 0);
 

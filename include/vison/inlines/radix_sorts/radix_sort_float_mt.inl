@@ -5,7 +5,16 @@ inline void radix_sort_float_mt(const float* keys,
                                 size_t* idx,
                                 size_t n)
 {
-    if (n == 0) return;
+    
+    #if !defined(__AVX2__)
+    static_assert(!Simd, 
+        "Simd=true requires AVX2, but AVX2 is not available on this CPU/compiler.");
+    #endif
+
+    if (n == 0) {
+        warn("0 rows in radix_sort_float_mt");
+        return;
+    }
 
     constexpr unsigned THREADS = (CORES == 0 ? 1u : CORES);
     constexpr size_t PASSES = 2;
