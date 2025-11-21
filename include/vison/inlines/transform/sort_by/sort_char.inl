@@ -3,11 +3,12 @@
 template <bool ASC, 
           unsigned int CORES = 4, 
           bool Simd = true,
+          bool Flat = false,
           SortType S = SortType::Radix,
           typename ComparatorFactory = DefaultComparatorFactory>
 inline void sort_char(
     std::vector<size_t>& idx,
-    const int8_t* col,
+    const int8_t (*col)[df_charbuf_size],
     ComparatorFactory make_cmp = ComparatorFactory{}
 )
 {
@@ -18,6 +19,44 @@ inline void sort_char(
 
     if constexpr (S == SortType::Radix) {
 
+        if constexpr (CORES == 1) {
+
+            if constexpr (Flat) {
+
+                std::vector<uint8_t> keys_flat(nrow * df_charbuf_size);
+                for (size_t i = 0; i < nrow; ++i) {
+                    uint8_t* dst = keys_flat.data() + i * df_charbuf_size;
+                    const int8_t* src = col[i];
+                
+                    for (size_t j = 0; j < df_charbuf_size; ++j)
+                        dst[j] = uint8_t(src[j]) ^ 0x80u;
+                }
+
+                radix_sort_charbuf_flat(keys_flat.data(), nrow, idx.data());
+
+            } else if constexpr (!Flat) {
+
+                std::vector<uint8_t[df_charbuf_size]> tkeys(nrow);
+                for (size_t i = 0; i < nrow; ++i) {
+                    const int8_t (&cur_col)[df_charbuf_size] = col[i];
+                    for (size_t j = 0; j < df_charbuf_size; ++j) {
+                        tkeys[i][j] = uint8_t(cur_col[j]) ^ 0x80u;
+                    }
+                }
+
+                radix_sort_charbuf<Simd>(tkeys.data(), nrow, idx.data());
+
+            }
+
+        } else if constexpr (CORES > 1) {
+
+            if constexpr (Flat) {
+
+            } else if constexpr (!Flat) {
+
+            }
+
+        }
 
     } else if constexpr (S == SortType::Standard) {
 
