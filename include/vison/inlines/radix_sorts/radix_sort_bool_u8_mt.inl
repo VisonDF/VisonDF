@@ -7,6 +7,11 @@ inline void radix_sort_bool_u8_mt(uint8_t* keys,
                             size_t* idx, 
                             size_t n) {
 
+    #if !defined(__AVX2__)
+    static_assert(!Simd, 
+        "Simd=true requires AVX2, but AVX2 is not available on this CPU/compiler.");
+    #endif
+
     if constexpr (Simd) {
 
         if constexpr (!IsBoolCompressed) {

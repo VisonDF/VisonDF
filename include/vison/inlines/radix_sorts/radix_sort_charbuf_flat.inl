@@ -6,6 +6,12 @@ void radix_sort_charbuf_flat(
     size_t n,
     size_t* idx)
 {
+   
+    #if !defined(__AVX2__)
+    static_assert(!Simd, 
+        "Simd=true requires AVX2, but AVX2 is not available on this CPU/compiler.");
+    #endif
+
     std::vector<size_t> tmp(n);
     size_t   count[256];
     std::vector<uint8_t> cur_keys(n);
