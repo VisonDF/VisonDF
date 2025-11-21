@@ -156,6 +156,8 @@ namespace vison {
         using FloatT = typename Types::FloatT;
    
         static constexpr std::size_t df_charbuf_size = array_length<CharT>::value;
+        static_assert(df_charbuf_size < 1'000'000,
+            "df_charbuf_size is way too big for a DataFrame cell.");
 
         unsigned int nrow = 0;
         unsigned int ncol = 0;
@@ -204,6 +206,7 @@ namespace vison {
         };
 
         #include "inlines/radix_sorts/radix_sort_charbuf.inl"
+        #include "inlines/radix_sorts/radix_sort_charbuf_flat.inl"
 
         #include "inlines/classify_column.inl"
      
