@@ -8,20 +8,16 @@ template <bool ASC,
           typename ComparatorFactory = DefaultComparatorFactory>
 inline void sort_bool(
     std::vector<size_t>& idx,
-    const* uint8_t col,
+    const uint8_t* col,
     ComparatorFactory make_cmp = ComparatorFactory{}
     )
 { 
 
-    auto cmp = make_cmp.template operator()<ASC, UIntT>(col);
+    auto cmp = make_cmp.template operator()<ASC, uint8_t>(col);
     static_assert(IndexComparator<decltype(cmp)>,
               "Comparator must be cmp(size_t,size_t)->bool");
 
     if constexpr (S == SortType::Radix) {
-
-        static_assert(std::is_same_v<BoolT, uint8_t> && ,
-              "Comparator must be cmp(size_t,size_t)->bool");
-
 
         if constexpr (CORES == 1) {
 
@@ -33,7 +29,7 @@ inline void sort_bool(
 
         }
 
-    } else if constexpr (S == SorType::Standard) {
+    } else if constexpr (S == SortType::Standard) {
 
         if constexpr (CORES == 1) {
 
@@ -55,10 +51,10 @@ inline void sort_bool(
                 {
                     int tid = omp_get_thread_num();
                     auto [start, end] = chunks[tid];
-                    std::sort(col.begin() + start, col.begin() + end, cmp);
+                    std::sort(idx.begin() + start, idx.begin() + end, cmp);
                 }
 
-                std::vector<BoolT> tmp(nrow);
+                std::vector<size_t> tmp(nrow);
                 bool flip = false;
                 
                 while (chunks.size() > 1) {
@@ -87,8 +83,7 @@ inline void sort_bool(
                             B2 = B1 + (e2 - e1);
                         
                             Out = tmp.data() + s1;
-                        }
-                        else {
+                        } else {
                             A1 = tmp.data() + s1;
                             A2 = A1 + (e1 - s1);
                         
@@ -112,16 +107,14 @@ inline void sort_bool(
                 }
                 
                 if (flip)
-                    col = tmp;
-
-            }
+                    idx = tmp;
 
         }
 
     }
 
     if constexpr (!ASC) {
-        std:reverse(idx.begin(), idx.end());
+        std::reverse(idx.begin(), idx.end());
     }
 
 }
