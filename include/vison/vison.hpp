@@ -59,6 +59,7 @@ namespace vison {
     #include "types/comparator_assertion.inl"
     #include "types/fapply_assertion.inl"
 
+    #include "inlines/warning.inl"
 
     #include "custom_simd_hash/simd_hash.hpp"
 
@@ -206,6 +207,7 @@ namespace vison {
         };
 
         #include "inlines/radix_sorts/radix_sort_charbuf.inl"
+        #include "inlines/radix_sorts/radix_sort_charbuf_mt.inl"
         #include "inlines/radix_sorts/radix_sort_charbuf_flat.inl"
 
         #include "inlines/classify_column.inl"

@@ -7,7 +7,23 @@ inline void radix_sort_charbuf_mt(
     size_t* idx
 )
 {
-    if (n == 0) return;
+
+    #if !defined(__AVX2__)
+    static_assert(!Simd, 
+        "Simd=true requires AVX2, but AVX2 is not available on this CPU/compiler.");
+    #endif
+
+    if (n == 0) {
+        warn("0 rows in radix_sort_charbuf_mt");
+        return;
+    }
+
+    #if defined(__AVX512F__)
+    constexpr bool HasAVX512 = true;
+    #else
+    constexpr bool HasAVX512 = false;
+    #endif    
+    constexpr bool InplaceScatter = Simd && HasAVX512;
 
     constexpr unsigned THREADS = (CORES == 0 ? 1u : CORES);
 
@@ -57,34 +73,33 @@ inline void radix_sort_charbuf_mt(
             size_t* h = hist[t].data();
             std::memset(h, 0, 256 * sizeof(size_t));
 
-        #if defined(__AVX512F__)
             if constexpr (Simd) {
-                histogram_pass_u8_avx512_16buckets(
-                    cur_keys.data() + beg,
-                    end - beg,
-                    h
-                );
-            } else
-        #endif
-        #if defined(__AVX2__)
-            if constexpr (Simd) {
+
                 size_t len = end - beg;
-                if (len < 200'000) {
-                    histogram_pass_u8_avx2(
+
+                #if defined(__AVX512F__)
+                    histogram_pass_u8_avx512_16buckets(
                         cur_keys.data() + beg,
                         len,
                         h
                     );
-                } else {
-                    histogram_pass_u8_avx2_8buckets(
-                        cur_keys.data() + beg,
-                        len,
-                        h
-                    );
-                }
-            } else
-        #endif
-            {
+                #elif defined(__AVX2__)
+                    if (len < 200'000) {
+                        histogram_pass_u8_avx2(
+                            cur_keys.data() + beg,
+                            len,
+                            h
+                        );
+                    } else {
+                        histogram_pass_u8_avx2_8buckets(
+                            cur_keys.data() + beg,
+                            len,
+                            h
+                        );
+                    }
+                #endif
+
+            } else {
                 for (size_t i = beg; i < end; i++)
                     h[ cur_keys[i] ]++;
             }
@@ -107,12 +122,10 @@ inline void radix_sort_charbuf_mt(
         // ====================================================
         // 3) GLOBAL PREFIX → bucket_base
         // ====================================================
-        {
-            size_t acc = 0;
-            for (int b = 0; b < 256; b++) {
-                bucket_base[b] = acc;
-                acc += bucket_size[b];
-            }
+        size_t acc = 0;
+        for (int b = 0; b < 256; b++) {
+            bucket_base[b] = acc;
+            acc += bucket_size[b];
         }
 
         // ====================================================
@@ -139,25 +152,15 @@ inline void radix_sort_charbuf_mt(
 
         #if defined(__AVX512F__)
             if constexpr (Simd) {
-                // You can adapt your AVX512 MT scatter to this prototype:
-                //
-                // scatter_pass_u8_avx512_mt(
-                //     cur_keys.data() + beg, // keys for [beg,end)
-                //     in,                     // full input indices
-                //     out,                    // full output indices
-                //     beg,                    // start index
-                //     len,                    // length
-                //     off                     // thread-local bucket offsets
-                // );
-                //
+            
                 scatter_pass_u8_avx512_mt(
-                    cur_keys.data() + beg,
-                    in,
-                    out,
-                    beg,
+                    cur_keys.data() + beg,   
+                    in,          
+                    beg,          
                     len,
-                    off
+                    off           
                 );
+
             } else
         #endif
             {
@@ -169,14 +172,18 @@ inline void radix_sort_charbuf_mt(
             }
         }
 
-        // Swap for next digit
-        std::swap(in, out);
+        if constexpr (!InplaceScatter)
+            std::swap(in, out);
+
     }
 
-    // After last pass, 'in' holds the final permutation
-    if (in != idx) {
-        std::copy(in, in + n, idx);
+    if constexpr (!InplaceScatter) {
+        if (in != idx) {
+            std::copy(in, in + n, idx);
+        }
     }
+
 }
+
 
 

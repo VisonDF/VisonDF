@@ -51,8 +51,29 @@ inline void sort_char(
         } else if constexpr (CORES > 1) {
 
             if constexpr (Flat) {
+                
+                std::vector<uint8_t> keys_flat(nrow * df_charbuf_size);
+                for (size_t i = 0; i < nrow; ++i) {
+                    uint8_t* dst = keys_flat.data() + i * df_charbuf_size;
+                    const int8_t* src = col[i];
+                
+                    for (size_t j = 0; j < df_charbuf_size; ++j)
+                        dst[j] = uint8_t(src[j]) ^ 0x80u;
+                }
+
+                
 
             } else if constexpr (!Flat) {
+
+                std::vector<uint8_t[df_charbuf_size]> tkeys(nrow);
+                for (size_t i = 0; i < nrow; ++i) {
+                    const int8_t (&cur_col)[df_charbuf_size] = col[i];
+                    for (size_t j = 0; j < df_charbuf_size; ++j) {
+                        tkeys[i][j] = uint8_t(cur_col[j]) ^ 0x80u;
+                    }
+                }
+
+
 
             }
 
