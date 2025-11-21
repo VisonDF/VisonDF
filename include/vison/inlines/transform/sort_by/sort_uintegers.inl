@@ -96,7 +96,7 @@ inline void sort_uintegers(
                     std::sort(idx.begin() + start, idx.begin() + end, cmp);
                 }
 
-                std::vector<UIntT> tmp(nrow);
+                std::vector<size_t> tmp(nrow);
                 bool flip = false;
                 
                 while (chunks.size() > 1) {

@@ -72,7 +72,7 @@ inline void sort_flt(
                     std::sort(idx.begin() + start, idx.begin() + end, cmp);
                 }
 
-                std::vector<FloatT> tmp(nrow);
+                std::vector<size_t> tmp(nrow);
                 bool flip = false;
                 
                 while (chunks.size() > 1) {
