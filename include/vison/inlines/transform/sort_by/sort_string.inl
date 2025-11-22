@@ -4,6 +4,8 @@ template <bool ASC,
           unsigned int CORES = 4,
           bool Simd = true,
           SortType S = SortType::Radix,
+          bool Flat = true,
+          char PaddingChar = 0x00,
           typename ComparatorFactory = DefaultComparatorFactory>
 inline void sort_string(
     std::vector<size_t>& idx, 
@@ -14,7 +16,43 @@ inline void sort_string(
     auto cmp = make_cmp.template operator()<ASC, std::string>(col);
     static_assert(IndexComparator<decltype(cmp)>,
               "Comparator must be cmp(size_t,size_t)->bool");
+
     if constexpr (S == SortType::Radix) {
+
+            if constexpr (Flat) {
+
+                // TODO when ghost mode is activated, just have to check 
+                // if modified, then compute if not, just get the old 
+                // max_length for this string col
+                const size_t max_length = max_chars_string_col<CORES, Simd>(col);
+                std::vector<uint8_t> tkeys(nrow * max_length);
+                const uint8_t pad = uint8_t(PaddingChar) ^ 0x80u;
+
+                for (size_t i = 0; i < nrow; ++i) {
+                    const std::string& s = col[i];
+                    const size_t len = s.size();
+
+                    uint8_t* dst = tkeys.data() + i * max_length;
+                
+                    for (size_t j = 0; j < len; ++j)
+                        dst[j] = uint8_t(s[j]) ^ 0x80u;
+                
+                    std::memset(dst + len, pad, max_length - len);
+                }
+
+                sort_char_from_string<ASC, 
+                                      CORES, 
+                                      Simd>(idx.data(), tkeys.data(), nrow);
+
+            } else if constexpr (!Flat) {
+
+                if constexpr (CORES > 1) {
+
+                } else if constexpr (CORES <= 1) {
+
+                }
+
+            }
 
             return;
 
@@ -40,10 +78,10 @@ inline void sort_string(
                 {
                     int tid = omp_get_thread_num();
                     auto [start, end] = chunks[tid];
-                    std::sort(col.begin() + start, col.begin() + end, cmp);
+                    std::sort(idx.begin() + start, idx.begin() + end, cmp);
                 }
 
-                std::vector<std::string> tmp(nrow);
+                std::vector<size_t> tmp(nrow);
                 bool flip = false;
                 
                 while (chunks.size() > 1) {
@@ -97,7 +135,7 @@ inline void sort_string(
                 }
                 
                 if (flip)
-                    col = tmp;
+                    idx = tmp;
 
             }
 

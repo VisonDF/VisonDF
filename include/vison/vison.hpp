@@ -54,7 +54,6 @@ namespace vison {
     #endif
 
     #include "types/supported_types.inl"
-    #include "types/supported_string_radix_methods.inl"
     #include "types/supported_sorting_methods.inl"
     #include "types/comparator.inl"
     #include "types/comparator_assertion.inl"
@@ -233,7 +232,8 @@ namespace vison {
         #include "inlines/transform/sort_by/permute_block.inl"
         #include "inlines/transform/sort_by/permute_block_mt.inl"
 
-        //#include "inlines/transform/sort_by/sort_string.inl"
+        #include "inlines/transform/sort_by/details/sort_char_from_string.inl"
+        #include "inlines/transform/sort_by/sort_string.inl"
         #include "inlines/transform/sort_by/sort_char.inl"
         #include "inlines/transform/sort_by/sort_bool.inl"
         #include "inlines/transform/sort_by/sort_integers.inl"
