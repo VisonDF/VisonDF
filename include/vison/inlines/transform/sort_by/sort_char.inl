@@ -32,7 +32,7 @@ inline void sort_char(
                         dst[j] = uint8_t(src[j]) ^ 0x80u;
                 }
 
-                radix_sort_charbuf_flat(keys_flat.data(), nrow, idx.data());
+                radix_sort_charbuf_flat<Simd>(keys_flat.data(), nrow, idx.data());
 
             } else if constexpr (!Flat) {
 
@@ -61,7 +61,7 @@ inline void sort_char(
                         dst[j] = uint8_t(src[j]) ^ 0x80u;
                 }
 
-                
+                 radix_sort_charbuf_flat_mt<CORES, Simd>(keys_flat.data(), nrow, idx.data());              
 
             } else if constexpr (!Flat) {
 
@@ -73,7 +73,7 @@ inline void sort_char(
                     }
                 }
 
-
+                 radix_sort_charbuf_mt<CORES, Simd>(tkeys.data(), nrow, idx.data());
 
             }
 
