@@ -17,6 +17,13 @@ void radix_sort_charbuf_flat(
         return;
     }
 
+    #if defined(__AVX512F__)
+    constexpr bool HasAVX512 = true;
+    #else
+    constexpr bool HasAVX512 = false;
+    #endif
+    constexpr bool InplaceScatter = Simd && HasAVX512;
+
     std::vector<size_t> tmp(n);
     size_t   count[256];
     std::vector<uint8_t> cur_keys(n);
@@ -86,11 +93,11 @@ void radix_sort_charbuf_flat(
     for (int pos = df_charbuf_size - 1; pos >= 0; pos--) {
         pass(pos);
 
-        if constexpr (!Simd)
+        if constexpr (!InplaceScatter)
             std::swap(in, out);
     }
 
-    if constexpr (!Simd) {
+    if constexpr (!InplaceScatter) {
         if (in != idx) {
             std::copy(in, in + n, idx);
         }
