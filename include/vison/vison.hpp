@@ -54,6 +54,7 @@ namespace vison {
     #endif
 
     #include "types/supported_types.inl"
+    #include "types/supported_string_radix_methods.inl"
     #include "types/supported_sorting_methods.inl"
     #include "types/comparator.inl"
     #include "types/comparator_assertion.inl"
