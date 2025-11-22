@@ -10,6 +10,8 @@ template <bool ASC,
 inline void sort_string(
     std::vector<size_t>& idx, 
     const std::string* col,
+    const size_t nrow,
+    const size_t df_charbuf_size,
     ComparatorFactory make_cmp = ComparatorFactory{})
 {
 
@@ -26,23 +28,109 @@ inline void sort_string(
                 // max_length for this string col
                 const size_t max_length = max_chars_string_col<CORES, Simd>(col);
                 std::vector<uint8_t> tkeys(nrow * max_length);
-                const uint8_t pad = uint8_t(PaddingChar) ^ 0x80u;
 
-                for (size_t i = 0; i < nrow; ++i) {
-                    const std::string& s = col[i];
-                    const size_t len = s.size();
+                if constexpr (CORES > 1) {
 
-                    uint8_t* dst = tkeys.data() + i * max_length;
-                
-                    for (size_t j = 0; j < len; ++j)
-                        dst[j] = uint8_t(s[j]) ^ 0x80u;
-                
-                    std::memset(dst + len, pad, max_length - len);
+                     if constexpr (Simd) {
+
+                        #pragma omp parallel for num_threads(CORES)
+                        for (size_t i = 0; i < CORES; ++i) {
+                       
+                            size_t t = omp_get_thread_num();
+                            const size_t chunk = nrow / CORES;
+                            const size_t rem   = nrow % CORES;
+                            const size_t start = t * chunk + std::min(t, rem);
+                            const size_t end   = start + chunk + (t < rem ? 1 : 0);
+
+                            #if defined (__AVX512F__)
+                            string_to_u8buf_avx512<PaddingChar>(tkeys.data(), 
+                                                         col, 
+                                                         max_length,
+                                                         start,
+                                                         end); 
+                            #else
+                            string_to_u8buf_avx2<PaddingChar>(tkeys.data(), 
+                                                         col, 
+                                                         max_length,
+                                                         start,
+                                                         end); 
+                            #endif
+
+                        }
+
+                    } else if constexpr (!Simd) {
+
+                            const uint8_t pad = uint8_t(PaddingChar) ^ 0x80u;
+
+                            #pragma omp parallel num_threads(CORES)
+                            {
+                                    
+                                size_t t = omp_get_thread_num();
+                                const size_t chunk = nrow / CORES;
+                                const size_t rem   = nrow % CORES;
+                                const size_t start = t * chunk + std::min(t, rem);
+                                const size_t end   = start + chunk + (t < rem ? 1 : 0);
+
+                                for (size_t i = start; i < end; ++i) {
+
+                                    const std::string& s = col[i];
+                                    const size_t len = s.size();
+
+                                    uint8_t* dst = tkeys.data() + i * max_length;
+                                
+                                    for (size_t j = 0; j < len; ++j)
+                                        dst[j] = uint8_t(s[j]) ^ 0x80u;
+                                
+                                    std::memset(dst + len, pad, max_length - len);
+                                }
+                            }
+
+                    }
+
+                } else if constexpr (CORES <= 1) {
+
+                        if constexpr (Simd) {
+
+                            #if defined (__AVX512F__)
+                            string_to_u8buf_avx512<PaddingChar>(tkeys.data(), 
+                                                         col, 
+                                                         max_length, 
+                                                         0,
+                                                         nrow);
+                            #else
+                            string_to_u8buf_avx2<PaddingChar>(tkeys.data(), 
+                                                         col, 
+                                                         max_length, 
+                                                         0,
+                                                         nrow);
+                            #endif
+
+                        } else if constexpr (!Simd) {
+
+                            const uint8_t pad = uint8_t(PaddingChar) ^ 0x80u;
+
+                            for (size_t i = 0; i < nrow; ++i) {
+                                const std::string& s = col[i];
+                                const size_t len = s.size();
+
+                                uint8_t* dst = tkeys.data() + i * max_length;
+                            
+                                for (size_t j = 0; j < len; ++j)
+                                    dst[j] = uint8_t(s[j]) ^ 0x80u;
+                            
+                                std::memset(dst + len, pad, max_length - len);
+                            }
+
+                        }
+
                 }
 
                 sort_char_from_string<ASC, 
                                       CORES, 
-                                      Simd>(idx.data(), tkeys.data(), nrow);
+                                      Simd>(idx.data(), 
+                                            tkeys.data(), 
+                                            df_charbuf_size,
+                                            nrow);
 
             } else if constexpr (!Flat) {
 

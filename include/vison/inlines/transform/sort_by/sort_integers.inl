@@ -8,6 +8,7 @@ template <bool ASC,
 inline void sort_integers(
     std::vector<size_t>& idx,
     const IntT* col,
+    const size_t nrow,
     ComparatorFactory make_cmp = ComparatorFactory{}
 )
 {

@@ -8,6 +8,7 @@ template <bool ASC,
 inline void sort_uintegers(
     std::vector<size_t>& idx,
     const UIntT* col,
+    const size_t nrow,
     ComparatorFactory make_cmp = ComparatorFactory{}
 )
 {

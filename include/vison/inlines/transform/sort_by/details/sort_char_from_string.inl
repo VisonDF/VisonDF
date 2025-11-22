@@ -13,9 +13,15 @@ inline void sort_char_from_string(
 {
 
     if constexpr (CORES > 1)
-        radix_sort_charbuf_flat_mt<CORES, Simd>(col, nrow, idx.data());
+        radix_sort_charbuf_flat_mt<CORES, Simd>(col, 
+                                                nrow, 
+                                                df_charbuf_size, 
+                                                idx.data());
     else
-        radix_sort_charbuf_flat<Simd>          (col, nrow, idx.data());
+        radix_sort_charbuf_flat<Simd>          (col, 
+                                                nrow, 
+                                                df_charbuf_size,
+                                                idx.data());
 
     if constexpr (!ASC)
         std::reverse(idx.begin(), idx.end());

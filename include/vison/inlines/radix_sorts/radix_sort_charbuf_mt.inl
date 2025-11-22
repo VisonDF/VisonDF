@@ -3,7 +3,8 @@
 template<unsigned int CORES = 4, bool Simd = true>
 inline void radix_sort_charbuf_mt(
     const std::vector<uint8_t[df_charbuf_size]>* bufv,
-    size_t n,
+    const size_t n,
+    const size_t df_charbuf_size,
     size_t* idx
 )
 {

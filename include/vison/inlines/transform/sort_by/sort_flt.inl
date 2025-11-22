@@ -8,6 +8,7 @@ template <bool ASC,
 inline void sort_flt(
     std::vector<size_t>& idx,
     const FloatT* col,
+    const size_t nrow,
     ComparatorFactory make_cmp = ComparatorFactory{}
 )
 {

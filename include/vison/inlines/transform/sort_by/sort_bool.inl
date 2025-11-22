@@ -9,6 +9,7 @@ template <bool ASC,
 inline void sort_bool(
     std::vector<size_t>& idx,
     const uint8_t* col,
+    const size_t nrow,
     ComparatorFactory make_cmp = ComparatorFactory{}
     )
 { 

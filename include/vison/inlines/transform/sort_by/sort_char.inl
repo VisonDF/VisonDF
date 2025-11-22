@@ -9,6 +9,8 @@ template <bool ASC,
 inline void sort_char(
     std::vector<size_t>& idx,
     const int8_t (*col)[df_charbuf_size],
+    const size_t nrow,
+    const size_t df_charbuf_size,
     ComparatorFactory make_cmp = ComparatorFactory{}
 )
 {
@@ -33,12 +35,14 @@ inline void sort_char(
                 if constexpr (CORES > 1) {
 
                         radix_sort_charbuf_flat_mt<CORES, Simd>(keys_flat.data(), 
-                                                                nrow, 
+                                                                nrow,
+                                                                df_charbuf_size,
                                                                 idx.data());              
                 } else if constexpr (CORES <= 1) {
 
                         radix_sort_charbuf_flat<Simd>(keys_flat.data(), 
-                                                     nrow, 
+                                                     nrow,
+                                                     df_charbuf_size,
                                                      idx.data());
 
                 }
@@ -56,13 +60,15 @@ inline void sort_char(
                 if constexpr (CORES > 1) {
 
                         radix_sort_charbuf_mt<CORES, Simd>(tkeys.data(), 
-                                                           nrow, 
+                                                           nrow,
+                                                           df_charbuf_size,
                                                            idx.data());
 
                 } else if constexpr (CORES <= 1) {
 
                         radix_sort_charbuf<Simd>          (tkeys.data(), 
-                                                           nrow, 
+                                                           nrow,
+                                                           df_charbuf_size,
                                                            idx.data());
 
                 }
