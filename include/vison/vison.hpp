@@ -213,7 +213,8 @@ namespace vison {
 
         #include "inlines/classify_column.inl"
      
-        #include "detail/longest_determine.hpp"
+        #include "details/longest_determine.hpp"
+        #include "details/max_chars_string_col.hpp"
 
         #include "inlines/fapply/max_chars_needed.inl"
         #include "inlines/fapply/apply_numeric.inl"
