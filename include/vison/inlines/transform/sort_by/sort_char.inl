@@ -19,37 +19,6 @@ inline void sort_char(
 
     if constexpr (S == SortType::Radix) {
 
-        if constexpr (CORES == 1) {
-
-            if constexpr (Flat) {
-
-                std::vector<uint8_t> keys_flat(nrow * df_charbuf_size);
-                for (size_t i = 0; i < nrow; ++i) {
-                    uint8_t* dst = keys_flat.data() + i * df_charbuf_size;
-                    const int8_t* src = col[i];
-                
-                    for (size_t j = 0; j < df_charbuf_size; ++j)
-                        dst[j] = uint8_t(src[j]) ^ 0x80u;
-                }
-
-                radix_sort_charbuf_flat<Simd>(keys_flat.data(), nrow, idx.data());
-
-            } else if constexpr (!Flat) {
-
-                std::vector<uint8_t[df_charbuf_size]> tkeys(nrow);
-                for (size_t i = 0; i < nrow; ++i) {
-                    const int8_t (&cur_col)[df_charbuf_size] = col[i];
-                    for (size_t j = 0; j < df_charbuf_size; ++j) {
-                        tkeys[i][j] = uint8_t(cur_col[j]) ^ 0x80u;
-                    }
-                }
-
-                radix_sort_charbuf<Simd>(tkeys.data(), nrow, idx.data());
-
-            }
-
-        } else if constexpr (CORES > 1) {
-
             if constexpr (Flat) {
                 
                 std::vector<uint8_t> keys_flat(nrow * df_charbuf_size);
@@ -61,7 +30,18 @@ inline void sort_char(
                         dst[j] = uint8_t(src[j]) ^ 0x80u;
                 }
 
-                 radix_sort_charbuf_flat_mt<CORES, Simd>(keys_flat.data(), nrow, idx.data());              
+                if constexpr (CORES > 1) {
+
+                        radix_sort_charbuf_flat_mt<CORES, Simd>(keys_flat.data(), 
+                                                                nrow, 
+                                                                idx.data());              
+                } else if constexpr (CORES <= 1) {
+
+                        radix_sort_charbuf_flat<Simd>(keys_flat.data(), 
+                                                     nrow, 
+                                                     idx.data());
+
+                }
 
             } else if constexpr (!Flat) {
 
@@ -73,11 +53,21 @@ inline void sort_char(
                     }
                 }
 
-                 radix_sort_charbuf_mt<CORES, Simd>(tkeys.data(), nrow, idx.data());
+                if constexpr (CORES > 1) {
+
+                        radix_sort_charbuf_mt<CORES, Simd>(tkeys.data(), 
+                                                           nrow, 
+                                                           idx.data());
+
+                } else if constexpr (CORES <= 1) {
+
+                        radix_sort_charbuf<Simd>          (tkeys.data(), 
+                                                           nrow, 
+                                                           idx.data());
+
+                }
 
             }
-
-        }
 
     } else if constexpr (S == SortType::Standard) {
 
