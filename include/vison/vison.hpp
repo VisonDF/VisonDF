@@ -209,6 +209,7 @@ namespace vison {
         #include "inlines/radix_sorts/radix_sort_charbuf.inl"
         #include "inlines/radix_sorts/radix_sort_charbuf_mt.inl"
         #include "inlines/radix_sorts/radix_sort_charbuf_flat.inl"
+        #include "inlines/radix_sorts/radix_sort_charbuf_flat_mt.inl"
 
         #include "inlines/classify_column.inl"
      
