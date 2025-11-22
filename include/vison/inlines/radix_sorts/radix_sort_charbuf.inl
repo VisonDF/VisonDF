@@ -66,6 +66,11 @@ void radix_sort_charbuf(
                                     in, 
                                     n, 
                                     count);
+        #else
+            for (size_t i = 0; i < n; i++) {
+                uint8_t k = (*bufv)[in[i]][pos];
+                out[count[k]++] = in[i];
+            }
         #endif
         } else {
             for (size_t i = 0; i < n; i++) {
