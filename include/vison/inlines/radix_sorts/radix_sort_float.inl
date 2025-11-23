@@ -1,7 +1,7 @@
 #pragma once
 
 template <bool Simd = true>
-inline void radix_sort_float(const float* keys,
+inline void radix_sort_float(std::vector<uint32_t>& tkeys,
                              size_t* idx,
                              size_t n)
 {
@@ -19,13 +19,9 @@ inline void radix_sort_float(const float* keys,
     using U = uint32_t;
     constexpr size_t PASSES = 2;      
 
-    std::vector<U> tkeys(n);
     std::vector<U> tmp_keys(n);
     std::vector<size_t> tmp(n);
     std::vector<size_t> count(RADIX_KI32);
-
-    for (size_t i = 0; i < n; i++)
-        tkeys[i] = float_to_sortable(keys[i]);
 
     // 2 passes, each processing 16 bits of the 32-bit key.
     // pass = 0 → least significant 16 bits

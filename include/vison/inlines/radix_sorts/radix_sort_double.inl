@@ -1,7 +1,7 @@
 #pragma once
 
 template <bool Simd = true>
-inline void radix_sort_double(const double* keys, size_t* idx, size_t n)
+inline void radix_sort_double(std::vector<uint64_t>& tkeys, size_t* idx, size_t n)
 {
 
     #if !defined(__AVX2__)
@@ -16,12 +16,7 @@ inline void radix_sort_double(const double* keys, size_t* idx, size_t n)
 
     std::vector<size_t> count(RADIX_KI64);
     std::vector<size_t> tmp_idx(n);
-    std::vector<uint64_t> tkeys(n);
     std::vector<uint64_t> tmp_keys(n);
-
-    for (size_t i = 0; i < n; i++) {
-        tkeys[i] = double_to_sortable(keys[i]);
-    }
 
     for (size_t pass = 0; pass < 4; pass++)
     {

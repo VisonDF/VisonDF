@@ -1,7 +1,7 @@
 #pragma once
 
 template <unsigned int CORES = 4, bool Simd = true>
-inline void radix_sort_double_mt(const double* keys,
+inline void radix_sort_double_mt(std::vector<uint64_t>& tkeys,
                                 size_t* idx,
                                 size_t n)
 {
@@ -20,14 +20,8 @@ inline void radix_sort_double_mt(const double* keys,
     constexpr size_t PASSES = 4;
 
     // Storage
-    std::vector<uint64_t> tkeys(n);
     std::vector<uint64_t> tmp_keys(n);
     std::vector<size_t>   tmp(n);
-
-    // Pre-build transformed keys
-    #pragma omp parallel for num_threads(THREADS)
-    for (size_t i = 0; i < n; i++)
-        tkeys[i] = double_to_sortable(keys[i]);
 
     // Per-thread histograms
     std::vector<std::vector<size_t>>

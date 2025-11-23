@@ -135,9 +135,6 @@ namespace vison {
     #include "inlines/radix_sorts/radix_sort_uint64.inl"
     #include "inlines/radix_sorts/radix_sort_uint64_mt.inl"
 
-    #include "inlines/radix_sorts/details/float_to_sortable.inl"
-    #include "inlines/radix_sorts/details/double_to_sortable.inl"
-
     #include "inlines/radix_sorts/radix_sort_float.inl"
     #include "inlines/radix_sorts/radix_sort_float_mt.inl"
     #include "inlines/radix_sorts/radix_sort_double.inl"
@@ -232,6 +229,10 @@ namespace vison {
         #include "inlines/transform/sort_by/permute_block.inl"
         #include "inlines/transform/sort_by/permute_block_mt.inl"
 
+        #include "inlines/transform/sort_by/details/double_to_u64_avx2.inl"
+        #include "inlines/transform/sort_by/details/double_to_u64_avx512.inl"
+        #include "inlines/transform/sort_by/details/float_to_u32_avx2.inl"
+        #include "inlines/transform/sort_by/details/float_to_u32_avx512.inl"
         #include "inlines/transform/sort_by/details/int_to_uint_avx2.inl"
         #include "inlines/transform/sort_by/details/int_to_uint_avx512.inl"
         #include "inlines/transform/sort_by/details/string_to_u8buf_avx2.inl"
