@@ -22,11 +22,11 @@ inline void sort_bool(
 
         if constexpr (CORES == 1) {
 
-                radix_sort_bool_u8<Simd, IsBoolCompressed>(col, idx.data(), nrow);
+                radix_sort_bool_u8   <Simd, IsBoolCompressed>(col, idx.data(), nrow);
 
         } else if constexpr (CORES > 1) {
 
-                radix_sort_bool_u8<CORES, Simd, IsBoolCompressed>(col, idx.data(), nrow);
+                radix_sort_bool_u8_mt<CORES, Simd, IsBoolCompressed>(col, idx.data(), nrow);
 
         }
 
