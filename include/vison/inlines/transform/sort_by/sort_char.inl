@@ -24,52 +24,188 @@ inline void sort_char(
             if constexpr (Flat) {
                 
                 std::vector<uint8_t> keys_flat(nrow * df_charbuf_size);
-                for (size_t i = 0; i < nrow; ++i) {
-                    uint8_t* dst = keys_flat.data() + i * df_charbuf_size;
-                    const int8_t* src = col[i];
-                
-                    for (size_t j = 0; j < df_charbuf_size; ++j)
-                        dst[j] = uint8_t(src[j]) ^ 0x80u;
-                }
 
                 if constexpr (CORES > 1) {
 
-                        radix_sort_charbuf_flat_mt<CORES, Simd>(keys_flat.data(), 
-                                                                nrow,
-                                                                df_charbuf_size,
-                                                                idx.data());              
+                    if constexpr (Simd) {
+
+                        #pragma omp parallel for num_threads(CORES)
+                        for (size_t i = 0; i < CORES; ++i) {
+
+                            size_t t = omp_get_thread_num();
+                            const size_t chunk = nrow / CORES;
+                            const size_t rem   = nrow % CORES;
+                            const size_t start = t * chunk + std::min(t, rem);
+                            const size_t end   = start + chunk + (t < rem ? 1 : 0);
+
+                            #if defined (__AVX512F__)
+                            char_to_u8buf_avx512<df_charbuf_size>(keys_flat.data(), 
+                                                                  col, 
+                                                                  start,
+                                                                  end); 
+                            #else
+                            char_to_u8buf_avx2<df_charbuf_size>(keys_flat.data(), 
+                                                                col, 
+                                                                start,
+                                                                end); 
+                            #endif
+                   
+                        }
+
+                    } else if constexpr (!Simd) {
+
+                            #pragma omp parallel num_threads(CORES)
+                            {
+
+                                size_t t = omp_get_thread_num();
+                                const size_t chunk = nrow / CORES;
+                                const size_t rem   = nrow % CORES;
+                                const size_t start = t * chunk + std::min(t, rem);
+                                const size_t end   = start + chunk + (t < rem ? 1 : 0);
+
+                                for (size_t i = start; i < end; ++i) {
+                                    uint8_t* dst = keys_flat.data() + i * df_charbuf_size;
+                                    const int8_t* src = col[i];
+                                
+                                    for (size_t j = 0; j < df_charbuf_size; ++j)
+                                        dst[j] = uint8_t(src[j]) ^ 0x80u;
+                                }
+
+                            }
+
+                    }
+
+                    radix_sort_charbuf_flat_mt<CORES, Simd>(keys_flat.data(), 
+                                                            nrow,
+                                                            df_charbuf_size,
+                                                            idx.data());              
                 } else if constexpr (CORES <= 1) {
 
-                        radix_sort_charbuf_flat<Simd>(keys_flat.data(), 
-                                                     nrow,
-                                                     df_charbuf_size,
-                                                     idx.data());
+                    if constexpr (Simd) {
+
+                        #if defined (__AVX512F__)
+                        char_to_u8buf_avx512<df_charbuf_size>(keys_flat.data(), 
+                                                   col, 
+                                                   0,
+                                                   nrow); 
+                        #else
+                        char_to_u8buf_avx2<df_charbuf_size>(keys_flat.data(), 
+                                                     col, 
+                                                     0,
+                                                     nrow); 
+                        #endif
+
+                    } else if constexpr (!Simd) {
+
+                        for (size_t i = 0; i < nrow; ++i) {
+                            uint8_t* dst = keys_flat.data() + i * df_charbuf_size;
+                            const int8_t* src = col[i];
+                        
+                            for (size_t j = 0; j < df_charbuf_size; ++j)
+                                dst[j] = uint8_t(src[j]) ^ 0x80u;
+                        }
+
+                    }
+
+                    radix_sort_charbuf_flat<Simd>(keys_flat.data(), 
+                                                  nrow,
+                                                  df_charbuf_size,
+                                                  idx.data());
 
                 }
 
             } else if constexpr (!Flat) {
 
                 std::vector<uint8_t[df_charbuf_size]> tkeys(nrow);
-                for (size_t i = 0; i < nrow; ++i) {
-                    const int8_t (&cur_col)[df_charbuf_size] = col[i];
-                    for (size_t j = 0; j < df_charbuf_size; ++j) {
-                        tkeys[i][j] = uint8_t(cur_col[j]) ^ 0x80u;
-                    }
-                }
 
                 if constexpr (CORES > 1) {
 
-                        radix_sort_charbuf_mt<CORES, Simd>(tkeys.data(), 
-                                                           nrow,
-                                                           df_charbuf_size,
-                                                           idx.data());
+                    if constexpr (Simd) {
+
+                        #pragma omp parallel for num_threads(CORES)
+                        for (size_t i = 0; i < CORES; ++i) {
+
+                            size_t t = omp_get_thread_num();
+                            const size_t chunk = nrow / CORES;
+                            const size_t rem   = nrow % CORES;
+                            const size_t start = t * chunk + std::min(t, rem);
+                            const size_t end   = start + chunk + (t < rem ? 1 : 0);
+
+                            #if defined (__AVX512F__)
+                            char_to_u8buf2d_avx512<df_charbuf_size>(tkeys.data(), 
+                                                                    col, 
+                                                                    start,
+                                                                    end); 
+                            #else
+                            char_to_u8buf2d_avx2<df_charbuf_size>(tkeys.data(), 
+                                                                  col, 
+                                                                  start,
+                                                                  end); 
+                            #endif
+
+                        }
+
+                    } else if constexpr (!Simd) {
+
+                            #pragma omp parallel num_threads(CORES)
+                            {
+
+                                size_t t = omp_get_thread_num();
+                                const size_t chunk = nrow / CORES;
+                                const size_t rem   = nrow % CORES;
+                                const size_t start = t * chunk + std::min(t, rem);
+                                const size_t end   = start + chunk + (t < rem ? 1 : 0);
+
+                                for (size_t i = 0; i < nrow; ++i) {
+                                    const int8_t (&cur_col)[df_charbuf_size] = col[i];
+                                    std::vector<uint8_t[df_charbuf_size]>& tmp_tkeys = tkeys[i];
+                                    for (size_t j = 0; j < df_charbuf_size; ++j) {
+                                        tmp_tkeys[j] = uint8_t(cur_col[j]) ^ 0x80u;
+                                    }
+                                }
+
+                            }
+
+                    }
+
+                    radix_sort_charbuf_mt<CORES, Simd>(tkeys.data(), 
+                                                       nrow,
+                                                       df_charbuf_size,
+                                                       idx.data());
 
                 } else if constexpr (CORES <= 1) {
 
-                        radix_sort_charbuf<Simd>          (tkeys.data(), 
-                                                           nrow,
-                                                           df_charbuf_size,
-                                                           idx.data());
+                    if constexpr (Simd) {
+
+                            #if defined (__AVX512F__)
+                            char_to_u8buf2d_avx512<df_charbuf_size>(tkeys.data(), 
+                                                         col, 
+                                                         0,
+                                                         nrow); 
+                            #else
+                            char_to_u8buf2d_avx2<df_charbuf_size>(tkeys.data(), 
+                                                         col, 
+                                                         0,
+                                                         nrow); 
+                            #endif
+
+
+                    } else if constexpr (!Simd) {
+
+                        for (size_t i = 0; i < nrow; ++i) {
+                            const int8_t (&cur_col)[df_charbuf_size] = col[i];
+                            std::vector<uint8_t[df_charbuf_size]>& tmp_tkeys = tkeys[i];
+                            for (size_t j = 0; j < df_charbuf_size; ++j) {
+                                tmp_tkeys[j] = uint8_t(cur_col[j]) ^ 0x80u;
+                            }
+                        }
+
+                    }
+
+                    radix_sort_charbuf<Simd>          (tkeys.data(), 
+                                                       nrow,
+                                                       df_charbuf_size,
+                                                       idx.data());
 
                 }
 
