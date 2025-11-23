@@ -1,5 +1,7 @@
 #pragma once
 
+#if defined (__AVX512F__)
+
 template <typename UIntT, typename IntT>
 inline void int_to_uint_avx512(UIntT* dst,
                              const IntT* src,
@@ -67,5 +69,7 @@ inline void int_to_uint_avx512(UIntT* dst,
     for (; i < end; ++i)
         dst[i] = UIntT(src[i]) ^ c_val;
 }
+
+#endif
 
 

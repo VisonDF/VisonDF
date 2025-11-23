@@ -1,5 +1,7 @@
 #pragma once
 
+#if defined (__AVX2__)
+
 template <char PaddingChar = 0x00>
 inline void string_to_u8buf_avx2(uint8_t* tkeys, 
                                  const std::string* __restrict col,
@@ -35,6 +37,6 @@ inline void string_to_u8buf_avx2(uint8_t* tkeys,
 
 }
 
-
+#endif
 
 

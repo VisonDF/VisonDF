@@ -232,6 +232,8 @@ namespace vison {
         #include "inlines/transform/sort_by/permute_block.inl"
         #include "inlines/transform/sort_by/permute_block_mt.inl"
 
+        #include "inlines/transform/sort_by/details/int_to_uint_avx2.inl"
+        #include "inlines/transform/sort_by/details/int_to_uint_avx512.inl"
         #include "inlines/transform/sort_by/details/string_to_u8buf_avx2.inl"
         #include "inlines/transform/sort_by/details/string_to_u8buf_avx512.inl"
         #include "inlines/transform/sort_by/details/char_to_u8buf2d_avx2.inl"

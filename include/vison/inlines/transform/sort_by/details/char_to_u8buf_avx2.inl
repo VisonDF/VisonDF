@@ -1,5 +1,7 @@
 #pragma once
 
+#if defined (__AVX2__)
+
 inline void char_to_u8buf_avx2(
     uint8_t* __restrict tkeys,
     const int8_t (* __restrict col)[df_charbuf_size],
@@ -33,5 +35,5 @@ inline void char_to_u8buf_avx2(
 
 }
 
-
+#endif
 

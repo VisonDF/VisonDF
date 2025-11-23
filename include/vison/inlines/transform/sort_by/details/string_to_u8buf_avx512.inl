@@ -1,5 +1,7 @@
 #pragma once
 
+#if defined (__AVX512F__)
+
 template <char PaddingChar = 0x00>
 inline void string_to_u8buf_avx512(
     uint8_t* __restrict tkeys,
@@ -34,5 +36,8 @@ inline void string_to_u8buf_avx512(
         std::memset(dst + len, pad, max_length - len);
     }
 }
+
+#endif
+
 
 
