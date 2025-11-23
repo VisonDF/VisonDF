@@ -1,7 +1,7 @@
 #pragma once
 
 template <unsigned int CORES = 4, bool Simd = true>
-inline void radix_sort_uint32_mt(const uint32_t* keys,
+inline void radix_sort_uint32_mt(std::vector<uint32_t>& tkeys,
                                 size_t* idx,
                                 size_t n)
 {
@@ -21,13 +21,7 @@ inline void radix_sort_uint32_mt(const uint32_t* keys,
 
     // Storage
     std::vector<uint32_t> tmp_keys(n);
-    std::vector<uint32_t> tkeys(n);
     std::vector<size_t>   tmp(n);
-
-    // Pre-build transformed keys
-    #pragma omp parallel for num_threads(THREADS)
-    for (size_t i = 0; i < n; i++)
-        tkeys[i] = keys[i];
 
     // Per-thread histograms
     std::vector<std::vector<size_t>>
