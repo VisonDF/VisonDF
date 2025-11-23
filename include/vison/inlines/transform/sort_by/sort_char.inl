@@ -39,12 +39,12 @@ inline void sort_char(
                             const size_t end   = start + chunk + (t < rem ? 1 : 0);
 
                             #if defined (__AVX512F__)
-                            char_to_u8buf_avx512<df_charbuf_size>(keys_flat.data(), 
+                            char_to_u8buf_avx512(keys_flat.data(), 
                                                                   col, 
                                                                   start,
                                                                   end); 
                             #else
-                            char_to_u8buf_avx2<df_charbuf_size>(keys_flat.data(), 
+                            char_to_u8buf_avx2(keys_flat.data(), 
                                                                 col, 
                                                                 start,
                                                                 end); 
@@ -84,12 +84,12 @@ inline void sort_char(
                     if constexpr (Simd) {
 
                         #if defined (__AVX512F__)
-                        char_to_u8buf_avx512<df_charbuf_size>(keys_flat.data(), 
+                        char_to_u8buf_avx512(keys_flat.data(), 
                                                    col, 
                                                    0,
                                                    nrow); 
                         #else
-                        char_to_u8buf_avx2<df_charbuf_size>(keys_flat.data(), 
+                        char_to_u8buf_avx2(keys_flat.data(), 
                                                      col, 
                                                      0,
                                                      nrow); 

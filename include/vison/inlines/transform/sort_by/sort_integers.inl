@@ -17,13 +17,68 @@ inline void sort_integers(
     static_assert(IndexComparator<decltype(cmp)>,
               "Comparator must be cmp(size_t,size_t)->bool");
 
+    std::vector<UIntT> tkeys(nrow);
+
+    auto dispatch = [&](size_t nrow, UIntT c_byte)
+    {
+
+        auto process_range = [&](size_t start, size_t end)
+        {
+            if constexpr (Simd)
+            {
+            #if defined(__AVX512F__)
+                int_to_uint_avx512(tkeys.data(),
+                                   col,
+                                   start,
+                                   end,
+                                   c_byte);
+    
+            #elif defined(__AVX2__)
+                int_to_uint_avx2(tkeys.data(),
+                                 col,
+                                 start,
+                                 end,
+                                 c_byte);
+    
+            #else
+                #pragma unroll
+                for (size_t i = start; i < end; ++i)
+                    tkeys[i] = UIntT(col[i]) ^ c_byte;
+            #endif
+            }
+            else
+            {
+                #pragma unroll
+                for (size_t i = start; i < end; ++i)
+                    tkeys[i] = UIntT(col[i]) ^ c_byte;
+            }
+        };
+    
+        if constexpr (CORES > 1)
+        {
+            #pragma omp parallel num_threads(CORES)
+            {
+                size_t tid   = omp_get_thread_num();
+                size_t chunk = nrow / CORES;
+                size_t rem   = nrow % CORES;
+    
+                size_t start = tid * chunk + std::min(tid, rem);
+                size_t end   = start + chunk + (tid < rem ? 1 : 0);
+    
+                process_range(start, end);
+            }
+        }
+        else
+        {
+            process_range(0, nrow);
+        }
+    };
+
     if constexpr (S == SortType::Radix) {
 
         if constexpr (std::is_same_v<IntT, int8_t>) {
 
-            std::vector<uint8_t> tkeys(nrow);
-            for (size_t i = 0; i < nrow; ++i)
-                tkeys[i] = uint8_t(col[i]) ^ 0x80u;
+            dispatch(nrow, 0x80u);
 
             if constexpr (CORES == 1) {
 
@@ -37,9 +92,7 @@ inline void sort_integers(
 
         } else if constexpr (std::is_same_v<IntT, int16_t>) {
 
-            std::vector<uint16_t> tkeys(nrow);
-            for (size_t i = 0; i < nrow; i++)
-                tkeys[i] = uint16_t(col[i]) ^ 0x8000u;
+            dispatch(nrow, 0x8000u);
 
             if constexpr (CORES == 1) {
 
@@ -53,33 +106,29 @@ inline void sort_integers(
 
         } else if constexpr (std::is_same_v<IntT, int32_t>) {
 
-            std::vector<uint32_t> tkeys(nrow);
-            for (size_t i = 0; i < nrow; i++)
-                tkeys[i] = uint32_t(col[i]) ^ 0x80000000u;
+            dispatch(nrow, 0x80000000u);
 
             if constexpr (CORES == 1) {
 
-                radix_sort_uint32<Simd>          (tkeys.data(), idx.data(), nrow);
+                radix_sort_uint32<Simd>          (tkeys, idx.data(), nrow);
 
             } else if constexpr (CORES > 1) {
 
-                radix_sort_uint32_mt<CORES, Simd>(tkeys.data(), idx.data(), nrow);
+                radix_sort_uint32_mt<CORES, Simd>(tkeys, idx.data(), nrow);
 
             }
 
         } else if constexpr (std::is_same_v<IntT, int64_t>) {
 
-            std::vector<uint64_t> tkeys(nrow);
-            for (size_t i = 0; i < nrow; i++)
-                tkeys[i] = uint64_t(col[idx[i]]) ^ 0x8000000000000000ULL;
+            dispatch(nrow, 0x8000000000000000ULL);
 
             if constexpr (CORES == 1) {
 
-                radix_sort_uint64<Simd>          (tkeys.data(), idx.data(), nrow);
+                radix_sort_uint64<Simd>          (tkeys, idx.data(), nrow);
 
             } else if constexpr (CORES > 1) {
 
-                radix_sort_uint64_mt<CORES, Simd>(tkeys.data(), idx.data(), nrow);
+                radix_sort_uint64_mt<CORES, Simd>(tkeys, idx.data(), nrow);
 
             }
             

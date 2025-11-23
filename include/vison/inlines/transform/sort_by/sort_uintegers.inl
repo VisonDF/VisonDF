@@ -45,25 +45,81 @@ inline void sort_uintegers(
 
         } else if constexpr (std::is_same_v<UIntT, uint32_t>) {
 
-            if constexpr (CORES == 1) {
+            std::vector<UIntT> tkeys(nrow);
+           
+            if constexpr (CORES <= 1) {
 
-                radix_sort_uint32<Simd>(col, idx.data(), nrow);
+                memcpy(tkeys.data(), 
+                       col, 
+                       tkeys.size() * sizeof(UIntT));
 
             } else if constexpr (CORES > 1) {
 
-                radix_sort_uint32_mt<CORES, Simd>(col, idx.data(), nrow);
+                const size_t total = nrow;
+                const size_t chunk = (total + CORES - 1) / CORES;
+
+                #pragma omp parallel num_threads(CORES)
+                {
+                    const size_t tid = omp_get_thread_num();
+                    const size_t begin = tid * chunk;
+                    const size_t end   = std::min(begin + chunk, total);
+
+                    if (begin < end) {
+                        std::memcpy(&tkeys[begin],
+                                    &col[begin],
+                                    (end - begin) * sizeof(UIntT));
+                    }
+                }
+
+            }
+
+            if constexpr (CORES == 1) {
+
+                radix_sort_uint32<Simd>          (tkeys, idx.data(), nrow);
+
+            } else if constexpr (CORES > 1) {
+
+                radix_sort_uint32_mt<CORES, Simd>(tkeys, idx.data(), nrow);
 
             }
 
         } else if constexpr (std::is_same_v<UIntT, uint64_t>) {
 
-            if constexpr (CORES == 1) {
+            std::vector<UIntT> tkeys(nrow);
+           
+            if constexpr (CORES <= 1) {
 
-                radix_sort_uint64<Simd>(col, idx.data(), nrow);
+                memcpy(tkeys.data(), 
+                       col, 
+                       tkeys.size() * sizeof(UIntT));
 
             } else if constexpr (CORES > 1) {
 
-                radix_sort_uint64_mt<CORES, Simd>(col, idx.data(), nrow);
+                const size_t total = nrow;
+                const size_t chunk = (total + CORES - 1) / CORES;
+
+                #pragma omp parallel num_threads(CORES)
+                {
+                    const size_t tid = omp_get_thread_num();
+                    const size_t begin = tid * chunk;
+                    const size_t end   = std::min(begin + chunk, total);
+
+                    if (begin < end) {
+                        std::memcpy(&tkeys[begin],
+                                    &col[begin],
+                                    (end - begin) * sizeof(UIntT));
+                    }
+                }
+
+            }
+
+            if constexpr (CORES == 1) {
+
+                radix_sort_uint64<Simd>          (tkeys, idx.data(), nrow);
+
+            } else if constexpr (CORES > 1) {
+
+                radix_sort_uint64_mt<CORES, Simd>(tkeys, idx.data(), nrow);
 
             }
             
