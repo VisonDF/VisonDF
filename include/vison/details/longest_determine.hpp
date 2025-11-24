@@ -1,22 +1,28 @@
 #pragma once
 
+template <unsigned int CORES= 4>
 void longest_determine() {
-  longest_v = {};
-  unsigned int i;
-  unsigned int i2;
-  if (name_v.size() > 0) {
-    for (i = 0; i < ncol; ++i) {
-      longest_v.push_back(name_v[i].length());
-    };
-  } else {
-    longest_v.resize(ncol, 0);
-  }; 
-  for (i = 0; i < ncol; ++i) {
-    for (i2 = 0; i2 < nrow; ++i2) {
-      if (tmp_val_refv[i][i2].length() > longest_v[i]) {
-        longest_v[i] = tmp_val_refv[i][i2].length();
 
-      };
-    };
-  };
+    longest_v.resize(ncol);
+    
+    if (!name_v.empty()) {
+        for (unsigned i = 0; i < ncol; ++i)
+            longest_v[i] = name_v[i].size();
+    } else {
+        std::fill(longest_v.begin(), longest_v.end(), 0);
+    }
+   
+    #pragma omp parallel for num_threads(CORES)
+    for (unsigned i = 0; i < ncol; ++i) {
+        auto* __restrict col = tmp_val_refv[i].data();
+        unsigned max_len = longest_v[i];
+    
+        #pragma GCC ivdep
+        #pragma GCC unroll 8
+        for (unsigned row = 0; row < nrow; ++row)
+            max_len = std::max<unsigned>(max_len, col[row].size());
+    
+        longest_v[i] = max_len;
+    }
+
 };

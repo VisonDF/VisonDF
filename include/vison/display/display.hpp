@@ -1,109 +1,112 @@
 #pragma once
 
+template <unsigned int CORES = 4>
 void display() {
-  longest_determine();
-  unsigned int i2;
-  unsigned int i3;
-  unsigned int i4;
-  unsigned int max_nblngth = 0;
-  if (name_v_row.size() == 0) {
-    max_nblngth = std::to_string(nrow).length();
-  } else {
-    for (auto& el : name_v_row) {
-      if (el.size() > max_nblngth) {
-        max_nblngth = el.size();
+    longest_determine<CORES>();
+    unsigned int i2;
+    unsigned int i3;
+    unsigned int i4;
+    unsigned int max_nblngth = 0;
+    if (name_v_row.size() == 0) {
+      max_nblngth = std::to_string(nrow).length();
+    } else {
+      for (auto& el : name_v_row) {
+        if (el.size() > max_nblngth) {
+          max_nblngth = el.size();
+        };
       };
     };
-  };
-  for (i2 = 0; i2 < max_nblngth + 2; ++i2) {
-    std::cout << " ";
-  };
-  std::string cur_str;
-  for (i2 = 0; i2 < ncol; ++i2) {
-    if (type_refv[i2] == 's') {
-      cur_str = "<str>";
-      if (longest_v[i2] < 5) {
-        longest_v[i2] = 5;
-      };
-    } else if (type_refv[i2] == 'c') {
-      cur_str = "<char>";
-      if (longest_v[i2] < 6) {
-        longest_v[i2] = 6;
-      };
-    } else if (type_refv[i2] == 'b') {
-      cur_str = "<bool>";
-      if (longest_v[i2] < 6) {
-        longest_v[i2] = 6;
-      };
-    } else if (type_refv[i2] == 'i') {
-      cur_str = "<int>";
-      if (longest_v[i2] < 5) {
-        longest_v[i2] = 5;
-      };
-    } else if (type_refv[i2] == 'u') {
-      cur_str = "<uint>";
-      if (longest_v[i2] < 6) {
-        longest_v[i2] = 6;
-      };
-    } else if (type_refv[i2] == 'd') {
-      cur_str = "<double>";
-      if (longest_v[i2] < 8) {
-        longest_v[i2] = 8;
-      };
-    };
-    std::cout << cur_str << " ";  
-    for (i4 = cur_str.length(); i4 < longest_v[i2]; ++i4) {
+    for (i2 = 0; i2 < max_nblngth + 2; ++i2) {
       std::cout << " ";
     };
-  };
-  std::cout << "\n";
-  for (i2 = 0; i2 < max_nblngth + 2; ++i2) {
-    std::cout << " ";
-  };
-  if (name_v.size() > 0) {
+    std::string cur_str;
     for (i2 = 0; i2 < ncol; ++i2) {
-      cur_str = name_v[i2];
+      if (type_refv[i2] == 's') {
+        cur_str = "<str>";
+        if (longest_v[i2] < 5) {
+          longest_v[i2] = 5;
+        };
+      } else if (type_refv[i2] == 'c') {
+        cur_str = "<char>";
+        if (longest_v[i2] < 6) {
+          longest_v[i2] = 6;
+        };
+      } else if (type_refv[i2] == 'b') {
+        cur_str = "<bool>";
+        if (longest_v[i2] < 6) {
+          longest_v[i2] = 6;
+        };
+      } else if (type_refv[i2] == 'i') {
+        cur_str = "<int>";
+        if (longest_v[i2] < 5) {
+          longest_v[i2] = 5;
+        };
+      } else if (type_refv[i2] == 'u') {
+        cur_str = "<uint>";
+        if (longest_v[i2] < 6) {
+          longest_v[i2] = 6;
+        };
+      } else if (type_refv[i2] == 'd') {
+        cur_str = "<double>";
+        if (longest_v[i2] < 8) {
+          longest_v[i2] = 8;
+        };
+      };
       std::cout << cur_str << " ";  
       for (i4 = cur_str.length(); i4 < longest_v[i2]; ++i4) {
         std::cout << " ";
       };
     };
-  } else {
-    for (i2 = 0; i2 < ncol; ++i2) {
-      cur_str = "[" + std::to_string(i2) + "]";
-      std::cout << cur_str << " ";
-      for (i4 = cur_str.length(); i4 < longest_v[i2]; ++i4) {
-        std::cout << " ";
-      };
+    std::cout << "\n";
+    for (i2 = 0; i2 < max_nblngth + 2; ++i2) {
+      std::cout << " ";
     };
-  };
-  std::cout << "\n";
-  if (name_v_row.size() == 0) {
-    for (unsigned int i = 0; i < nrow; ++i) {
-      std::cout << ":" << i << ": ";
-      for (i3 = std::to_string(i).length(); i3 < max_nblngth; ++i3) {
-        std::cout << " ";
-      };
+    if (name_v.size() > 0) {
       for (i2 = 0; i2 < ncol; ++i2) {
-        cur_str = tmp_val_refv[i2][i];
-        std::cout << cur_str << " ";
-        for (i3 = cur_str.length(); i3 < longest_v[i2]; ++i3) {
+        cur_str = name_v[i2];
+        std::cout << cur_str << " ";  
+        for (i4 = cur_str.length(); i4 < longest_v[i2]; ++i4) {
           std::cout << " ";
         };
       };
-      std::cout << "\n";
-    };
-  } else {
-    for (unsigned int i = 0; i < nrow; ++i) {
-      std::cout << std::setw(max_nblngth) << name_v_row[i] << " : ";
+    } else {
       for (i2 = 0; i2 < ncol; ++i2) {
-        cur_str = tmp_val_refv[i2][i];
+        cur_str = "[" + std::to_string(i2) + "]";
         std::cout << cur_str << " ";
-        for (i3 = cur_str.length(); i3 < longest_v[i2]; ++i3) {
+        for (i4 = cur_str.length(); i4 < longest_v[i2]; ++i4) {
           std::cout << " ";
         };
       };
-      std::cout << "\n";
     };
-  };
+    std::cout << "\n";
+    if (name_v_row.size() == 0) {
+      for (unsigned int i = 0; i < nrow; ++i) {
+        std::cout << ":" << i << ": ";
+        for (i3 = std::to_string(i).length(); i3 < max_nblngth; ++i3) {
+          std::cout << " ";
+        };
+        for (i2 = 0; i2 < ncol; ++i2) {
+          cur_str = tmp_val_refv[i2][i];
+          std::cout << cur_str << " ";
+          for (i3 = cur_str.length(); i3 < longest_v[i2]; ++i3) {
+            std::cout << " ";
+          };
+        };
+        std::cout << "\n";
+      };
+    } else {
+      for (unsigned int i = 0; i < nrow; ++i) {
+        std::cout << std::setw(max_nblngth) << name_v_row[i] << " : ";
+        for (i2 = 0; i2 < ncol; ++i2) {
+          cur_str = tmp_val_refv[i2][i];
+          std::cout << cur_str << " ";
+          for (i3 = cur_str.length(); i3 < longest_v[i2]; ++i3) {
+            std::cout << " ";
+          };
+        };
+        std::cout << "\n";
+      };
+    };
 };
+
+
