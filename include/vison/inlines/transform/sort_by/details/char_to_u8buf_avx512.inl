@@ -13,7 +13,7 @@ inline void char_to_u8buf_avx512(
     constexpr size_t VecBytes = 64;
     const __m512i xor_mask = _mm512_set1_epi8(0x80);
 
-    constexpr size_t NVEC     = df_charbuf_size / VecBytes;
+    const size_t NVEC     = df_charbuf_size / VecBytes;
 
     for (size_t i = start; i < end; ++i) {
         uint8_t*       dst = tkeys + i * df_charbuf_size;

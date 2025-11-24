@@ -14,7 +14,7 @@ inline void char_to_u8buf_avx2(
     const __m256i xor_mask = _mm256_set1_epi8(0x80);
     constexpr size_t VecBytes = 32;
 
-    constexpr size_t NVEC = df_charbuf_size / VecBytes;
+    const size_t NVEC = df_charbuf_size / VecBytes;
 
     for (size_t i = start; i < end; ++i) {
 
