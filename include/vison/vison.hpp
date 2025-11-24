@@ -203,6 +203,24 @@ namespace vison {
           return matr_idx;
         };
 
+        std::array<std::string, 6> type_print_vec = {
+                                        "<str> ",
+                                        type_name<CharT> + " ",
+                                        "<bool / u8> ",
+                                        type_name<IntT>   + " ",
+                                        type_name<UIntT>  + " ",
+                                        type_name<FloatT> + " " 
+                                   };
+
+        std::array<size_t, 6> ref_type_size = {
+                                                type_print_vec[0].size(),
+                                                type_print_vec[1].size(),
+                                                type_print_vec[2].size(),
+                                                type_print_vec[3].size(),
+                                                type_print_vec[4].size(),
+                                                type_print_vec[5].size()  
+                                              };
+
         #include "inlines/radix_sorts/radix_sort_charbuf.inl"
         #include "inlines/radix_sorts/radix_sort_charbuf_mt.inl"
         #include "inlines/radix_sorts/radix_sort_charbuf_flat.inl"
