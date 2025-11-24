@@ -225,7 +225,6 @@ namespace vison {
 
         #include "inlines/write_csv/estimate_row_size.inl"
 
-        #include "inlines/transform/sort_by/permute_block_bool.inl"
         #include "inlines/transform/sort_by/permute_block.inl"
         #include "inlines/transform/sort_by/permute_block_mt.inl"
 

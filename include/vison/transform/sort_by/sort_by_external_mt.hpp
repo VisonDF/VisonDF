@@ -1,0 +1,113 @@
+#pragma once
+
+template <bool ASC = 1,
+          unsigned int CORES = 4,
+          bool Simd = true,
+          bool InnerThreads = false,
+          SortType S = SortType::Radix,
+          bool BoolAsU8 = true,
+          bool IsBoolCompressed = false,
+          typename T>
+void sort_by_external_mr(const std::vector<T>& nvec) {
+
+     assert(("sort vec must be same size as dataframe nrow", 
+                             nvec.size() == nrow));
+     static_assert(is_supported_sort<S>::value, 
+                     "Sorting Method Not Supported");
+
+     std::vector<size_t> idx(nrow);
+     std::iota(idx.begin(), idx.end(), 0);
+    
+     if constexpr (std::is_same_v<T, std::string>) {
+
+         sort_string<ASC, CORES, Simd, S> (idx, nvec.data(), nrow);
+
+     } else if constexpr (std::is_same_v<T, CharT>) {
+
+         sort_char<ASC, CORES, Simd, S>   (idx, nvec.data(), nrow, df_charbuf_size);
+
+     } else if constexpr (BoolAsU8) {
+
+         sort_bool<ASC, 
+                   CORES, 
+                   Simd, 
+                   S, 
+                   BoolAsU8, 
+                   IsBoolCompressed>(idx, nvec.data(), nrow);
+
+     } else if constexpr(std::is_same_v<T, bool>) {
+
+         sort_bool<ASC, 
+                   CORES, 
+                   Simd, 
+                   S, 
+                   BoolAsU8, 
+                   IsBoolCompressed>(idx, nvec.data(), nrow);
+
+     } else if constexpr (is_supported_int<T>::value) {
+
+         sort_integers<ASC, CORES, Simd, S> (idx, nvec.data(), nrow);
+
+     } else if constexpr (is_supported_uint<T>::value) {
+
+         sort_uintegers<ASC, CORES, Simd, S>(idx, nvec.data(), nrow);
+
+     } else if constexpr (is_supported_decimal<T>::value) {
+
+         sort_flt<ASC, CORES, Simd, S>      (idx, nvec.data(), nrow);
+
+     }
+
+     std::vector<std::string> str_v2(nrow);
+     
+     permute_block_mt<std::string, CORES, Simd, InnerThreads>(
+         str_v,
+         tmp_val_refv,
+         str_v2,
+         matr_idx[0],
+         idx,
+         nrow);
+
+     permute_block_mt<CharT, CORES, Simd, InnerThreads>(
+         chr_v,
+         tmp_val_refv,
+         str_v2,
+         matr_idx[1],
+         idx,
+         nrow);
+      
+     permute_block_mt<uint8_t, CORES, Simd, InnerThreads>(
+         bool_v,
+         tmp_val_refv,
+         str_v2,
+         matr_idx[2],
+         idx,
+         nrow);
+      
+     permute_block_mt<IntT, CORES, Simd, InnerThreads>(
+         int_v,
+         tmp_val_refv,
+         str_v2,
+         matr_idx[3],
+         idx,
+         nrow);
+     
+     permute_block_mt<UIntT, CORES, Simd, InnerThreads>(
+         uint_v,
+         tmp_val_refv,
+         str_v2,
+         matr_idx[4],
+         idx,
+         nrow);
+     
+     permute_block_mt<FloatT, CORES, Simd, InnerThreads>(
+         dbl_v,
+         tmp_val_refv,
+         str_v2,
+         matr_idx[5],
+         idx,
+         nrow);
+      
+};
+
+
