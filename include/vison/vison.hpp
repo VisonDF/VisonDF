@@ -336,6 +336,8 @@ namespace vison {
         #include "rm_row/vectorized/rm_row_range_reconstruct_simd.hpp"
 
         #include "transform/reorder_col/reorder_col.hpp"
+        #include "transform/reorder_col/reorder_col_mt.hpp"
+        #include "transform/reorder_col/reorder_col2.hpp"
 
         #include "transform/transform_inner/transform_inner.hpp" 
         #ifdef _OPENMP

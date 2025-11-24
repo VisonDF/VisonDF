@@ -1,6 +1,7 @@
 #pragma once
 
-void reorder_col(const std::vector<std::pair<unsigned int, unsigned int>>& swaps)
+template <unsigned int CORES = 4>
+void reorder_col_mt(const std::vector<std::pair<unsigned int, unsigned int>>& swaps)
 {
 
     ankerl::unordered_dense::set<unsigned> seen;
@@ -23,6 +24,7 @@ void reorder_col(const std::vector<std::pair<unsigned int, unsigned int>>& swaps
         for (size_t j = 0; j < matr_idx[i].size(); ++j)
             pos_of[matr_idx[i][j]] = {i, j};
 
+    #pragma omp parallel for num_threads(CORES)
     for (int k = 0; k < (int)swaps.size(); ++k) {
 
         unsigned old_pos = swaps[k].first;
@@ -45,4 +47,6 @@ void reorder_col(const std::vector<std::pair<unsigned int, unsigned int>>& swaps
     }
 
 }
+
+
 
