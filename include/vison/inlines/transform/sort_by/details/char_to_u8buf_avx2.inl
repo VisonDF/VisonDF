@@ -5,8 +5,10 @@
 inline void char_to_u8buf_avx2(
     uint8_t* __restrict tkeys,
     const int8_t (* __restrict col)[df_charbuf_size],
-    size_t start,
-    size_t end)
+    const size_t start,
+    const size_t end,
+    const size_t df_charbuf_size
+    )
 {
 
     const __m256i xor_mask = _mm256_set1_epi8(0x80);

@@ -40,14 +40,16 @@ inline void sort_char(
 
                             #if defined (__AVX512F__)
                             char_to_u8buf_avx512(keys_flat.data(), 
-                                                                  col, 
-                                                                  start,
-                                                                  end); 
+                                                 col, 
+                                                 start,
+                                                 end,
+                                                 df_charbuf_size); 
                             #else
                             char_to_u8buf_avx2(keys_flat.data(), 
-                                                                col, 
-                                                                start,
-                                                                end); 
+                                               col, 
+                                               start,
+                                               end,
+                                               df_charbuf_size); 
                             #endif
                    
                         }
@@ -85,14 +87,16 @@ inline void sort_char(
 
                         #if defined (__AVX512F__)
                         char_to_u8buf_avx512(keys_flat.data(), 
-                                                   col, 
-                                                   0,
-                                                   nrow); 
+                                             col, 
+                                             0,
+                                             nrow,
+                                             df_charbuf_size); 
                         #else
                         char_to_u8buf_avx2(keys_flat.data(), 
-                                                     col, 
-                                                     0,
-                                                     nrow); 
+                                           col, 
+                                           0,
+                                           nrow,
+                                           df_charbuf_size); 
                         #endif
 
                     } else if constexpr (!Simd) {
@@ -135,12 +139,14 @@ inline void sort_char(
                             char_to_u8buf2d_avx512<df_charbuf_size>(tkeys.data(), 
                                                                     col, 
                                                                     start,
-                                                                    end); 
+                                                                    end,
+                                                                    df_charbuf_size); 
                             #else
                             char_to_u8buf2d_avx2<df_charbuf_size>(tkeys.data(), 
                                                                   col, 
                                                                   start,
-                                                                  end); 
+                                                                  end,
+                                                                  df_charbuf_size); 
                             #endif
 
                         }
@@ -181,12 +187,14 @@ inline void sort_char(
                             char_to_u8buf2d_avx512<df_charbuf_size>(tkeys.data(), 
                                                          col, 
                                                          0,
-                                                         nrow); 
+                                                         nrow,
+                                                         df_charbuf_size); 
                             #else
                             char_to_u8buf2d_avx2<df_charbuf_size>(tkeys.data(), 
                                                          col, 
                                                          0,
-                                                         nrow); 
+                                                         nrow,
+                                                         df_charbuf_size); 
                             #endif
 
 

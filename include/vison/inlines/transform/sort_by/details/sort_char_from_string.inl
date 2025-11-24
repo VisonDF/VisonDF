@@ -8,19 +8,20 @@ template <
 inline void sort_char_from_string(
     std::vector<size_t>& idx,
     const uint8_t* col,
-    size_t nrow
+    const size_t nrow,
+    const size_t max_length 
 )
 {
 
     if constexpr (CORES > 1)
         radix_sort_charbuf_flat_mt<CORES, Simd>(col, 
                                                 nrow, 
-                                                df_charbuf_size, 
+                                                max_length, 
                                                 idx.data());
     else
         radix_sort_charbuf_flat<Simd>          (col, 
                                                 nrow, 
-                                                df_charbuf_size,
+                                                max_length,
                                                 idx.data());
 
     if constexpr (!ASC)

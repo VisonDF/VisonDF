@@ -5,8 +5,9 @@
 inline void char_to_u8buf_avx512(
     uint8_t* __restrict tkeys,
     const int8_t (* __restrict col)[df_charbuf_size],
-    size_t start,
-    size_t end)
+    const size_t start,
+    const size_t end,
+    const size_t df_charbuf_size)
 {
 
     constexpr size_t VecBytes = 64;
