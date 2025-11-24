@@ -11,7 +11,6 @@ inline void sort_string(
     std::vector<size_t>& idx, 
     const std::string* col,
     const size_t nrow,
-    const size_t df_charbuf_size,
     ComparatorFactory make_cmp = ComparatorFactory{})
 {
 
@@ -129,7 +128,7 @@ inline void sort_string(
                                       CORES, 
                                       Simd>(idx.data(), 
                                             tkeys.data(), 
-                                            df_charbuf_size,
+                                            max_length,
                                             nrow);
 
             } else if constexpr (!Flat) {

@@ -50,8 +50,7 @@ void sort_by_mt(unsigned int& n) {
               const std::string* keys = str_v.data() + nrow * col_id;
               sort_string<ASC, CORES, Simd, S, ComparatorFactory>(idx, 
                                                                   keys, 
-                                                                  nrow, 
-                                                                  df_charbuf_size);
+                                                                  nrow);
               break;
           }
           case 'c':
