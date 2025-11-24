@@ -59,7 +59,7 @@ void concat(Dataframe& obj)
  
     str_v.swap(new_str_v);
 
-    std::vector<char> new_chr_v;
+    std::vector<CharT> new_chr_v;
     new_chr_v.reserve(chr_v.size() + chr_v2.size());
   
     for (size_t el = 0; el < matr_idx[1].size(); el += 1) {
