@@ -48,37 +48,43 @@ void sort_by_mt(unsigned int& n) {
           case 's':
           {
               const std::string* keys = str_v.data() + nrow * col_id;
-              sort_string<ASC, CORES, Simd, S, ComparatorFactory>(idx, keys);
+              sort_string<ASC, CORES, Simd, S, ComparatorFactory>(idx, 
+                                                                  keys, 
+                                                                  nrow, 
+                                                                  df_charbuf_size);
               break;
           }
           case 'c':
           {
               const int8_t* keys = reinterpret_cast<const int8_t*>(chr_v.data()) + nrow * col_id;
-              sort_char<ASC, CORES, Simd, S, ComparatorFactory>(idx, keys);
+              sort_char<ASC, CORES, Simd, S, ComparatorFactory>  (idx, 
+                                                                  keys,
+                                                                  nrow,
+                                                                  df_charbuf_size);
               break;
           }
           case 'b':
           {
               const uint8_t* keys = dbl_v.data() + nrow * col_id;
-              sort_bool<ASC, CORES, Simd, S, false, ComparatorFactory>(idx, keys); 
+              sort_bool<ASC, CORES, Simd, S, false, ComparatorFactory>(idx, keys, nrow); 
               break;
           }
           case 'i':
           {
               const IntT* keys = int_v.data() + nrow * col_id;
-              sort_integers<ASC, CORES, Simd, S, ComparatorFactory>(idx, keys);
+              sort_integers<ASC, CORES, Simd, S, ComparatorFactory>   (idx, keys, nrow);
               break;
           }
           case 'u':
           {
               const UIntT* keys = uint_v.data() + nrow * col_id;
-              sort_uintegers<ASC, CORES, Simd, S, ComparatorFactory>(idx, keys);
+              sort_uintegers<ASC, CORES, Simd, S, ComparatorFactory>  (idx, keys, nrow);
               break;
           }
           case 'd':
           {
               const FloatT* keys = dbl_v.data() + nrow * col_id;
-              sort_flt<ASC, CORES, Simd, S, ComparatorFactory>(idx, keys);
+              sort_flt<ASC, CORES, Simd, S, ComparatorFactory>        (idx, keys, nrow);
               break;
           }
       }
