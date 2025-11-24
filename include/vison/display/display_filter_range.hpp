@@ -1,8 +1,9 @@
 #pragma once
 
 template <unsigned int CORES = 4>
-void display_filter(const std::vector<uint8_t>& mask,
-                    std::vector<unsigned int>& cols) {
+void display_filter_range(const std::vector<uint8_t>& mask,
+                          const size_t strt,
+                          std::vector<unsigned int>& cols) {
    
     if (cols.empty()) {
         cols.resize(ncol);
@@ -18,8 +19,8 @@ void display_filter(const std::vector<uint8_t>& mask,
     } else {
         for (size_t i = 0; i < mask.size(); ++i) {
             if (!mask[i]) continue;
-            if (name_v_row[i].size() > max_nblngth)
-                max_nblngth = name_v_row[i].size();
+            if (name_v_row[strt + i].size() > max_nblngth)
+                max_nblngth = name_v_row[strt + i].size();
         };
     };
 
@@ -89,11 +90,11 @@ void display_filter(const std::vector<uint8_t>& mask,
 
             if (!mask[i]) continue;
 
-            std::cout << ":" << i << ": ";
-            std::cout << std::string(max_nblngth - std::to_string(i).length(), ' ');
+            std::cout << ":" << (strt + i) << ": ";
+            std::cout << std::string(max_nblngth - std::to_string(strt + i).length(), ' ');
 
             for (size_t& i2 : cols) {
-                const std::string& cur_str = tmp_val_refv[i2][i];
+                const std::string& cur_str = tmp_val_refv[i2][strt + i];
                 std::cout << cur_str << " ";
                 std::cout << std::string(longest_v[i2] - cur_str.length(), ' ');
             };
@@ -106,11 +107,11 @@ void display_filter(const std::vector<uint8_t>& mask,
 
             if (!mask[i]) continue;
 
-            std::cout << name_v_row[i] << " : ";
-            std::cout << std::string(max_nblngth - std::to_string(i).length(), ' ');
+            std::cout << name_v_row[strt + i] << " : ";
+            std::cout << std::string(max_nblngth - std::to_string(strt + i).length(), ' ');
 
             for (size_t& i2 : cols) {
-                const std::string& cur_str = tmp_val_refv[i2][i];
+                const std::string& cur_str = tmp_val_refv[i2][strt + i];
                 std::cout << cur_str << " ";
                 std::cout << std::string(longest_v[i2] - cur_str.length(), ' ');
             };

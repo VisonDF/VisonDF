@@ -221,6 +221,8 @@ namespace vison {
                                                 type_print_vec[5].size()  
                                               };
 
+        #include "types/stringify_types.inl"
+
         #include "inlines/radix_sorts/radix_sort_charbuf.inl"
         #include "inlines/radix_sorts/radix_sort_charbuf_mt.inl"
         #include "inlines/radix_sorts/radix_sort_charbuf_flat.inl"
@@ -276,10 +278,9 @@ namespace vison {
         
         #include "read_csv/type_inference/type_classification.hpp"
     
-        #include "display/display_filter.hpp"
-         
+        #include "display/display_filter.hpp" 
+        #include "display/display_filter_range.hpp" 
         #include "display/display_filter_idx.hpp"
-       
         #include "display/display.hpp"
 
         #include "reinitiate.hpp"

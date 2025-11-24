@@ -1,18 +1,14 @@
 #pragma once
 
-template <typename T>
-constexpr std::string_view type_name() {
-
-    std::string_view p = __PRETTY_FUNCTION__;
-    auto start = p.find("with T = ") + 9;
-    auto end   = p.find(';', start);
-    return p.substr(start, end - start);
-
-}
-
 template <unsigned int CORES = 4>
-void display() {
-    
+void display(std::vector<unsigned int>& cols) {
+   
+    if (cols.empty()) {
+        cols.resize(ncol);
+        for (size_t i = 0; i < ncol; ++i)
+            cols[i] = i;
+    }
+
     longest_determine<CORES>();
     unsigned int max_nblngth;
 
@@ -27,7 +23,7 @@ void display() {
 
     std::cout << std::string(max_nblngth + 2, ' ');
 
-    for (size_t i = 0; i < ncol; ++i) {
+    for (size_t& i : cols) {
 
         switch(type_refv[i]) {
 
@@ -72,16 +68,16 @@ void display() {
     std::cout << std::string(max_nblngth + 2, ' ');
    
     if (name_v.size() > 0) {
-        for (size_t i = 0; i < ncol; ++i) {
+        for (size_t& i : cols) {
             std::cout << name_v[i] << " ";
             std::cout << std::string(longest_v[i] - name_v[i].length(), ' ');
         };
     } else {
-      for (size_t i = 0; i < ncol; ++i) {
-          const std::string cur_str = "[" + std::to_string(i) + "]";
-          std::cout << cur_str << " ";
-          std::cout << std::string(longest_v[i] - cur_str.length(), ' ');
-      };
+        for (size_t& i : cols) {
+            const std::string cur_str = "[" + std::to_string(i) + "]";
+            std::cout << cur_str << " ";
+            std::cout << std::string(longest_v[i] - cur_str.length(), ' ');
+        };
     };
     
     std::cout << "\n";
@@ -92,7 +88,7 @@ void display() {
             std::cout << ":" << i << ": ";
             std::cout << std::string(max_nblngth - std::to_string(i).length(), ' ');
 
-            for (size_t i2 = 0; i2 < ncol; ++i2) {
+            for (size_t& i2 : cols) {
                 const std::string& cur_str = tmp_val_refv[i2][i];
                 std::cout << cur_str << " ";
                 std::cout << std::string(longest_v[i2] - cur_str.length(), ' ');
@@ -102,21 +98,19 @@ void display() {
 
         };
     } else {
+        for (size_t i = 0; i < nrow; ++i) {
+            std::cout << name_v_row[i] << " : ";
+            std::cout << std::string(max_nblngth - std::to_string(i).length(), ' ');
 
-      for (size_t i = 0; i < nrow; ++i) {
-          std::cout << name_v_row[i] << " : ";
-          std::cout << std::string(max_nblngth - std::to_string(i).length(), ' ');
+            for (size_t& i2 : cols) {
+                const std::string& cur_str = tmp_val_refv[i2][i];
+                std::cout << cur_str << " ";
+                std::cout << std::string(longest_v[i2] - cur_str.length(), ' ');
+            };
 
-          for (size_t i2 = 0; i2 < ncol; ++i2) {
-              const std::string& cur_str = tmp_val_refv[i2][i];
-              std::cout << cur_str << " ";
-              std::cout << std::string(longest_v[i2] - cur_str.length(), ' ');
-          };
+            std::cout << "\n";
 
-          std::cout << "\n";
-
-      };
-
+        };
     };
 
 };
