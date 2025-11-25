@@ -6,7 +6,7 @@ template <unsigned int strt_row = 0,
           bool WARMING = 0, 
           bool MEM_CLEAN = 0,
           char TrailingChar = '0'>
-void readf(std::string &file_name, char delim = ',', bool header_name = 1, char str_context = '\'') {
+void rea_csv(std::string &file_name, char delim = ',', bool header_name = 1, char str_context = '\'') {
             
     int fd = open(file_name.c_str(), O_RDONLY);
     if (fd == -1) {
