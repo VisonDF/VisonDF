@@ -149,6 +149,10 @@ void rea_csv(std::string &file_name, char delim = ',', bool header_name = 1, cha
     
     i += 1; // because already covered first breakline with first read pass
     
+    for (auto& col : tmp_val_refv) {
+      col.reserve(nrow);
+    };
+
     if constexpr (CORES > 1) { 
       
       if constexpr (WARMING) {
@@ -174,11 +178,7 @@ void rea_csv(std::string &file_name, char delim = ',', bool header_name = 1, cha
       }
     
     } else if constexpr (CORES == 1) {
-    
-      for (auto& col : tmp_val_refv) {
-        col.reserve(nrow);
-      };
-    
+        
       if constexpr (strt_row == 0 && end_row == 0) {
         
             const char* base = csv_view.data();

@@ -54,7 +54,6 @@ inline void standard_parser_mt(std::string_view& csv_view,
                 total += thread_columns[t][c].size();
         
             auto& dst = tmp_val_refv[c];
-            dst.reserve(dst.size() + total);  
         
             for (int t = 0; t < nthreads; ++t) {
                 auto& src = thread_columns[t][c];
@@ -116,7 +115,6 @@ inline void standard_parser_mt(std::string_view& csv_view,
                 total += thread_columns[t][c].size();
         
             auto& dst = tmp_val_refv[c];
-            dst.reserve(dst.size() + total);  
         
             for (int t = 0; t < nthreads; ++t) {
                 auto& src = thread_columns[t][c];
@@ -179,7 +177,6 @@ inline void standard_parser_mt(std::string_view& csv_view,
                 total += thread_columns[t][c].size();
         
             auto& dst = tmp_val_refv[c];
-            dst.reserve(dst.size() + total);  
         
             for (int t = 0; t < nthreads; ++t) {
                 auto& src = thread_columns[t][c];
@@ -238,7 +235,6 @@ inline void standard_parser_mt(std::string_view& csv_view,
                 total += thread_columns[t][c].size();
         
             auto& dst = tmp_val_refv[c];
-            dst.reserve(dst.size() + total);  
         
             for (int t = 0; t < nthreads; ++t) {
                 auto& src = thread_columns[t][c];
