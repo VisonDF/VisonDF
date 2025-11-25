@@ -1,4 +1,5 @@
-inline void parse_rows_range_cached(
+
+inline void parse_rows_chunk_warmed(
     std::string_view local_view,        
     const char*      orig_base,         
     size_t           orig_start_byte,   

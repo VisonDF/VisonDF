@@ -1,4 +1,5 @@
-inline void parse_rows_range(
+
+inline void parse_rows_chunk(
     std::string_view csv_view,
     size_t start_byte,
     size_t end_byte,
