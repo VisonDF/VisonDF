@@ -36,54 +36,25 @@ inline void apply_numeric_simd_filter(std::vector<T>& values,
     for (; i + 4 <= end; i += 4, i3 += 4) {
     
         char buf[buf_size];
-    
-        if (mask[i]) {
 
-            f(values[i + 0]);
-       
-            auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, values[i]);
-            if (ec == std::errc{}) [[likely]]
-                val_tmp[i3].assign(buf, ptr);
-            else [[unlikely]]
+        auto process = [&](int k) {
+            if (!mask[i + k]) return;
+
+            f(values[i + k]);
+
+            auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, values[i + k]);
+            if (ec == std::errc{}) [[likely]] {
+                val_tmp[i3 + k].assign(buf, ptr);
+            } else [[unlikely]] {
                 std::terminate();
+            }
+        };
 
-        }
+        process(0);
+        process(1);
+        process(2);
+        process(3);
 
-        if (mask[i + 1]) {
-
-            f(values[i + 1]);
-
-            auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, values[i + 1]);
-            if (ec == std::errc{}) [[likely]]
-                val_tmp[i3 + 1].assign(buf, ptr);
-            else [[unlikely]]
-                std::terminate();
-
-        }
-
-        if (mask[i + 2]) {
-
-            f(values[i + 2]);
-
-            auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, values[i + 2]);
-            if (ec == std::errc{}) [[likely]]
-                val_tmp[i3 + 2].assign(buf, ptr);
-            else [[unlikely]]
-                std::terminate();
-
-        }
-        if (mask[i + 3]) {
-
-            f(values[i + 3]);
-
-            auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, values[i + 3]);
-            if (ec == std::errc{}) [[likely]]
-                val_tmp[i3 + 3].assign(buf, ptr);
-            else [[unlikely]]
-                std::terminate();
-
-        }
-                
     }
 
     for (; i < end; ++i, ++i3) {
