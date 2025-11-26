@@ -96,8 +96,9 @@ void type_classification(std::vector<char> dtype = {}) {
                               for (size_t i2 = 0; i2 < src.size(); ++i2) {
                                   FloatT val;
                                   const std::string& el = src[i2];
-                                  auto [ptr, ec] = std::from_chars(el.data(),
-                                                                   el.data() + el.size(), val);
+                                  //auto [ptr, ec] = std::from_chars(el.data(),
+                                  //                                 el.data() + el.size(), val);
+                                  auto [ptr, ec] = fast_float::from_chars(el.data(), el.data() + el.size(), val);
                                   dst[i2] = (ec == std::errc() ? val : static_cast<FloatT>(0));
                               }
                           }
