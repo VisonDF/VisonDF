@@ -3,7 +3,7 @@ template <unsigned int strt_row,
           unsigned int end_row,
           unsigned int CORES = 4,
           bool Lambda = false,
-          typename F = DefaultApply>
+          typename F = DefaultFn>
 requires FapplyFn<F, first_arg_t<F>>
 inline void warming_parser_mt(std::string_view& csv_view,
                               const char delim,

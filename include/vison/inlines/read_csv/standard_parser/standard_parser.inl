@@ -2,7 +2,7 @@
 template <unsigned int strt_row, 
           unsigned int end_row, 
           bool Lambda = false,
-          typename F = DefaultApply>
+          typename F = DefaultFn>
 requires FapplyFn<F, first_arg_t<F>>
 inline void standard_parser(std::string_view& csv_view,
                             const char delim,
