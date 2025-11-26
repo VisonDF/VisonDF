@@ -32,7 +32,7 @@ inline void apply_numeric_filter(std::vector<T>& values,
         f(values[i]);
 
         char buf[buf_size];
-        auto [ptr, ec] = std::to_chars(buf, buf + buf_size, values[i]);
+        auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, values[i]);
 
         if (ec == std::errc{}) [[likely]] {
             val_tmp[i3].assign(buf, ptr);

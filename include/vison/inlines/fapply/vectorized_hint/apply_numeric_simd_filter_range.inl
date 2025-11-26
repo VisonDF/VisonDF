@@ -42,7 +42,7 @@ inline void apply_numeric_simd_filter_range(std::vector<T>& values,
 
             f(values[strt_vl + i + 0]);
        
-            auto [ptr, ec] = std::to_chars(buf, buf + buf_size, values[strt_vl + i]);
+            auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, values[strt_vl + i]);
             if (ec == std::errc{}) [[likely]]
                 val_tmp[strt_vl + i3].assign(buf, ptr);
             else [[unlikely]]
@@ -54,7 +54,7 @@ inline void apply_numeric_simd_filter_range(std::vector<T>& values,
 
             f(values[strt_vl + i + 1]);
 
-            auto [ptr, ec] = std::to_chars(buf, buf + buf_size, values[strt_vl + i + 1]);
+            auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, values[strt_vl + i + 1]);
             if (ec == std::errc{}) [[likely]]
                 val_tmp[strt_vl + i3 + 1].assign(buf, ptr);
             else [[unlikely]]
@@ -66,7 +66,7 @@ inline void apply_numeric_simd_filter_range(std::vector<T>& values,
 
             f(values[strt_vl + i + 2]);
 
-            auto [ptr, ec] = std::to_chars(buf, buf + buf_size, values[strt_vl + i + 2]);
+            auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, values[strt_vl + i + 2]);
             if (ec == std::errc{}) [[likely]]
                 val_tmp[strt_vl + i3 + 2].assign(buf, ptr);
             else [[unlikely]]
@@ -77,7 +77,7 @@ inline void apply_numeric_simd_filter_range(std::vector<T>& values,
 
             f(values[strt_vl + i + 3]);
 
-            auto [ptr, ec] = std::to_chars(buf, buf + buf_size, values[strt_vl + i + 3]);
+            auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, values[strt_vl + i + 3]);
             if (ec == std::errc{}) [[likely]]
                 val_tmp[strt_vl + i3 + 3].assign(buf, ptr);
             else [[unlikely]]
@@ -91,7 +91,7 @@ inline void apply_numeric_simd_filter_range(std::vector<T>& values,
         if (mask[i]) {
             f(values[strt_vl + i]);
             char buf[buf_size];
-            auto [ptr, ec] = std::to_chars(buf, buf + buf_size, values[strt_vl + i]);
+            auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, values[strt_vl + i]);
             if (ec == std::errc{}) [[likely]]
                 val_tmp[strt_vl + i3].assign(buf, ptr);
             else [[unlikely]]

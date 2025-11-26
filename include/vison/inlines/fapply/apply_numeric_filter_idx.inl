@@ -36,7 +36,7 @@ inline void apply_numeric_filter_idx(std::vector<T>& values,
 
         f(values[abs_idx]);
 
-        auto [ptr, ec] = std::to_chars(buf, buf + buf_size, values[abs_idx]);
+        auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, values[abs_idx]);
 
         if (ec == std::errc{}) [[likely]] {
             val_tmp[pos_idx].assign(buf, ptr);

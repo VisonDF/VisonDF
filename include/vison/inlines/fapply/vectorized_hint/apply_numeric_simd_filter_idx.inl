@@ -46,7 +46,7 @@ inline void apply_numeric_simd_filter_idx(
     
         char buf[buf_size];
         auto store = [&](unsigned int pos, unsigned int abs) {
-            auto [ptr, ec] = std::to_chars(buf, buf + buf_size, values[abs]);
+            auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, values[abs]);
             if (ec == std::errc{}) [[likely]]
                 val_tmp[pos].assign(buf, ptr);
             else [[unlikely]]
@@ -65,7 +65,7 @@ inline void apply_numeric_simd_filter_idx(
     
         f(values[abs_idx]);
         char buf[buf_size];
-        auto [ptr, ec] = std::to_chars(buf, buf + buf_size, values[abs_idx]);
+        auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, values[abs_idx]);
         if (ec == std::errc{}) [[likely]]
             val_tmp[pos_idx].assign(buf, ptr);
         else [[unlikely]]

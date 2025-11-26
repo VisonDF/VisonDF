@@ -40,7 +40,7 @@ inline void apply_numeric_simd(std::vector<T>& values,
 
         char buf[buf_size];
         for (int j = 0; j < 4; ++j) {
-            auto [ptr, ec] = std::to_chars(buf, buf + buf_size, values[i + j]);
+            auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, values[i + j]);
             if (ec == std::errc{}) [[likely]]
                 val_tmp[i3 + j].assign(buf, ptr);
             else [[unlikely]]
@@ -51,7 +51,7 @@ inline void apply_numeric_simd(std::vector<T>& values,
     for (; i < end; ++i, ++i3) {
         f(values[i]);
         char buf[buf_size];
-        auto [ptr, ec] = std::to_chars(buf, buf + buf_size, values[i]);
+        auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, values[i]);
         if (ec == std::errc{}) [[likely]]
             val_tmp[i3].assign(buf, ptr);
         else [[unlikely]]

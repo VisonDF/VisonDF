@@ -41,7 +41,7 @@ inline void apply_numeric_simd_filter(std::vector<T>& values,
 
             f(values[i + 0]);
        
-            auto [ptr, ec] = std::to_chars(buf, buf + buf_size, values[i]);
+            auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, values[i]);
             if (ec == std::errc{}) [[likely]]
                 val_tmp[i3].assign(buf, ptr);
             else [[unlikely]]
@@ -53,7 +53,7 @@ inline void apply_numeric_simd_filter(std::vector<T>& values,
 
             f(values[i + 1]);
 
-            auto [ptr, ec] = std::to_chars(buf, buf + buf_size, values[i + 1]);
+            auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, values[i + 1]);
             if (ec == std::errc{}) [[likely]]
                 val_tmp[i3 + 1].assign(buf, ptr);
             else [[unlikely]]
@@ -65,7 +65,7 @@ inline void apply_numeric_simd_filter(std::vector<T>& values,
 
             f(values[i + 2]);
 
-            auto [ptr, ec] = std::to_chars(buf, buf + buf_size, values[i + 2]);
+            auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, values[i + 2]);
             if (ec == std::errc{}) [[likely]]
                 val_tmp[i3 + 2].assign(buf, ptr);
             else [[unlikely]]
@@ -76,7 +76,7 @@ inline void apply_numeric_simd_filter(std::vector<T>& values,
 
             f(values[i + 3]);
 
-            auto [ptr, ec] = std::to_chars(buf, buf + buf_size, values[i + 3]);
+            auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, values[i + 3]);
             if (ec == std::errc{}) [[likely]]
                 val_tmp[i3 + 3].assign(buf, ptr);
             else [[unlikely]]
@@ -90,7 +90,7 @@ inline void apply_numeric_simd_filter(std::vector<T>& values,
         if (mask[i]) {
             f(values[i]);
             char buf[buf_size];
-            auto [ptr, ec] = std::to_chars(buf, buf + buf_size, values[i]);
+            auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, values[i]);
             if (ec == std::errc{}) [[likely]]
                 val_tmp[i3].assign(buf, ptr);
             else [[unlikely]]
