@@ -13,7 +13,9 @@ void read_csv_apply(std::string &file_name,
                     char delim = ',', 
                     bool header_name = 1, 
                     char str_context = '\'') {
-            
+        
+    assert((strt_row < end_row) && "`strt_row` must be lower than `end_row`");
+
     int fd = open(file_name.c_str(), O_RDONLY);
     if (fd == -1) {
         perror("open");
@@ -152,7 +154,10 @@ void read_csv_apply(std::string &file_name,
     if (header_name) {
       nrow -= 1;
     };
-    
+
+    assert((strt_row < nrow) && "`strt_row` must be lower than the actual row number");
+    assert((end_row < nrow) &&  "`end_row` must be lower than the actual row number");
+
     i += 1; // because already covered first breakline with first read pass
     
     for (auto& col : tmp_val_refv) {
