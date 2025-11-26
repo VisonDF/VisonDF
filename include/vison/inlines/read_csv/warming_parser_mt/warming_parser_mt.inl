@@ -59,7 +59,8 @@ inline void warming_parser_mt(std::string_view& csv_view,
                                     thread_columns[t], 
                                     delim, 
                                     str_context, 
-                                    ncol);
+                                    ncol,
+                                    f);
 
             free(local_buf);
         }
@@ -133,7 +134,8 @@ inline void warming_parser_mt(std::string_view& csv_view,
                                     thread_columns[t], 
                                     delim, 
                                     str_context, 
-                                    ncol);
+                                    ncol,
+                                    f);
 
             free(local_buf);
         }
@@ -207,7 +209,8 @@ inline void warming_parser_mt(std::string_view& csv_view,
                                     thread_columns[t], 
                                     delim, 
                                     str_context, 
-                                    ncol);
+                                    ncol,
+                                    f);
 
             free(local_buf);
         }
@@ -280,7 +283,8 @@ inline void warming_parser_mt(std::string_view& csv_view,
                                     thread_columns[t], 
                                     delim, 
                                     str_context, 
-                                    ncol);
+                                    ncol,
+                                    f);
 
             free(local_buf);
         }

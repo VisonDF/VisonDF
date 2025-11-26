@@ -1,5 +1,5 @@
 
-template <bool Lambda = false, typename F = DefaultFn>
+template <bool Lambda = false, typename F>
 inline void parse_rows_chunk_warmed(
     std::string_view local_view,        
     const char*      orig_base,         
@@ -7,7 +7,7 @@ inline void parse_rows_chunk_warmed(
     std::vector<std::vector<std::string_view>>& columns,
     char delim, char str_context, 
     unsigned int ncol,
-    F f = F{}
+    F f
 ) noexcept
 {
     const char* base_local = local_view.data();
