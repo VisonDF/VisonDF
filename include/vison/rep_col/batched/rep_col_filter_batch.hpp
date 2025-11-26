@@ -72,7 +72,7 @@ void rep_col_filter_batch(std::vector<T>& x,
             for (size_t j = i; j < end; ++j) {
                 if (!mask[j]) continue;
                 auto& cur_buf = local_bufs[j - i];
-                auto [ptr, ec] = std::to_chars(
+                auto [ptr, ec] = fast_to_chars(
                     cur_buf,
                     cur_buf + buf_size,
                     src[j]

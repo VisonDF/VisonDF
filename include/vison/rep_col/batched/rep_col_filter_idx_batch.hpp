@@ -61,7 +61,7 @@ void rep_col_filter_idx_batch(std::vector<T>& x,
                 const size_t pos_idx = mask[j];
 
                 auto& cur_buf = local_bufs[j - i];
-                auto [ptr, ec] = std::to_chars(
+                auto [ptr, ec] = fast_to_chars(
                     cur_buf,
                     cur_buf + buf_size,
                     src[pos_idx]

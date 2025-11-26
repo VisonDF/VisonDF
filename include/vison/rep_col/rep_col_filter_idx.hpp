@@ -48,7 +48,7 @@ void rep_col_filter_idx(std::vector<T> &x,
             dst[pos_idx] = v;
 
             char buf[buf_size];
-            auto [ptr, ec] = std::to_chars(buf, buf + buf_size, v);
+            auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, v);
 
             if (ec == std::errc{}) {
                 val_tmp[pos_idx].assign(buf, ptr);

@@ -75,7 +75,7 @@ void rep_col_filter(std::vector<T>& x,
 
                 char buf[BUF_SIZE];
                 auto [ptr, ec] =
-                    std::to_chars(buf, buf + BUF_SIZE, v);   
+                    fast_to_chars(buf, buf + BUF_SIZE, v);   
 
                 if (ec == std::errc{}) [[likely]]
                     val_tmp[i].assign(buf, ptr);

@@ -91,7 +91,7 @@ void rep_col_filter_range(std::vector<T>& x,
 
                 char buf[buf_size];
                 auto [ptr, ec] =
-                    std::to_chars(buf, buf + buf_size, v);
+                    fast_to_chars(buf, buf + buf_size, v);
 
                 if (ec == std::errc{}) {
                     val_tmp[k].assign(buf, ptr);

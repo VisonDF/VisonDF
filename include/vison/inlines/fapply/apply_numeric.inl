@@ -21,7 +21,7 @@ inline void apply_numeric(std::vector<T>& values, unsigned int n, size_t idx_typ
         f(values[i]);
 
         char buf[buf_size];
-        auto [ptr, ec] = std::to_chars(buf, buf + buf_size, values[i]);
+        auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, values[i]);
 
         if (ec == std::errc{}) [[likely]] {
             val_tmp[i3].assign(buf, ptr);

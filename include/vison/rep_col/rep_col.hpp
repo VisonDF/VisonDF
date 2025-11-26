@@ -48,7 +48,7 @@ void rep_col(std::vector<T> &x, unsigned int &colnb) {
         // convert x[i] → string view
         for (size_t i = 0; i < nrow; ++i) {
             char buf[buf_size];
-            auto [ptr, ec] = std::to_chars(buf, buf + buf_size, x[i]);
+            auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, x[i]);
             if (ec == std::errc{}) {
                 val_tmp[i].assign(buf, ptr);
             } else {
