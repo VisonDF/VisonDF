@@ -278,7 +278,9 @@ namespace vison {
         #include "read_csv/read_csv.hpp"
         #include "read_csv/read_csv_noinfer.hpp"
         #include "read_csv/read_csv_trim.hpp"
+        #include "read_csv/read_csv_trim_noinfer.hpp"
         #include "read_csv/read_csv_apply.hpp"
+        #include "read_csv/read_csv_apply_noinfer.hpp"
         
         #include "inlines/read_csv/type_inference/type_classification.inl"
     
