@@ -2,14 +2,17 @@
 template <unsigned int strt_row,
           unsigned int end_row,
           unsigned int CORES = 4,
-          bool Lambda = false>
+          bool Lambda = false,
+          typename F = DefaultApply>
+requires FapplyFn<F, first_arg_t<F>>
 inline void standard_parser_mt(std::string_view& csv_view,
                                const char delim,
                                const char str_context,
                                const size_t ncol,
                                const size_t i,
                                const std::vector<size_t>& newline_pos,
-                               const bool header_name)
+                               const bool header_name,
+                               F f = F{})
 {
     if constexpr (strt_row == 0 && end_row == 0) {
 

@@ -1,12 +1,17 @@
 
-template <unsigned int strt_row, unsigned int end_row, bool Lambda = false>
+template <unsigned int strt_row, 
+          unsigned int end_row, 
+          bool Lambda = false,
+          typename F = DefaultApply>
+requires FapplyFn<F, first_arg_t<F>>
 inline void standard_parser(std::string_view& csv_view,
                             const char delim,
                             const char str_context,
                             const size_t ncol,
                             const size_t i,
                             const std::vector<size_t>& newline_pos,
-                            const bool header_name
+                            const bool header_name,
+                            F f = F{}
                             ) 
 {
 
@@ -18,7 +23,8 @@ inline void standard_parser(std::string_view& csv_view,
                          tmp_val_refv2,
                          delim,
                          str_context,
-                         ncol);
+                         ncol,
+                         f);
       
       } else if constexpr (strt_row != 0 && end_row != 0) {
   
@@ -30,7 +36,8 @@ inline void standard_parser(std::string_view& csv_view,
                            tmp_val_refv2,
                            delim,
                            str_context,
-                           ncol);
+                           ncol,
+                           f);
 
 
       } else if constexpr (strt_row != 0) {
@@ -43,7 +50,8 @@ inline void standard_parser(std::string_view& csv_view,
                            tmp_val_refv2,
                            delim,
                            str_context,
-                           ncol);
+                           ncol,
+                           f);
  
       } else if constexpr (end_row != 0) {
   
@@ -54,7 +62,8 @@ inline void standard_parser(std::string_view& csv_view,
                            tmp_val_refv,
                            delim,
                            str_context,
-                           ncol);
+                           ncol,
+                           f);
 
       }
 }

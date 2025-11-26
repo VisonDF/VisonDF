@@ -1,13 +1,14 @@
 
-template <typename ColumnsType, bool Lambda = false, typename F = DefaultFn>
-requires FapplyFn<F, first_arg_t<F>>
+template <typename ColumnsType, 
+          bool Lambda = false, 
+          typename F>
 inline void parse_rows_chunk(
     std::string_view chunk_view,
     std::vector<std::vector<ColumnsType>>& columns,
     const char delim,
     const char str_context,
     const unsigned int ncol,
-    F f = F{}
+    F f
 ) noexcept
 {
     const char* base = chunk_view.data();
