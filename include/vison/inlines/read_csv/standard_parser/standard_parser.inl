@@ -24,7 +24,7 @@ inline void standard_parser(std::string_view& csv_view,
   
           nrow = end_row - strt_row;  
           std::string_view csv_view2(csv_view.data() + newline_pos[strt_row], 
-                                     newline_pos[strt_row] - newline_pos[end_row] + 1);
+                                     newline_pos[end_row] - newline_pos[strt_row] + 1);
 
           parse_rows_chunk(csv_view2,
                            tmp_val_refv2,
