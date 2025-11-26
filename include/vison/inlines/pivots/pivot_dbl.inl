@@ -80,7 +80,7 @@ void pivot_dbl(Dataframe &obj,
     
         dbl_v[col_idx * nrow + row_idx] = value;
     
-        auto [ptr, ec] = std::to_chars(buf, buf + sizeof(buf), value);
+        auto [ptr, ec] = fast_to_chars(buf, buf + sizeof(buf), value);
         tmp_val_refv[col_idx][row_idx].assign(buf, ptr - buf);
     }
     
