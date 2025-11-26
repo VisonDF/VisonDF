@@ -6,10 +6,10 @@ template <unsigned int strt_row = 0,
           bool WARMING = 0, 
           bool MEM_CLEAN = 0,
           char TrailingChar = '0'>
-void read_csv(std::string &file_name, 
-              char delim = ',', 
-              bool header_name = 1, 
-              char str_context = '\'') {
+void read_csv_trim(std::string &file_name, 
+                   char delim = ',', 
+                   bool header_name = 1, 
+                   char str_context = '\'') {
             
     int fd = open(file_name.c_str(), O_RDONLY);
     if (fd == -1) {
@@ -160,35 +160,43 @@ void read_csv(std::string &file_name,
       
       if constexpr (WARMING) {
    
-          warming_parser_mt<strt_row, end_row, CORES, false> (csv_view, 
-                                                              delim, 
-                                                              str_context, 
-                                                              ncol,
-                                                              i,
-                                                              newline_pos,
-                                                              header_name);
+          warming_parser_mt<strt_row, 
+                            end_row, 
+                            CORES,
+                            true>(csv_view, 
+                               delim, 
+                               str_context, 
+                               ncol,
+                               i,
+                               newline_pos,
+                               header_name);
             
       } else if constexpr (!WARMING) {
 
-          standard_parser_mt<strt_row, end_row, CORES, false>(csv_view, 
-                                                              delim, 
-                                                              str_context, 
-                                                              ncol,
-                                                              i,
-                                                              newline_pos,
-                                                              header_name);
+          standard_parser_mt<strt_row, 
+                             end_row, 
+                             CORES,
+                             true>(csv_view, 
+                                delim, 
+                                str_context, 
+                                ncol,
+                                i,
+                                newline_pos,
+                                header_name);
 
       }
     
     } else if constexpr (CORES == 1) {
 
-          standard_parser<strt_row, end_row, false>(csv_view, 
-                                                    delim, 
-                                                    str_context, 
-                                                    ncol,
-                                                    i,
-                                                    newline_pos,
-                                                    header_name);
+          standard_parser<strt_row, 
+                          end_row,
+                          true>(csv_view, 
+                             delim, 
+                             str_context, 
+                             ncol,
+                             i,
+                             newline_pos,
+                             header_name);
 
     }
     

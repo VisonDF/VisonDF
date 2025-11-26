@@ -1,10 +1,13 @@
 
+template <bool Lambda = false, typename F = DefaultFn>
 inline void parse_rows_chunk_warmed(
     std::string_view local_view,        
     const char*      orig_base,         
     size_t           orig_start_byte,   
     std::vector<std::vector<std::string_view>>& columns,
-    char delim, char str_context, unsigned int ncol
+    char delim, char str_context, 
+    unsigned int ncol,
+    F f = F{}
 ) noexcept
 {
     const char* base_local = local_view.data();
@@ -23,7 +26,17 @@ inline void parse_rows_chunk_warmed(
         size_t len = end - start;
         const char* emit_ptr = orig_base + orig_start_byte + start; 
         std::string_view field(emit_ptr, len);
-        columns[verif_ncol].emplace_back(field.empty() ? std::string_view("NA") : field);
+
+        auto& col = columns[verif_ncol];
+        
+        if (field.empty()) [[unlikely]] {
+            col.emplace_back("NA");
+        } else if constexpr (!Lambda) {
+            col.emplace_back(field);
+        } else {
+            col.emplace_back(f(field));
+        }
+
     };
 
     for (; pos + 32 <= N; ) {

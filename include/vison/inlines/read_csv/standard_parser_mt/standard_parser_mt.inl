@@ -1,7 +1,8 @@
 
 template <unsigned int strt_row,
           unsigned int end_row,
-          unsigned int CORES = 4>
+          unsigned int CORES = 4,
+          bool Lambda = false>
 inline void standard_parser_mt(std::string_view& csv_view,
                                const char delim,
                                const char str_context,
@@ -37,7 +38,7 @@ inline void standard_parser_mt(std::string_view& csv_view,
             std::string_view chunk_view(csv_view.data() + start_byte, 
                                      end_byte - start_byte);
 
-            parse_rows_chunk(chunk_view, 
+            parse_rows_chunk<std::string_view, Lambda>(chunk_view, 
                              thread_columns[t], 
                              delim, 
                              str_context, 
@@ -96,7 +97,7 @@ inline void standard_parser_mt(std::string_view& csv_view,
             std::string_view chunk_view(csv_view.data() + start_byte, 
                                      end_byte - start_byte);
 
-            parse_rows_chunk(chunk_view, 
+            parse_rows_chunk<std::string_view, Lambda>(chunk_view, 
                              thread_columns[t], 
                              delim, 
                              str_context, 
@@ -156,7 +157,7 @@ inline void standard_parser_mt(std::string_view& csv_view,
             std::string_view chunk_view(csv_view.data() + start_byte, 
                                      end_byte - start_byte);
 
-            parse_rows_chunk(chunk_view, 
+            parse_rows_chunk<std::string_view, Lambda>(chunk_view, 
                              thread_columns[t], 
                              delim, 
                              str_context, 
@@ -213,7 +214,7 @@ inline void standard_parser_mt(std::string_view& csv_view,
             std::string_view chunk_view(csv_view.data() + start_byte, 
                                      end_byte - start_byte);
 
-            parse_rows_chunk(chunk_view, 
+            parse_rows_chunk<std::string_view, Lambda>(chunk_view, 
                              thread_columns[t], 
                              delim, 
                              str_context, 

@@ -1,10 +1,13 @@
 
+template <typename ColumnsType, bool Lambda = false, typename F = DefaultFn>
+requires FapplyFn<F, first_arg_t<F>>
 inline void parse_rows_chunk(
     std::string_view chunk_view,
-    std::vector<std::vector<std::string_view>>& columns,
+    std::vector<std::vector<ColumnsType>>& columns,
     const char delim,
     const char str_context,
-    const unsigned int ncol
+    const unsigned int ncol,
+    F f = F{}
 ) noexcept
 {
     const char* base = chunk_view.data();
@@ -70,20 +73,31 @@ inline void parse_rows_chunk(
             }
             else if (!in_quotes && c == delim) {
                 std::string_view field = chunk_view.substr(field_start, idx - field_start);
-                columns[verif_ncol].emplace_back(
-                    field.empty() ? std::string_view("NA") : field
-                );
-
+                auto& col = columns[verif_ncol];
+                
+                if (field.empty()) [[unlikely]] {
+                    col.emplace_back("NA");
+                } else if constexpr (!Lambda) {
+                    col.emplace_back(field);
+                } else {
+                    col.emplace_back(f(field));
+                }
 
                 ++verif_ncol;
                 field_start = idx + 1;
             }
             else if (!in_quotes && (c == '\n' || c == '\r')) {
                 std::string_view field = chunk_view.substr(field_start, idx - field_start);
-                columns[verif_ncol].emplace_back(
-                    field.empty() ? std::string_view("NA") : field
-                );
- 
+                auto& col = columns[verif_ncol];
+                
+                if (field.empty()) [[unlikely]] {
+                    col.emplace_back("NA");
+                } else if constexpr (!Lambda) {
+                    col.emplace_back(field);
+                } else {
+                    col.emplace_back(f(field));
+                }
+
                 if (verif_ncol + 1 != ncol) {
                     std::cerr << "column number problem\n";
                     return;
@@ -110,17 +124,29 @@ inline void parse_rows_chunk(
             in_quotes = !in_quotes;
         } else if (!in_quotes && c == delim) {
             std::string_view field = chunk_view.substr(field_start, pos - field_start);
-            columns[verif_ncol].emplace_back(
-                field.empty() ? std::string_view("NA") : field
-            );
+            auto& col = columns[verif_ncol];
+            
+            if (field.empty()) [[unlikely]] {
+                col.emplace_back("NA");
+            } else if constexpr (!Lambda) {
+                col.emplace_back(field);
+            } else {
+                col.emplace_back(f(field));
+            }
 
             ++verif_ncol;
             field_start = pos + 1;
         } else if (!in_quotes && (c == '\n' || c == '\r')) {
             std::string_view field = chunk_view.substr(field_start, pos - field_start);
-            columns[verif_ncol].emplace_back(
-                field.empty() ? std::string_view("NA") : field
-            );
+            auto& col = columns[verif_ncol];
+            
+            if (field.empty()) [[unlikely]] {
+                col.emplace_back("NA");
+            } else if constexpr (!Lambda) {
+                col.emplace_back(field);
+            } else {
+                col.emplace_back(f(field));
+            }
 
             if (verif_ncol + 1 != ncol) {
                 std::cerr << "column number problem in readf\n";
@@ -138,9 +164,15 @@ inline void parse_rows_chunk(
 
     if (field_start < N) {
         std::string_view field = chunk_view.substr(field_start, N - field_start);
-        columns[verif_ncol].emplace_back(
-            field.empty() ? std::string_view("NA") : field
-        );
+        auto& col = columns[verif_ncol];
+        
+        if (field.empty()) [[unlikely]] {
+            col.emplace_back("NA");
+        } else if constexpr (!Lambda) {
+            col.emplace_back(field);
+        } else {
+            col.emplace_back(f(field));
+        }
     }
 
 }

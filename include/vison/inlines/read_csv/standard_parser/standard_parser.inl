@@ -1,5 +1,5 @@
 
-template <unsigned int strt_row, unsigned int end_row>
+template <unsigned int strt_row, unsigned int end_row, bool Lambda = false>
 inline void standard_parser(std::string_view& csv_view,
                             const char delim,
                             const char str_context,
@@ -14,7 +14,7 @@ inline void standard_parser(std::string_view& csv_view,
 
         std::string_view csv_view2(csv_view.data() + i, csv_view.size() - i);
 
-        parse_rows_chunk(csv_view2,
+        parse_rows_chunk<std::string, Lambda>(csv_view2,
                          tmp_val_refv2,
                          delim,
                          str_context,
@@ -26,7 +26,7 @@ inline void standard_parser(std::string_view& csv_view,
           std::string_view csv_view2(csv_view.data() + newline_pos[strt_row], 
                                      newline_pos[end_row] - newline_pos[strt_row] + 1);
 
-          parse_rows_chunk(csv_view2,
+          parse_rows_chunk<std::string, Lambda>(csv_view2,
                            tmp_val_refv2,
                            delim,
                            str_context,
@@ -39,7 +39,7 @@ inline void standard_parser(std::string_view& csv_view,
           std::string_view csv_view2(csv_view.data() + newline_pos[strt_row], 
                                      csv_view.size() - newline_pos[strt_row]);
 
-          parse_rows_chunk(csv_view2,
+          parse_rows_chunk<std::string, Lambda>(csv_view2,
                            tmp_val_refv2,
                            delim,
                            str_context,
@@ -50,8 +50,8 @@ inline void standard_parser(std::string_view& csv_view,
           nrow = end_row;
           std::string_view csv_view2(csv_view.data(), newline_pos[end_row] + 1);
 
-          parse_rows_chunk(csv_view2,
-                           tmp_val_refv2,
+          parse_rows_chunk<std::string, Lambda>(csv_view2,
+                           tmp_val_refv,
                            delim,
                            str_context,
                            ncol);

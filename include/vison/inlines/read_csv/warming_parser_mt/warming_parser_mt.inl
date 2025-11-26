@@ -1,7 +1,8 @@
 
 template <unsigned int strt_row,
           unsigned int end_row,
-          unsigned int CORES = 4>
+          unsigned int CORES = 4,
+          bool Lambda = false>
 inline void warming_parser_mt(std::string_view& csv_view,
                               const char delim,
                               const char str_context,
@@ -49,7 +50,7 @@ inline void warming_parser_mt(std::string_view& csv_view,
             std::string_view chunk_view(local_buf, slice_size);
             const char* orig_base = csv_view.data();           
             size_t orig_start_byte = start_byte;                
-            parse_rows_chunk_warmed(chunk_view, 
+            parse_rows_chunk_warmed<Lambda>(chunk_view, 
                                     orig_base, 
                                     orig_start_byte,
                                     thread_columns[t], 
@@ -123,7 +124,7 @@ inline void warming_parser_mt(std::string_view& csv_view,
             std::string_view chunk_view(local_buf, slice_size);
             const char* orig_base = csv_view.data();           
             size_t orig_start_byte = start_byte; 
-            parse_rows_chunk_warmed(chunk_view, 
+            parse_rows_chunk_warmed<Lambda>(chunk_view, 
                                     orig_base, 
                                     orig_start_byte,
                                     thread_columns[t], 
@@ -197,7 +198,7 @@ inline void warming_parser_mt(std::string_view& csv_view,
             std::string_view chunk_view(local_buf, slice_size);
             const char* orig_base = csv_view.data();           
             size_t orig_start_byte = start_byte; 
-            parse_rows_chunk_warmed(chunk_view, 
+            parse_rows_chunk_warmed<Lambda>(chunk_view, 
                                     orig_base, 
                                     orig_start_byte,
                                     thread_columns[t], 
@@ -270,7 +271,7 @@ inline void warming_parser_mt(std::string_view& csv_view,
             std::string_view chunk_view(local_buf, slice_size);
             const char* orig_base = csv_view.data();           
             size_t orig_start_byte = start_byte; 
-            parse_rows_chunk_warmed(chunk_view, 
+            parse_rows_chunk_warmed<Lambda>(chunk_view, 
                                     orig_base, 
                                     orig_start_byte,
                                     thread_columns[t], 
