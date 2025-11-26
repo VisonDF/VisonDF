@@ -276,6 +276,7 @@ namespace vison {
         #include "inlines/read_csv/standard_parser_mt/standard_parser_mt.inl"
         #include "inlines/read_csv/standard_parser/standard_parser.inl"
         #include "read_csv/read_csv.hpp"
+        #include "read_csv/read_csv_noinfer.hpp"
         #include "read_csv/read_csv_trim.hpp"
         #include "read_csv/read_csv_apply.hpp"
         

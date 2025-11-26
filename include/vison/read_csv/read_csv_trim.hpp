@@ -209,7 +209,7 @@ void read_csv_trim(std::string &file_name,
       };
     };
     
-    type_classification<CORES, TrailingChar>();
+    type_classification<CORES, TrailingChar, false>();
 };
 
 

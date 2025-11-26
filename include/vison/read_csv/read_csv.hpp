@@ -201,7 +201,7 @@ void read_csv(std::string &file_name,
       };
     };
     
-    type_classification<CORES, TrailingChar>();
+    type_classification<CORES, TrailingChar, false>();
 };
 
 

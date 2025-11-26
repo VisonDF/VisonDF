@@ -5,14 +5,12 @@ template <unsigned int strt_row = 0,
           unsigned int CORES = 1, 
           bool WARMING = 0, 
           bool MEM_CLEAN = 0,
-          char TrailingChar = '0',
-          typename F>
-requires FapplyFn<F, first_arg_t<F>>
-void read_csv_apply(std::string &file_name, 
-                    F f,
-                    char delim = ',', 
-                    bool header_name = 1, 
-                    char str_context = '\'') {
+          char TrailingChar = '0'>
+void read_csv_noinfer(std::string &file_name, 
+                      const std::vector<char> dtype,
+                      const char delim = ',', 
+                      const bool header_name = 1, 
+                      const char str_context = '\'') {
             
     int fd = open(file_name.c_str(), O_RDONLY);
     if (fd == -1) {
@@ -163,46 +161,35 @@ void read_csv_apply(std::string &file_name,
       
       if constexpr (WARMING) {
    
-          warming_parser_mt<strt_row, 
-                            end_row, 
-                            CORES,
-                            true>(csv_view, 
-                               delim, 
-                               str_context, 
-                               ncol,
-                               i,
-                               newline_pos,
-                               header_name,
-                               f);
+          warming_parser_mt<strt_row, end_row, CORES, false> (csv_view, 
+                                                              delim, 
+                                                              str_context, 
+                                                              ncol,
+                                                              i,
+                                                              newline_pos,
+                                                              header_name);
             
       } else if constexpr (!WARMING) {
 
-          standard_parser_mt<strt_row, 
-                             end_row, 
-                             CORES,
-                             true>(csv_view, 
-                                delim, 
-                                str_context, 
-                                ncol,
-                                i,
-                                newline_pos,
-                                header_name,
-                                f);
+          standard_parser_mt<strt_row, end_row, CORES, false>(csv_view, 
+                                                              delim, 
+                                                              str_context, 
+                                                              ncol,
+                                                              i,
+                                                              newline_pos,
+                                                              header_name);
 
       }
     
     } else if constexpr (CORES == 1) {
 
-          standard_parser<strt_row, 
-                          end_row,
-                          true>(csv_view, 
-                             delim, 
-                             str_context, 
-                             ncol,
-                             i,
-                             newline_pos,
-                             header_name,
-                             f);
+          standard_parser<strt_row, end_row, false>(csv_view, 
+                                                    delim, 
+                                                    str_context, 
+                                                    ncol,
+                                                    i,
+                                                    newline_pos,
+                                                    header_name);
 
     }
     
@@ -215,7 +202,7 @@ void read_csv_apply(std::string &file_name,
       };
     };
     
-    type_classification<CORES, TrailingChar, false>();
+    type_classification<CORES, TrailingChar, true>(dtype);
 };
 
 
