@@ -62,9 +62,6 @@ namespace vison {
     #include "inlines/warning.inl"
 
     #include "custom_simd_hash/simd_hash.hpp"
-
-    #include "inlines/read_csv/warming_parser_mt/parse_rows_chunk_warmed.inl"
-    #include "inlines/read_csv/standard_parser_mt/parse_rows_chunk.inl"
     
     #include "inlines/read_csv/simd_count_newlines.inl"
        
@@ -273,6 +270,8 @@ namespace vison {
       
         #include "inlines/operator_overloading/equality.inl"
 
+        #include "inlines/read_csv/parsers_core/parse_rows_chunk_warmed.inl"
+        #include "inlines/read_csv/parsers_core/parse_rows_chunk.inl"
         #include "inlines/read_csv/warming_parser_mt/warming_parser_mt.inl"
         #include "inlines/read_csv/standard_parser_mt/standard_parser_mt.inl"
         #include "read_csv/read_csv.hpp"

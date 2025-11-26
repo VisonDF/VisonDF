@@ -2,9 +2,9 @@
 inline void parse_rows_chunk(
     std::string_view chunk_view,
     std::vector<std::vector<std::string_view>>& columns,
-    char delim,
-    char str_context,
-    unsigned int ncol
+    const char delim,
+    const char str_context,
+    const unsigned int ncol
 ) noexcept
 {
     const char* base = chunk_view.data();
