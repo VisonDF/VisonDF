@@ -38,8 +38,6 @@ inline void standard_parser_mt(std::string_view& csv_view,
                                      end_byte - start_byte);
 
             parse_rows_chunk(chunk_view, 
-                             0, 
-                             chunk_view.size(), 
                              thread_columns[t], 
                              delim, 
                              str_context, 
@@ -99,8 +97,6 @@ inline void standard_parser_mt(std::string_view& csv_view,
                                      end_byte - start_byte);
 
             parse_rows_chunk(chunk_view, 
-                             0, 
-                             chunk_view.size(), 
                              thread_columns[t], 
                              delim, 
                              str_context, 
@@ -161,12 +157,10 @@ inline void standard_parser_mt(std::string_view& csv_view,
                                      end_byte - start_byte);
 
             parse_rows_chunk(chunk_view, 
-                            0, 
-                            chunk_view.size(), 
-                            thread_columns[t], 
-                            delim, 
-                            str_context, 
-                            ncol);
+                             thread_columns[t], 
+                             delim, 
+                             str_context, 
+                             ncol);
         }
 
         // merging phase for tmp_val_refv
@@ -220,8 +214,6 @@ inline void standard_parser_mt(std::string_view& csv_view,
                                      end_byte - start_byte);
 
             parse_rows_chunk(chunk_view, 
-                             0, 
-                             chunk_view.size(), 
                              thread_columns[t], 
                              delim, 
                              str_context, 

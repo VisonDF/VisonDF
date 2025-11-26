@@ -1,22 +1,18 @@
 
 inline void parse_rows_chunk(
-    std::string_view csv_view,
-    size_t start_byte,
-    size_t end_byte,
+    std::string_view chunk_view,
     std::vector<std::vector<std::string_view>>& columns,
     char delim,
     char str_context,
     unsigned int ncol
 ) noexcept
 {
-    const char* base = csv_view.data();
-    const size_t N = csv_view.size();
-    if (start_byte >= N) return;
-    end_byte = std::min(end_byte, N);
+    const char* base = chunk_view.data();
+    const size_t N = chunk_view.size();
 
-    size_t pos = start_byte;
+    size_t pos = 0;
     bool in_quotes = false;
-    size_t field_start = start_byte;
+    size_t field_start = 0;
     size_t verif_ncol = 0;
 
     static const __m256i NL = _mm256_set1_epi8('\n');
@@ -73,7 +69,7 @@ inline void parse_rows_chunk(
                 in_quotes = !in_quotes;
             }
             else if (!in_quotes && c == delim) {
-                std::string_view field = csv_view.substr(field_start, idx - field_start);
+                std::string_view field = chunk_view.substr(field_start, idx - field_start);
                 columns[verif_ncol].emplace_back(
                     field.empty() ? std::string_view("NA") : field
                 );
@@ -83,7 +79,7 @@ inline void parse_rows_chunk(
                 field_start = idx + 1;
             }
             else if (!in_quotes && (c == '\n' || c == '\r')) {
-                std::string_view field = csv_view.substr(field_start, idx - field_start);
+                std::string_view field = chunk_view.substr(field_start, idx - field_start);
                 columns[verif_ncol].emplace_back(
                     field.empty() ? std::string_view("NA") : field
                 );
@@ -113,7 +109,7 @@ inline void parse_rows_chunk(
         if (c == str_context) {
             in_quotes = !in_quotes;
         } else if (!in_quotes && c == delim) {
-            std::string_view field = csv_view.substr(field_start, pos - field_start);
+            std::string_view field = chunk_view.substr(field_start, pos - field_start);
             columns[verif_ncol].emplace_back(
                 field.empty() ? std::string_view("NA") : field
             );
@@ -121,7 +117,7 @@ inline void parse_rows_chunk(
             ++verif_ncol;
             field_start = pos + 1;
         } else if (!in_quotes && (c == '\n' || c == '\r')) {
-            std::string_view field = csv_view.substr(field_start, pos - field_start);
+            std::string_view field = chunk_view.substr(field_start, pos - field_start);
             columns[verif_ncol].emplace_back(
                 field.empty() ? std::string_view("NA") : field
             );
@@ -141,7 +137,7 @@ inline void parse_rows_chunk(
     }
 
     if (field_start < N) {
-        std::string_view field = csv_view.substr(field_start, N - field_start);
+        std::string_view field = chunk_view.substr(field_start, N - field_start);
         columns[verif_ncol].emplace_back(
             field.empty() ? std::string_view("NA") : field
         );
