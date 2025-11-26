@@ -20,7 +20,7 @@ inline void standard_parser(std::string_view& csv_view,
         std::string_view csv_view2(csv_view.data() + i, csv_view.size() - i);
 
         parse_rows_chunk<std::string, Lambda>(csv_view2,
-                         tmp_val_refv2,
+                         tmp_val_refv,
                          delim,
                          str_context,
                          ncol,
@@ -33,7 +33,7 @@ inline void standard_parser(std::string_view& csv_view,
                                      newline_pos[end_row] - newline_pos[strt_row] + 1);
 
           parse_rows_chunk<std::string, Lambda>(csv_view2,
-                           tmp_val_refv2,
+                           tmp_val_refv,
                            delim,
                            str_context,
                            ncol,
@@ -47,7 +47,7 @@ inline void standard_parser(std::string_view& csv_view,
                                      csv_view.size() - newline_pos[strt_row]);
 
           parse_rows_chunk<std::string, Lambda>(csv_view2,
-                           tmp_val_refv2,
+                           tmp_val_refv,
                            delim,
                            str_context,
                            ncol,

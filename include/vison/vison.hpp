@@ -274,7 +274,10 @@ namespace vison {
         #include "inlines/read_csv/parsers_core/parse_rows_chunk.inl"
         #include "inlines/read_csv/warming_parser_mt/warming_parser_mt.inl"
         #include "inlines/read_csv/standard_parser_mt/standard_parser_mt.inl"
+        #include "inlines/read_csv/standard_parser/standard_parser.inl"
         #include "read_csv/read_csv.hpp"
+        #include "read_csv/read_csv_trim.hpp"
+        #include "read_csv/read_csv_apply.hpp"
         
         #include "inlines/read_csv/type_inference/type_classification.inl"
     
