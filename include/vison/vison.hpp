@@ -277,7 +277,7 @@ namespace vison {
         #include "inlines/read_csv/standard_parser_mt/standard_parser_mt.inl"
         #include "read_csv/read_csv.hpp"
         
-        #include "read_csv/type_inference/type_classification.hpp"
+        #include "inlines/read_csv/type_inference/type_classification.inl"
     
         #include "display/display_filter.hpp" 
         #include "display/display_filter_range.hpp" 

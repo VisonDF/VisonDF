@@ -33,8 +33,37 @@ inline void parse_rows_chunk_warmed(
         int mQ  = _mm256_movemask_epi8(_mm256_cmpeq_epi8(chunk, Q));
         int mNL = _mm256_movemask_epi8(_mm256_cmpeq_epi8(chunk, NL));
         int mCR = _mm256_movemask_epi8(_mm256_cmpeq_epi8(chunk, CR));
+        // here we just OR the mask
         int mNL_any = (mNL | mCR);
-        int events  = (mD | mNL_any | mQ);
+        int32_t events  = (mD | mNL_any | mQ);
+
+        // We have a 32-bit mask where each bit corresponds to one byte in the AVX chunk.
+        // Example: events = 000...0111  (three matches in the lowest lanes)
+        //
+        // Each iteration:
+        //      events &= (events - 1);
+        //
+        // This uses the classic “remove lowest set bit” trick.
+        // Visually:
+        //
+        //   events = 000...0111
+        //   events - 1 = 000...0110
+        //   ------------------------ AND
+        //   result =      000...0110   (lowest 1-bit cleared)
+        //
+        // Next iteration:
+        //   events = 000...0110
+        //   events - 1 = 000...0101
+        //   AND →       000...0100
+        //
+        // Next:
+        //   events = 000...0100
+        //   events - 1 = 000...0011
+        //   AND →       000...0000
+        //
+        // So each pass removes exactly one lowest 1-bit, letting us visit
+        // every “true” bit position (character match) in the mask *once*
+        // without scanning all 32 lanes.
 
         while (events) {
             int bit = __builtin_ctz(events);
@@ -56,7 +85,7 @@ inline void parse_rows_chunk_warmed(
                 pos = idx + adv;
                 goto next_chunk;
             }
-            events &= (events - 1);
+            events &= (events - 1); // clears the lowest bit
         }
         pos += 32;
         next_chunk: continue;

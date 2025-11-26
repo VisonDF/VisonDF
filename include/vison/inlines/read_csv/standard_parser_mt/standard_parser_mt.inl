@@ -228,6 +228,7 @@ inline void standard_parser_mt(std::string_view& csv_view,
                              ncol);
         }
 
+        // merging phase for tmp_val_refv
         #pragma omp parallel for num_threads(CORES)
         for (size_t c = 0; c < ncol; ++c) {
             size_t total = 0;
