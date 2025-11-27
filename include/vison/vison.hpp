@@ -483,6 +483,8 @@ namespace vison {
     #include "inlines/operator_overloading/get_dataframe/vectorized/get_dataframe_filter_range_simd.inl"
     #include "inlines/operator_overloading/get_dataframe/vectorized/get_dataframe_filter_idx_simd.inl"
 
+    #include "inlines/operator_overloading/add_col/add_col.inl"
+    #include "inlines/operator_overloading/add_col/batched/add_col_batch.inl"
 
 }
 
