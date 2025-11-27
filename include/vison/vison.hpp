@@ -467,6 +467,8 @@ namespace vison {
     
     };
 
+    #include "inlines/operator_overloading/get_col.inl"
+
 }
 
 
