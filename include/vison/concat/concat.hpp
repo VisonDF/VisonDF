@@ -17,8 +17,8 @@ void concat(Dataframe& obj)
     };
   
     const std::vector<std::string>& str_v2 = obj.get_str_vec();
-    const std::vector<char>& chr_v2 = obj.get_chr_vec();
-    const std::vector<bool>& bool_v2 = obj.get_bool_vec();
+    const std::vector<CharT>& chr_v2 = obj.get_chr_vec();
+    const std::vector<uint8_t>& bool_v2 = obj.get_bool_vec();
     const std::vector<int>& int_v2 = obj.get_int_vec();
     const std::vector<unsigned int>& uint_v2 = obj.get_uint_vec();
     const std::vector<double>& dbl_v2 = obj.get_dbl_vec();
@@ -60,151 +60,180 @@ void concat(Dataframe& obj)
     str_v.swap(new_str_v);
 
     std::vector<CharT> new_chr_v;
-    new_chr_v.reserve(chr_v.size() + chr_v2.size());
+    new_chr_v.resize(chr_v.size() + chr_v2.size());
   
     for (size_t el = 0; el < matr_idx[1].size(); el += 1) {
       
-      const size_t val_idx = matr_idx[1][el];
+        const size_t val_idx = matr_idx[1][el];
 
-      std::vector<std::string>& val_tmp = tmp_val_refv[val_idx];
-      std::vector<std::string>& val_tmp2 = tmp_val_refv2[val_idx];
+        std::vector<std::string>& val_tmp = tmp_val_refv[val_idx];
+        std::vector<std::string>& val_tmp2 = tmp_val_refv2[val_idx];
 
-      val_tmp.reserve(nrow);
-      val_tmp.insert(val_tmp.end(), 
-                     val_tmp2.begin(),
-                     val_tmp2.end());
+        val_tmp.reserve(nrow);
+        val_tmp.insert(val_tmp.end(), 
+                       val_tmp2.begin(),
+                       val_tmp2.end());
 
-      const size_t base_old = el * pre_nrow;
-      const size_t base_new = el * nrow2;
+        const size_t base_old = el * pre_nrow;
+        const size_t base_new = el * nrow2;
 
-      new_chr_v.insert(new_chr_v.end(),
-                   chr_v.begin() + base_old,
-                   chr_v.begin() + base_old + pre_nrow);
-      
-      new_chr_v.insert(new_chr_v.end(),
-                     chr_v2.begin() + base_new,
-                     chr_v2.begin() + base_new + nrow2);
+        CharT* dst = new_chr_v.data() + el * nrow;
+        std::memcpy(
+            dst,
+            chr_v.data() + base_old,
+            pre_nrow * sizeof(CharT)
+        );
 
+        CharT* dst2 = new_chr_v.data() + el * nrow + pre_nrow;
+        std::memcpy(
+            dst2,
+            chr_v2.data() + base_new,
+            nrow2 * sizeof(CharT)
+        );
 
     };
  
     chr_v.swap(new_chr_v);
 
     std::vector<uint8_t> new_bool_v;
-    new_bool_v.reserve(bool_v.size() + bool_v2.size());
+    new_bool_v.resize(bool_v.size() + bool_v2.size());
  
     for (size_t el = 0; el < matr_idx[2].size(); el += 1) {
       
-      const size_t val_idx = matr_idx[2][el];
+        const size_t val_idx = matr_idx[2][el];
 
-      std::vector<std::string>& val_tmp = tmp_val_refv[val_idx];
-      std::vector<std::string>& val_tmp2 = tmp_val_refv2[val_idx];
+        std::vector<std::string>& val_tmp = tmp_val_refv[val_idx];
+        std::vector<std::string>& val_tmp2 = tmp_val_refv2[val_idx];
 
-      val_tmp.reserve(nrow);
-      val_tmp.insert(val_tmp.end(), 
-                     val_tmp2.begin(),
-                     val_tmp2.end());
+        val_tmp.reserve(nrow);
+        val_tmp.insert(val_tmp.end(), 
+                       val_tmp2.begin(),
+                       val_tmp2.end());
 
-      const size_t base_old = el * pre_nrow;
-      const size_t base_new = el * nrow2;
+        const size_t base_old = el * pre_nrow;
+        const size_t base_new = el * nrow2;
 
-      new_bool_v.insert(new_bool_v.end(),
-                   bool_v.begin() + base_old,
-                   bool_v.begin() + base_old + pre_nrow);
-      
-      new_bool_v.insert(new_bool_v.end(),
-                     bool_v2.begin() + base_new,
-                     bool_v2.begin() + base_new + nrow2);
+        uint8_t* dst = new_bool_v.data() + el * nrow;
+        std::memcpy(
+            dst,
+            bool_v.data() + base_old,
+            pre_nrow * sizeof(uint8_t)
+        );
+
+        uint8_t* dst2 = new_bool_v.data() + el * nrow + pre_nrow;
+        std::memcpy(
+            dst2,
+            bool_v2.data() + base_new,
+            nrow2 * sizeof(uint8_t)
+        );
 
     };
  
     bool_v.swap(new_bool_v);
  
     std::vector<IntT> new_int_v;
-    new_int_v.reserve(int_v.size() + int_v2.size());
+    new_int_v.resize(int_v.size() + int_v2.size());
    
     for (size_t el = 0; el < matr_idx[3].size(); el += 1) {
       
-      const size_t val_idx = matr_idx[3][el];
+        const size_t val_idx = matr_idx[3][el];
 
-      std::vector<std::string>& val_tmp = tmp_val_refv[val_idx];
-      std::vector<std::string>& val_tmp2 = tmp_val_refv2[val_idx];
+        std::vector<std::string>& val_tmp = tmp_val_refv[val_idx];
+        std::vector<std::string>& val_tmp2 = tmp_val_refv2[val_idx];
 
-      val_tmp.reserve(nrow);
-      val_tmp.insert(val_tmp.end(), 
-                     val_tmp2.begin(),
-                     val_tmp2.end());
+        val_tmp.reserve(nrow);
+        val_tmp.insert(val_tmp.end(), 
+                       val_tmp2.begin(),
+                       val_tmp2.end());
 
-      const size_t base_old = el * pre_nrow;
-      const size_t base_new = el * nrow2;
+        const size_t base_old = el * pre_nrow;
+        const size_t base_new = el * nrow2;
 
-      new_int_v.insert(new_int_v.end(),
-                   int_v.begin() + base_old,
-                   int_v.begin() + base_old + pre_nrow);
-      
-      new_int_v.insert(new_int_v.end(),
-                     int_v2.begin() + base_new,
-                     int_v2.begin() + base_new + nrow2);
+        IntT* dst = new_int_v.data() + el * nrow;
+        std::memcpy(
+            dst,
+            int_v.data() + base_old,
+            pre_nrow * sizeof(IntT)
+        );
+
+        IntT* dst2 = new_int_v.data() + el * nrow + pre_nrow;
+        std::memcpy(
+            dst2,
+            int_v2.data() + base_new,
+            nrow2 * sizeof(IntT)
+        );
 
     };
  
     int_v.swap(new_int_v);
 
     std::vector<UIntT> new_uint_v;
-    new_uint_v.reserve(uint_v.size() + uint_v2.size());
+    new_uint_v.resize(uint_v.size() + uint_v2.size());
    
     for (size_t el = 0; el < matr_idx[4].size(); el += 1) {
       
-      const size_t val_idx = matr_idx[4][el];
+        const size_t val_idx = matr_idx[4][el];
 
-      std::vector<std::string>& val_tmp = tmp_val_refv[val_idx];
-      std::vector<std::string>& val_tmp2 = tmp_val_refv2[val_idx];
+        std::vector<std::string>& val_tmp = tmp_val_refv[val_idx];
+        std::vector<std::string>& val_tmp2 = tmp_val_refv2[val_idx];
 
-      val_tmp.reserve(nrow);
-      val_tmp.insert(val_tmp.end(), 
-                     val_tmp2.begin(),
-                     val_tmp2.end());
+        val_tmp.reserve(nrow);
+        val_tmp.insert(val_tmp.end(), 
+                       val_tmp2.begin(),
+                       val_tmp2.end());
 
-      const size_t base_old = el * pre_nrow;
-      const size_t base_new = el * nrow2;
+        const size_t base_old = el * pre_nrow;
+        const size_t base_new = el * nrow2;
 
-      new_uint_v.insert(new_uint_v.end(),
-                   uint_v.begin() + base_old,
-                   uint_v.begin() + base_old + pre_nrow);
-      
-      new_uint_v.insert(new_uint_v.end(),
-                     uint_v2.begin() + base_new,
-                     uint_v2.begin() + base_new + nrow2);
+        UIntT* dst = new_uint_v.data() + el * nrow;
+        std::memcpy(
+            dst,
+            uint_v.data() + base_old,
+            pre_nrow * sizeof(UIntT)
+        );
+
+        UIntT* dst2 = new_uint_v.data() + el * nrow + pre_nrow;
+        std::memcpy(
+            dst2,
+            uint_v2.data() + base_new,
+            nrow2 * sizeof(UIntT)
+        );
 
     };
  
     uint_v.swap(new_uint_v);
 
     std::vector<FloatT> new_dbl_v;
-    new_dbl_v.reserve(dbl_v.size() + dbl_v2.size());
+    new_dbl_v.resize(dbl_v.size() + dbl_v2.size());
    
     for (size_t el = 0; el < matr_idx[5].size(); el += 1) {
       
-      const size_t val_idx = matr_idx[5][el];
+        const size_t val_idx = matr_idx[5][el];
 
-      std::vector<std::string>& val_tmp = tmp_val_refv[val_idx];
-      std::vector<std::string>& val_tmp2 = tmp_val_refv2[val_idx];
+        std::vector<std::string>& val_tmp = tmp_val_refv[val_idx];
+        std::vector<std::string>& val_tmp2 = tmp_val_refv2[val_idx];
 
-      val_tmp.reserve(nrow);
-      val_tmp.insert(val_tmp.end(), 
-                     val_tmp2.begin(),
-                     val_tmp2.end());
+        val_tmp.reserve(nrow);
+        val_tmp.insert(val_tmp.end(), 
+                       val_tmp2.begin(),
+                       val_tmp2.end());
 
-      const size_t base_old = el * pre_nrow;
-      const size_t base_new = el * nrow2;
+        const size_t base_old = el * pre_nrow;
+        const size_t base_new = el * nrow2;
 
-      new_dbl_v.insert(new_dbl_v.end(),
-                   dbl_v.begin() + base_old,
-                   dbl_v.begin() + base_old + pre_nrow);
-      
-      new_dbl_v.insert(new_dbl_v.end(),
-                     dbl_v2.begin() + base_new,
-                     dbl_v2.begin() + base_new + nrow2);
+        FloatT* dst = new_dbl_v.data() + el * nrow;
+        std::memcpy(
+            dst,
+            dbl_v.data() + base_old,
+            pre_nrow * sizeof(FloatT)
+        );
+
+        FloatT* dst2 = new_dbl_v.data() + el * nrow + pre_nrow;
+        std::memcpy(
+            dst2,
+            dbl_v2.data() + base_new,
+            nrow2 * sizeof(FloatT)
+        );
 
     };
  
