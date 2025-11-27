@@ -467,7 +467,9 @@ namespace vison {
     
     };
 
-    #include "inlines/operator_overloading/get_col.inl"
+    #include "inlines/operator_overloading/get_col/get_col_filter.inl"
+    #include "inlines/operator_overloading/get_col/get_col_filter_range.inl"
+    #include "inlines/operator_overloading/get_col/get_col_filter_idx.inl"
 
 }
 
