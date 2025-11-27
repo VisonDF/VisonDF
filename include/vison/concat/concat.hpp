@@ -34,209 +34,85 @@ void concat(Dataframe& obj)
     
     for (size_t el = 0; matr_idx[0].size(); el += 1) {
 
-      const size_t val_idx = matr_idx[0][el];
+        const size_t val_idx = matr_idx[0][el];
 
-      std::vector<std::string>& val_tmp = tmp_val_refv[val_idx];
-      std::vector<std::string>& val_tmp2 = tmp_val_refv2[val_idx];
+        std::vector<std::string>& val_tmp = tmp_val_refv[val_idx];
+        std::vector<std::string>& val_tmp2 = tmp_val_refv2[val_idx];
 
-      val_tmp.reserve(nrow);
-      val_tmp.insert(val_tmp.end(), 
-                     val_tmp2.begin(),
-                     val_tmp2.end());
+        val_tmp.reserve(nrow);
+        val_tmp.insert(val_tmp.end(), 
+                       val_tmp2.begin(),
+                       val_tmp2.end());
 
-      const size_t base_old = el * pre_nrow;
-      const size_t base_new = el * nrow2;
+        const size_t base_old = el * pre_nrow;
+        const size_t base_new = el * nrow2;
 
-      new_str_v.insert(new_str_v.end(),
-                     str_v.begin() + base_old,
-                     str_v.begin() + base_old + pre_nrow);
-      
-      new_str_v.insert(new_str_v.end(),
-                     str_v2.begin() + base_new,
-                     str_v2.begin() + base_new + nrow2);
+        new_str_v.insert(new_str_v.end(),
+                       str_v.begin() + base_old,
+                       str_v.begin() + base_old + pre_nrow);
+        
+        new_str_v.insert(new_str_v.end(),
+                       str_v2.begin() + base_new,
+                       str_v2.begin() + base_new + nrow2);
 
     };
  
     str_v.swap(new_str_v);
 
-    std::vector<CharT> new_chr_v;
-    new_chr_v.resize(chr_v.size() + chr_v2.size());
-  
-    for (size_t el = 0; el < matr_idx[1].size(); el += 1) {
-      
-        const size_t val_idx = matr_idx[1][el];
-
-        std::vector<std::string>& val_tmp = tmp_val_refv[val_idx];
-        std::vector<std::string>& val_tmp2 = tmp_val_refv2[val_idx];
-
-        val_tmp.reserve(nrow);
-        val_tmp.insert(val_tmp.end(), 
-                       val_tmp2.begin(),
-                       val_tmp2.end());
-
-        const size_t base_old = el * pre_nrow;
-        const size_t base_new = el * nrow2;
-
-        CharT* dst = new_chr_v.data() + el * nrow;
-        std::memcpy(
-            dst,
-            chr_v.data() + base_old,
-            pre_nrow * sizeof(CharT)
-        );
-
-        CharT* dst2 = new_chr_v.data() + el * nrow + pre_nrow;
-        std::memcpy(
-            dst2,
-            chr_v2.data() + base_new,
-            nrow2 * sizeof(CharT)
-        );
-
+    auto concat_pod_column = [&](auto& out_vec,
+                                 const auto& vec1,
+                                 const auto& vec2,
+                                 const std::vector<size_t>& col_idx) 
+    {
+        using T = typename std::remove_reference_t<decltype(vec1)>::value_type;
+    
+        out_vec.resize(vec1.size() + vec2.size());
+    
+        for (size_t el = 0; el < col_idx.size(); ++el) 
+        {
+            const size_t val_idx = col_idx[el];
+    
+            auto& val_tmp  = tmp_val_refv[val_idx];
+            auto& val_tmp2 = tmp_val_refv2[val_idx];
+    
+            val_tmp.reserve(nrow);
+            val_tmp.insert(val_tmp.end(),
+                           val_tmp2.begin(),
+                           val_tmp2.end());
+    
+            const size_t base_old = el * pre_nrow;
+            const size_t base_new = el * nrow2;
+            T* dst  = out_vec.data() + el * nrow;
+            T* dst2 = dst + pre_nrow;
+    
+            std::memcpy(dst,
+                        vec1.data() + base_old,
+                        pre_nrow * sizeof(T));
+    
+            std::memcpy(dst2,
+                        vec2.data() + base_new,
+                        nrow2 * sizeof(T));
+        }
     };
- 
+
+    std::vector<CharT> new_chr_v;
+    concat_pod_column(new_chr_v, chr_v, chr_v2, matr_idx[1]);
     chr_v.swap(new_chr_v);
 
     std::vector<uint8_t> new_bool_v;
-    new_bool_v.resize(bool_v.size() + bool_v2.size());
- 
-    for (size_t el = 0; el < matr_idx[2].size(); el += 1) {
-      
-        const size_t val_idx = matr_idx[2][el];
-
-        std::vector<std::string>& val_tmp = tmp_val_refv[val_idx];
-        std::vector<std::string>& val_tmp2 = tmp_val_refv2[val_idx];
-
-        val_tmp.reserve(nrow);
-        val_tmp.insert(val_tmp.end(), 
-                       val_tmp2.begin(),
-                       val_tmp2.end());
-
-        const size_t base_old = el * pre_nrow;
-        const size_t base_new = el * nrow2;
-
-        uint8_t* dst = new_bool_v.data() + el * nrow;
-        std::memcpy(
-            dst,
-            bool_v.data() + base_old,
-            pre_nrow * sizeof(uint8_t)
-        );
-
-        uint8_t* dst2 = new_bool_v.data() + el * nrow + pre_nrow;
-        std::memcpy(
-            dst2,
-            bool_v2.data() + base_new,
-            nrow2 * sizeof(uint8_t)
-        );
-
-    };
- 
+    concat_pod_column(new_chr_v, chr_v, chr_v2, matr_idx[1]);
     bool_v.swap(new_bool_v);
  
     std::vector<IntT> new_int_v;
-    new_int_v.resize(int_v.size() + int_v2.size());
-   
-    for (size_t el = 0; el < matr_idx[3].size(); el += 1) {
-      
-        const size_t val_idx = matr_idx[3][el];
-
-        std::vector<std::string>& val_tmp = tmp_val_refv[val_idx];
-        std::vector<std::string>& val_tmp2 = tmp_val_refv2[val_idx];
-
-        val_tmp.reserve(nrow);
-        val_tmp.insert(val_tmp.end(), 
-                       val_tmp2.begin(),
-                       val_tmp2.end());
-
-        const size_t base_old = el * pre_nrow;
-        const size_t base_new = el * nrow2;
-
-        IntT* dst = new_int_v.data() + el * nrow;
-        std::memcpy(
-            dst,
-            int_v.data() + base_old,
-            pre_nrow * sizeof(IntT)
-        );
-
-        IntT* dst2 = new_int_v.data() + el * nrow + pre_nrow;
-        std::memcpy(
-            dst2,
-            int_v2.data() + base_new,
-            nrow2 * sizeof(IntT)
-        );
-
-    };
- 
+    concat_pod_column(new_int_v, int_v, int_v2, matr_idx[3]);
     int_v.swap(new_int_v);
 
     std::vector<UIntT> new_uint_v;
-    new_uint_v.resize(uint_v.size() + uint_v2.size());
-   
-    for (size_t el = 0; el < matr_idx[4].size(); el += 1) {
-      
-        const size_t val_idx = matr_idx[4][el];
-
-        std::vector<std::string>& val_tmp = tmp_val_refv[val_idx];
-        std::vector<std::string>& val_tmp2 = tmp_val_refv2[val_idx];
-
-        val_tmp.reserve(nrow);
-        val_tmp.insert(val_tmp.end(), 
-                       val_tmp2.begin(),
-                       val_tmp2.end());
-
-        const size_t base_old = el * pre_nrow;
-        const size_t base_new = el * nrow2;
-
-        UIntT* dst = new_uint_v.data() + el * nrow;
-        std::memcpy(
-            dst,
-            uint_v.data() + base_old,
-            pre_nrow * sizeof(UIntT)
-        );
-
-        UIntT* dst2 = new_uint_v.data() + el * nrow + pre_nrow;
-        std::memcpy(
-            dst2,
-            uint_v2.data() + base_new,
-            nrow2 * sizeof(UIntT)
-        );
-
-    };
- 
+    concat_pod_column(new_uint_v, uint_v, uint_v2, matr_idx[4]);
     uint_v.swap(new_uint_v);
 
     std::vector<FloatT> new_dbl_v;
-    new_dbl_v.resize(dbl_v.size() + dbl_v2.size());
-   
-    for (size_t el = 0; el < matr_idx[5].size(); el += 1) {
-      
-        const size_t val_idx = matr_idx[5][el];
-
-        std::vector<std::string>& val_tmp = tmp_val_refv[val_idx];
-        std::vector<std::string>& val_tmp2 = tmp_val_refv2[val_idx];
-
-        val_tmp.reserve(nrow);
-        val_tmp.insert(val_tmp.end(), 
-                       val_tmp2.begin(),
-                       val_tmp2.end());
-
-        const size_t base_old = el * pre_nrow;
-        const size_t base_new = el * nrow2;
-
-        FloatT* dst = new_dbl_v.data() + el * nrow;
-        std::memcpy(
-            dst,
-            dbl_v.data() + base_old,
-            pre_nrow * sizeof(FloatT)
-        );
-
-        FloatT* dst2 = new_dbl_v.data() + el * nrow + pre_nrow;
-        std::memcpy(
-            dst2,
-            dbl_v2.data() + base_new,
-            nrow2 * sizeof(FloatT)
-        );
-
-    };
- 
+    concat_pod_column(new_dbl_v, dbl_v, dbl_v2, matr_idx[5]);
     dbl_v.swap(new_dbl_v);
 
 };
