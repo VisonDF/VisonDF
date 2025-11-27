@@ -19,53 +19,57 @@ inline void parse_rows_chunk(
     size_t field_start = 0;
     size_t verif_ncol = 0;
 
+    #if defined (__AVX512F__)
+    static const __m512i NL = _mm512_set1_epi8('\n');
+    static const __m512i CR = _mm512_set1_epi8('\r');
+    const __m512i D = _mm512_set1_epi8(delim);
+    const __m512i Q = _mm512_set1_epi8(str_context);
+    const size_t BATCH = 64;
+    #elif defined(__AVX2__)
     static const __m256i NL = _mm256_set1_epi8('\n');
     static const __m256i CR = _mm256_set1_epi8('\r');
-    __m256i D = _mm256_set1_epi8(delim);
-    __m256i Q = _mm256_set1_epi8(str_context);
+    const __m256i D = _mm256_set1_epi8(delim);
+    const __m256i Q = _mm256_set1_epi8(str_context);
+    const size_t BATCH = 32;
+    #endif
 
-    for (; pos + 32 <= N; ) {
+    for (; pos + BATCH <= N; ) {
+
+        #if defined (__AVX512F__)
+        _mm_prefetch(base + pos + 1024, _MM_HINT_T0);
+        __m512i chunk = _mm512_loadu_si512(reinterpret_cast<const __m512i*>(base + pos));
+
+        int64_t mD  = _mm512_movemask_epi8(_mm512_cmpeq_epi8(chunk, D));
+        int64_t mQ  = _mm512_movemask_epi8(_mm512_cmpeq_epi8(chunk, Q));
+        int64_t mNL = _mm512_movemask_epi8(_mm512_cmpeq_epi8(chunk, NL));
+        int64_t mCR = _mm512_movemask_epi8(_mm512_cmpeq_epi8(chunk, CR));
+
+        int64_t mNL_any = (mNL | mCR);
+        int64_t events  = (mD | mNL_any | mQ);
+
+        #elif defined (__AVX2__)
         _mm_prefetch(base + pos + 512, _MM_HINT_T0);
         __m256i chunk = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(base + pos));
 
-        int mD  = _mm256_movemask_epi8(_mm256_cmpeq_epi8(chunk, D));
-        int mQ  = _mm256_movemask_epi8(_mm256_cmpeq_epi8(chunk, Q));
-        int mNL = _mm256_movemask_epi8(_mm256_cmpeq_epi8(chunk, NL));
-        int mCR = _mm256_movemask_epi8(_mm256_cmpeq_epi8(chunk, CR));
+        int32_t mD  = _mm256_movemask_epi8(_mm256_cmpeq_epi8(chunk, D));
+        int32_t mQ  = _mm256_movemask_epi8(_mm256_cmpeq_epi8(chunk, Q));
+        int32_t mNL = _mm256_movemask_epi8(_mm256_cmpeq_epi8(chunk, NL));
+        int32_t mCR = _mm256_movemask_epi8(_mm256_cmpeq_epi8(chunk, CR));
 
-        int mNL_any = (mNL | mCR);
+        int32_t mNL_any = (mNL | mCR);
         int32_t events  = (mD | mNL_any | mQ);
 
-        // We have a 32-bit mask where each bit corresponds to one byte in the AVX chunk.
-        // Example: events = 000...0111  (three matches in the lowest lanes)
-        //
-        // Each iteration:
-        //      events &= (events - 1);
-        //
-        // This uses the classic “remove lowest set bit” trick.
-        // Visually:
-        //
-        //   events = 000...0111
-        //   events - 1 = 000...0110
-        //   ------------------------ AND
-        //   result =      000...0110   (lowest 1-bit cleared)
-        //
-        // Next iteration:
-        //   events = 000...0110
-        //   events - 1 = 000...0101
-        //   AND →       000...0100
-        //
-        // Next:
-        //   events = 000...0100
-        //   events - 1 = 000...0011
-        //   AND →       000...0000
-        //
-        // So each pass removes exactly one lowest 1-bit, letting us visit
-        // every “true” bit position (character match) in the mask *once*
-        // without scanning all 32 lanes.
+        #endif
 
         while (events) {
+            // get the index of the least significant bit equals to 1
+            // in fact the first matching bit (order reversed - right to left)
+            #if defined (__AVX512F__)
+            int bit = __builtin_ctzll(events);
+            #elif defined (__AVX2__)
             int bit = __builtin_ctz(events);
+            #endif
+
             size_t idx = pos + bit;
             char c = base[idx];
 
@@ -114,7 +118,7 @@ inline void parse_rows_chunk(
             events &= (events - 1);
         }
 
-        pos += 32;
+        pos += BATCH;
         next_chunk:
           continue;
     }
