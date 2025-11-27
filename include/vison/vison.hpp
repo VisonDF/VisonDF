@@ -470,6 +470,10 @@ namespace vison {
     #include "inlines/operator_overloading/get_col/get_col_filter.inl"
     #include "inlines/operator_overloading/get_col/get_col_filter_range.inl"
     #include "inlines/operator_overloading/get_col/get_col_filter_idx.inl"
+    #include "inlines/operator_overloading/get_col/vectorized/get_col.inl"
+    #include "inlines/operator_overloading/get_col/vectorized/get_col_filter_simd.inl"
+    #include "inlines/operator_overloading/get_col/vectorized/get_col_filter_range_simd.inl"
+
 
 }
 
