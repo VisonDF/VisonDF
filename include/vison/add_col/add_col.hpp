@@ -3,7 +3,7 @@
 template <typename T, 
           bool Large = false, 
           bool BoolAsU8 = false> 
-void add_col(std::vector<T> &x, std::string name = "NA") {
+void add_col(const std::vector<T> &x, const std::string name = "NA") {
   
     if (x.size() != nrow) {
       std::cerr << "Error: vector length (" << x.size()
