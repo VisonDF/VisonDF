@@ -11,6 +11,10 @@ void read_csv(std::string &file_name,
               bool header_name = 1, 
               char str_context = '\'') {
   
+    #if !defined(__AVX512F__) && !defined(__AVX2__)
+    #error "`read_csv` and variants code requires AVX2 or AVX512."
+    #endif
+
     assert((strt_row < end_row) && "`strt_row` must be lower than `end_row`");
 
     int fd = open(file_name.c_str(), O_RDONLY);
