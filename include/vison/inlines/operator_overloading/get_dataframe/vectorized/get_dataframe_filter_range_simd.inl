@@ -29,8 +29,8 @@ inline GetDataframeFilterRangeSimd get_dataframe_filter_range_simd(
 }
 
 inline GetDataframeFilterRangeSimd get_dataframe_filter_range_simd(
-                         std::initializer_list<size_t>& cols,
-                         std::initializer_list<uint8_t>& mask,
+                         std::initializer_list<size_t> cols,
+                         std::initializer_list<uint8_t> mask,
                          const size_t strt_vl) {
 
     auto owned_cols = std::make_shared<std::vector<size_t>> (cols);
@@ -45,7 +45,7 @@ inline GetDataframeFilterRangeSimd get_dataframe_filter_range_simd(
 }
 
 inline GetDataframeFilterRangeSimd get_dataframe_filter_range_simd(
-                         std::initializer_list<size_t>& cols,
+                         std::initializer_list<size_t> cols,
                          const std::vector<uint8_t>& mask,
                          const size_t strt_vl) {
 
@@ -61,7 +61,7 @@ inline GetDataframeFilterRangeSimd get_dataframe_filter_range_simd(
 
 inline GetDataframeFilterRangeSimd get_dataframe_filter_range_simd(
                          const std::vector<size_t>& cols,
-                         std::initializer_list<uint8_t>& mask,
+                         std::initializer_list<uint8_t> mask,
                          const size_t strt_vl) {
 
     auto owned_mask = std::make_shared<std::vector<uint8_t>>(mask);
