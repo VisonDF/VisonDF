@@ -1,10 +1,11 @@
 #pragma once
 
-void get_dataframe(const std::vector<int>& cols, Dataframe& cur_obj)
+void get_dataframe(const std::vector<size_t>& cols, 
+                   Dataframe& cur_obj)
 {
     nrow = cur_obj.get_nrow();
 
-    if (cols.empty() || cols[0] == -1) {
+    if (cols.empty()) {
         matr_idx     = cur_obj.get_matr_idx();
         ncol         = cur_obj.get_ncol();
         tmp_val_refv = cur_obj.get_tmp_val_refv();

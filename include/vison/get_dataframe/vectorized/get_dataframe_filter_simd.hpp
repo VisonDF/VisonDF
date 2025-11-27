@@ -1,8 +1,8 @@
 #pragma once
 
-void get_dataframe_filter_simd(const std::vector<int>& cols, 
-                Dataframe& cur_obj,
-                const std::vector<uint8_t>& mask)
+void get_dataframe_filter_simd(const std::vector<size_t>& cols, 
+                               Dataframe& cur_obj,
+                               const std::vector<uint8_t>& mask)
 {
 
     const size_t tot_nrow = cur_obj.get_nrow();
@@ -110,7 +110,7 @@ void get_dataframe_filter_simd(const std::vector<int>& cols,
     const auto& uint_vec2 = cur_obj.get_uint_vec();
     const auto& dbl_vec2  = cur_obj.get_dbl_vec();
 
-    if (cols.empty() || cols[0] == -1) {
+    if (cols.empty()) {
         matr_idx     = cur_obj.get_matr_idx();
         ncol         = cur_obj.get_ncol();
 

@@ -475,6 +475,15 @@ namespace vison {
     #include "inlines/operator_overloading/get_col/vectorized/get_col_filter_range_simd.inl"
     #include "inlines/operator_overloading/get_col/vectorized/get_col_filter_idx_simd.inl"
 
+    #include "inlines/operator_overloading/get_dataframe/get_dataframe.inl"
+    #include "inlines/operator_overloading/get_dataframe/get_dataframe_filter.inl"
+    #include "inlines/operator_overloading/get_dataframe/get_dataframe_filter_range.inl"
+    #include "inlines/operator_overloading/get_dataframe/get_dataframe_filter_idx.inl"
+    #include "inlines/operator_overloading/get_dataframe/vectorized/get_dataframe_filter_simd.inl"
+    #include "inlines/operator_overloading/get_dataframe/vectorized/get_dataframe_filter_range_simd.inl"
+    #include "inlines/operator_overloading/get_dataframe/vectorized/get_dataframe_filter_idx_simd.inl"
+
+
 }
 
 

@@ -1,8 +1,8 @@
 #pragma once
 
-void get_dataframe_filter_idx(const std::vector<int>& cols, 
-                Dataframe& cur_obj,
-                const std::vector<unsigned int>& mask)
+void get_dataframe_filter_idx(const std::vector<size_t>& cols, 
+                              Dataframe& cur_obj,
+                              const std::vector<unsigned int>& mask)
 {
 
     nrow = mask.size();
@@ -45,7 +45,7 @@ void get_dataframe_filter_idx(const std::vector<int>& cols,
         type_idx++;
     };
 
-    if (cols.empty() || cols[0] == -1) {
+    if (cols.empty()) {
         matr_idx     = cur_obj.get_matr_idx();
         ncol         = cur_obj.get_ncol();
 
