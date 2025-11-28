@@ -47,31 +47,89 @@ void get_col_filter_simd(unsigned int &x,
 
     } else if constexpr (IsBool) {
         const size_t pos_base = find_col_base(matr_idx[2]);
-        get_filtered_col_general<T>(bool_v[pos_base], 
-                                    rtn_v,
-                                    mask,
-                                    0);
+        if constexpr (sizeof(T) == 1) {
+            get_filtered_col_8<T>(bool_v[pos_base], 
+                                  rtn_v,
+                                  mask,
+                                  0);
+        } else if constexpr (sizeof(T) == 2) {
+            get_filtered_col_16<T>(bool_v[pos_base], 
+                                   rtn_v,
+                                   mask,
+                                   0);
+        } else if constexpr (sizeof(T) == 4) {
+            get_filtered_col_32<T>(bool_v[pos_base], 
+                                   rtn_v,
+                                   mask,
+                                   0);
+        } else if constexpr (sizeof(T) == 8) {
+            get_filtered_col_64<T>(bool_v[pos_base], 
+                                   rtn_v,
+                                   mask,
+                                   0);
+        }
   
     } else if constexpr (std::is_same_v<T, IntT>) {
         const size_t pos_base = find_col_base(matr_idx[3]);
-        get_filtered_col_general<T>(int_v[pos_base],
-                                    rtn_v,
-                                    mask,
-                                    0);
+        if constexpr (sizeof(T) == 1) {
+            get_filtered_col_8<T>(int_v[pos_base], 
+                                  rtn_v,
+                                  mask,
+                                  0);
+        } else if constexpr (sizeof(T) == 2) {
+            get_filtered_col_16<T>(int_v[pos_base], 
+                                   rtn_v,
+                                   mask,
+                                   0);
+        } else if constexpr (sizeof(T) == 4) {
+            get_filtered_col_32<T>(int_v[pos_base], 
+                                   rtn_v,
+                                   mask,
+                                   0);
+        } else if constexpr (sizeof(T) == 8) {
+            get_filtered_col_64<T>(int_v[pos_base], 
+                                   rtn_v,
+                                   mask,
+                                   0);
+        }
   
     } else if constexpr (std::is_same_v<T, UIntT>) { 
         const size_t pos_base = find_col_base(matr_idx[4]);
-        get_filtered_col_general<T>(uint_v[pos_base],
-                                    rtn_v,
-                                    mask,
-                                    0);
-  
+        if constexpr (sizeof(T) == 1) {
+            get_filtered_col_8<T>(uint_v[pos_base], 
+                                  rtn_v,
+                                  mask,
+                                  0);
+        } else if constexpr (sizeof(T) == 2) {
+            get_filtered_col_16<T>(uint_v[pos_base], 
+                                   rtn_v,
+                                   mask,
+                                   0);
+        } else if constexpr (sizeof(T) == 4) {
+            get_filtered_col_32<T>(uint_v[pos_base], 
+                                   rtn_v,
+                                   mask,
+                                   0);
+        } else if constexpr (sizeof(T) == 8) {
+            get_filtered_col_64<T>(uint_v[pos_base], 
+                                   rtn_v,
+                                   mask,
+                                   0);
+        }
+
     } else if constexpr (std::is_same_v<T, FloatT>) {
         const size_t pos_base = find_col_base(matr_idx[5]);
-        get_filtered_col_general<T>(dbl_v[pos_base],
-                                    rtn_v,
-                                    mask,
-                                    0);
+        if constexpr (sizeof(T) == 4) {
+            get_filtered_col_32<T>(dbl_v[pos_base], 
+                                   rtn_v,
+                                   mask,
+                                   0);
+        } else if constexpr (sizeof(T) == 8) {
+            get_filtered_col_64<T>(dbl_v[pos_base], 
+                                   rtn_v,
+                                   mask,
+                                   0);
+        }
   
     } else {
       std::cerr << "Error in (get_col), unsupported type\n";
