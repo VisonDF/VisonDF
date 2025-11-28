@@ -1,6 +1,7 @@
 #pragma once
 
-void concat(Dataframe& obj) 
+template <unsigned int CORES = 4>
+void concat_mt(Dataframe& obj) 
 {
     const unsigned int& ncol2 = obj.get_ncol();
 
@@ -31,7 +32,8 @@ void concat(Dataframe& obj)
   
     std::vector<std::string> new_str_v;
     new_str_v.resize(str_v.size() + str_v2.size());
-    
+
+    #pragma omp parallel for num_threads(CORES)
     for (size_t el = 0; el < matr_idx[0].size(); el += 1) {
 
         const size_t val_idx = matr_idx[0][el];
@@ -70,7 +72,8 @@ void concat(Dataframe& obj)
         using T = typename std::remove_reference_t<decltype(vec1)>::value_type;
     
         out_vec.resize(vec1.size() + vec2.size());
-    
+   
+        #pragma omp parallel for num_threads(CORES)
         for (size_t el = 0; el < col_idx.size(); ++el) 
         {
             const size_t val_idx = col_idx[el];

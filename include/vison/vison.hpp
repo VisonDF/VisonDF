@@ -445,7 +445,8 @@ namespace vison {
         #include "transform/sort_by/sort_by_mt.hpp"
 
         #include "concat/concat.hpp"
-            
+        #include "concat/concat_mt.hpp"
+           
         #include "set_colname.hpp"
         #include "set_rowname.hpp"
             
