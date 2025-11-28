@@ -358,7 +358,6 @@ namespace vison {
 
         #include "rm_col/rm_col.hpp"
         #include "rm_col/rm_col_range.hpp"
-        #include "rm_col/rm_col_range_reconstruct.hpp"
 
         #include "rm_row/rm_row.hpp"
         #include "rm_row/batched/rm_row_batch.hpp"

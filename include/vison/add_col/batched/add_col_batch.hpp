@@ -70,10 +70,11 @@ void add_col_batch(std::vector<T> &x, std::string name = "NA") {
         type_refv.push_back('b');
         
         const size_t base_idx = bool_v.size();
-        bool_v.resize(base_idx + nrow);    
+        bool_v.resize(base_idx + 1);
+        bool_v[base_idx].resize(nrow);
         const size_t buf_size = max_chars_needed<uint8_t>();
 
-        auto* __restrict dst = std::assume_aligned<64>(bool_v.data() + base_idx);
+        auto* __restrict dst = std::assume_aligned<64>(bool_v[base_idx].data());
         auto* __restrict src = std::assume_aligned<64>(x.data());
 
         std::memcpy(dst, src, nrow * sizeof(T));  
@@ -89,11 +90,12 @@ void add_col_batch(std::vector<T> &x, std::string name = "NA") {
         type_refv.push_back('i');
 
         const size_t base_idx = int_v.size();
-        int_v.resize(base_idx + nrow);
+        int_v.resize(base_idx + 1);
+        int_v[base_idx].resize(nrow);
     
         constexpr size_t buf_size = max_chars_needed<T>();
         
-        auto* __restrict dst = std::assume_aligned<64>(int_v.data() + base_idx);
+        auto* __restrict dst = std::assume_aligned<64>(int_v[base_idx].data());
         auto* __restrict src = std::assume_aligned<64>(x.data());
 
         std::memcpy(dst, src, nrow * sizeof(T));  
@@ -109,11 +111,12 @@ void add_col_batch(std::vector<T> &x, std::string name = "NA") {
         type_refv.push_back('u');
  
         const size_t base_idx = uint_v.size();
-        uint_v.resize(base_idx + nrow);
+        uint_v.resize(base_idx + 1);
+        uint_v[base_idx].resize(nrow);
     
         constexpr size_t buf_size = max_chars_needed<T>();
         
-        auto* __restrict dst = std::assume_aligned<64>(uint_v.data() + base_idx);
+        auto* __restrict dst = std::assume_aligned<64>(uint_v[base_idx].data());
         auto* __restrict src = std::assume_aligned<64>(x.data());
 
         std::memcpy(dst, src, nrow * sizeof(T));  
@@ -129,11 +132,12 @@ void add_col_batch(std::vector<T> &x, std::string name = "NA") {
         type_refv.push_back('d');
 
         const size_t base_idx = dbl_v.size();
-        dbl_v.resize(base_idx + nrow);
+        dbl_v.resize(base_idx + 1);
+        dbl_v[base_idx].resize(nrow);
     
         constexpr size_t buf_size = max_chars_needed<T>();
         
-        auto* __restrict dst = std::assume_aligned<64>(dbl_v.data() + base_idx);
+        auto* __restrict dst = std::assume_aligned<64>(dbl_v[base_idx].data());
         auto* __restrict src = std::assume_aligned<64>(x.data());
 
         std::memcpy(dst, src, nrow * sizeof(T));  
@@ -149,9 +153,10 @@ void add_col_batch(std::vector<T> &x, std::string name = "NA") {
         type_refv.push_back('c');
 
         const size_t base_idx = chr_v.size();
-        chr_v.resize(base_idx + nrow);
+        chr_v.resize(base_idx + 1);
+        chr_v[base_idx].resize(nrow);
 
-        auto* __restrict dst = std::assume_aligned<64>(chr_v.data() + base_idx);
+        auto* __restrict dst = std::assume_aligned<64>(chr_v[base_idx].data());
         auto* __restrict src = std::assume_aligned<64>(x.data());
 
         std::memcpy(dst, src, nrow * sizeof(char));  
@@ -167,10 +172,11 @@ void add_col_batch(std::vector<T> &x, std::string name = "NA") {
         type_refv.push_back('s');
 
         const size_t base_idx = str_v.size();
-        str_v.resize(base_idx + nrow);
+        str_v.resize(base_idx + 1);
+        str_v[base_idx].resize(nrow);
 
+        auto* __restrict dst_str = str_v[base_idx].data();
         auto* __restrict src = x.data();
-        auto* __restrict dst_str = str_v.data() + base_idx;
 
         batch_stringify(val_tmp.data(), src, 0, dst_str);
       

@@ -1,78 +1,76 @@
 #pragma once
 
 template <bool MemClean = false>
-void rm_col_range(std::vector<unsigned int> nbcolv) {
-    if (nbcolv.empty()) return;
-
-    std::sort(nbcolv.begin(), nbcolv.end());
-    std::reverse(nbcolv.begin(), nbcolv.end());
+void rm_col_range(std::vector<unsigned int>& x) {
 
     std::vector<size_t> col_type(ncol);
-    for (size_t type_i = 0; type_i < matr_idx.size(); ++type_i)
+    for (size_t type_i = 0; type_i < 6; ++type_i)
         for (auto col : matr_idx[type_i])
             col_type[col] = type_i;
 
-    auto erase_block = [&](auto& vec, size_t off){
-        vec.erase(vec.begin() + off, vec.begin() + off + nrow);
-    };
+    if (x.empty()) {
+        std::cerr << "Cols can not be empty\n";
+        return;
+    }
+        
+    if constexpr (MemClean) {
 
-    for (unsigned nbcol : nbcolv) {
+        for (auto& nbcol : x) {
 
-        size_t type_i = col_type[nbcol];
-        size_t idx_in_type =
-            std::find(matr_idx[type_i].begin(), matr_idx[type_i].end(), nbcol)
-            - matr_idx[type_i].begin();
+            size_t type_i = col_type[nbcol];
+            size_t idx_in_type =
+                std::find(matr_idx[type_i].begin(), matr_idx[type_i].end(), nbcol)
+                - matr_idx[type_i].begin();
 
-        name_v.erase(name_v.begin() + nbcol);
-        tmp_val_refv.erase(tmp_val_refv.begin() + nbcol);
-        type_refv.erase(type_refv.begin() + nbcol);
-        matr_idx[type_i].erase(matr_idx[type_i].begin() + idx_in_type);
+            if (!name_v.empty()) { name_v.erase(name_v.begin() + nbcol); }
+            tmp_val_refv.erase(tmp_val_refv.begin() + nbcol);
+            type_refv.erase(type_refv.begin() + nbcol);
+            matr_idx[type_i].erase(matr_idx[type_i].begin() + idx_in_type);
 
-        size_t offset = idx_in_type * nrow;
-        switch (type_i) {
-            case 0: erase_block(str_v, offset); break;
-            case 1: erase_block(chr_v, offset); break;
-            case 2: erase_block(bool_v, offset); break;
-            case 3: erase_block(int_v, offset); break;
-            case 4: erase_block(uint_v, offset); break;
-            case 5: erase_block(dbl_v, offset); break;
+            switch (type_i) {
+                case 0: str_v. erase(str_v.begin()  + idx_in_type); str_v.shrink_to_fit();  break;
+                case 1: chr_v. erase(chr_v.begin()  + idx_in_type); chr_v.shrink_to_fit();  break;
+                case 2: bool_v.erase(bool_v.begin() + idx_in_type); bool_v.shrink_to_fit(); break;
+                case 3: int_v. erase(int_v.begin()  + idx_in_type); int_v.shrink_to_fit();  break;
+                case 4: uint_v.erase(uint_v.begin() + idx_in_type); uint_v.shrink_to_fit(); break;
+                case 5: dbl_v. erase(dbl_v.begin()  + idx_in_type); dbl_v.shrink_to_fit();  break;
+            }
+
+            name_v.shrink_to_fit();
+            tmp_val_refv.shrink_to_fit();
+            type_refv.shrink_to_fit();
+            matr_idx[type_i].shrink_to_fit();
+
         }
 
-        --ncol;
+    } else if constexpr (!MemClean) {
+
+        for (auto& nbcol : x) {
+
+            size_t type_i = col_type[nbcol];
+            size_t idx_in_type =
+                std::find(matr_idx[type_i].begin(), matr_idx[type_i].end(), nbcol)
+                - matr_idx[type_i].begin();
+
+            if (!name_v.empty()) { name_v.erase(name_v.begin() + nbcol); }
+            tmp_val_refv.erase(tmp_val_refv.begin() + nbcol);
+            type_refv.erase(type_refv.begin() + nbcol);
+            matr_idx[type_i].erase(matr_idx[type_i].begin() + idx_in_type);
+
+            switch (type_i) {
+                case 0: str_v. erase(str_v.begin()  + idx_in_type);  break;
+                case 1: chr_v. erase(chr_v.begin()  + idx_in_type);  break;
+                case 2: bool_v.erase(bool_v.begin() + idx_in_type);  break;
+                case 3: int_v. erase(int_v.begin()  + idx_in_type);  break;
+                case 4: uint_v.erase(uint_v.begin() + idx_in_type);  break;
+                case 5: dbl_v. erase(dbl_v.begin()  + idx_in_type);  break;
+            }
+
+        }
+
     }
 
-    if (!name_v.empty()) {
-
-          std::vector<unsigned int> keep(ncol, 1);
-          for (auto& rr : nbcolv) {
-            keep[rr] = 0;
-          }
-          size_t idx = 0;
-          auto beg = name_v.begin();
-          auto end = name_v.end();
-          auto it  = std::remove_if(beg, end, [&](auto&) mutable { return !keep[idx++]; });
-          name_v.erase(it, end);
-
-    }
-
-    if constexpr (MemClean) {
-       type_refv.shrink_to_fit();
-       name_v.shrink_to_fit();
-       tmp_val_refv.shrink_to_fit();
-
-       for (auto& el : matr_idx) {
-         el.shrink_to_fit();
-       }
-
-       str_v.shrink_to_fit();
-       chr_v.shrink_to_fit();
-       bool_v.shrink_to_fit();
-       int_v.shrink_to_fit();
-       uint_v.shrink_to_fit();
-       dbl_v.shrink_to_fit();
-       name_v.shrink_to_fit();
-    }
-
+    --ncol;
 }
 
 
