@@ -28,7 +28,15 @@ void get_col_filter_range(unsigned int &x,
         }
     };
 
-    if constexpr (IsBool) {
+    if constexpr (std::is_same_v<T, std::string>) {
+        const size_t pos_base = find_col_base(matr_idx[0]);
+        extract_masked(str_v[pos_base].data());
+
+    } else if constexpr (std::is_same_v<T, CharT>) {
+        const size_t pos_base = find_col_base(matr_idx[1]);
+        extract_masked(chr_v[pos_base].data());
+
+    } else if constexpr (IsBool) {
         const size_t pos_base = find_col_base(matr_idx[2]);
         extract_masked(bool_v[pos_base].data());
 
@@ -43,14 +51,6 @@ void get_col_filter_range(unsigned int &x,
     } else if constexpr (std::is_same_v<T, FloatT>) {
         const size_t pos_base = find_col_base(matr_idx[5]);
         extract_masked(dbl_v[pos_base].data());
-
-    } else if constexpr (std::is_same_v<T, std::string>) {
-        const size_t pos_base = find_col_base(matr_idx[0]);
-        extract_masked(str_v[pos_base].data());
-
-    } else if constexpr (std::is_same_v<T, CharT>) {
-        const size_t pos_base = find_col_base(matr_idx[1]);
-        extract_masked(chr_v[pos_base].data());
 
     } else {
         std::cerr << "Error in (get_col), unsupported type\n";

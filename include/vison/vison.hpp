@@ -313,7 +313,15 @@ namespace vison {
         #include "view_col/view_colint.hpp"
         #include "view_col/view_coluint.hpp"
         #include "view_col/view_colflt.hpp"
-       
+      
+        #include "inlines/get_col/get_filtered_col_8.inl"
+        #include "inlines/get_col/get_filtered_col_16.inl"
+        #include "inlines/get_col/get_filtered_col_32.inl"
+        #include "inlines/get_col/get_filtered_col_64.inl"
+        #include "inlines/get_col/get_filtered_col_idx_8.inl"
+        #include "inlines/get_col/get_filtered_col_idx_16.inl"
+        #include "inlines/get_col/get_filtered_col_idx_32.inl"
+        #include "inlines/get_col/get_filtered_col_idx_64.inl"
         #include "get_col/get_col_filter.hpp"
         #include "get_col/vectorized/get_col_filter_simd.hpp"
         #include "get_col/get_col_filter_idx.hpp"

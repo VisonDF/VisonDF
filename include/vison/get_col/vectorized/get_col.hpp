@@ -2,53 +2,54 @@
 
 template <typename T, bool IsBool = false>
 void get_col(unsigned int &x, 
-                std::vector<T> &rtn_v) {
+             std::vector<T> &rtn_v) {
   
     rtn_v.resize(nrow);
-    unsigned int i;
-    unsigned int i2 = 0;
 
-    auto load_column = [&](auto& col_vec, const auto& idx_vec)
-    {
-        size_t idx = 0;
-        while (idx < idx_vec.size() && x != idx_vec[idx])
-            ++idx;
-    
-        if (idx == idx_vec.size()) {
+    auto find_col_base = [&](auto &idx_vec) -> size_t {
+        size_t pos = 0;
+        while (pos < idx_vec.size() && idx_vec[pos] != x)
+            ++pos;
+
+        if (pos == idx_vec.size()) {
             std::cerr << "Error in (get_col), no column found\n";
-            return;
+            return size_t(-1);
         }
-    
-        size_t offset = idx * nrow;
-    
-        #pragma GCC ivdep
-        for (size_t r = 0; r < nrow; ++r)
-            rtn_v[r] = col_vec[offset + r];
+        return pos;
     };
 
-    if constexpr (IsBool) {
+    auto load_column = [&](const auto *__restrict src)
+    {
+        memcpy(rtn_v.data(), 
+               src, 
+               nrow * sizeof(T));
+    };
 
-      load_column(bool_v, matr_idx[2]);
-
-    } else if constexpr (std::is_same_v<T, IntT>) {
-
-      load_column(int_v, matr_idx[3]);
-
-    } else if constexpr (std::is_same_v<T, UIntT>) {
-
-      load_column(uint_v, matr_idx[4]);
-
-    } else if constexpr (std::is_same_v<T, FloatT>) {
-
-      load_column(dbl_v, matr_idx[5]);
-
-    } else if constexpr (std::is_same_v<T, std::string>) {
-
-      load_column(str_v, matr_idx[0]);
+    if constexpr (std::is_same_v<T, std::string>) {
+      const size_t pos_base = find_col_base(matr_idx[0]);
+      const auto& src = str_v[pos_base];
+      for (size_t i = 0; i < nrow; ++i)
+          rtn_v[i] = src[i];
 
     } else if constexpr (std::is_same_v<T, CharT>) {
+      const size_t pos_base = find_col_base(matr_idx[1]);
+      load_column(chr_v[pos_base].data());
 
-      load_column(chr_v, matr_idx[1]);
+    } else if constexpr (IsBool) {
+      const size_t pos_base = find_col_base(matr_idx[2]);
+      load_column(bool_v[pos_base].data());
+
+    } else if constexpr (std::is_same_v<T, IntT>) {
+      const size_t pos_base = find_col_base(matr_idx[3]);
+      load_column(int_v[pos_base].data());
+
+    } else if constexpr (std::is_same_v<T, UIntT>) {
+      const size_t pos_base = find_col_base(matr_idx[4]);
+      load_column(uint_v[pos_base].data());
+
+    } else if constexpr (std::is_same_v<T, FloatT>) {
+      const size_t pos_base = find_col_base(matr_idx[5]);
+      load_column(uint_v[pos_base].data());
 
     } else {
       std::cerr << "Error in (get_col), unsupported type\n";
