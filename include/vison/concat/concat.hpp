@@ -16,22 +16,26 @@ void concat(Dataframe& obj)
       return;
     };
   
-    const std::vector<std::string>& str_v2 = obj.get_str_vec();
-    const std::vector<CharT>& chr_v2 = obj.get_chr_vec();
-    const std::vector<uint8_t>& bool_v2 = obj.get_bool_vec();
-    const std::vector<IntT>& int_v2 = obj.get_int_vec();
-    const std::vector<UIntT>& uint_v2 = obj.get_uint_vec();
-    const std::vector<FloatT>& dbl_v2 = obj.get_dbl_vec();
+    const std::vector<std::vector<std::string>>& str_v2  = obj.get_str_vec() ;
+    const std::vector<std::vector<CharT>>&       chr_v2  = obj.get_chr_vec() ;
+    const std::vector<std::vector<uint8_t>>&     bool_v2 = obj.get_bool_vec();
+    const std::vector<std::vector<IntT>>&        int_v2  = obj.get_int_vec() ;
+    const std::vector<std::vector<UIntT>>&       uint_v2 = obj.get_uint_vec();
+    const std::vector<std::vector<FloatT>>&      dbl_v2  = obj.get_dbl_vec() ;
   
     const std::vector<std::vector<std::string>>& tmp_val_refv2 = obj.get_tmp_val_refv();
   
     const unsigned int& nrow2 = obj.get_nrow();
     unsigned int pre_nrow = nrow;
     nrow += nrow2;
-  
-    std::vector<std::string> new_str_v;
-    new_str_v.resize(str_v.size() + str_v2.size());
-    
+
+    for (auto& el : str_v ) { el.resize(nrow) };
+    for (auto& el : chr_v ) { el.resize(nrow) };
+    for (auto& el : bool_v) { el.resize(nrow) };
+    for (auto& el : int_v ) { el.resize(nrow) };
+    for (auto& el : uint_v) { el.resize(nrow) };
+    for (auto& el : dbl_v ) { el.resize(nrow) };
+
     for (size_t el = 0; el < matr_idx[0].size(); el += 1) {
 
         const size_t val_idx = matr_idx[0][el];
@@ -44,32 +48,20 @@ void concat(Dataframe& obj)
                        val_tmp2.begin(),
                        val_tmp2.end());
 
-        const size_t base_old = el * pre_nrow;
-        const size_t base_new = el * nrow2;
+        auto& dst = str_v [el];
+        auto& src = str_v2[el];
 
-        size_t i2 = base_old;
-        const size_t target_1 = el * nrow + pre_nrow;
-        size_t i = el * nrow;
-        for (; i < target_1; ++i, ++i2)
-            new_str_v[i] = str_v[i2];
-
-        i2 = base_new;
-        const size_t target_2 = el * nrow + nrow;
-        for (; i < target_2; ++i, ++i2)
-            new_str_v[i] = str_v2[i2];
+        size_t i2 = 0;
+        for (size_t i = pre_nrow; i < nrow; ++i, ++i2)
+            dst[i] = src[i2];
 
     };
  
-    str_v.swap(new_str_v);
-
-    auto concat_pod_column = [&](auto& out_vec,
-                                 const auto& vec1,
+    auto concat_pod_column = [&](const auto& vec1,
                                  const auto& vec2,
                                  const std::vector<size_t>& col_idx) 
     {
         using T = typename std::remove_reference_t<decltype(vec1)>::value_type;
-    
-        out_vec.resize(vec1.size() + vec2.size());
     
         for (size_t el = 0; el < col_idx.size(); ++el) 
         {
@@ -82,42 +74,24 @@ void concat(Dataframe& obj)
             val_tmp.insert(val_tmp.end(),
                            val_tmp2.begin(),
                            val_tmp2.end());
-    
-            const size_t base_old = el * pre_nrow;
-            const size_t base_new = el * nrow2;
-            T* dst  = out_vec.data() + el * nrow;
-            T* dst2 = dst + pre_nrow;
-    
+   
+            T* dst = vec1[el].data() + pre_nrow;
+            T* src = vec2[el].data();
             std::memcpy(dst,
-                        vec1.data() + base_old,
-                        pre_nrow * sizeof(T));
-    
-            std::memcpy(dst2,
-                        vec2.data() + base_new,
+                        src,
                         nrow2 * sizeof(T));
         }
+
     };
 
-    std::vector<CharT> new_chr_v;
-    concat_pod_column(new_chr_v, chr_v, chr_v2, matr_idx[1]);
-    chr_v.swap(new_chr_v);
-
-    std::vector<uint8_t> new_bool_v;
-    concat_pod_column(new_chr_v, chr_v, chr_v2, matr_idx[1]);
-    bool_v.swap(new_bool_v);
- 
-    std::vector<IntT> new_int_v;
-    concat_pod_column(new_int_v, int_v, int_v2, matr_idx[3]);
-    int_v.swap(new_int_v);
-
-    std::vector<UIntT> new_uint_v;
-    concat_pod_column(new_uint_v, uint_v, uint_v2, matr_idx[4]);
-    uint_v.swap(new_uint_v);
-
-    std::vector<FloatT> new_dbl_v;
-    concat_pod_column(new_dbl_v, dbl_v, dbl_v2, matr_idx[5]);
-    dbl_v.swap(new_dbl_v);
+    concat_pod_column(chr_v , chr_v2 ,  matr_idx[1]);
+    concat_pod_column(bool_v, bool_v2,  matr_idx[2]);
+    concat_pod_column(int_v , int_v2 ,  matr_idx[3]);
+    concat_pod_column(uint_v, uint_v2,  matr_idx[4]);
+    concat_pod_column(dbl_v , dbl_v2 ,  matr_idx[5]);
 
 };
+
+
 
 

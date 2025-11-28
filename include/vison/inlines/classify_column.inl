@@ -1,8 +1,8 @@
 struct ColumnResult {
     char type;
     std::vector<std::string> str_v;
-    std::vector<char> chr_v;
-    std::vector<bool> bool_v;
+    std::vector<CharT> chr_v;
+    std::vector<uint8_t> bool_v;
     std::vector<IntT> int_v;
     std::vector<UIntT> uint_v;
     std::vector<FloatT> dbl_v;

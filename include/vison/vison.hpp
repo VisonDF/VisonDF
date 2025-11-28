@@ -156,14 +156,21 @@ namespace vison {
         unsigned int nrow = 0;
         unsigned int ncol = 0;
       
-        std::vector<std::string> str_v = {};
-        std::vector<char[df_charbuf_size]> chr_v = {};
-        std::vector<uint8_t> bool_v = {};
-        std::vector<IntT> int_v = {};
-        std::vector<UIntT> uint_v = {};
-        std::vector<FloatT> dbl_v = {};
+        std::vector<std::vector<std::string>> str_v = {};
+        std::vector<std::vector<CharT>>       chr_v = {};
+        std::vector<std::vector<uint8_t>>     bool_v = {};
+        std::vector<std::vector<IntT>>        int_v = {};
+        std::vector<std::vector<UIntT>>       uint_v = {};
+        std::vector<std::vector<FloatT>>      dbl_v = {};
        
-        std::vector<std::vector<unsigned int>> matr_idx = {{}, {}, {}, {}, {}, {}};
+        std::vector<std::vector<unsigned int>> matr_idx = {
+                                                           {}, 
+                                                           {}, 
+                                                           {}, 
+                                                           {}, 
+                                                           {}, 
+                                                           {}
+                                                          };
         std::vector<std::string> name_v = {};
         std::vector<std::string> name_v_row = {};
         std::vector<unsigned int> longest_v = {};
@@ -171,27 +178,27 @@ namespace vison {
         std::vector<char> type_refv = {};
         std::vector<std::vector<std::string>> tmp_val_refv = {};
     
-        [[nodiscard]] inline const std::vector<std::string>& get_str_vec() const {
+        [[nodiscard]] inline const std::vector<std::vector<std::string>>& get_str_vec() const {
           return str_v;
         };
     
-        [[nodiscard]] inline const std::vector<char[df_charbuf_size]>& get_chr_vec() const {
+        [[nodiscard]] inline const std::vector<std::vector<CharT>>& get_chr_vec() const {
           return chr_v;
         };
     
-        [[nodiscard]] inline const std::vector<uint8_t>& get_bool_vec() const {
+        [[nodiscard]] inline const std::vector<std::vector<uint8_t>>& get_bool_vec() const {
           return bool_v;
         };
     
-        [[nodiscard]] inline const std::vector<IntT>& get_int_vec() const {
+        [[nodiscard]] inline const std::vector<std::vector<IntT>>& get_int_vec() const {
           return int_v;
         };
     
-        [[nodiscard]] inline const std::vector<UIntT>& get_uint_vec() const {
+        [[nodiscard]] inline const std::vector<std::vector<UIntT>>& get_uint_vec() const {
           return uint_v;
         };
     
-        [[nodiscard]] inline const std::vector<FloatT>& get_dbl_vec() const {
+        [[nodiscard]] inline const std::vector<std::vector<FloatT>>& get_dbl_vec() const {
           return dbl_v;
         };
     

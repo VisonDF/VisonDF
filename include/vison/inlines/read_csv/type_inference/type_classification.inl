@@ -108,16 +108,27 @@ void type_classification(std::vector<char> dtype = {}) {
     }
     
     size_t total_str=0, total_chr=0, total_bool=0, total_int=0, total_uint=0, total_dbl=0;
-    std::array<size_t,6> total_idx{0,0,0,0,0,0};
+    std::array<size_t, 6> total_idx{0,0,0,0,0,0};
 
+    std::vector<size_t> off_str(results.size(),  0),
+                        off_chr(results.size(),  0),
+                        off_bool(results.size(), 0),
+                        off_int(results.size(),  0),
+                        off_uint(results.size(), 0),
+                        off_dbl(results.size(),  0);
+
+    size_t cnt = 0;
     for (const auto& r : results) {
-        total_str  += r.str_v.size();
-        total_chr  += r.chr_v.size();
-        total_bool += r.bool_v.size();
-        total_int  += r.int_v.size();
-        total_uint += r.uint_v.size();
-        total_dbl  += r.dbl_v.size();
+        
+        if (r.str_v.size() > 0)  { off_str[cnt]   = total_str ; total_str  += 1; };
+        if (r.chr_v.size() > 0)  { off_chr[cnt]   = total_chr ; total_chr  += 1; };
+        if (r.bool_v.size() > 0) { off_bool[cnt]  = total_bool; total_bool += 1; };
+        if (r.int_v.size() > 0)  { off_int[cnt]   = total_int ; total_int  += 1; };
+        if (r.uint_v.size() > 0) { off_uint[cnt]  = total_uint; total_uint += 1; };
+        if (r.dbl_v.size() > 0)  { off_dbl[cnt]   = total_dbl;  total_dbl  += 1; };
+
         for (size_t t = 0; t < 6; ++t) total_idx[t] += r.matr_idx[t].size();
+        cnt += 1;
     }
 
     str_v.resize (total_str);
@@ -126,28 +137,21 @@ void type_classification(std::vector<char> dtype = {}) {
     int_v.resize (total_int);
     uint_v.resize(total_uint);
     dbl_v.resize (total_dbl);
+    for (auto& el : str_v ) { el.resize(nrow) };
+    for (auto& el : chr_v ) { el.resize(nrow) };
+    for (auto& el : bool_v) { el.resize(nrow) };
+    for (auto& el : int_v ) { el.resize(nrow) };
+    for (auto& el : uint_v) { el.resize(nrow) };
+    for (auto& el : dbl_v ) { el.resize(nrow) };
     for (size_t t = 0 ; t < 6; ++t) matr_idx[t].resize(total_idx[t]);
-
-    std::vector<size_t> off_str(results.size()),
-                        off_chr(results.size()),
-                        off_bool(results.size()),
-                        off_int(results.size()),
-                        off_uint(results.size()),
-                        off_dbl(results.size());
 
     std::array<std::vector<size_t>,6> off_idx;
     for (auto& v : off_idx)
         v.resize(results.size());
 
     for (size_t i = 1; i < results.size(); ++i) {
-        off_str[i]  = off_str[i - 1]  + results[i - 1].str_v.size();
-        off_chr[i]  = off_chr[i - 1]  + results[i - 1].chr_v.size();
-        off_bool[i] = off_bool[i - 1] + results[i - 1].bool_v.size();
-        off_int[i]  = off_int[i - 1]  + results[i - 1].int_v.size();
-        off_uint[i] = off_uint[i - 1] + results[i - 1].uint_v.size();
-        off_dbl[i]  = off_dbl[i - 1]  + results[i - 1].dbl_v.size();
         for (size_t t = 0; t < 6; ++t)
-            off_idx[t][i] = off_idx[t][i-1] + results[i-1].matr_idx[t].size();
+            off_idx[t][i] = off_idx[t][i - 1] + results[i - 1].matr_idx[t].size();
     }
 
     #pragma omp parallel for schedule(static) num_threads(CORES)
@@ -155,12 +159,12 @@ void type_classification(std::vector<char> dtype = {}) {
         auto& r = results[i];
         type_refv[i] = r.type;
 
-        std::move(r.str_v.begin(),  r.str_v.end(),  str_v.begin() + off_str[i]);
-        std::move(r.chr_v.begin(),  r.chr_v.end(),  chr_v.begin() + off_chr[i]);
-        std::move(r.bool_v.begin(), r.bool_v.end(), bool_v.begin() + off_bool[i]);
-        std::move(r.int_v.begin(),  r.int_v.end(),  int_v.begin()  + off_int[i]);
-        std::move(r.uint_v.begin(), r.uint_v.end(), uint_v.begin() + off_uint[i]);
-        std::move(r.dbl_v.begin(),  r.dbl_v.end(),  dbl_v.begin() + off_dbl[i]);
+        std::move(r.str_v.begin(),  r.str_v.end(),  str_v [ off_str [i] ].begin());
+        std::move(r.chr_v.begin(),  r.chr_v.end(),  chr_v [ off_chr [i] ].begin());
+        std::move(r.bool_v.begin(), r.bool_v.end(), bool_v[ off_bool[i] ].begin());
+        std::move(r.int_v.begin(),  r.int_v.end(),  int_v [ off_int [i] ].begin());
+        std::move(r.uint_v.begin(), r.uint_v.end(), uint_v[ off_uint[i] ].begin());
+        std::move(r.dbl_v.begin(),  r.dbl_v.end(),  dbl_v [ off_dbl [i] ].begin());
 
         for (size_t t = 0;t < 6; ++t)
             std::move(r.matr_idx[t].begin(),
