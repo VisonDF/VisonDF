@@ -488,6 +488,7 @@ namespace vison {
     #include "inlines/operator_overloading/add_col/batched/add_col_batch.inl"
 
     #include "inlines/operator_overloading/concat/concat.inl"
+    #include "inlines/operator_overloading/concat/concat_mt.inl"
 
 }
 
