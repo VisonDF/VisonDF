@@ -16,42 +16,40 @@ void get_col_filter(unsigned int &x,
             std::cerr << "Error in (get_col), no column found\n";
             return size_t(-1);
         }
-        return pos * nrow;
+        return pos;
     };
 
-    auto extract_masked = [&](const auto *__restrict col_ptr, size_t base) {
-        const auto *src = col_ptr + base;
-        size_t idx = 0;
-
-        for (size_t i = 0; i < nrow; ++i, ++idx) {
+    auto extract_masked = [&](const auto *__restrict col_ptr) {
+        const auto *src = col_ptr;
+        for (size_t i = 0; i < mask.size(); ++i) {
             if (mask[i])
-                rtn_v.push_back(src[idx]);
+                rtn_v.push_back(src[i]);
         }
     };
 
     if constexpr (IsBool) {
-        extract_masked(bool_v.data(),
-                       find_col_base(matr_idx[2]));
+        const size_t pos_base = find_col_base(matr_idx[2]);
+        extract_masked(bool_v[pos_base].data());
 
     } else if constexpr (std::is_same_v<T, IntT>) {
-        extract_masked(int_v.data(),
-                       find_col_base(matr_idx[3]));
+        const size_t pos_base = find_col_base(matr_idx[3]);
+        extract_masked(int_v[pos_base].data());
 
     } else if constexpr (std::is_same_v<T, UIntT>) {
-        extract_masked(uint_v.data(),
-                       find_col_base(matr_idx[4]));
+        const size_t pos_base = find_col_base(matr_idx[4]);
+        extract_masked(uint_v[pos_base].data());
 
     } else if constexpr (std::is_same_v<T, FloatT>) {
-        extract_masked(dbl_v.data(),
-                       find_col_base(matr_idx[5]));
+        const size_t pos_base = find_col_base(matr_idx[5]);
+        extract_masked(dbl_v[pos_base].data());
 
     } else if constexpr (std::is_same_v<T, std::string>) {
-        extract_masked(str_v.data(),
-                       find_col_base(matr_idx[0]));
+        const size_t pos_base = find_col_base(matr_idx[0]);
+        extract_masked(str_v[pos_base].data());
 
     } else if constexpr (std::is_same_v<T, CharT>) {
-        extract_masked(chr_v.data(),
-                       find_col_base(matr_idx[1]));
+        const size_t pos_base = find_col_base(matr_idx[1]);
+        extract_masked(chr_v[pos_base].data());
 
     } else {
         std::cerr << "Error in (get_col), unsupported type\n";

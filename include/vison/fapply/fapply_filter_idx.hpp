@@ -3,8 +3,8 @@
 template <typename F, bool IsBool = false>
 requires FapplyFn<F, first_arg_t<F>>
 void fapply_filter_idx(F f, 
-                unsigned int& n, 
-                const std::vector<unsigned int>& mask) 
+                       unsigned int& n, 
+                       const std::vector<unsigned int>& mask) 
 {
 
     using T = first_arg_t<F>;
@@ -16,23 +16,39 @@ void fapply_filter_idx(F f,
           return;
         }
 
-        apply_numeric_filter_idx<uint8_t>(bool_v, n, 0, f, mask);
+        apply_numeric_filter_idx<uint8_t>(bool_v, 
+                                          n, 
+                                          0, 
+                                          f, 
+                                          mask);
 
     } else if constexpr (std::is_same_v<T, IntT>)
-        apply_numeric_filter_idx<IntT>(int_v, n, 3, f, mask);
+        apply_numeric_filter_idx<IntT>(int_v, 
+                                       n, 
+                                       3, 
+                                       f, 
+                                       mask);
 
     else if constexpr (std::is_same_v<T, UIntT>)
-        apply_numeric_filter_idx<UIntT>(uint_v, n, 4, f, mask);
+        apply_numeric_filter_idx<UIntT>(uint_v, 
+                                        n, 
+                                        4, 
+                                        f, 
+                                        mask);
 
     else if constexpr (std::is_same_v<T, FloatT>)
-        apply_numeric_filter_idx<FloatT>(dbl_v, n, 5, f, mask);
+        apply_numeric_filter_idx<FloatT>(dbl_v, 
+                                         n, 
+                                         5, 
+                                         f, 
+                                         mask);
 
     else if constexpr (std::is_same_v<T, CharT>) {
         unsigned int i2 = 0;
         while (i2 < matr_idx[1].size() && n != matr_idx[1][i2])
             ++i2;
         
-        const unsigned int start = nrow * i2;
+        std::vector<CharT>& dst = chr_v[i2];
         std::vector<std::string>& val_tmp = tmp_val_refv[n];
         
         #if defined(__clang__)
@@ -44,9 +60,8 @@ void fapply_filter_idx(F f,
         #endif
         
         for (unsigned int& pos_idx : mask) {
-            const unsigned int abs_idx = start + pos_idx;
-            f(chr_v[abs_idx]);
-            val_tmp[pos_idx].assign(chr_v[abs_idx], df_charbuf_size);
+            f(dst[pos_idx]);
+            val_tmp[pos_idx].assign(dst[pos_idx], df_charbuf_size);
         }
 
     }
@@ -56,7 +71,7 @@ void fapply_filter_idx(F f,
         while (i2 < matr_idx[0].size() && n != matr_idx[0][i2])
             ++i2;
         
-        const unsigned int start = nrow * i2;
+        std::vector<std::string>& dst = str_v[i2];
         std::vector<std::string>& val_tmp = tmp_val_refv[n];
 
         #if defined(__clang__)
@@ -67,9 +82,8 @@ void fapply_filter_idx(F f,
             #pragma loop(ivdep)
         #endif
         for (unsigned int& pos_idx : mask) {
-            const unsigned int abs_idx = start + pos_idx;
-            f(str_v[abs_idx]);
-            val_tmp[pos_idx] = str_v[abs_idx];
+            f(dst[pos_idx]);
+            val_tmp[pos_idx] = dst[pos_idx];
         }
 
     }

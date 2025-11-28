@@ -15,11 +15,8 @@ inline void apply_numeric_simd(std::vector<T>& values,
     while (i2 < matr_idx[idx_type].size() && n != matr_idx[idx_type][i2])
         ++i2;
 
-    const unsigned int start = nrow * i2;
-    const unsigned int end   = start + nrow;
-
-    unsigned int i3 = 0;
-    size_t i = start;
+    std::vector<T>& dst    = values[i2];
+    size_t i = 0;
 
     std::vector<std::string>& val_tmp = tmp_val_refv[n];
 
@@ -32,28 +29,28 @@ inline void apply_numeric_simd(std::vector<T>& values,
         #pragma loop(ivdep)
     #endif
         
-    for (; i + 4 <= end; i += 4, i3 += 4) {
-        f(values[i + 0]);
-        f(values[i + 1]);
-        f(values[i + 2]);
-        f(values[i + 3]);
+    for (; i + 4 <= nrow; i += 4) {
+        f(dst[i + 0]);
+        f(dst[i + 1]);
+        f(dst[i + 2]);
+        f(dst[i + 3]);
 
         char buf[buf_size];
         for (int j = 0; j < 4; ++j) {
-            auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, values[i + j]);
+            auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, dst[i + j]);
             if (ec == std::errc{}) [[likely]]
-                val_tmp[i3 + j].assign(buf, ptr);
+                val_tmp[i + j].assign(buf, ptr);
             else [[unlikely]]
                 std::terminate();
         }
     }
 
-    for (; i < end; ++i, ++i3) {
-        f(values[i]);
+    for (; i < nrow; ++i) {
+        f(dst[i]);
         char buf[buf_size];
-        auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, values[i]);
+        auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, dst[i]);
         if (ec == std::errc{}) [[likely]]
-            val_tmp[i3].assign(buf, ptr);
+            val_tmp[i].assign(buf, ptr);
         else [[unlikely]]
             std::terminate();
     }

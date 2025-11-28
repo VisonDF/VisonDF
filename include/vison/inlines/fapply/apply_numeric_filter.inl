@@ -18,21 +18,18 @@ inline void apply_numeric_filter(std::vector<T>& values,
         ++i2;
     }
 
-    const unsigned int start = nrow * i2;
-    unsigned int i3 = 0;
+    std::vector<T>& dst = values[i2];
     std::vector<std::string>& val_tmp = tmp_val_refv[n];
     const unsigned int end_val = mask.size();
 
-    for (size_t i = start; i < start + end_val; ++i, ++i3) {
+    for (size_t i = 0; i < end_val; ++i) {
 
-        if (!mask[i3]) [[likely]] {
-          continue;
-        }
+        if (!mask[i]) [[likely]] { continue; }
 
-        f(values[i]);
+        f(dst[i]);
 
         char buf[buf_size];
-        auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, values[i]);
+        auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, dst[i]);
 
         if (ec == std::errc{}) [[likely]] {
             val_tmp[i3].assign(buf, ptr);

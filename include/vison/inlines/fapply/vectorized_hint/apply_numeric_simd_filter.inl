@@ -2,10 +2,10 @@
 
 template <typename T, typename F>
 inline void apply_numeric_simd_filter(std::vector<T>& values, 
-                unsigned int n, 
-                size_t idx_type, 
-                F&& f,
-                const std::vector<uint8_t>& mask) {
+                                      unsigned int n, 
+                                      size_t idx_type, 
+                                      F&& f,
+                                      const std::vector<uint8_t>& mask) {
     
     constexpr size_t buf_size = max_chars_needed<T>();
     
@@ -17,11 +17,9 @@ inline void apply_numeric_simd_filter(std::vector<T>& values,
         ++i2;
 
     const unsigned int end_val = mask.size();
-    const unsigned int start = nrow * i2;
-    const unsigned int end   = start + end_val;
+    std::vector<T>& dst = values[i2];
 
-    unsigned int i3 = 0;
-    size_t i = start;
+    size_t i = 0;
 
     std::vector<std::string>& val_tmp = tmp_val_refv[n];
      
@@ -33,18 +31,18 @@ inline void apply_numeric_simd_filter(std::vector<T>& values,
         #pragma loop(ivdep)
     #endif
         
-    for (; i + 4 <= end; i += 4, i3 += 4) {
+    for (; i + 4 <= end_val; i += 4) {
     
         char buf[buf_size];
 
         auto process = [&](int k) {
             if (!mask[i + k]) return;
 
-            f(values[i + k]);
+            f(dst[i + k]);
 
-            auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, values[i + k]);
+            auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, dst[i + k]);
             if (ec == std::errc{}) [[likely]] {
-                val_tmp[i3 + k].assign(buf, ptr);
+                val_tmp[i + k].assign(buf, ptr);
             } else [[unlikely]] {
                 std::terminate();
             }
@@ -57,13 +55,13 @@ inline void apply_numeric_simd_filter(std::vector<T>& values,
 
     }
 
-    for (; i < end; ++i, ++i3) {
+    for (; i < end_val; ++i) {
         if (mask[i]) {
-            f(values[i]);
+            f(dst[i]);
             char buf[buf_size];
-            auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, values[i]);
+            auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, dst[i]);
             if (ec == std::errc{}) [[likely]]
-                val_tmp[i3].assign(buf, ptr);
+                val_tmp[i].assign(buf, ptr);
             else [[unlikely]]
                 std::terminate();
         }

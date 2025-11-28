@@ -28,12 +28,11 @@ void fapply(F f, unsigned int& n) {
         unsigned int i2 = 0;
         while (i2 < matr_idx[1].size() && n != matr_idx[1][i2])
             ++i2;
-        const unsigned int start = nrow * i2;
-        unsigned int i3 = 0;
+        std::vector<CharT>& dst = chr_v[i2];
         std::vector<std::string>& val_tmp = tmp_val_refv[n];
-        for (size_t i = start; i < start + nrow; ++i, ++i3) {
-            f(chr_v[i]);
-            val_tmp[i3].assign(chr_v[i], df_charbuf_size);
+        for (size_t i = 0; i < nrow; ++i) {
+            f(dst[i]);
+            val_tmp[i].assign(dst[i], df_charbuf_size);
         }
     }
 
@@ -41,12 +40,14 @@ void fapply(F f, unsigned int& n) {
         unsigned int i2 = 0;
         while (i2 < matr_idx[0].size() && n != matr_idx[0][i2])
             ++i2;
-        const unsigned int start = nrow * i2;
-        unsigned int i3 = 0;
-        for (size_t i = start; i < start + nrow; ++i, ++i3) {
-            f(str_v[i]);
-            tmp_val_refv[n][i3] = str_v[i];
+        std::vector<std::string>& dst = str_v[i2];
+        std::vector<std::string>& val_tmp = tmp_val_refv[n];
+        for (size_t i = 0; i < nrow; ++i) {
+            f(dst[i]);
+            val_tmp[i] = dst[i];
         }
     }
 }
+
+
 

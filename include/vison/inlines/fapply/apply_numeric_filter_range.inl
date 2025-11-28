@@ -2,11 +2,11 @@
 
 template <typename T, typename F>
 inline void apply_numeric_filter_range(std::vector<T>& values, 
-                unsigned int n, 
-                size_t idx_type, 
-                F&& f,
-                const std::vector<uint8_t>& mask,
-                const unsigned int& strt_vl) 
+                                       unsigned int n, 
+                                       size_t idx_type, 
+                                       F&& f,
+                                       const std::vector<uint8_t>& mask,
+                                       const unsigned int strt_vl) 
 {
     constexpr auto buf_size = max_chars_needed<T>();
     for (auto& s : tmp_val_refv[n])
@@ -19,24 +19,21 @@ inline void apply_numeric_filter_range(std::vector<T>& values,
         ++i2;
     }
 
-    const unsigned int start = nrow * i2;
-    unsigned int i3 = 0;
+    std::vector<T>& dst = values[i2];
     std::vector<std::string>& val_tmp = tmp_val_refv[n];
     const unsigned int end_val = mask.size();
 
-    for (size_t i = start; i < start + end_val; ++i, ++i3) {
+    for (size_t i = 0; i < end_val; ++i) {
 
-        if (!mask[i3]) [[likely]] {
-          continue;
-        }
+        if (!mask[i]) [[likely]] { continue; }
 
-        f(values[strt_vl + i]);
+        f(dst[strt_vl + i]);
 
         char buf[buf_size];
-        auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, values[strt_vl + i]);
+        auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, dst[strt_vl + i]);
 
         if (ec == std::errc{}) [[likely]] {
-            val_tmp[strt_vl + i3].assign(buf, ptr);
+            val_tmp[strt_vl + i].assign(buf, ptr);
         } else [[unlikely]] {
             std::terminate();
         }

@@ -3,8 +3,8 @@
 template <typename F, bool IsBool = false>
 requires FapplyFn<F, first_arg_t<F>>
 void fapply_filter(F f, 
-                unsigned int& n, 
-                const std::vector<uint8_t>& mask) 
+                   unsigned int& n, 
+                   const std::vector<uint8_t>& mask) 
 {
 
     using T = first_arg_t<F>;
@@ -33,16 +33,15 @@ void fapply_filter(F f,
         unsigned int i2 = 0;
         while (i2 < matr_idx[1].size() && n != matr_idx[1][i2])
             ++i2;
-        const unsigned int start = nrow * i2;
-        unsigned int i3 = 0;
+        std::vector<CharT>& dst = chr_v[i2];
         std::vector<std::string>& val_tmp = tmp_val_refv[n];
         const unsigned int end_val = mask.size();
-        for (size_t i = start; i < start + end_val; ++i, ++i3) {
-            if (!mask[i3]) {
-              continue;
+        for (size_t i = 0; i < end_val; ++i) {
+            if (!mask[i]) {
+                continue;
             }
-            f(chr_v[i]);
-            val_tmp[i3].assign(chr_v[i], df_charbuf_size);
+            f(dst[i]);
+            val_tmp[i].assign(dst[i], df_charbuf_size);
         }
     }
 
@@ -50,16 +49,15 @@ void fapply_filter(F f,
         unsigned int i2 = 0;
         while (i2 < matr_idx[0].size() && n != matr_idx[0][i2])
             ++i2;
-        const unsigned int start = nrow * i2;
-        unsigned int i3 = 0;
+        std::vector<std::string>& dst = str_v[i2];
         std::vector<std::string>& val_tmp = tmp_val_refv[n]; 
         const unsigned int end_val = mask.size();
-        for (size_t i = start; i < start + end_val; ++i, ++i3) {
-            if (!mask[i3]) {
-              continue;
+        for (size_t i = 0; i < end_val; ++i) {
+            if (!mask[i]) {
+                continue;
             }
-            f(str_v[i]);
-            val_tmp[i3] = str_v[i];
+            f(dst[i]);
+            val_tmp[i3] = dst[i];
         }
     }
 }

@@ -2,10 +2,10 @@
 
 template <typename T, typename F>
 inline void apply_numeric_filter_idx(std::vector<T>& values, 
-                unsigned int n, 
-                size_t idx_type, 
-                F&& f,
-                const std::vector<unsigned int>& mask) 
+                                     unsigned int n, 
+                                     size_t idx_type, 
+                                     F&& f,
+                                     const std::vector<unsigned int>& mask) 
 {
     constexpr auto buf_size = max_chars_needed<T>();
     for (auto& s : tmp_val_refv[n])
@@ -18,7 +18,7 @@ inline void apply_numeric_filter_idx(std::vector<T>& values,
         ++i2;
     }
 
-    const unsigned int start = nrow * i2;
+    std::vector<T>& dst = values[i2];
     std::vector<std::string>& val_tmp = tmp_val_refv[n];
     
     #if defined(__clang__)
@@ -32,11 +32,9 @@ inline void apply_numeric_filter_idx(std::vector<T>& values,
 
         char buf[buf_size];
 
-        const unsigned int abs_idx = start + pos_idx;
+        f(dst[pos_idx]);
 
-        f(values[abs_idx]);
-
-        auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, values[abs_idx]);
+        auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, dst[pos_idx]);
 
         if (ec == std::errc{}) [[likely]] {
             val_tmp[pos_idx].assign(buf, ptr);
