@@ -313,7 +313,9 @@ namespace vison {
         #include "view_col/view_colint.hpp"
         #include "view_col/view_coluint.hpp"
         #include "view_col/view_colflt.hpp"
-      
+
+        #include "inlines/get_col/avx2_lut4.inl"
+        #include "inlines/get_col/avx2_lut8.inl"
         #include "inlines/get_col/get_filtered_col_8.inl"
         #include "inlines/get_col/get_filtered_col_16.inl"
         #include "inlines/get_col/get_filtered_col_32.inl"
