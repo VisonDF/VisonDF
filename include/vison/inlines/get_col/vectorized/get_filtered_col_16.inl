@@ -5,6 +5,7 @@ inline void get_filtered_col_16(
     const std::vector<T>& col_vec,
     std::vector<T>& rtn_v,
     const std::vector<uint8_t>& mask,
+    const unsigned int strt_vl,
     const size_t n_el)
 {
     size_t out_idx = 0;
