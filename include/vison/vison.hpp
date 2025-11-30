@@ -326,6 +326,7 @@ namespace vison {
         #include "inlines/get_col/get_filtered_col_idx_16.inl"
         #include "inlines/get_col/get_filtered_col_idx_32.inl"
         #include "inlines/get_col/get_filtered_col_idx_64.inl"
+        #include "inlines/get_col/get_col_filter_boolmask.inl"
         #include "get_col/get_col_filter.hpp"
         #include "get_col/vectorized/get_col_filter_simd.hpp"
         #include "get_col/get_col_filter_idx.hpp"
