@@ -4,7 +4,9 @@ template <typename T, typename F>
 inline void apply_numeric(std::vector<std::vector<T>>& values, 
                           unsigned int n, 
                           size_t idx_type, 
-                          F&& f) {
+                          F&& f,
+                          const unsigned int end_val) {
+    
     constexpr auto buf_size = max_chars_needed<T>();
     for (auto& s : tmp_val_refv[n])
         s.reserve(buf_size);
@@ -19,7 +21,7 @@ inline void apply_numeric(std::vector<std::vector<T>>& values,
     std::vector<T>& dst = values[i2];
     std::vector<std::string>& val_tmp = tmp_val_refv[n];
 
-    for (size_t i = 0; i < nrow; ++i) {
+    for (size_t i = 0; i < end_val; ++i) {
         f(dst[i]);
 
         char buf[buf_size];
