@@ -4,7 +4,8 @@ template <typename T, typename F>
 inline void apply_numeric_simd(std::vector<T>& values, 
                 unsigned int n, 
                 size_t idx_type, 
-                F&& f) {
+                F&& f,
+                const unsigned int nrow) {
     
     constexpr size_t buf_size = max_chars_needed<T>();
     

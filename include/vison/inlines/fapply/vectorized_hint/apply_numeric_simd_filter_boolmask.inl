@@ -1,12 +1,12 @@
 #pragma once
 
 template <typename T, typename F>
-inline void apply_numeric_simd_filter_range(std::vector<T>& values, 
-                                            unsigned int n, 
-                                            size_t idx_type, 
-                                            F&& f,
-                                            const std::vector<uint8_t>& mask,
-                                            const unsigned int& strt_vl) {
+inline void apply_numeric_simd_filter_boolmask(std::vector<T>& values, 
+                                               unsigned int n, 
+                                               size_t idx_type, 
+                                               F&& f,
+                                               const std::vector<uint8_t>& mask,
+                                               const unsigned int& strt_vl) {
     
     constexpr size_t buf_size = max_chars_needed<T>();
     
