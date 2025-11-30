@@ -346,6 +346,7 @@ namespace vison {
         };
    
         #include "get_dataframe/get_dataframe.hpp" 
+        #include "get_dataframe/get_dataframe_mt.hpp" 
         #include "get_dataframe/get_dataframe_filter.hpp"
         #include "get_dataframe/get_dataframe_filter_range.hpp"
         #include "get_dataframe/vectorized/get_dataframe_filter_simd.hpp"
