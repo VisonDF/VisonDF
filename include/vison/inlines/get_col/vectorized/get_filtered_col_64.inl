@@ -29,14 +29,15 @@ inline void get_filtered_col_64(
         __mmask8 k2 = (__mmask8)((maskbits >> 16) & 0xFFu );
         __mmask8 k3 = (__mmask8)((maskbits >> 24) & 0xFFu );
 
-        __m512i vals0 = _mm512_loadu_si512((const __m512i*)&col_vec[i]);
         if constexpr (std::is_same_v<T, double>) {
+            __m512d vals0 = _mm512_loadu_pd(&col_vec[i]);
             _mm512_mask_compressstoreu_pd(
                 &rtn_v[out_idx],
                 k0,
-                __m512_castsi512_pd(vals0)
+                vals0
             );
         } else {
+            __m512i vals0 = _mm512_loadu_si512(&col_vec[i]);
             _mm512_mask_compressstoreu_epi64(
                 (__m512i*)&rtn_v[out_idx],
                 k0,
@@ -45,14 +46,15 @@ inline void get_filtered_col_64(
         }
         out_idx += _mm_popcnt_u32(k0);
 
-        __m512i vals1 = _mm512_loadu_si512((const __m512i*)&col_vec[i + 8]); 
         if constexpr (std::is_same_v<T, double>) {
+            __m512d vals1 = _mm512_loadu_pd(&col_vec[i + 8]); 
             _mm512_mask_compressstoreu_pd(
                 &rtn_v[out_idx],
                 k1,
-                __m512_castsi512_pd(vals1)
+                vals1
             );
         } else {
+            __m512i vals1 = _mm512_loadu_si512(&col_vec[i + 8]); 
             _mm512_mask_compressstoreu_epi64(
                 (__m512i*)&rtn_v[out_idx],
                 k1,
@@ -61,14 +63,15 @@ inline void get_filtered_col_64(
         }
         out_idx += _mm_popcnt_u32(k1);
 
-        __m512i vals2 = _mm512_loadu_si512((const __m512i*)&col_vec[i + 16]); 
         if constexpr (std::is_same_v<T, double>) {
+            __m512d vals2 = _mm512_loadu_pd(&col_vec[i + 16]); 
             _mm512_mask_compressstoreu_pd(
                 &rtn_v[out_idx],
                 k2,
-                __m512_castsi512_pd(vals2)
+                vals2
             );
         } else {
+            __m512i vals2 = _mm512_loadu_si512(&col_vec[i + 16]); 
             _mm512_mask_compressstoreu_epi64(
                 (__m512i*)&rtn_v[out_idx],
                 k2,
@@ -77,14 +80,15 @@ inline void get_filtered_col_64(
         }
         out_idx += _mm_popcnt_u32(k2);
 
-        __m512i vals3 = _mm512_loadu_si512((const __m512i*)&col_vec[i + 24]); 
         if constexpr (std::is_same_v<T, double>) {
+            __m512d vals3 = _mm512_loadu_pd(&col_vec[i + 24]); 
             _mm512_mask_compressstoreu_pd(
                 &rtn_v[out_idx],
                 k3,
-                __m512_castsi512_pd(vals3)
+                vals3
             );
         } else {
+            __m512i vals3 = _mm512_loadu_si512(&col_vec[i + 24]); 
             _mm512_mask_compressstoreu_epi64(
                 (__m512i*)&rtn_v[out_idx],
                 k3,
