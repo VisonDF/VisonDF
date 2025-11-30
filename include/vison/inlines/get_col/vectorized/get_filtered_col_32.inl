@@ -1,16 +1,5 @@
 #pragma once
 
-template <typename T>
-inline int compress8x32_lut(const T* src, 
-                            uint8_t mask8, 
-                            T* dst) {
-    const Mask8LUT &e = LUT8[mask8];
-    int n = e.count;
-    for (size_t i = 0; i < n; ++i)
-        dst[i] = src[e.idx[i]];
-    return n;
-}
-
 template <typename T, bool NeedsNormalization = false>
 inline void get_filtered_col_32(
     const std::vector<T>& col_vec,
@@ -90,10 +79,10 @@ inline void get_filtered_col_32(
         uint8_t m2 = static_cast<uint8_t>((maskbits >> 16) & 0xFFu);
         uint8_t m3 = static_cast<uint8_t>((maskbits >> 24) & 0xFFu);
 
-        out_idx += compress8x32_lut(&col_vec[i +  0], m0, &rtn_v[out_idx]);
-        out_idx += compress8x32_lut(&col_vec[i +  8], m1, &rtn_v[out_idx]);
-        out_idx += compress8x32_lut(&col_vec[i + 16], m2, &rtn_v[out_idx]);
-        out_idx += compress8x32_lut(&col_vec[i + 24], m3, &rtn_v[out_idx]);
+        out_idx += compress8_lut(&col_vec[i +  0], m0, &rtn_v[out_idx]);
+        out_idx += compress8_lut(&col_vec[i +  8], m1, &rtn_v[out_idx]);
+        out_idx += compress8_lut(&col_vec[i + 16], m2, &rtn_v[out_idx]);
+        out_idx += compress8_lut(&col_vec[i + 24], m3, &rtn_v[out_idx]);
 
     }
     #endif

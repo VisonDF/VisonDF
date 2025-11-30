@@ -23,3 +23,19 @@ static constexpr Mask4LUT LUT4[16] = {
     {{1,2,3,0}, 3},       // 1110 -> keep 1,2,3
     {{0,1,2,3}, 4},       // 1111 -> keep all
 };
+
+// Compress 4x64-bit chunk according to 4-bit mask, scalar but branch-light.
+template <typename T>
+inline int compress4_lut(const T* src, 
+                            uint8_t mask4, 
+                            T* dst) {
+    const Mask4LUT &e = LUT4[mask4];
+    int n = e.count;
+    if (n >= 1) dst[0] = src[e.idx[0]];
+    if (n >= 2) dst[1] = src[e.idx[1]];
+    if (n >= 3) dst[2] = src[e.idx[2]];
+    if (n >= 4) dst[3] = src[e.idx[3]];
+    return n;
+}
+
+

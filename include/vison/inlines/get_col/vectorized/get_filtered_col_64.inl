@@ -1,19 +1,5 @@
 #pragma once
 
-// Compress 4x64-bit chunk according to 4-bit mask, scalar but branch-light.
-template <typename T>
-inline int compress4x64_lut(const T* src, 
-                            uint8_t mask4, 
-                            T* dst) {
-    const Mask4LUT &e = LUT4[mask4];
-    int n = e.count;
-    if (n >= 1) dst[0] = src[e.idx[0]];
-    if (n >= 2) dst[1] = src[e.idx[1]];
-    if (n >= 3) dst[2] = src[e.idx[2]];
-    if (n >= 4) dst[3] = src[e.idx[3]];
-    return n;
-}
-
 template <typename T, bool NeedsNormalization = false>
 inline void get_filtered_col_64(
     const std::vector<T>& col_vec,
@@ -136,14 +122,14 @@ inline void get_filtered_col_64(
         uint8_t m7 =  (maskbits >> 28) & 0x0Fu;                     
     
         // Compress each group of 4 elements
-        out_idx += compress4x64_lut(&col_vec[i +  0], m0, &rtn_v[out_idx]);
-        out_idx += compress4x64_lut(&col_vec[i +  4], m1, &rtn_v[out_idx]);
-        out_idx += compress4x64_lut(&col_vec[i +  8], m2, &rtn_v[out_idx]);
-        out_idx += compress4x64_lut(&col_vec[i + 12], m3, &rtn_v[out_idx]);
-        out_idx += compress4x64_lut(&col_vec[i + 16], m4, &rtn_v[out_idx]);
-        out_idx += compress4x64_lut(&col_vec[i + 20], m5, &rtn_v[out_idx]);
-        out_idx += compress4x64_lut(&col_vec[i + 24], m6, &rtn_v[out_idx]);
-        out_idx += compress4x64_lut(&col_vec[i + 28], m7, &rtn_v[out_idx]);
+        out_idx += compress4_lut(&col_vec[i +  0], m0, &rtn_v[out_idx]);
+        out_idx += compress4_lut(&col_vec[i +  4], m1, &rtn_v[out_idx]);
+        out_idx += compress4_lut(&col_vec[i +  8], m2, &rtn_v[out_idx]);
+        out_idx += compress4_lut(&col_vec[i + 12], m3, &rtn_v[out_idx]);
+        out_idx += compress4_lut(&col_vec[i + 16], m4, &rtn_v[out_idx]);
+        out_idx += compress4_lut(&col_vec[i + 20], m5, &rtn_v[out_idx]);
+        out_idx += compress4_lut(&col_vec[i + 24], m6, &rtn_v[out_idx]);
+        out_idx += compress4_lut(&col_vec[i + 28], m7, &rtn_v[out_idx]);
     }
     #endif
 

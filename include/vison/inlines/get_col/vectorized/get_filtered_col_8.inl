@@ -19,14 +19,14 @@ inline void get_filtered_col_8(
 
         __mmask64 k;
         if constexpr (NeedsNormalization) {
-        // Normalize: convert {0,1} and create a bitmask
+            // Normalize: convert {0,1} and create a bitmask
             k = _mm512_cmpneq_epi8_mask(mbytes, _mm512_setzero_si512());
         } else if constexpr (!NeedsNormalization) {
             k = _mm512_movepi8_mask(mbytes);
         }
 
         // Load 64 source bytes
-        __m512i vals = _mm512_loadu_si512((const void*)&col_vec[i]);
+        __m512i vals = _mm512_loadu_si512((const void*)&col_vec[strt_vl + i]);
 
         // Compress-store only active bytes
         _mm512_mask_compressstoreu_epi8(
@@ -43,7 +43,7 @@ inline void get_filtered_col_8(
     {
         // Load 32 mask bytes and 32 value bytes
         __m256i mbytes = _mm256_loadu_si256((const __m256i*)&mask[i]);
-        __m256i vals   = _mm256_loadu_si256((const __m256i*)&col_vec[i]);
+        __m256i vals   = _mm256_loadu_si256((const __m256i*)&col_vec[strt_vl + i]);
     
         uint32_t maskbits;
         // Produce 32-bit mask (with normalization, so it does not check wether 
@@ -70,7 +70,7 @@ inline void get_filtered_col_8(
 
     for (; i < n_el; ++i)
         if (mask[i])
-            rtn_v[out_idx++] = col_vec[i];
+            rtn_v[out_idx++] = col_vec[strt_vl + i];
 }
 
 

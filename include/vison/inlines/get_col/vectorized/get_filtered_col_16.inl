@@ -24,7 +24,7 @@ inline void get_filtered_col_16(
             k = _mm256_movemask_epi8(mbytes);
         }
     
-        __m512i vals = _mm512_loadu_si512((const __m512i*)&col_vec[i]);
+        __m512i vals = _mm512_loadu_si512((const __m512i*)&col_vec[strt_vl + i]);
     
         _mm512_mask_compressstoreu_epi16(
             &rtn_v[out_idx],
@@ -47,23 +47,16 @@ inline void get_filtered_col_16(
             maskbits = _mm256_movemask_epi8(mbytes);
         }
     
-        uint16_t mask_lo = static_cast<uint16_t>( maskbits        & 0xFFFFu);
-        uint16_t mask_hi = static_cast<uint16_t>((maskbits >> 16) & 0xFFFFu);
+        uint8_t m0 = static_cast<uint8_t>( maskbits        & 0xFFu);
+        uint8_t m1 = static_cast<uint8_t>((maskbits >> 8)  & 0xFFu);
+        uint8_t m2 = static_cast<uint8_t>((maskbits >> 16) & 0xFFu);
+        uint8_t m3 = static_cast<uint8_t>((maskbits >> 24) & 0xFFu);
     
-        __m256i vals0 = _mm256_loadu_si256((const __m256i*)&col_vec[i]);      // elements i..i+15
-        __m256i vals1 = _mm256_loadu_si256((const __m256i*)&col_vec[i + 16]); // elements i+16..i+31
-    
-        alignas(32) uint16_t tmp[32];
-        _mm256_storeu_si256((__m256i*)(tmp),      vals0);
-        _mm256_storeu_si256((__m256i*)(tmp + 16), vals1);
-    
-        for (int lane = 0; lane < 16; ++lane)
-            if (mask_lo & (1u << lane))
-                rtn_v[out_idx++] = tmp[lane];
-    
-        for (int lane = 0; lane < 16; ++lane)
-            if (mask_hi & (1u << lane))
-                rtn_v[out_idx++] = tmp[16 + lane];
+        out_idx += compress8_lut(&col_vec[i +  0], m0, &rtn_v[out_idx]);
+        out_idx += compress8_lut(&col_vec[i +  8], m1, &rtn_v[out_idx]);
+        out_idx += compress8_lut(&col_vec[i + 16], m2, &rtn_v[out_idx]);
+        out_idx += compress8_lut(&col_vec[i + 24], m3, &rtn_v[out_idx]);
+
     }
     #endif
 

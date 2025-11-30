@@ -263,4 +263,15 @@ static constexpr Mask8LUT LUT8[256] = {
 };
 
 
+template <typename T>
+inline int compress8_lut(const T* src, 
+                            uint8_t mask8, 
+                            T* dst) {
+    const Mask8LUT &e = LUT8[mask8];
+    int n = e.count;
+    for (size_t i = 0; i < n; ++i)
+        dst[i] = src[e.idx[i]];
+    return n;
+}
+
 
