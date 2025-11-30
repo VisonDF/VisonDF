@@ -52,10 +52,10 @@ inline void get_filtered_col_16(
         uint8_t m2 = static_cast<uint8_t>((maskbits >> 16) & 0xFFu);
         uint8_t m3 = static_cast<uint8_t>((maskbits >> 24) & 0xFFu);
     
-        out_idx += compress8_lut(&col_vec[i +  0], m0, &rtn_v[out_idx]);
-        out_idx += compress8_lut(&col_vec[i +  8], m1, &rtn_v[out_idx]);
-        out_idx += compress8_lut(&col_vec[i + 16], m2, &rtn_v[out_idx]);
-        out_idx += compress8_lut(&col_vec[i + 24], m3, &rtn_v[out_idx]);
+        out_idx += compress8_lut(&col_vec[strt_vl + i +  0], m0, &rtn_v[out_idx]);
+        out_idx += compress8_lut(&col_vec[strt_vl + i +  8], m1, &rtn_v[out_idx]);
+        out_idx += compress8_lut(&col_vec[strt_vl + i + 16], m2, &rtn_v[out_idx]);
+        out_idx += compress8_lut(&col_vec[strt_vl + i + 24], m3, &rtn_v[out_idx]);
 
     }
     #endif

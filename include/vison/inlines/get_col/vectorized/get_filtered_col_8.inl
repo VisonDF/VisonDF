@@ -57,7 +57,7 @@ inline void get_filtered_col_8(
         uint16_t m_hi = static_cast<uint16_t>((maskbits >> 16) & 0xFFFFu );
 
         __m256i v = _mm256_loadu_si256(
-            reinterpret_cast<const __m256i*>(&col_vec[i])
+            reinterpret_cast<const __m256i*>(&col_vec[strt_vl + i])
         );
 
         __m128i v0 = _mm256_castsi256_si128(v);                 

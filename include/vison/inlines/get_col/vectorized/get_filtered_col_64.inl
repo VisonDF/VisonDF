@@ -30,14 +30,14 @@ inline void get_filtered_col_64(
         __mmask8 k3 = (__mmask8)((maskbits >> 24) & 0xFFu );
 
         if constexpr (std::is_same_v<T, double>) {
-            __m512d vals0 = _mm512_loadu_pd(&col_vec[i]);
+            __m512d vals0 = _mm512_loadu_pd(&col_vec[strt_vl + i]);
             _mm512_mask_compressstoreu_pd(
                 &rtn_v[out_idx],
                 k0,
                 vals0
             );
         } else {
-            __m512i vals0 = _mm512_loadu_si512(&col_vec[i]);
+            __m512i vals0 = _mm512_loadu_si512(&col_vec[strt_vl + i]);
             _mm512_mask_compressstoreu_epi64(
                 (__m512i*)&rtn_v[out_idx],
                 k0,
@@ -47,14 +47,14 @@ inline void get_filtered_col_64(
         out_idx += _mm_popcnt_u32(k0);
 
         if constexpr (std::is_same_v<T, double>) {
-            __m512d vals1 = _mm512_loadu_pd(&col_vec[i + 8]); 
+            __m512d vals1 = _mm512_loadu_pd(&col_vec[strt_vl + i + 8]); 
             _mm512_mask_compressstoreu_pd(
                 &rtn_v[out_idx],
                 k1,
                 vals1
             );
         } else {
-            __m512i vals1 = _mm512_loadu_si512(&col_vec[i + 8]); 
+            __m512i vals1 = _mm512_loadu_si512(&col_vec[strt_vl + i + 8]); 
             _mm512_mask_compressstoreu_epi64(
                 (__m512i*)&rtn_v[out_idx],
                 k1,
@@ -64,14 +64,14 @@ inline void get_filtered_col_64(
         out_idx += _mm_popcnt_u32(k1);
 
         if constexpr (std::is_same_v<T, double>) {
-            __m512d vals2 = _mm512_loadu_pd(&col_vec[i + 16]); 
+            __m512d vals2 = _mm512_loadu_pd(&col_vec[strt_vl + i + 16]); 
             _mm512_mask_compressstoreu_pd(
                 &rtn_v[out_idx],
                 k2,
                 vals2
             );
         } else {
-            __m512i vals2 = _mm512_loadu_si512(&col_vec[i + 16]); 
+            __m512i vals2 = _mm512_loadu_si512(&col_vec[strt_vl + i + 16]); 
             _mm512_mask_compressstoreu_epi64(
                 (__m512i*)&rtn_v[out_idx],
                 k2,
@@ -81,14 +81,14 @@ inline void get_filtered_col_64(
         out_idx += _mm_popcnt_u32(k2);
 
         if constexpr (std::is_same_v<T, double>) {
-            __m512d vals3 = _mm512_loadu_pd(&col_vec[i + 24]); 
+            __m512d vals3 = _mm512_loadu_pd(&col_vec[strt_vl + i + 24]); 
             _mm512_mask_compressstoreu_pd(
                 &rtn_v[out_idx],
                 k3,
                 vals3
             );
         } else {
-            __m512i vals3 = _mm512_loadu_si512(&col_vec[i + 24]); 
+            __m512i vals3 = _mm512_loadu_si512(&col_vec[strt_vl + i + 24]); 
             _mm512_mask_compressstoreu_epi64(
                 (__m512i*)&rtn_v[out_idx],
                 k3,
@@ -126,14 +126,14 @@ inline void get_filtered_col_64(
         uint8_t m7 =  (maskbits >> 28) & 0x0Fu;                     
     
         // Compress each group of 4 elements
-        out_idx += compress4_lut(&col_vec[i +  0], m0, &rtn_v[out_idx]);
-        out_idx += compress4_lut(&col_vec[i +  4], m1, &rtn_v[out_idx]);
-        out_idx += compress4_lut(&col_vec[i +  8], m2, &rtn_v[out_idx]);
-        out_idx += compress4_lut(&col_vec[i + 12], m3, &rtn_v[out_idx]);
-        out_idx += compress4_lut(&col_vec[i + 16], m4, &rtn_v[out_idx]);
-        out_idx += compress4_lut(&col_vec[i + 20], m5, &rtn_v[out_idx]);
-        out_idx += compress4_lut(&col_vec[i + 24], m6, &rtn_v[out_idx]);
-        out_idx += compress4_lut(&col_vec[i + 28], m7, &rtn_v[out_idx]);
+        out_idx += compress4_lut(&col_vec[strt_vl + i +  0], m0, &rtn_v[out_idx]);
+        out_idx += compress4_lut(&col_vec[strt_vl + i +  4], m1, &rtn_v[out_idx]);
+        out_idx += compress4_lut(&col_vec[strt_vl + i +  8], m2, &rtn_v[out_idx]);
+        out_idx += compress4_lut(&col_vec[strt_vl + i + 12], m3, &rtn_v[out_idx]);
+        out_idx += compress4_lut(&col_vec[strt_vl + i + 16], m4, &rtn_v[out_idx]);
+        out_idx += compress4_lut(&col_vec[strt_vl + i + 20], m5, &rtn_v[out_idx]);
+        out_idx += compress4_lut(&col_vec[strt_vl + i + 24], m6, &rtn_v[out_idx]);
+        out_idx += compress4_lut(&col_vec[strt_vl + i + 28], m7, &rtn_v[out_idx]);
     }
     #endif
 
