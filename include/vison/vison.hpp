@@ -69,6 +69,7 @@ namespace vison {
 
     #include "inlines/get_dataframe/append_block.inl"
     #include "inlines/get_dataframe/get_dataframe_filter_any.inl"
+    #include "inlines/get_dataframe/get_dataframe_filter_any_simd.inl"
 
     #include "inlines/has_dot.inl"
     

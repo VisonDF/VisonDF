@@ -9,7 +9,7 @@ void get_dataframe_filter_idx(const std::vector<size_t>& cols,
 
     get_dataframe_any(cols,
                       cur_obj,
-                      active_rows);
+                      mask);
 
 }
 
