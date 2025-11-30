@@ -1,8 +1,9 @@
 #pragma once
 
 inline void get_dataframe_filter_any_simd(const std::vector<size_t>& cols, 
-                                    Dataframe& cur_obj,
-                                    const std::vector<unsigned int>& active_rows)
+                                          Dataframe& cur_obj,
+                                          const std::vector<unsigned int>& active_rows,
+                                          const unsigned int nrow)
 {
 
     auto process_string = [&](const auto& src_vec2,

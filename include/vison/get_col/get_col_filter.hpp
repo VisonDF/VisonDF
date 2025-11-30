@@ -9,7 +9,8 @@ void get_col_filter(unsigned int &x,
     get_col_filter_boolmask<T, MemClean, IsBool>(x,
                                                  rtn_v,
                                                  mask,
-                                                 0);
+                                                 0,
+                                                 nrow);
 }
 
 

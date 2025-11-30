@@ -28,7 +28,8 @@ void get_dataframe_filter_range_simd(const std::vector<size_t>& cols,
 
     get_dataframe_filter_any_simd(cols,
                                   cur_obj,
-                                  active_rows);
+                                  active_rows,
+                                  nrow);
 
 }
 

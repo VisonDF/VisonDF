@@ -11,7 +11,8 @@ void get_col_filter_range(unsigned int &x,
     get_col_filter_boolmask<T, MemClean, IsBool>(x,
                                                  rtn_v,
                                                  mask,
-                                                 strt_vl);
+                                                 strt_vl,
+                                                 nrow);
 }
 
 

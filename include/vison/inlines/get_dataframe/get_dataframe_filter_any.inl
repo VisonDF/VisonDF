@@ -1,8 +1,9 @@
 #pragma once
 
 inline void get_dataframe_any(const std::vector<size_t>& cols, 
-                Dataframe& cur_obj,
-                const std::vector<unsigned int>& active_rows)
+                              Dataframe& cur_obj,
+                              const std::vector<unsigned int>& active_rows,
+                              const unsigned int nrow)
 {
 
     auto insert_column = [&](auto &dst_vec,

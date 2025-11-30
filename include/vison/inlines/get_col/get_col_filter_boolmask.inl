@@ -6,7 +6,8 @@ template <typename T,
 inline void get_col_filter_boolmask(unsigned int &x,
                           std::vector<T> &rtn_v,
                           const std::vector<uint8_t> &mask,
-                          const unsigned int strt_vl)
+                          const unsigned int strt_vl,
+                          const unsigned int nrow)
 {
     rtn_v.reserve(nrow);
 

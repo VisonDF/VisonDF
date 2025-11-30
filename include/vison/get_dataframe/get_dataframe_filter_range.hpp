@@ -27,7 +27,8 @@ void get_dataframe_filter_range(const std::vector<size_t>& cols,
 
     get_dataframe_any(cols,
                       cur_obj,
-                      active_rows);
+                      active_rows,
+                      nrow);
 
 }
 
