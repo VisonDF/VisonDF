@@ -22,19 +22,19 @@ void otm(Dataframe &obj_l,
     const std::vector<std::vector<unsigned int>>& matr_idx1 = obj_l.get_matr_idx();
     const std::vector<std::vector<unsigned int>>& matr_idx2 = obj_r.get_matr_idx();
 
-    const std::vector<std::string>& str_v2   = obj_r.get_str_vec();
-    const std::vector<char>& chr_v2          = obj_r.get_chr_vec();
-    const std::vector<uint8_t>& bool_v2      = obj_r.get_bool_vec();
-    const std::vector<IntT>& int_v2           = obj_r.get_int_vec();
-    const std::vector<UIntT>& uint_v2        = obj_r.get_uint_vec();
-    const std::vector<FloatT>& dbl_v2        = obj_r.get_dbl_vec();
+    const auto& str_v2  = obj_r.get_str_vec();
+    const auto& chr_v2  = obj_r.get_chr_vec();
+    const auto& bool_v2 = obj_r.get_bool_vec();
+    const auto& int_v2  = obj_r.get_int_vec();
+    const auto& uint_v2 = obj_r.get_uint_vec();
+    const auto& dbl_v2  = obj_r.get_dbl_vec();
  
-    const std::vector<std::string>& str_v1   = obj_l.get_str_vec();
-    const std::vector<char>& chr_v1          = obj_l.get_chr_vec();
-    const std::vector<uint8_t>& bool_v1         = obj_l.get_bool_vec();
-    const std::vector<IntT>& int_v1           = obj_l.get_int_vec();
-    const std::vector<UIntT>& uint_v1 = obj_l.get_uint_vec();
-    const std::vector<FloatT>& dbl_v1        = obj_l.get_dbl_vec();
+    const auto& str_v1  = obj_l.get_str_vec();
+    const auto& chr_v1  = obj_l.get_chr_vec();
+    const auto& bool_v1 = obj_l.get_bool_vec();
+    const auto& int_v1  = obj_l.get_int_vec();
+    const auto& uint_v1 = obj_l.get_uint_vec();
+    const auto& dbl_v1  = obj_l.get_dbl_vec();
    
     const unsigned int size_str1  = matr_idx1[0].size();
     const unsigned int size_chr1  = matr_idx1[1].size();
@@ -136,12 +136,12 @@ void otm(Dataframe &obj_l,
         }
     }
 
-    str_v. resize(nrow * (size_str1  + size_str2),  default_str);
-    chr_v. resize(nrow * (size_chr1  + size_chr2),  default_chr);
-    bool_v.resize(nrow * (size_bool1 + size_bool2),  default_bool);
-    int_v. resize(nrow * (size_int1  + size_int2),  default_int);
-    uint_v.resize(nrow * (size_uint1 + size_uint2),  default_uint);
-    dbl_v. resize(nrow * (size_dbl1  + size_dbl2),  default_dbl);
+    str_v. resize(size_str1  + size_str2 ,  default_str);
+    chr_v. resize(size_chr1  + size_chr2 ,  default_chr);
+    bool_v.resize(size_bool1 + size_bool2, default_bool);
+    int_v. resize(size_int1  + size_int2 ,  default_int);
+    uint_v.resize(size_uint1 + size_uint2, default_uint);
+    dbl_v. resize(size_dbl1  + size_dbl2 ,  default_dbl);
 
     std::vector<std::string> vec_str;
     vec_str.resize(nrow, default_str);
