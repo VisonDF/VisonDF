@@ -68,7 +68,8 @@ namespace vison {
     #include "inlines/simd_can_be_nb.inl"
 
     #include "inlines/get_dataframe/append_block.inl"
- 
+    #include "inlines/get_dataframe/get_dataframe_filter_any.inl"
+
     #include "inlines/has_dot.inl"
     
     #include "types/PairHash.hpp"    
