@@ -5,6 +5,7 @@ void get_dataframe_mt(const std::vector<size_t>& cols,
                       Dataframe& cur_obj)
 {
     nrow = cur_obj.get_nrow();
+    const unsigned int local_nrow = nrow;
 
     if (cols.empty()) {
         matr_idx     = cur_obj.get_matr_idx();
@@ -40,7 +41,7 @@ void get_dataframe_mt(const std::vector<size_t>& cols,
         name_v.resize(ncol);
         tmp_val_refv.resize(ncol);
         for (auto& el : tmp_val_refv) {
-          el.reserve(nrow);
+          el.reserve(local_nrow);
         };
 
         size_t i2 = 0;
@@ -52,27 +53,27 @@ void get_dataframe_mt(const std::vector<size_t>& cols,
                 case 's': {
                                matr_idx[0].push_back(i2);
                                str_v.emplace_back();
-                               str_v.back().resize(nrow);
+                               str_v.back().resize(local_nrow);
                                auto* __restrict dst = str_v.back().data();
                                const auto* __restrict src = str_v2[i].data();
                                #pragma omp parallel for num_threads(CORES)
-                               for (size_t i = 0; i < nrow; ++i)
+                               for (size_t i = 0; i < local_nrow; ++i)
                                    dst[i] = src[i];
                                break;
                           }
                 case 'c': {
                                matr_idx[1].push_back(i2);
                                chr_v.emplace_back();
-                               chr_v.back().resize(nrow);                               
+                               chr_v.back().resize(local_nrow);                               
                                CharT* __restrict dst = chr_v.back().data();
                                const CharT* __restrict src = chr_v2[i].data();
                                #pragma omp parallel for num_threads(CORES)
                                for (int t = 0; t < CORES; ++t)
                                {
-                                   size_t chunk = nrow / CORES;
+                                   size_t chunk = local_nrow / CORES;
                                    size_t start = t * chunk;
                                
-                                   size_t end = (t == CORES - 1) ? nrow : start + chunk;
+                                   size_t end = (t == CORES - 1) ? local_nrow : start + chunk;
                                
                                    size_t bytes = (end - start) * sizeof(CharT);
                                
@@ -83,16 +84,16 @@ void get_dataframe_mt(const std::vector<size_t>& cols,
                 case 'b': {
                                matr_idx[2].push_back(i2);
                                bool_v.emplace_back();
-                               bool_v.back().resize(nrow);                               
+                               bool_v.back().resize(local_nrow);                               
                                uint8_t* __restrict dst = bool_v.back().data();
                                const uint8_t* __restrict src = bool_v2[i].data();
                                #pragma omp parallel for num_threads(CORES)
                                for (int t = 0; t < CORES; ++t)
                                {
-                                   size_t chunk = nrow / CORES;
+                                   size_t chunk = local_nrow / CORES;
                                    size_t start = t * chunk;
                                
-                                   size_t end = (t == CORES - 1) ? nrow : start + chunk;
+                                   size_t end = (t == CORES - 1) ? local_nrow : start + chunk;
                                
                                    size_t bytes = (end - start) * sizeof(uint8_t);
                                
@@ -103,16 +104,16 @@ void get_dataframe_mt(const std::vector<size_t>& cols,
                 case 'i': {
                                matr_idx[3].push_back(i2);
                                int_v.emplace_back();
-                               int_v.back().resize(nrow);                               
+                               int_v.back().resize(local_nrow);                               
                                IntT* __restrict dst = int_v.back().data();
                                const IntT* __restrict src = int_v2[i].data();
                                #pragma omp parallel for num_threads(CORES)
                                for (int t = 0; t < CORES; ++t)
                                {
-                                   size_t chunk = nrow / CORES;
+                                   size_t chunk = local_nrow / CORES;
                                    size_t start = t * chunk;
                                
-                                   size_t end = (t == CORES - 1) ? nrow : start + chunk;
+                                   size_t end = (t == CORES - 1) ? local_nrow : start + chunk;
                                
                                    size_t bytes = (end - start) * sizeof(IntT);
                                
@@ -123,16 +124,16 @@ void get_dataframe_mt(const std::vector<size_t>& cols,
                 case 'u': {
                                matr_idx[4].push_back(i2);
                                uint_v.emplace_back();
-                               uint_v.back().resize(nrow);                               
+                               uint_v.back().resize(local_nrow);                               
                                UIntT* __restrict dst = uint_v.back().data();
                                const UIntT* __restrict src = uint_v2[i].data();
                                #pragma omp parallel for num_threads(CORES)
                                for (int t = 0; t < CORES; ++t)
                                {
-                                   size_t chunk = nrow / CORES;
+                                   size_t chunk = local_nrow / CORES;
                                    size_t start = t * chunk;
                                
-                                   size_t end = (t == CORES - 1) ? nrow : start + chunk;
+                                   size_t end = (t == CORES - 1) ? local_nrow : start + chunk;
                                
                                    size_t bytes = (end - start) * sizeof(UIntT);
                                
@@ -143,16 +144,16 @@ void get_dataframe_mt(const std::vector<size_t>& cols,
                 case 'd': {
                                matr_idx[5].push_back(i2);
                                dbl_v.emplace_back();
-                               dbl_v.back().resize(nrow);                               
+                               dbl_v.back().resize(local_nrow);                               
                                FloatT* __restrict dst = dbl_v.back().data();
                                const FloatT* __restrict src = dbl_v2[i].data();
                                #pragma omp parallel for num_threads(CORES)
                                for (int t = 0; t < CORES; ++t)
                                {
-                                   size_t chunk = nrow / CORES;
+                                   size_t chunk = local_nrow / CORES;
                                    size_t start = t * chunk;
                                
-                                   size_t end = (t == CORES - 1) ? nrow : start + chunk;
+                                   size_t end = (t == CORES - 1) ? local_nrow : start + chunk;
                                
                                    size_t bytes = (end - start) * sizeof(FloatT);
                                
