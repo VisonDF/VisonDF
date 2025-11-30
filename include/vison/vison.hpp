@@ -243,9 +243,9 @@ namespace vison {
         #include "inlines/fapply/apply_numeric_filter_idx.inl"
         #include "inlines/fapply/fapply_filter_boolmask.inl"
         #include "inlines/fapply/vectorized_hint/apply_numeric_simd.inl"
-        #include "inlines/fapply/vectorized_hint/apply_numeric_simd_filter.inl"
-        #include "inlines/fapply/vectorized_hint/apply_numeric_simd_filter_idx.inl"
+        #include "inlines/fapply/vectorized_hint/apply_numeric_simd_filter_boolmask.inl"
         #include "inlines/fapply/vectorized_hint/apply_numeric_simd_filter_range.inl"
+        #include "inlines/fapply/vectorized_hint/fapply_simd_filter_boolmask.inl"
 
         #include "inlines/write_csv/estimate_row_size.inl"
 
