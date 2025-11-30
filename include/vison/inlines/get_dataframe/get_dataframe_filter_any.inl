@@ -1,6 +1,6 @@
 #pragma once
 
-void get_dataframe_any(const std::vector<size_t>& cols, 
+inline void get_dataframe_any(const std::vector<size_t>& cols, 
                 Dataframe& cur_obj,
                 const std::vector<unsigned int>& active_rows)
 {
