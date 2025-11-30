@@ -239,9 +239,9 @@ namespace vison {
 
         #include "inlines/fapply/max_chars_needed.inl"
         #include "inlines/fapply/apply_numeric.inl"
-        #include "inlines/fapply/apply_numeric_filter_range.inl"
-        #include "inlines/fapply/apply_numeric_filter.inl"
+        #include "inlines/fapply/apply_numeric_filter_boolmask.inl"
         #include "inlines/fapply/apply_numeric_filter_idx.inl"
+        #include "inlines/fapply/fapply_filter_boolmask.inl"
         #include "inlines/fapply/vectorized_hint/apply_numeric_simd.inl"
         #include "inlines/fapply/vectorized_hint/apply_numeric_simd_filter.inl"
         #include "inlines/fapply/vectorized_hint/apply_numeric_simd_filter_idx.inl"
