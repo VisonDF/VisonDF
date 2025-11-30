@@ -3,8 +3,9 @@
 template <typename T, bool IsBool = false>
 void get_col(unsigned int &x, 
              std::vector<T> &rtn_v) {
-  
-    rtn_v.resize(nrow);
+ 
+    const unsigned int local_nrow = nrow;
+    rtn_v.resize(local_nrow);
 
     auto find_col_base = [&](auto &idx_vec) -> size_t {
         size_t pos = 0;
@@ -22,13 +23,13 @@ void get_col(unsigned int &x,
     {
         memcpy(rtn_v.data(), 
                src, 
-               nrow * sizeof(T));
+               local_nrow * sizeof(T));
     };
 
     if constexpr (std::is_same_v<T, std::string>) {
       const size_t pos_base = find_col_base(matr_idx[0]);
       const auto& src = str_v[pos_base];
-      for (size_t i = 0; i < nrow; ++i)
+      for (size_t i = 0; i < local_nrow; ++i)
           rtn_v[i] = src[i];
 
     } else if constexpr (std::is_same_v<T, CharT>) {
