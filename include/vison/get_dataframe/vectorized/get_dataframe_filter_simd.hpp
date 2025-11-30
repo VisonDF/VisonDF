@@ -28,7 +28,7 @@ void get_dataframe_filter_simd(const std::vector<size_t>& cols,
     get_dataframe_filter_any_simd(cols,
                                   cur_obj,
                                   active_rows,
-                                  nrow);
+                                  nrow); //copied by value here
 
 }
 
