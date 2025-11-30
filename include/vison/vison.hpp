@@ -316,6 +316,7 @@ namespace vison {
 
         #include "inlines/get_col/avx2_lut4.inl"
         #include "inlines/get_col/avx2_lut8.inl"
+        #include "inlines/get_col/avx2_lut16.inl"
         #include "inlines/get_col/get_filtered_col_8.inl"
         #include "inlines/get_col/get_filtered_col_16.inl"
         #include "inlines/get_col/get_filtered_col_32.inl"

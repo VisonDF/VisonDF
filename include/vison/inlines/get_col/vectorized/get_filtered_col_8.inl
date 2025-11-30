@@ -41,30 +41,45 @@ inline void get_filtered_col_8(
     #elif defined(__AVX2__)
     for (; i + 32 <= n_el; i += 32)
     {
-        // Load 32 mask bytes and 32 value bytes
-        __m256i mbytes = _mm256_loadu_si256((const __m256i*)&mask[i]);
-        __m256i vals   = _mm256_loadu_si256((const __m256i*)&col_vec[strt_vl + i]);
-    
+        __m256i mbytes = _mm256_loadu_si256(
+            reinterpret_cast<const __m256i*>(&mask[i])
+        );
+
         uint32_t maskbits;
-        // Produce 32-bit mask (with normalization, so it does not check wether 
-        // negative or positive but if 0 or 1)
         if constexpr (NeedsNormalization) {
-            maskbits =
-                _mm256_movemask_epi8(
-                    _mm256_cmpgt_epi8(mbytes, _mm256_setzero_si256())
-                );
-        } else if constexpr (!NeedsNormalization) {
-            maskbits =
-                _mm256_movemask_epi8(mbytes);
+            __m256i nz = _mm256_cmpgt_epi8(mbytes, _mm256_setzero_si256()); 
+            maskbits = static_cast<uint32_t>(_mm256_movemask_epi8(nz));
+        } else {
+            maskbits = static_cast<uint32_t>(_mm256_movemask_epi8(mbytes));
         }
-    
-        // Extract active bytes (~32 iterations)
-        uint8_t tmp[32];
-        _mm256_storeu_si256((__m256i*)tmp, vals);
-    
-        for (int k = 0; k < 32; ++k)
-            if (maskbits & (1u << k))
-                rtn_v[out_idx++] = tmp[k];
+
+        uint16_t m_lo = static_cast<uint16_t>( maskbits        & 0xFFFFu );
+        uint16_t m_hi = static_cast<uint16_t>((maskbits >> 16) & 0xFFFFu );
+
+        __m256i v = _mm256_loadu_si256(
+            reinterpret_cast<const __m256i*>(&col_vec[i])
+        );
+
+        __m128i v0 = _mm256_castsi256_si128(v);                 
+        __m128i v1 = _mm256_extracti128_si256(v, 1);            
+
+        {
+            const Lut16Entry &e = LUT16[m_lo];
+            __m128i shuf = _mm_loadu_si128(reinterpret_cast<const __m128i*>(e.shuf));
+            __m128i res  = _mm_shuffle_epi8(v0, shuf);
+
+            _mm_storeu_si128(reinterpret_cast<__m128i*>(&rtn_v[out_idx]), res);
+            out_idx += e.count;
+        }
+
+        {
+            const Lut16Entry &e = LUT16[m_hi];
+            __m128i shuf = _mm_loadu_si128(reinterpret_cast<const __m128i*>(e.shuf));
+            __m128i res  = _mm_shuffle_epi8(v1, shuf);
+
+            _mm_storeu_si128(reinterpret_cast<__m128i*>(&rtn_v[out_idx]), res);
+            out_idx += e.count;
+        }
     }
     #endif
 
