@@ -417,7 +417,6 @@ namespace vison {
         #endif
         #include "one_to_many_join/otm.hpp"
         #ifdef _OPENMP
-        #include "one_to_many_join/otm_simd.hpp"
         #include "one_to_many_join/otm_mt.hpp"
         #endif
 
