@@ -13,9 +13,6 @@ void rep_col_batch(std::vector<T>& x, unsigned int& colnb)
         return;
     }
 
-    // -------------------------------------------------
-    // helper: find column index and return base offset
-    // -------------------------------------------------
     auto find_col_base = [&](auto& idx_vec) -> size_t {
         size_t pos = 0;
         while (pos < idx_vec.size() && idx_vec[pos] != colnb)
@@ -26,20 +23,17 @@ void rep_col_batch(std::vector<T>& x, unsigned int& colnb)
                       << " not found for this type in (replace_col)\n";
             return size_t(-1);
         }
-        return pos * nrow;
+        return pos;
     };
 
-    // -------------------------------------------------
-    // unified NUMERIC path: Bool / IntT / UIntT / FloatT
-    // -------------------------------------------------
     auto replace_numeric = [&](auto& col_vec, auto& idx_vec)
     {
         constexpr size_t buf_size = max_chars_needed<T>();
 
-        size_t base = find_col_base(idx_vec);
+        size_t pos = find_col_base(idx_vec);
         if (base == size_t(-1)) return;
 
-        T*          __restrict dst = col_vec.data() + base;
+        T*          __restrict dst = col_vec[pos].data();
         const T*    __restrict src = x.data();
         auto&       val_tmp        = tmp_val_refv[colnb];
 
@@ -52,14 +46,8 @@ void rep_col_batch(std::vector<T>& x, unsigned int& colnb)
         for (size_t i = 0; i < nrow; i += BATCH) {
             const size_t end = std::min(i + BATCH, static_cast<size_t>(nrow));
 
-            // copy raw numeric values into column
-            #pragma GCC ivdep
-            for (size_t j = i; j < end; ++j) {
-                dst[j] = src[j];
-            }
+            memcpy(dst + i, src + i, (end - i) * sizeof(IntT));
 
-            //// STRINGS /////
-            // format into per-lane buffers
             for (size_t j = i; j < end; ++j) {
                 auto& cur_buf = local_bufs[j - i];
                 auto [ptr, ec] = std::to_chars(cur_buf,
@@ -70,7 +58,6 @@ void rep_col_batch(std::vector<T>& x, unsigned int& colnb)
                 lengths[j - i] = static_cast<uint8_t>(ptr - cur_buf);
             }
 
-            // copy formatted text back into val_tmp
             for (size_t j = i; j < end; ++j) {
                 auto&      cur_buf = local_bufs[j - i];
                 const auto len     = static_cast<size_t>(lengths[j - i]);
@@ -78,19 +65,15 @@ void rep_col_batch(std::vector<T>& x, unsigned int& colnb)
                 s.resize(len);
                 std::memcpy(s.data(), cur_buf, len);
             }
-            //////
         }
     };
 
-    // -------------------------------------------------
-    // std::string path
-    // -------------------------------------------------
     auto replace_string = [&]()
     {
-        size_t base = find_col_base(matr_idx[0]);
+        size_t pos = find_col_base(matr_idx[0]);
         if (base == size_t(-1)) return;
 
-        auto*       __restrict dst = str_v.data() + base;
+        auto*       __restrict dst = str_v[pos].data();
         const auto* __restrict src = x.data();
 
         // write underlying column
@@ -116,15 +99,12 @@ void rep_col_batch(std::vector<T>& x, unsigned int& colnb)
         }
     };
 
-    // -------------------------------------------------
-    // CharT (fixed-size char buffer) path
-    // -------------------------------------------------
     auto replace_charbuf = [&]()
     {
-        size_t base = find_col_base(matr_idx[1]);
+        size_t pos = find_col_base(matr_idx[1]);
         if (base == size_t(-1)) return;
 
-        CharT*       __restrict dst = chr_v.data() + base;
+        CharT*       __restrict dst = chr_v[pos].data();
         const CharT* __restrict src = x.data();
 
         // copy underlying column storage
@@ -153,9 +133,6 @@ void rep_col_batch(std::vector<T>& x, unsigned int& colnb)
         }
     };
 
-    // -------------------------------------------------
-    // DISPATCH
-    // -------------------------------------------------
     if constexpr (IsBool) {
         replace_numeric(bool_v, matr_idx[2]);
 
