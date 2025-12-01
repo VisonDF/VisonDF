@@ -44,8 +44,8 @@ inline void rep_col_filter_boolmask(std::vector<T>& x,
         size_t pos = find_col_index(idx_vec);
 
         // 2. Data pointers (offset by strt_vl)
-        U*      dst = col_vec[pos].data() + strt_vl;
-        U*      src = x.data()            + strt_vl;
+        U*    __restrict dst = col_vec[pos].data() + strt_vl;
+        U*    __restrict src = x.data();
         auto&   vt  = tmp_val_refv[colnb];
         std::string* val_tmp = vt.data() + strt_vl;
 
