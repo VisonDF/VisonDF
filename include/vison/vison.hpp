@@ -164,15 +164,6 @@ namespace vison {
         std::vector<std::vector<UIntT>>       uint_v = {};
         std::vector<std::vector<FloatT>>      dbl_v = {};
       
-        struct Views {
-            std::vector<std::vector<std::string>>* str_v_view;
-            std::vector<std::vector<CharT>>*       chr_v_view;
-            std::vector<std::vector<uint8_t>>*     bool_v_view;
-            std::vector<std::vector<IntT>>*        int_v_view;
-            std::vector<std::vector<UIntT>>*       uint_v_view;
-            std::vector<std::vector<FloatT>>*      dbl_v_view;
-        };
-
         std::vector<std::vector<unsigned int>> matr_idx = {
                                                            {}, 
                                                            {}, 
@@ -452,12 +443,6 @@ namespace vison {
         #include "transform/transform_group_by/transform_group_by_mt.hpp"
         #endif
         
-        //#ifdef _OPENMP
-        //#include "inlines/pivots/pivot_int_mt.inl"
-        //#include "inlines/pivots/pivot_uint_mt.inl"
-        //#include "inlines/pivots/pivot_dbl_mt.inl"
-        //#endif
-
         #include "pivots/pivot.hpp"
         #ifdef _OPENMP
         #include "pivots/pivot_mt.hpp"
@@ -484,15 +469,7 @@ namespace vison {
           return type_refv;
         };
     
-        Views views;
-        Dataframe() {
-            views.str_v_view  = &str_v;
-            views.chr_v_view  = &chr_v;
-            views.bool_v_view = &bool_v;
-            views.int_v_view  = &int_v;
-            views.uint_v_view = &uint_v;
-            views.dbl_v_view  = &dbl_v;
-        };
+        Dataframe() = default;
     
         ~Dataframe() = default;
     

@@ -79,13 +79,13 @@ void pivot(Dataframe &obj,
     auto* cols = static_cast<std::vector<std::vector<T>>*>(nullptr);
     if constexpr (std::is_same_v<T, IntT>) {
         idx_type = 3;
-        cols = views.int_v_view;
+        cols = &int_v_view;
     } else if constexpr (std::is_same_v<T, UIntT>) {
         idx_type = 4;
-        cols = views.uint_v_view;
+        cols = &uint_v_view;
     } else if constexpr (std::is_same_v<T, FloatT>) {
         idx_type = 5;
-        cols = views.dbl_v_view;
+        cols = &dbl_v_view;
     }
 
     (*cols).resize(ncol, 0);
