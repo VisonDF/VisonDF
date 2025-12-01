@@ -237,8 +237,8 @@ void otm(Dataframe &obj_l,
         std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
         const std::vector<std::string>& val_tmp2 = tmp_val_refv1[dst_col];
 
-        auto*       dst_val = str_v[t].data();
-        const auto* src_val = str_v1[t].data();
+        auto&       dst_val = str_v[t];
+        const auto& src_val = str_v1[t];
        
         size_t out = 0;
         for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
