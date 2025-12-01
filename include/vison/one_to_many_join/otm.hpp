@@ -5,12 +5,12 @@ void otm(Dataframe &obj_l,
          Dataframe &obj_r,
          const unsigned int &key1, 
          const unsigned int &key2,
+         const CharT default_chr,
          const std::string default_str = "NA",
-         const char default_chr = ' ',
          const uint8_t default_bool = 0,
-         const int default_int = 0,
-         const unsigned int default_uint = 0,
-         const double default_dbl = 0) 
+         const IntT default_int = 0,
+         const UIntT default_uint = 0,
+         const FloatT default_decimal = 0) 
 {
   
     const unsigned int& ncol1 = obj_l.get_ncol();
@@ -120,7 +120,7 @@ void otm(Dataframe &obj_l,
       it->second.push_back(i);
     };
 
-    nrow = 0;
+    unsigned int local_nrow = 0;
 
     std::vector<std::vector<size_t>> match_idx(nrow1);
     std::vector<size_t> rep_v(nrow1);
@@ -128,23 +128,39 @@ void otm(Dataframe &obj_l,
         auto it = lookup.find(col1[i]);
         if (it != lookup.end()) {
             match_idx[i] = it->second;
-            nrow += it->second.size();
+            local_nrow += it->second.size();
             rep_v[i] = match_idx[i].size();
         } else {
-            nrow += 1;
+            local_nrow += 1;
             rep_v[i] = 1;
         }
     }
 
-    str_v. resize(size_str1  + size_str2 ,  default_str);
-    chr_v. resize(size_chr1  + size_chr2 ,  default_chr);
-    bool_v.resize(size_bool1 + size_bool2, default_bool);
-    int_v. resize(size_int1  + size_int2 ,  default_int);
-    uint_v.resize(size_uint1 + size_uint2, default_uint);
-    dbl_v. resize(size_dbl1  + size_dbl2 ,  default_dbl);
+    const unsigned int local_nrow_final = local_nrow;
+    nrow = local_nrow_final;
+
+    str_v. resize(size_str1  + size_str2);
+    chr_v. resize(size_chr1  + size_chr2);
+    bool_v.resize(size_bool1 + size_bool2);
+    int_v. resize(size_int1  + size_int2);
+    uint_v.resize(size_uint1 + size_uint2);
+    dbl_v. resize(size_dbl1  + size_dbl2);
+
+    for (auto& el : str_v)
+        el.resize(local_nrow_final, default_str);
+    for (auto& el : chr_v)
+        el.resize(local_nrow_final);
+    for (auto& el : bool_v)
+        el.resize(local_nrow_final, default_bool);
+    for (auto& el : int_v)
+        el.resize(local_nrow_final, default_int);
+    for (auto& el : uint_v)
+        el.resize(local_nrow_final, default_uint);
+    for (auto& el : dbl_v)
+        el.resize(local_nrow_final, default_decimal);
 
     std::vector<std::string> vec_str;
-    vec_str.resize(nrow, default_str);
+    vec_str.resize(local_nrow_final, default_str);
     tmp_val_refv.insert(tmp_val_refv.end(), ncol1 + ncol2, vec_str);
 
     auto expand_repeats = [&](auto& dst_vec,
@@ -161,8 +177,8 @@ void otm(Dataframe &obj_l,
             auto& val_tmp  = tmp_val_refv[dst_col];
             const auto& val_tmp2 = tmp_val_refv1[dst_col];
     
-            T*       dst_val = dst_vec.data()  + nrow  * t;
-            const T* src_val = src_vec.data() + nrow1 * t;
+            T*       dst_val = dst_vec[t].data();
+            const T* src_val = src_vec[t].data();
     
             size_t out = 0;
             for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
@@ -191,13 +207,12 @@ void otm(Dataframe &obj_l,
         for (size_t t = 0; t < idx_list_b.size(); ++t) {
     
             size_t dst_col = idx_list_b[t];
-            size_t src_col = idx_list[t];
-    
+            size_t src_col = idx_list[t]; 
             auto& val_tmp  = tmp_val_refv[dst_col];
             const auto& val_tmp2 = tmp_val_refv2[src_col];
     
-            T*       dst_val = dst_vec.data()  + nrow * (offset + t);
-            const T* src_val = src_vec.data() + nrow2 * t;
+            T*       dst_val = dst_vec[offset + t].data();
+            const T* src_val = src_vec[t].data();
     
             size_t out = 0;
     
@@ -209,36 +224,10 @@ void otm(Dataframe &obj_l,
                     continue;
                 }
     
-                if (matches.size() <= 4) {
-                    for (size_t idx : matches) {
-                        dst_val[out] = src_val[idx];
-                        val_tmp[out] = val_tmp2[idx];
-                        ++out;
-                    }
-                    continue;
-                }
-    
-                std::sort(matches.begin(), matches.end());
-    
-                for (size_t k = 0; k < matches.size();) {
-    
-                    size_t start = matches[k];
-                    size_t run_len = 1;
-    
-                    while (k + run_len < matches.size() &&
-                           matches[k + run_len] == matches[k + run_len - 1] + 1)
-                        ++run_len;
-    
-                    std::memcpy(dst_val + out,
-                                src_val + start,
-                                run_len * sizeof(T));
-    
-                    std::copy_n(val_tmp2.begin() + start,
-                                run_len,
-                                val_tmp.begin() + out);
-    
-                    out += run_len;
-                    k += run_len;
+                for (size_t idx : matches) {
+                    dst_val[out] = src_val[idx];
+                    val_tmp[out] = val_tmp2[idx];
+                    ++out;
                 }
             }
         }
@@ -250,8 +239,8 @@ void otm(Dataframe &obj_l,
         std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
         const std::vector<std::string>& val_tmp2 = tmp_val_refv1[dst_col];
 
-        auto*       dst_val = str_v.data()  + nrow  * t;
-        const auto* src_val = str_v1.data() + nrow1 * t;
+        auto*       dst_val = str_v[t].data();
+        const auto* src_val = str_v1[t].data();
         
         size_t out = 0;
         for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
@@ -274,20 +263,21 @@ void otm(Dataframe &obj_l,
         std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
         const std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
 
-        auto*       dst_val = str_v.data()  + nrow  * (size_str1 + t);
-        const auto* src_val = str_v2.data() + nrow2 * t;
+        auto*       dst_val = str_v[size_str1 + t].data();
+        const auto* src_val = str_v2[t].data();
 
         size_t out = 0;  
         for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
             const auto& matches = match_idx[i_ref]; 
 
-            if (!matches.empty()) {
-                for (size_t j_idx : matches) {
-                    dst_val[out] = src_val[j_idx];
-                    val_tmp[out] = val_tmp2[j_idx];
-                    ++out;
-                }
-            } else {
+            if (matches.empty()) {
+                ++out;
+                continue;
+            }
+
+            for (size_t j_idx : matches) {
+                dst_val[out] = src_val[j_idx];
+                val_tmp[out] = val_tmp2[j_idx];
                 ++out;
             }
         }
