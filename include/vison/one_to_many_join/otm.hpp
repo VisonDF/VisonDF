@@ -174,8 +174,8 @@ void otm(Dataframe &obj_l,
         for (size_t t = 0; t < idx_list.size(); ++t) {
             size_t dst_col = idx_list[t];
     
-            auto* val_tmp  = tmp_val_refv[dst_col];
-            const auto* val_tmp2 = tmp_val_refv1[dst_col];
+            auto& val_tmp  = tmp_val_refv[dst_col];
+            const auto& val_tmp2 = tmp_val_refv1[dst_col];
     
             T*       dst_val = dst_vec[t].data();
             const T* src_val = src_vec[t].data();
@@ -220,8 +220,8 @@ void otm(Dataframe &obj_l,
             auto& val_tmp  = tmp_val_refv[dst_col];
             const auto& val_tmp2 = tmp_val_refv2[src_col];
     
-            T*       dst_val = dst_vec[offset + t].data();
-            const T* src_val = src_vec[t].data();
+            T&       dst_val = dst_vec[offset + t];
+            const T& src_val = src_vec[t];
     
             size_t out = 0;
     
@@ -245,11 +245,11 @@ void otm(Dataframe &obj_l,
     for (size_t t = 0; t < matr_idx1[0].size(); ++t) {
         size_t dst_col = matr_idx1[0][t];
 
-        std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
-        const std::vector<std::string>& val_tmp2 = tmp_val_refv1[dst_col];
+        auto& val_tmp  = tmp_val_refv[dst_col];
+        const auto& val_tmp2 = tmp_val_refv1[dst_col];
 
-        auto*       dst_val = str_v[t].data();
-        const auto* src_val = str_v1[t].data();
+        auto&       dst_val = str_v[t];
+        const auto& src_val = str_v1[t];
        
         size_t out = 0;
         for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
@@ -265,14 +265,14 @@ void otm(Dataframe &obj_l,
     }
 
     for (size_t t = 0; t < matr_idx2b[0].size(); ++t) {
+
         size_t dst_col = matr_idx2b[0][t];
         size_t src_col = matr_idx2[0][t];
+        auto& val_tmp  = tmp_val_refv[dst_col];
+        const auto& val_tmp2 = tmp_val_refv2[src_col];
 
-        std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
-        const std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
-
-        auto*       dst_val = str_v[size_str1 + t].data();
-        const auto* src_val = str_v2[t].data();
+        auto&       dst_val = str_v[size_str1 + t];
+        const auto& src_val = str_v2[t];
 
         size_t out = 0;  
         for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
