@@ -13,9 +13,6 @@ void rep_col_filter_idx(std::vector<T> &x,
 
     const unsigned int end_mask = mask.size();
 
-    // ----------------------------------------
-    // Find column index inside the index vector
-    // ----------------------------------------
     auto find_col_index = [&](auto& idxvec) -> size_t {
         for (size_t i = 0; i < idxvec.size(); ++i)
             if (idxvec[i] == colnb)
@@ -26,9 +23,6 @@ void rep_col_filter_idx(std::vector<T> &x,
         return size_t(-1);
     };
 
-    // ----------------------------------------
-    // Unified NUMERIC replace (Bool, Int, UInt, Float)
-    // ----------------------------------------
     auto replace_numeric = [&](auto& column_vec, auto& idxvec) {
         using U = std::decay_t<decltype(column_vec[0])>;
         constexpr size_t buf_size = max_chars_needed<U>();
@@ -36,8 +30,7 @@ void rep_col_filter_idx(std::vector<T> &x,
         size_t pos = find_col_index(idxvec);
         if (pos == size_t(-1)) return;
 
-        size_t base = pos * nrow;
-        U* dst = column_vec.data() + base;
+        U* dst = column_vec[pos].data();
         auto& val_tmp = tmp_val_refv[colnb];
 
         for (auto& s : val_tmp)
@@ -58,15 +51,11 @@ void rep_col_filter_idx(std::vector<T> &x,
         }
     };
 
-    // ----------------------------------------
-    // Replace strings
-    // ----------------------------------------
     auto replace_string = [&]() {
         size_t pos = find_col_index(matr_idx[0]);
         if (pos == size_t(-1)) return;
 
-        size_t base = pos * nrow;
-        std::string* dst = str_v.data() + base;
+        std::string* dst = str_v[pos].data();
         auto& val_tmp = tmp_val_refv[colnb];
 
         for (unsigned pos_idx : mask) {
@@ -75,15 +64,11 @@ void rep_col_filter_idx(std::vector<T> &x,
         }
     };
 
-    // ----------------------------------------
-    // Replace char buffers
-    // ----------------------------------------
     auto replace_charbuf = [&]() {
         size_t pos = find_col_index(matr_idx[1]);
         if (pos == size_t(-1)) return;
 
-        size_t base = pos * nrow;
-        CharT* dst = chr_v.data() + base;
+        CharT* dst = chr_v[pos].data();
         auto& val_tmp = tmp_val_refv[colnb];
 
         for (unsigned pos_idx : mask) {
@@ -92,9 +77,6 @@ void rep_col_filter_idx(std::vector<T> &x,
         }
     };
 
-    // ----------------------------------------
-    // Dispatch by type
-    // ----------------------------------------
     if constexpr (IsBool) {
         replace_numeric(bool_v,  matr_idx[2]);
 

@@ -358,7 +358,8 @@ namespace vison {
         #include "get_dataframe/vectorized/get_dataframe_filter_idx_simd.hpp"
 
         #include "write_csv/writef.hpp"
-   
+  
+        #include "inlines/rep_col/rep_col_filter_boolmask.inl"
         #include "rep_col/rep_col.hpp"
         #include "rep_col/batched/rep_col_batch.hpp"
         #include "rep_col/rep_col_filter.hpp"

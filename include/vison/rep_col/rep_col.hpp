@@ -27,23 +27,16 @@ void rep_col(std::vector<T> &x, unsigned int &colnb) {
         constexpr size_t buf_size = max_chars_needed<U>();
     
         size_t pos  = find_col_index(idx_vec);
-        size_t base = pos * nrow;
-        U* dst = col_vec.data() + base;
+        //size_t base = pos * nrow;
+        U* dst = col_vec[pos].data();
     
         auto& val_tmp = tmp_val_refv[colnb];
         for (auto& s: val_tmp)
             s.reserve(buf_size);
     
-        // write raw values
-        if constexpr (Large) {
-            for (size_t i = 0; i < nrow; ++i)
-                dst[i] = x[i];
-        } else {
-            for (size_t i = 0; i < nrow; ++i) {
-                auto& v = x[i];
-                dst[i] = v;
-            }
-        }
+        memcpy(dst, 
+               x.data(), 
+               nrow * sizeof(T));
     
         // convert x[i] → string view
         for (size_t i = 0; i < nrow; ++i) {
@@ -60,8 +53,7 @@ void rep_col(std::vector<T> &x, unsigned int &colnb) {
     auto replace_string = [&](){
     
         size_t pos = find_col_index(matr_idx[0]);
-        size_t base = pos * nrow;
-        std::string* dst = str_v.data() + base;
+        std::string* dst = str_v[pos].data();
         auto& val_tmp = tmp_val_refv[colnb];
     
         if constexpr (Large) {
@@ -72,7 +64,7 @@ void rep_col(std::vector<T> &x, unsigned int &colnb) {
         } else {
             for (size_t i = 0; i < nrow; ++i) {
                 dst[i] = x[i];
-                val_tmp[i]       = x[i];
+                val_tmp[i] = x[i];
             }
         }
     };
@@ -80,25 +72,18 @@ void rep_col(std::vector<T> &x, unsigned int &colnb) {
     auto replace_charbuf = [&]() {
     
         size_t pos = find_col_index(matr_idx[1]);
-        size_t base = pos * nrow;
-        CharT* dst = chr_v.data() + base;
+        CharT* dst = chr_v[pos].data();
         auto& val_tmp = tmp_val_refv[colnb];
     
-        if constexpr (!Large) {
-    
+        if constexpr (!Large) { 
             for (size_t i = 0; i < nrow; ++i) {
-                dst[i] = x[i];
-    
+                dst[i] = x[i]; 
                 val_tmp[i].assign(x[i], df_charbuf_size);
             }
-    
         } else {
-    
-            // First pass: update underlying column data
-            for (size_t i = 0; i < nrow; ++i)
-                dst[i] = x[i];
-    
-            // Second pass: update temporary string values
+            memcpy(dst, 
+                   x.data(),
+                   nrow * sizeof(CharT);
             for (size_t i = 0; i < nrow; ++i)
                 val_tmp[i].assign(x[i], df_charbuf_size);
         }
