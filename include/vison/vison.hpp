@@ -452,18 +452,11 @@ namespace vison {
         #include "transform/transform_group_by/transform_group_by_mt.hpp"
         #endif
         
-        #include "inlines/pivots/pivot_int.inl"
-        #ifdef _OPENMP
-        #include "inlines/pivots/pivot_int_mt.inl"
-        #endif
-        #include "inlines/pivots/pivot_uint.inl"
-        #ifdef _OPENMP
-        #include "inlines/pivots/pivot_uint_mt.inl"
-        #endif
-        #include "inlines/pivots/pivot_dbl.inl"
-        #ifdef _OPENMP
-        #include "inlines/pivots/pivot_dbl_mt.inl"
-        #endif
+        //#ifdef _OPENMP
+        //#include "inlines/pivots/pivot_int_mt.inl"
+        //#include "inlines/pivots/pivot_uint_mt.inl"
+        //#include "inlines/pivots/pivot_dbl_mt.inl"
+        //#endif
 
         #include "pivots/pivot.hpp"
         #ifdef _OPENMP
