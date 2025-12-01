@@ -179,14 +179,15 @@ void otm(Dataframe &obj_l,
     
             T*       dst_val = dst_vec[t].data();
             const T* src_val = src_vec[t].data();
-    
+   
+            size_t out = 0;
             for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
                 size_t repeat = rep_v[i_ref];
                 const T& v1 = src_val[i_ref];
                 const std::string& v2 = val_tmp2[i_ref];   
-                dst_val.insert(dst_val.end(), repeat, v1);
-                val_tmp.insert(val_tmp.end(), repeat, v2);
-
+                dst_val.insert(dst_val.begin() + out, repeat, v1);
+                val_tmp.insert(val_tmp.begin() + out, repeat, v2);
+                out += repeat;
             }
         }
     };
@@ -238,13 +239,15 @@ void otm(Dataframe &obj_l,
 
         auto*       dst_val = str_v[t].data();
         const auto* src_val = str_v1[t].data();
-        
+       
+        size_t out = 0;
         for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
             const size_t repeat = rep_v[i_ref]; 
             const std::string& v1 = src_val[i_ref];
             const std::string& v2 = val_tmp2[i_ref];
-            dst_val.insert(dst_val.end(), repeat, v1);
-            val_tmp.insert(val_tmp.end(), repeat, v2);
+            dst_val.insert(dst_val.begin() + out, repeat, v1);
+            val_tmp.insert(val_tmp.begin() + out, repeat, v2);
+            out += repeat;
         }
     }
 
