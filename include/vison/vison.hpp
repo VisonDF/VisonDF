@@ -360,6 +360,7 @@ namespace vison {
         #include "write_csv/writef.hpp"
   
         #include "inlines/rep_col/rep_col_filter_boolmask.inl"
+        #include "inlines/rep_col/rep_col_filter_boolmask_bacth.inl"
         #include "rep_col/rep_col.hpp"
         #include "rep_col/batched/rep_col_batch.hpp"
         #include "rep_col/rep_col_filter.hpp"
