@@ -163,7 +163,16 @@ namespace vison {
         std::vector<std::vector<IntT>>        int_v = {};
         std::vector<std::vector<UIntT>>       uint_v = {};
         std::vector<std::vector<FloatT>>      dbl_v = {};
-       
+      
+        struct Views {
+            std::vector<std::vector<std::string>>* str_v_view;
+            std::vector<std::vector<CharT>>*       chr_v_view;
+            std::vector<std::vector<uint8_t>>*     bool_v_view;
+            std::vector<std::vector<IntT>>*        int_v_view;
+            std::vector<std::vector<UIntT>>*       uint_v_view;
+            std::vector<std::vector<FloatT>>*      dbl_v_view;
+        };
+
         std::vector<std::vector<unsigned int>> matr_idx = {
                                                            {}, 
                                                            {}, 
@@ -482,7 +491,15 @@ namespace vison {
           return type_refv;
         };
     
-        Dataframe() = default;
+        Views views;
+        Dataframe() {
+            views.str_v_view  = &str_v;
+            views.chr_v_view  = &chr_v;
+            views.bool_v_view = &bool_v;
+            views.int_v_view  = &int_v;
+            views.uint_v_view = &uint_v;
+            views.dbl_v_view  = &dbl_v;
+        };
     
         ~Dataframe() = default;
     
