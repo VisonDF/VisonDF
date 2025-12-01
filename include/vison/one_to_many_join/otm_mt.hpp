@@ -6,11 +6,10 @@ void otm_mt(Dataframe &obj_l,
             const unsigned int &key1, 
             const unsigned int &key2,
             const std::string default_str = "NA",
-            const char default_chr = ' ',
-            const bool default_bool = 0,
-            const int default_int = 0,
-            const unsigned int default_uint = 0,
-            const double default_dbl = 0) 
+            const uint8_t default_bool = 0,
+            const IntT default_int = 0,
+            const UIntT default_uint = 0,
+            const FloatT default_dbl = 0) 
 {
   
     const unsigned int& ncol1 = obj_l.get_ncol();
@@ -22,19 +21,19 @@ void otm_mt(Dataframe &obj_l,
     const std::vector<std::vector<unsigned int>>& matr_idx1 = obj_l.get_matr_idx();
     const std::vector<std::vector<unsigned int>>& matr_idx2 = obj_r.get_matr_idx();
 
-    const std::vector<std::string>& str_v2   = obj_r.get_str_vec();
-    const std::vector<char>& chr_v2          = obj_r.get_chr_vec();
-    const std::vector<uint8_t>& bool_v2         = obj_r.get_bool_vec();
-    const std::vector<IntT>& int_v2           = obj_r.get_int_vec();
-    const std::vector<UIntT>& uint_v2 = obj_r.get_uint_vec();
-    const std::vector<FloatT>& dbl_v2        = obj_r.get_dbl_vec();
+    const auto& str_v2  = obj_r.get_str_vec();
+    const auto& chr_v2  = obj_r.get_chr_vec();
+    const auto& bool_v2 = obj_r.get_bool_vec();
+    const auto& int_v2  = obj_r.get_int_vec();
+    const auto& uint_v2 = obj_r.get_uint_vec();
+    const auto& dbl_v2  = obj_r.get_dbl_vec();
  
-    const std::vector<std::string>& str_v1   = obj_l.get_str_vec();
-    const std::vector<char>& chr_v1          = obj_l.get_chr_vec();
-    const std::vector<uint8_t>& bool_v1         = obj_l.get_bool_vec();
-    const std::vector<IntT>& int_v1           = obj_l.get_int_vec();
-    const std::vector<UIntT>& uint_v1 = obj_l.get_uint_vec();
-    const std::vector<FloatT>& dbl_v1        = obj_l.get_dbl_vec();
+    const auto& str_v1  = obj_l.get_str_vec();
+    const auto& chr_v1  = obj_l.get_chr_vec();
+    const auto& bool_v1 = obj_l.get_bool_vec();
+    const auto& int_v1  = obj_l.get_int_vec();
+    const auto& uint_v1 = obj_l.get_uint_vec();
+    const auto& dbl_v1  = obj_l.get_dbl_vec();
    
     const unsigned int size_str1  = matr_idx1[0].size();
     const unsigned int size_chr1  = matr_idx1[1].size();
@@ -120,8 +119,6 @@ void otm_mt(Dataframe &obj_l,
       it->second.push_back(i);
     };
 
-    nrow = 0;
-
     const int prev_nested = omp_get_nested();
     const int prev_max_levels = omp_get_max_active_levels();
 
@@ -155,23 +152,30 @@ void otm_mt(Dataframe &obj_l,
     // calculate the tot number of rows safely
     std::vector<size_t> out_offset(nrow1, 0);
     for (size_t i = 1; i < nrow1; ++i) {
-       out_offset[i] = out_offset[i-1] + rep_v[i-1];
+       out_offset[i] = out_offset[i - 1] + rep_v[i - 1];
     }
     size_t nrow = out_offset.back() + rep_v.back();
+    const unsigned int local_nrow_final = nrow;
 
-    #pragma omp parallel for num_threads(outer_threads) schedule(static)
-    for (ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(nrow1); ++i) {
-        auto& v = match_idx[i];
-        if (v.size() > 4)
-            std::sort(v.begin(), v.end());
-    }
+    str_v. resize(size_str1  + size_str2);
+    chr_v. resize(size_chr1  + size_chr2);
+    bool_v.resize(size_bool1 + size_bool2);
+    int_v. resize(size_int1  + size_int2);
+    uint_v.resize(size_uint1 + size_uint2);
+    dbl_v. resize(size_dbl1  + size_dbl2);
 
-    str_v. resize(nrow * (size_str1  + size_str2),  default_str);
-    chr_v. resize(nrow * (size_chr1  + size_chr2),  default_chr);
-    bool_v.resize(nrow * (size_bool1 + size_bool2),  default_bool);
-    int_v. resize(nrow * (size_int1  + size_int2),  default_int);
-    uint_v.resize(nrow * (size_uint1 + size_uint2),  default_uint);
-    dbl_v. resize(nrow * (size_dbl1  + size_dbl2),  default_dbl);
+    for (auto& el : str_v)
+        el.resize(local_nrow_final);
+    for (auto& el : chr_v)
+        el.resize(local_nrow_final);
+    for (auto& el : bool_v)
+        el.resize(local_nrow_final);
+    for (auto& el : int_v)
+        el.resize(local_nrow_final);
+    for (auto& el : uint_v)
+        el.resize(local_nrow_final);
+    for (auto& el : dbl_v)
+        el.resize(local_nrow_final);
 
     std::vector<std::string> vec_str;
     vec_str.resize(nrow, default_str);
@@ -193,8 +197,8 @@ void otm_mt(Dataframe &obj_l,
             auto&       val_tmp  = tmp_val_refv[dst_col];
             const auto& val_tmp2 = tmp_val_refv1[dst_col];
     
-            T*       dst_val = dst_vec.data()  + nrow  * static_cast<size_t>(t);
-            const T* src_val = src_vec.data() + nrow1 * static_cast<size_t>(t);
+            T*       dst_val = dst_vec[static_cast<size_t>(t)].data();
+            const T* src_val = src_vec[static_cast<size_t>(t)].data();
     
             if constexpr (Nested) {
     
@@ -205,13 +209,18 @@ void otm_mt(Dataframe &obj_l,
                     const T& v1              = src_val[i_ref];
                     const std::string& v2    = val_tmp2[i_ref];
                     const size_t out         = out_offset[i_ref];
-    
-                    #pragma omp simd
-                    for (size_t r = 0; r < repeat; ++r)
-                        dst_val[out + r] = v1;
-    
-                    for (size_t r = 0; r < repeat; ++r)
-                        val_tmp[out + r] = v2;
+
+                    if constexpr (sizeof(T) == 1) {
+                        memset(dst_val + out, v1, repeat);
+                    } else {
+                        #pragma omp simd
+                        for (size_t i = 0; i < repeat; ++i)
+                            dst_val[out + i] = v1;
+                    }
+
+                    for (size_t i = 0; i < repeat; ++i)
+                        val_tmp[out + i] = v2;
+
                 }
     
             } else {
@@ -223,18 +232,20 @@ void otm_mt(Dataframe &obj_l,
     
                     const T& v1             = src_val[i_ref];
                     const std::string& v2   = val_tmp2[i_ref];
-    
-                    size_t pre_out = out;
-    
-                    #pragma omp simd
-                    for (size_t r = 0; r < repeat; ++r)
-                        dst_val[pre_out + r] = v1;
-    
+
+                    if constexpr (sizeof(T) == 1) {
+                        memset(dst_val + out, v1, repeat);
+                    } else {
+                        #pragma omp simd
+                        for (size_t i = 0; i < repeat; ++i)
+                            dst_val[out + i] = v1;
+                    }
+
+                    for (size_t i = 0; i < repeat; ++i)
+                        val_tmp[out + i] = v2;
+                    
                     out += repeat;
-                    pre_out = out - repeat;
     
-                    for (size_t r = 0; r < repeat; ++r)
-                        val_tmp[pre_out + r] = v2;
                 }
             }
         }
@@ -254,13 +265,12 @@ void otm_mt(Dataframe &obj_l,
         for (ptrdiff_t t = 0; t < static_cast<ptrdiff_t>(idx_list_b.size()); ++t) {
     
             const size_t dst_col = idx_list_b[t];
-            const size_t src_col = idx_list[t];
-    
+            const size_t src_col = idx_list[t];   
             auto&       val_tmp  = tmp_val_refv[dst_col];
             const auto& val_tmp2 = tmp_val_refv2[src_col];
     
-            T*       dst_val = dst_vec.data()  + nrow  * (offset + static_cast<size_t>(t));
-            const T* src_val = src_vec.data() + nrow2 * static_cast<size_t>(t);
+            T&       dst_val = dst_vec[static_cast<size_t>(t) + offset];
+            const T& src_val = src_vec[static_cast<size_t>(t)];
     
             if constexpr (Nested) {
     
@@ -273,35 +283,12 @@ void otm_mt(Dataframe &obj_l,
                     if (matches.empty())
                         continue;
     
-                    if (matches.size() <= 4) {
-                        for (size_t j_idx : matches) {
-                            dst_val[out] = src_val[j_idx];
-                            val_tmp[out] = val_tmp2[j_idx];
-                            ++out;
-                        }
-                        continue;
-                    }
+                     for (size_t j_idx : matches) {
+                         dst_val[out] = src_val[j_idx];
+                         val_tmp[out] = val_tmp2[j_idx];
+                         ++out;
+                     }
     
-                    // Large case: contiguous-run compression
-                    for (size_t k = 0; k < matches.size();) {
-                        size_t start   = matches[k];
-                        size_t run_len = 1;
-    
-                        while (k + run_len < matches.size() &&
-                               matches[k + run_len] == matches[k + run_len - 1] + 1)
-                            ++run_len;
-    
-                        std::memcpy(dst_val + out,
-                                    src_val + start,
-                                    run_len * sizeof(T));
-    
-                        std::copy_n(val_tmp2.begin() + start,
-                                    run_len,
-                                    val_tmp.begin() + out);
-    
-                        out += run_len;
-                        k   += run_len;
-                    }
                 }
     
             } else {
@@ -317,34 +304,12 @@ void otm_mt(Dataframe &obj_l,
                         continue;
                     }
     
-                    if (matches.size() <= 4) {
-                        for (size_t j_idx : matches) {
-                            dst_val[out] = src_val[j_idx];
-                            val_tmp[out] = val_tmp2[j_idx];
-                            ++out;
-                        }
-                        continue;
+                    for (size_t j_idx : matches) {
+                        dst_val[out] = src_val[j_idx];
+                        val_tmp[out] = val_tmp2[j_idx];
+                        ++out;
                     }
     
-                    for (size_t k = 0; k < matches.size();) {
-                        size_t start   = matches[k];
-                        size_t run_len = 1;
-    
-                        while (k + run_len < matches.size() &&
-                               matches[k + run_len] == matches[k + run_len - 1] + 1)
-                            ++run_len;
-    
-                        std::memcpy(dst_val + out,
-                                    src_val + start,
-                                    run_len * sizeof(T));
-    
-                        std::copy_n(val_tmp2.begin() + start,
-                                    run_len,
-                                    val_tmp.begin() + out);
-    
-                        out += run_len;
-                        k   += run_len;
-                    }
                 }
             }
         }
@@ -352,37 +317,38 @@ void otm_mt(Dataframe &obj_l,
 
     #pragma omp parallel for num_threads(outer_threads) schedule(static)
     for (ptrdiff_t t = 0; t < static_cast<ptrdiff_t>(matr_idx1[0].size()); ++t) {
+        
         size_t dst_col = matr_idx1[0][t];
-        std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
-        const std::vector<std::string>& val_tmp2 = tmp_val_refv1[dst_col];
+        auto& val_tmp  = tmp_val_refv[dst_col];
+        const auto& val_tmp2 = tmp_val_refv1[dst_col];
     
-        auto*       dst_val = str_v.data()  + nrow  * t;
-        const auto* src_val = str_v1.data() + nrow1 * t;
+        auto&       dst_val = str_v[t];
+        const auto& src_val = str_v1[t];
    
         if constexpr (Nested) {
             #pragma omp parallel for num_threads(inner_threads) schedule(static)
             for (ptrdiff_t i_ref = 0; i_ref < static_cast<ptrdiff_t>(nrow1); ++i_ref) {
-                const size_t base = out_offset[i_ref];
+                const size_t out = out_offset[i_ref];
                 const size_t repeat = rep_v[i_ref];
                 const std::string& v1 = src_val[i_ref];
                 const std::string& v2 = val_tmp2[i_ref];
-                for (size_t r = 0; r < repeat; ++r) {
-                    dst_val[base + r] = v1;
-                    val_tmp[base + r] = v2;
+                for (size_t i = 0; repeat; ++i) {
+                    dst_val[out + i] = v1;
+                    val_tmp[out + i] = v2;
                 }
             }
         } else {
             size_t out = 0;
             for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
-                const size_t repeat = rep_v[i_ref];
-            
+                const size_t repeat = rep_v[i_ref]; 
                 const std::string& v1 = src_val[i_ref];
                 const std::string& v2 = val_tmp2[i_ref];
             
-                for (size_t r = 0; r < repeat; ++r, ++out) {
-                    dst_val[out] = v1;
-                    val_tmp[out] = v2;
+                for (size_t i = 0; i < repeat; ++i) {
+                    dst_val[out + i] = v1;
+                    val_tmp[out + i] = v2;
                 }
+                out += repeat;
             }
         }
     }
@@ -392,11 +358,11 @@ void otm_mt(Dataframe &obj_l,
         size_t dst_col = matr_idx2b[0][t];
         size_t src_col = matr_idx2[0][t];
 
-        std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
-        const std::vector<std::string>& val_tmp2 = tmp_val_refv2[src_col];
+        auto& val_tmp  = tmp_val_refv[dst_col];
+        const auto& val_tmp2 = tmp_val_refv2[src_col];
 
-        auto*       dst_val = str_v.data()  + nrow  * (size_str1 + t);
-        const auto* src_val = str_v2.data() + nrow2 * t;
+        auto&       dst_val = str_v[size_str1 + t];
+        const auto& src_val = str_v2[t];
 
         if constexpr (Nested) {
             #pragma omp parallel for num_threads(inner_threads) schedule(static)
@@ -404,13 +370,12 @@ void otm_mt(Dataframe &obj_l,
                 size_t out = out_offset[i_ref];
                 const auto& matches = match_idx[i_ref]; 
 
-                if (!matches.empty()) {
-                    for (size_t j_idx : matches) {
-                        dst_val[out] = src_val[j_idx];
-                        val_tmp[out] = val_tmp2[j_idx];
-                        ++out;
-                    }
-                } else {
+                if (matches.empty())
+                    continue;
+
+                for (size_t j_idx : matches) {
+                    dst_val[out] = src_val[j_idx];
+                    val_tmp[out] = val_tmp2[j_idx];
                     ++out;
                 }
             }
@@ -419,13 +384,12 @@ void otm_mt(Dataframe &obj_l,
             for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
                 const auto& matches = match_idx[i_ref]; 
 
-                if (!matches.empty()) {
-                    for (size_t j_idx : matches) {
-                        dst_val[out] = src_val[j_idx];
-                        val_tmp[out] = val_tmp2[j_idx];
-                        ++out;
-                    }
-                } else {
+                if (matches.empty())
+                    continue;
+
+                for (size_t j_idx : matches) {
+                    dst_val[out] = src_val[j_idx];
+                    val_tmp[out] = val_tmp2[j_idx];
                     ++out;
                 }
             }
@@ -471,10 +435,10 @@ void otm_mt(Dataframe &obj_l,
     const std::vector<std::string>& colname2 = obj_r.get_colname();
 
     if (colname2.size() > 0 && colname1.size() > 0) {
-      name_v.insert(name_v.end(), colname1.begin(), colname1.end());
-      name_v.insert(name_v.end(), colname2.begin(), colname2.end());
+        name_v.insert(name_v.end(), colname1.begin(), colname1.end());
+        name_v.insert(name_v.end(), colname2.begin(), colname2.end());
     } else {
-      name_v.resize(ncol);
+        name_v.resize(ncol);
     };
 
     omp_set_nested(prev_nested);
