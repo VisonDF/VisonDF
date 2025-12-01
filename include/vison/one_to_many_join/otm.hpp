@@ -174,21 +174,32 @@ void otm(Dataframe &obj_l,
         for (size_t t = 0; t < idx_list.size(); ++t) {
             size_t dst_col = idx_list[t];
     
-            auto& val_tmp  = tmp_val_refv[dst_col];
-            const auto& val_tmp2 = tmp_val_refv1[dst_col];
+            auto* val_tmp  = tmp_val_refv[dst_col];
+            const auto* val_tmp2 = tmp_val_refv1[dst_col];
     
             T*       dst_val = dst_vec[t].data();
             const T* src_val = src_vec[t].data();
-   
+  
             size_t out = 0;
             for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
                 size_t repeat = rep_v[i_ref];
+            
                 const T& v1 = src_val[i_ref];
                 const std::string& v2 = val_tmp2[i_ref];   
-                dst_val.insert(dst_val.begin() + out, repeat, v1);
-                val_tmp.insert(val_tmp.begin() + out, repeat, v2);
+            
+                if constexpr (sizeof(T) == 1) {
+                    std::memset(dst_val + out, v1, repeat);   
+                } else {
+                    for (size_t k = 0; k < repeat; ++k)
+                        dst_val[out + k] = v1;                
+                }
+            
+                for (size_t k = 0; k < repeat; ++k)
+                    val_tmp[out + k] = v2;                    
+            
                 out += repeat;
             }
+
         }
     };
 
@@ -237,16 +248,18 @@ void otm(Dataframe &obj_l,
         std::vector<std::string>& val_tmp  = tmp_val_refv[dst_col];
         const std::vector<std::string>& val_tmp2 = tmp_val_refv1[dst_col];
 
-        auto&       dst_val = str_v[t];
-        const auto& src_val = str_v1[t];
+        auto*       dst_val = str_v[t].data();
+        const auto* src_val = str_v1[t].data();
        
         size_t out = 0;
         for (size_t i_ref = 0; i_ref < nrow1; ++i_ref) {
             const size_t repeat = rep_v[i_ref]; 
             const std::string& v1 = src_val[i_ref];
             const std::string& v2 = val_tmp2[i_ref];
-            dst_val.insert(dst_val.begin() + out, repeat, v1);
-            val_tmp.insert(val_tmp.begin() + out, repeat, v2);
+            for (size_t i = 0; i < repeat; ++i) {
+                dst_val[out + i] = v1;
+                val_tmp[out + i] = v2;
+            }
             out += repeat;
         }
     }
