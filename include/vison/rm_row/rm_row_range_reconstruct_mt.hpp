@@ -1,6 +1,7 @@
 #pragma once
 
 template <unsigned int CORES = 4,
+          bool MemClean = false,
           bool OnlyView = false>
 void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
 {
@@ -14,33 +15,31 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
     auto compact_block_pod = [&]<typename T>(std::vector<T>& dst, 
                                              std::vector<T>& src) {
 
-        size_t i = 0;
+        size_t i = x[0];
         size_t i2 = 0;
-        size_t written = 0;
+        size_t written = x[0];
         while (i2 < x.size()) {
             const unsigned int ref_val = x[i2++];
             const size_t start = i;
-            while (i < ref_val) ++i;
+            while (i < ref_val) {
+                dst[written] = std::move(src[i]);
+                i += 1;
+            };
             const size_t len = i - start;
-            std::memcpy(dst.data() + written, 
-                        src.data() + start, 
-                        len * sizeof(T));
             written += len;
             i += 1;
         }
-        const size_t start = i;
-        while (i < old_nrow) ++i;
-        const size_t len = i - start;
-        std::memcpy(dst.data() + written, 
-                    src.data() + start, 
-                    len * sizeof(T));
+        while (i < ref_val) {
+            dst[written] = std::move(src[i]);
+            i += 1;
+        };
     };
 
     auto compact_block_scalar = [&](auto& dst, 
                                     auto& src) {
-        size_t i = 0;
+        size_t i = x[0];
         size_t i2 = 0;
-        size_t written = 0;
+        size_t written = x[0];
         while (i2 < x.size()) {
             const unsigned int ref_val = x[i2++];
             while (i < ref_val) {
@@ -112,9 +111,9 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
     for (size_t cpos = 0; cpos < ncol; ++cpos) {
         auto& src_aux = tmp_val_refv[cpos];
         auto& dst_aux = tmp_val_refv[cpos];
-        size_t i = 0;
+        size_t i = x[0];
         size_t i2 = 0;
-        size_t written = 0;
+        size_t written = x[0];
         while (i2 < x.size()) {
             const unsigned int ref_val = x[i2++];
             while (i < ref_val) {
@@ -133,34 +132,24 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
 
     std::vector<std::string> new_name_v_row;
     if (!name_v_row.empty()) {
-        new_name_v_row.resize(new_nrow);
-        size_t i = 0;
+        size_t i = x[0];
         size_t i2 = 0;
-        size_t written = 0;
+        size_t written = x[0];
         while (i2 < x.size()) {
             const unsigned int ref_val = x[i2++];
             while (i < ref_val) {
-                new_name_v_row[written] = std::move(name_v_row[i]);
+                name_v_row[written] = std::move(name_v_row[i]);
                 i += 1;
                 written += 1;
             };
             i += 1;
         }
         while (i < old_nrow) {
-            new_name_v_row[i] = std::move(name_v_row[i]);
+            name_v_row[i] = std::move(name_v_row[i]);
             i += 1;
             written += 1;
         };
     }
-
-    str_v.swap(new_str_v);
-    chr_v.swap(new_chr_v);
-    bool_v.swap(new_bool_v);
-    int_v.swap(new_int_v);
-    uint_v.swap(new_uint_v);
-    dbl_v.swap(new_dbl_v);
-    tmp_val_refv.swap(new_tmp_val_refv);
-    name_v_row.swap(new_name_v_row);
 
     nrow = new_nrow;
 
