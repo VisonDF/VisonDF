@@ -1,9 +1,14 @@
 #pragma once
 
+template <bool Sorted = true>
 void rm_row_range_reconstruct(std::vector<unsigned int>& x)
 {
     const size_t old_nrow = nrow;
     if (x.empty() || old_nrow == 0) return;
+
+    if constexpr (!Sorted) {
+        std::sort(x.begin(), x.end());
+    }
 
     const size_t new_nrow = old_nrow - x.size();
 
@@ -32,33 +37,46 @@ void rm_row_range_reconstruct(std::vector<unsigned int>& x)
     auto compact_block_pod = [&]<typename T>(std::vector<T>& dst, 
                                              const std::vector<T>& src) {
         size_t i = 0;
+        size_t i2 = 0;
         size_t written = 0;
-        while (i < old_nrow) {
-            const unsigned int ref_val = x[i];
-            if (i < ref_val) {
-                const size_t start = i;
-                while (i < old_nrow && i < ref_val) ++i;
-                const size_t len = i - start;
-                std::memcpy(dst.data() + written, 
-                            src.data() + start, 
-                            len * sizeof(T));
-                written += len;
-            }
+        while (i2 < x.size()) {
+            const unsigned int ref_val = x[i2++];
+            const size_t start = i;
+            while (i < ref_val) ++i;
+            const size_t len = i - start;
+            std::memcpy(dst.data() + written, 
+                        src.data() + start, 
+                        len * sizeof(T));
+            written += len;
+            i += 1;
         }
+        const size_t start = i;
+        while (i < old_nrow) ++i;
+        const size_t len = i - start;
+        std::memcpy(dst.data() + written, 
+                    src.data() + start, 
+                    len * sizeof(T));
     };
 
     auto compact_block_scalar = [&](auto& dst, 
                                     const auto& src) {
         size_t i = 0;
-        while (i < old_nrow) {
-            const unsigned int ref_val = x[i];
-            if (i < ref_val) {
-                while (i < old_nrow && i < ref_val) {
-                    dst[i] = src[i];
-                    i += 1;
-                };
-            }
+        size_t i2 = 0;
+        size_t written = 0;
+        while (i2 < x.size()) {
+            const unsigned int ref_val = x[i2++];
+            while (i < ref_val) {
+                dst[written] = src[i];
+                i += 1;
+                written += 1;
+            };
+            i += 1;
         }
+        while (i < old_nrow) {
+            dst[written] = src[i];
+            i += 1;
+            written += 1;
+        };
     };
 
     for (size_t t = 0; t < 6; ++t) {
@@ -109,32 +127,46 @@ void rm_row_range_reconstruct(std::vector<unsigned int>& x)
     for (size_t cpos = 0; cpos < ncol; ++cpos) {
         auto& src_aux = tmp_val_refv[cpos];
         auto& dst_aux = new_tmp_val_refv[cpos];
-        dst_aux.reserve(new_nrow);
+        dst_aux.resize(new_nrow);
         size_t i = 0;
-        while (i < old_nrow) {
-            const unsigned int ref_val = x[i];
-            if (i < ref_val) {
-                while (i < old_nrow && i < ref_val) {
-                    dst_aux[i] = std::move(src_aux[i]);
-                    i += 1;
-                };
-            }
+        size_t i2 = 0;
+        size_t written = 0;
+        while (i2 < x.size()) {
+            const unsigned int ref_val = x[i2++];
+            while (i < ref_val) {
+                dst_aux[written] = std::move(src_aux[i]);
+                i += 1;
+                written += 1;
+            };
+            i += 1;
         }
+        while (i < old_nrow) {
+            dst_aux[i] = std::move(src_aux[i]);
+            i += 1;
+            written += 1;
+        };
     }
 
     std::vector<std::string> new_name_v_row;
     if (!name_v_row.empty()) {
         new_name_v_row.resize(new_nrow);
         size_t i = 0;
-        while (i < old_nrow) {
-            const unsigned int ref_val = x[i];
-            if (i < ref_val) {
-                while (i < old_nrow && i < ref_val) {
-                    new_name_v_row[i] = std::move(name_v_row[i]);
-                    i += 1;
-                };
-            }
+        size_t i2 = 0;
+        size_t written = 0;
+        while (i2 < x.size()) {
+            const unsigned int ref_val = x[i2++];
+            while (i < ref_val) {
+                new_name_v_row[written] = std::move(name_v_row[i]);
+                i += 1;
+                written += 1;
+            };
+            i += 1;
         }
+        while (i < old_nrow) {
+            new_name_v_row[i] = std::move(name_v_row[i]);
+            i += 1;
+            written += 1;
+        };
     }
 
     str_v.swap(new_str_v);
