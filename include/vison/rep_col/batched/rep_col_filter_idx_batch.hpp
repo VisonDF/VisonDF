@@ -15,9 +15,6 @@ void rep_col_filter_idx_batch(std::vector<T>& x,
 
     const size_t end_mask = mask.size();
 
-    // -------------------------------------------------
-    // helper: find column index and return base offset
-    // -------------------------------------------------
     auto find_col_base = [&](auto& idx_vec) -> size_t {
         size_t pos = 0;
         while (pos < idx_vec.size() && idx_vec[pos] != colnb)
@@ -28,17 +25,17 @@ void rep_col_filter_idx_batch(std::vector<T>& x,
                       << " not found for this type in (replace_col)\n";
             return size_t(-1);
         }
-        return pos * nrow;
+        return pos;
     };
 
     auto replace_numeric = [&](auto& col_vec, auto& idx_vec)
     {
         constexpr size_t buf_size = max_chars_needed<T>();
 
-        size_t base = find_col_base(idx_vec);
+        size_t pos = find_col_base(idx_vec);
         if (base == size_t(-1)) return;
 
-        T*         __restrict dst = col_vec.data() + base;
+        T*         __restrict dst = col_vec[pos].data();
         const T*   __restrict src = x.data();
         auto&      val_tmp        = tmp_val_refv[colnb];
 
@@ -87,10 +84,10 @@ void rep_col_filter_idx_batch(std::vector<T>& x,
 
     auto replace_string = [&]()
     {
-        size_t base = find_col_base(matr_idx[0]);
-        if (base == size_t(-1)) return;
+        size_t pos = find_col_base(matr_idx[0]);
+        if (pos == size_t(-1)) return;
 
-        auto*       __restrict dst = str_v.data() + base;
+        auto*       __restrict dst = str_v[pos].data();
         const auto* __restrict src = x.data();
         auto&       val_tmp        = tmp_val_refv[colnb];
 
@@ -117,10 +114,10 @@ void rep_col_filter_idx_batch(std::vector<T>& x,
 
     auto replace_charbuf = [&]()
     {
-        size_t base = find_col_base(matr_idx[1]);
-        if (base == size_t(-1)) return;
+        size_t pos = find_col_base(matr_idx[1]);
+        if (pos == size_t(-1)) return;
 
-        CharT*       __restrict dst = chr_v.data() + base;
+        CharT*       __restrict dst = chr_v[pos].data();
         const CharT* __restrict src = x.data();
         auto&        val_tmp        = tmp_val_refv[colnb];
 
