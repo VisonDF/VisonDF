@@ -49,9 +49,16 @@ void rm_row_range_reconstruct(std::vector<unsigned int>& x)
 
     auto compact_block_scalar = [&](auto& dst, 
                                     const auto& src) {
-        auto beg = src.begin();
-        for (size_t i = 0; i < old_nrow; ++i)
-            if (keep[i]) dst.push_back(*(beg + i));
+        size_t i = 0;
+        while (i < old_nrow) {
+            const unsigned int ref_val = x[i];
+            if (i < ref_val) {
+                while (i < old_nrow && i < ref_val) {
+                    dst[i] = src[i];
+                    i += 1;
+                };
+            }
+        }
     };
 
     for (size_t t = 0; t < 6; ++t) {
@@ -103,15 +110,31 @@ void rm_row_range_reconstruct(std::vector<unsigned int>& x)
         auto& src_aux = tmp_val_refv[cpos];
         auto& dst_aux = new_tmp_val_refv[cpos];
         dst_aux.reserve(new_nrow);
-        for (size_t i = 0; i < old_nrow; ++i)
-            if (keep[i]) dst_aux.push_back(std::move(src_aux[i]));
+        size_t i = 0;
+        while (i < old_nrow) {
+            const unsigned int ref_val = x[i];
+            if (i < ref_val) {
+                while (i < old_nrow && i < ref_val) {
+                    dst_aux[i] = std::move(src_aux[i]);
+                    i += 1;
+                };
+            }
+        }
     }
 
     std::vector<std::string> new_name_v_row;
     if (!name_v_row.empty()) {
-        new_name_v_row.reserve(new_nrow);
-        for (size_t i = 0; i < old_nrow; ++i)
-            if (keep[i]) new_name_v_row.push_back(std::move(name_v_row[i]));
+        new_name_v_row.resize(new_nrow);
+        size_t i = 0;
+        while (i < old_nrow) {
+            const unsigned int ref_val = x[i];
+            if (i < ref_val) {
+                while (i < old_nrow && i < ref_val) {
+                    new_name_v_row[i] = std::move(name_v_row[i]);
+                    i += 1;
+                };
+            }
+        }
     }
 
     str_v.swap(new_str_v);
