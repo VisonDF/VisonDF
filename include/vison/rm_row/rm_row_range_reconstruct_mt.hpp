@@ -29,6 +29,7 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
                 T* __restrict d = dst.data() + written;
                 T* __restrict s = src.data() + start;
         
+                #pragma GCC ivdep
                 for (size_t k = 0; k < len; ++k)
                     d[k] = s[k];
             }
