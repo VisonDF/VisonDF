@@ -66,6 +66,7 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
 
         switch (t) {
             case 0: 
+                #pragma omp parallel for num_threads(CORES)
                 for (size_t cpos = 0; cpos < ncols_t; ++cpos)
                     compact_block_scalar(new_str_v[cpos], str_v[cpos]);
                 break;

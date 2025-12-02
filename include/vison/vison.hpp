@@ -378,7 +378,9 @@ namespace vison {
 
         #include "rm_row/rm_row.hpp"
         #include "rm_row/rm_row_range.hpp"
+        #include "rm_row/rm_row_range_mt.hpp"
         #include "rm_row/rm_row_range_reconstruct.hpp"
+        #include "rm_row/rm_row_range_reconstruct_mt.hpp"
 
         #include "transform/reorder_col/reorder_col.hpp"
         #include "transform/reorder_col/reorder_col_mt.hpp"
