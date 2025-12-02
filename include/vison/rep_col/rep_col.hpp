@@ -3,7 +3,9 @@
 template <typename T, bool Large = false, bool IsBool = false> 
 void rep_col(std::vector<T> &x, unsigned int &colnb) {
 
-    if (x.size() != nrow) {
+    const unsigned int local_nrow = nrow;
+
+    if (x.size() != local_nrow) {
       std::cerr << "Error: vector length (" << x.size()
                 << ") does not match nrow (" << nrow << ")\n";
       return;
@@ -36,10 +38,10 @@ void rep_col(std::vector<T> &x, unsigned int &colnb) {
     
         memcpy(dst, 
                x.data(), 
-               nrow * sizeof(T));
+               local_nrow * sizeof(T));
     
         // convert x[i] → string view
-        for (size_t i = 0; i < nrow; ++i) {
+        for (size_t i = 0; i < local_nrow; ++i) {
             char buf[buf_size];
             auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, x[i]);
             if (ec == std::errc{}) {
@@ -57,12 +59,12 @@ void rep_col(std::vector<T> &x, unsigned int &colnb) {
         auto& val_tmp = tmp_val_refv[colnb];
     
         if constexpr (Large) {
-            for (size_t i = 0; i < nrow; ++i)
+            for (size_t i = 0; i < local_nrow; ++i)
                 dst[i] = x[i];
-            for (size_t i = 0; i < nrow; ++i)
+            for (size_t i = 0; i < local_nrow; ++i)
                 val_tmp[i] = x[i];
         } else {
-            for (size_t i = 0; i < nrow; ++i) {
+            for (size_t i = 0; i < local_nrow; ++i) {
                 dst[i] = x[i];
                 val_tmp[i] = x[i];
             }
@@ -76,15 +78,15 @@ void rep_col(std::vector<T> &x, unsigned int &colnb) {
         auto& val_tmp = tmp_val_refv[colnb];
     
         if constexpr (!Large) { 
-            for (size_t i = 0; i < nrow; ++i) {
+            for (size_t i = 0; i < local_nrow; ++i) {
                 dst[i] = x[i]; 
                 val_tmp[i].assign(x[i], df_charbuf_size);
             }
         } else {
             memcpy(dst, 
                    x.data(),
-                   nrow * sizeof(CharT);
-            for (size_t i = 0; i < nrow; ++i)
+                   local_nrow * sizeof(CharT);
+            for (size_t i = 0; i < local_nrow; ++i)
                 val_tmp[i].assign(x[i], df_charbuf_size);
         }
     };

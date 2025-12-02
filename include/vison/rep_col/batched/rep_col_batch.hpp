@@ -7,7 +7,9 @@ void rep_col_batch(std::vector<T>& x, unsigned int& colnb)
 {
     static_assert(BATCH > 0, "BATCH must be > 0");
 
-    if (x.size() != nrow) {
+    const unsigned int local_nrow = nrow;
+
+    if (x.size() != local_nrow) {
         std::cerr << "Error: vector length (" << x.size()
                   << ") does not match nrow (" << nrow << ")\n";
         return;
@@ -43,8 +45,8 @@ void rep_col_batch(std::vector<T>& x, unsigned int& colnb)
         alignas(64) char   local_bufs[BATCH][buf_size];
         uint8_t            lengths[BATCH];
 
-        for (size_t i = 0; i < nrow; i += BATCH) {
-            const size_t end = std::min(i + BATCH, static_cast<size_t>(nrow));
+        for (size_t i = 0; i < local_nrow; i += BATCH) {
+            const size_t end = std::min(i + BATCH, static_cast<size_t>(local_nrow));
 
             memcpy(dst + i, src + i, (end - i) * sizeof(IntT));
 
@@ -78,15 +80,15 @@ void rep_col_batch(std::vector<T>& x, unsigned int& colnb)
 
         // write underlying column
         #pragma unroll 32
-        for (size_t i = 0; i < nrow; ++i)
+        for (size_t i = 0; i < local_nrow; ++i)
             dst[i] = src[i];
 
         std::vector<std::string>& __restrict val_tmp = tmp_val_refv[colnb];
 
         alignas(64) std::string buf[BATCH];
 
-        for (size_t i = 0; i < nrow; i += BATCH) {
-            const size_t end = std::min(i + BATCH, static_cast<size_t>(nrow));
+        for (size_t i = 0; i < local_nrow; i += BATCH) {
+            const size_t end = std::min(i + BATCH, static_cast<size_t>(local_nrow));
 
             // local copy in batch
             for (size_t j = i; j < end; ++j)
@@ -109,7 +111,7 @@ void rep_col_batch(std::vector<T>& x, unsigned int& colnb)
 
         memcpy(dst,
                src,
-               nrow * sizeof(CharT));
+               local_nrow * sizeof(CharT));
 
         std::vector<std::string>& __restrict val_tmp = tmp_val_refv[colnb];
 
@@ -118,8 +120,8 @@ void rep_col_batch(std::vector<T>& x, unsigned int& colnb)
 
         alignas(64) CharT buf[BATCH];
 
-        for (size_t i = 0; i < nrow; i += BATCH) {
-            const size_t end = std::min(i + BATCH, static_cast<size_t>(nrow));
+        for (size_t i = 0; i < local_nrow; i += BATCH) {
+            const size_t end = std::min(i + BATCH, static_cast<size_t>(local_nrow));
 
             // local cache of buffers
             for (size_t j = i; j < end; ++j)

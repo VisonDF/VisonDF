@@ -5,7 +5,10 @@ void rep_col_filter_idx(std::vector<T> &x,
                         unsigned int &colnb,
                         const std::vector<unsigned int>& mask)
 {
-    if (x.size() != nrow) {
+
+    const unsigned int local_nrow = nrow;
+
+    if (x.size() != local_nrow) {
         std::cerr << "Error: vector length (" << x.size()
                   << ") does not match nrow (" << nrow << ")\n";
         return;
