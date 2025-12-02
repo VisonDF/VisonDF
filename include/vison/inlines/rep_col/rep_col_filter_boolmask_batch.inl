@@ -33,7 +33,7 @@ void rep_col_filter_boolmask_batch(std::vector<T>& x,
         constexpr size_t buf_size = max_chars_needed<T>();
 
         size_t pos = find_col_base(idx_vec);
-        if (base == size_t(-1)) return;
+        if (pos == size_t(-1)) return;
 
         T*         __restrict dst = col_vec[pos].data() + strt_vl;
         const T*   __restrict src = x.data();
@@ -88,7 +88,7 @@ void rep_col_filter_boolmask_batch(std::vector<T>& x,
     auto replace_string = [&]()
     {
         size_t pos = find_col_base(matr_idx[0]);
-        if (base == size_t(-1)) return;
+        if (pos == size_t(-1)) return;
 
         auto*       __restrict dst = str_v[pos].data() + strt_vl;
         const auto* __restrict src = x.data();
@@ -117,7 +117,7 @@ void rep_col_filter_boolmask_batch(std::vector<T>& x,
     auto replace_charbuf = [&]()
     {
         size_t pos = find_col_base(matr_idx[1]);
-        if (base == size_t(-1)) return;
+        if (pos == size_t(-1)) return;
 
         CharT*       __restrict dst = chr_v[pos].data() + strt_vl;
         const CharT* __restrict src = x.data();
