@@ -17,10 +17,6 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
         size_t i = 0;
         size_t i2 = 0;
         size_t written = 0;
-        while (i == x[i2]) {
-            i2 += 1;
-            i += 1;
-        }
         while (i2 < x.size()) {
             const unsigned int ref_val = x[i2++];
             const size_t start = i;
@@ -45,10 +41,6 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
         size_t i = 0;
         size_t i2 = 0;
         size_t written = 0;
-        while (i == x[i2]) {
-            i2 += 1;
-            i += 1;
-        }
         while (i2 < x.size()) {
             const unsigned int ref_val = x[i2++];
             while (i < ref_val) {
@@ -123,10 +115,6 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
         size_t i = 0;
         size_t i2 = 0;
         size_t written = 0;
-        while (i == x[i2]) {
-            i2 += 1;
-            i += 1;
-        }
         while (i2 < x.size()) {
             const unsigned int ref_val = x[i2++];
             while (i < ref_val) {
@@ -149,10 +137,6 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
         size_t i = 0;
         size_t i2 = 0;
         size_t written = 0;
-        while (i == x[i2]) {
-            i2 += 1;
-            i += 1;
-        }
         while (i2 < x.size()) {
             const unsigned int ref_val = x[i2++];
             while (i < ref_val) {
