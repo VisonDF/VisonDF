@@ -1,13 +1,13 @@
 #pragma once
 
 template <bool MemClean = false>
-void rm_row_range(std::vector<unsigned int> x) 
+void rm_row_range(std::vector<unsigned int>& x) 
 {
 
     const size_t old_nrow = nrow;
 
     std::vector<uint8_t> keep(old_nrow, 1);
-    for (unsigned int rr : x) keep[rr] = 0;
+    for (unsigned int& rr : x) keep[rr] = 0;
 
     auto compact_block = [&](auto& vec) {
         size_t idx = 0;
