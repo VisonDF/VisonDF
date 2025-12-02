@@ -9,9 +9,9 @@ void rm_row_range(std::vector<unsigned int> x)
     std::vector<uint8_t> keep(old_nrow, 1);
     for (unsigned int rr : x) keep[rr] = 0;
 
-    auto compact_block = [&](auto& vec, size_t base) {
+    auto compact_block = [&](auto& vec) {
         size_t idx = 0;
-        auto beg = vec.begin() + base;
+        auto beg = vec.begin();
         auto end = beg + old_nrow;
         auto it  = std::remove_if(beg, end, [&](auto&) mutable { return !keep[idx++]; });
         vec.erase(it, end);
@@ -27,42 +27,63 @@ void rm_row_range(std::vector<unsigned int> x)
 
         const size_t ncols_t = matr_tmp.size();
         
-        for (size_t cpos = ncols_t; cpos-- > 0; ) {
-            
-            const size_t base = cpos * old_nrow;
-            
-            switch (t) {
-                case 0: compact_block(str_v,  base); break;
-                case 1: compact_block(chr_v,  base); break;
-                case 2: compact_block(bool_v, base); break;
-                case 3: compact_block(int_v,  base); break;
-                case 4: compact_block(uint_v, base); break;
-                case 5: compact_block(dbl_v,  base); break;
-            }
-            
-            auto& aux = tmp_val_refv[matr_tmp[cpos]];
-            size_t idx = 0;
-            auto it = std::remove_if(aux.begin(), aux.end(),
-                                     [&](auto&) mutable { return !keep[idx++]; });
-            aux.erase(it, aux.end());
-            
-            if constexpr (MemClean) {
-               aux.shrink_to_fit();
-            }
-            
+        switch (t) {
+            case 0: { 
+                        for (size_t cpos = 0; cpos < ncols_t; ++cpos)
+                            compact_block(str_v[cpos]); 
+                        break;
+                    }
+            case 1: {
+                         for (size_t cpos = 0; cpos < ncols_t; ++cpos)                      
+                            compact_block(chr_v[cpos]); 
+                        break;
+                    }
+            case 2: {
+                         for (size_t cpos = 0; cpos < ncols_t; ++cpos)
+                            compact_block(bool_v[cpos]); 
+                        break;
+                    }
+            case 3: {
+                        for (size_t cpos = 0; cpos < ncols_t; ++cpos)
+                            compact_block(int_v[cpos]); 
+                        break;
+                    }
+            case 4: {
+                        for (size_t cpos = 0; cpos < ncols_t; ++cpos)
+                            compact_block(uint_v[cpos]); 
+                        break;
+                    }
+            case 5: {
+                        for (size_t cpos = 0; cpos < ncols_t; ++cpos)
+                            compact_block(dbl_v[cpos]); 
+                        break;
+                    }
         }
+                    
+    }
 
-        if constexpr (MemClean) {
-            switch (t) {
-                case 0: str_v.shrink_to_fit(); break;
-                case 1: chr_v.shrink_to_fit(); break;
-                case 2: bool_v.shrink_to_fit(); break;
-                case 3: int_v.shrink_to_fit(); break;
-                case 4: uint_v.shrink_to_fit(); break;
-                case 5: dbl_v.shrink_to_fit(); break;
-            }
-        }
+    for (auto& el : tmp_val_refv) {
+        size_t idx = 0;
+        auto it = std::remove_if(el.begin(), el.end(),
+                                 [&](auto&) mutable { return !keep[idx++]; });
+        el.erase(it, aux.end()); 
+    }
 
+    if constexpr (MemClean) {
+        for (auto& el : str_v) 
+            el.shrink_to_fit();
+        for (auto& el : chr_v) 
+            el.shrink_to_fit();
+        for (auto& el : bool_v) 
+            el.shrink_to_fit();
+        for (auto& el : int_v) 
+            el.shrink_to_fit();
+        for (auto& el : uint_v) 
+            el.shrink_to_fit();
+        for (auto& el : dbl_v) 
+            el.shrink_to_fit();
+        for (auto& el : tmp_val_refv)
+            el.shrink_to_fit();
     }
 
     if (!name_v_row.empty()) {

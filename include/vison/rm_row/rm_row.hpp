@@ -16,37 +16,65 @@ void rm_row(unsigned int x)
 
         const size_t ncols_t = matr_tmp.size();
         
-        for (size_t cpos = ncols_t; cpos-- > 0; ) {
-            
-            const size_t base = cpos * old_nrow;
-            
-            switch (t) {
-                case 0: str_v.erase(str_v.begin() + x); break;
-                case 1: chr_v.erase(chr_v.begin() + x); break;
-                case 2: bool_v.erase(bool_v.begin() + x); break;
-                case 3: int_v.erase(int_v.begin() + x); break;
-                case 4: uint_v.erase(uint_v.begin() + x); break;
-                case 5: dbl_v.erase(dbl_v.begin() + x); break;
-            }
-            
-            auto& aux = tmp_val_refv[matr_tmp[cpos]];
-            aux.erase(aux.begin() + x);
-            if constexpr (MemClean) {
-              aux.shrink_to_fit();
-            }
-        }
+        switch (t) {
+            case 0: {
+                        for (size_t cpos = 0; cpos < ncols_t; ++cpos) 
+                            str_v[cpos].erase(str_v[cpos].begin() + x);
 
-        if constexpr (MemClean) {
-            switch (t) {
-                case 0: str_v.shrink_to_fit(); break;
-                case 1: chr_v.shrink_to_fit(); break;
-                case 2: bool_v.shrink_to_fit(); break;
-                case 3: int_v.shrink_to_fit(); break;
-                case 4: uint_v.shrink_to_fit(); break;
-                case 5: dbl_v.shrink_to_fit(); break;
-            }
-        }
+                        break; 
+                    }
+            case 1: {   
+                        for (size_t cpos = 0; cpos < ncols_t; ++cpos) 
+                            chr_v[cpos].erase(chr_v[cpos].begin() + x);
 
+                        break;
+                    }
+            case 2: {
+                        for (size_t cpos = 0; cpos < ncols_t; ++cpos)
+                            bool_v[cpos].erase(bool_v[cpos].begin() + x);
+
+                        break; 
+                    }
+            case 3: {
+                        for (size_t cpos = 0; cpos < ncols_t; ++cpos)
+                            int_v[cpos].erase(int_v[cpos].begin() + x);
+
+                        break; 
+                    }
+            case 4: {
+                        for (size_t cpos = 0; cpos < ncols_t; ++cpos)
+                            uint_v[cpos].erase(uint_v[cpos].begin() + x); 
+
+                        break; 
+                    }
+            case 5: {
+                        for (size_t cpos = 0; cpos < ncols_t; ++cpos)
+                            dbl_v[cpos].erase(dbl_v[cpos].begin() + x); 
+                    
+                        break; 
+                    }
+        }
+            
+    }
+
+    for (auto& el : tmp_val_ref)
+        el.erase(el.begin() + x);
+
+    if constexpr (MemClean) {
+        for (auto& el : str_v) 
+            el.shrink_to_fit();
+        for (auto& el : chr_v) 
+            el.shrink_to_fit();
+        for (auto& el : bool_v) 
+            el.shrink_to_fit();
+        for (auto& el : int_v) 
+            el.shrink_to_fit();
+        for (auto& el : uint_v) 
+            el.shrink_to_fit();
+        for (auto& el : dbl_v) 
+            el.shrink_to_fit();
+        for (auto& el : tmp_val_refv)
+            el.shrink_to_fit();
     }
 
     nrow = old_nrow - 1; 
