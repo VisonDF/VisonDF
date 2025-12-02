@@ -124,7 +124,7 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
             i += 1;
         }
         while (i < old_nrow) {
-            dst_aux[i] = std::move(src_aux[i]);
+            dst_aux[written] = std::move(src_aux[i]);
             i += 1;
             written += 1;
         };
@@ -145,10 +145,24 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
             i += 1;
         }
         while (i < old_nrow) {
-            name_v_row[i] = std::move(name_v_row[i]);
+            name_v_row[written] = std::move(name_v_row[i]);
             i += 1;
             written += 1;
         };
+        if constexpr (MemClean) {
+            name_v_row.resize(new_nrow);
+            name_v_row.shrink_to_fit();
+        }
+    }
+
+    if constexpr (MemClean) {
+        for (auto& el : str_v)        el.resize(new_nrow); el.shrink_to_fit();
+        for (auto& el : chr_v)        el.resize(new_nrow); el.shrink_to_fit();
+        for (auto& el : bool_v)       el.resize(new_nrow); el.shrink_to_fit();
+        for (auto& el : int_v)        el.resize(new_nrow); el.shrink_to_fit();
+        for (auto& el : uint_v)       el.resize(new_nrow); el.shrink_to_fit();
+        for (auto& el : dbl_v)        el.resize(new_nrow); el.shrink_to_fit();
+        for (auto& el : tmp_val_refv) el.resize(new_nrow); el.shrink_to_fit();
     }
 
     nrow = new_nrow;
