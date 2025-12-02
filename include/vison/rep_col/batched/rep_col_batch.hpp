@@ -107,10 +107,9 @@ void rep_col_batch(std::vector<T>& x, unsigned int& colnb)
         CharT*       __restrict dst = chr_v[pos].data();
         const CharT* __restrict src = x.data();
 
-        // copy underlying column storage
-        #pragma unroll 32
-        for (size_t i = 0; i < nrow; ++i)
-            dst[i] = src[i];
+        memcpy(dst,
+               src,
+               nrow * sizeof(CharT));
 
         std::vector<std::string>& __restrict val_tmp = tmp_val_refv[colnb];
 
