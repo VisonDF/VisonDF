@@ -9,34 +9,18 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
 
     const size_t new_nrow = old_nrow - x.size();
 
-    std::vector<std::vector<std::string>> new_str_v;  new_str_v .reserve(matr_idx[0].size());
-    std::vector<std::vector<CharT>>       new_chr_v;  new_chr_v .reserve(matr_idx[1].size());
-    std::vector<std::vector<uint8_t>>     new_bool_v; new_bool_v.reserve(matr_idx[2].size());
-    std::vector<std::vector<IntT>>        new_int_v;  new_int_v .reserve(matr_idx[3].size());
-    std::vector<std::vector<UIntT>>       new_uint_v; new_uint_v.reserve(matr_idx[4].size());
-    std::vector<std::vector<FloatT>>      new_dbl_v;  new_dbl_v .reserve(matr_idx[5].size());
-
-    for (auto& el : new_str_v)
-        el.resize(new_nrow);
-    for (auto& el : new_chr_v)
-        el.resize(new_nrow);
-    for (auto& el : new_bool_v)
-        el.resize(new_nrow);
-    for (auto& el : new_int_v)
-        el.resize(new_nrow);
-    for (auto& el : new_uint_v)
-        el.resize(new_nrow);
-    for (auto& el : new_dbl_v)
-        el.resize(new_nrow);
-
     std::vector<std::vector<std::string>> new_tmp_val_refv(tmp_val_refv.size());
 
     auto compact_block_pod = [&]<typename T>(std::vector<T>& dst, 
-                                             const std::vector<T>& src) {
+                                             std::vector<T>& src) {
 
         size_t i = 0;
         size_t i2 = 0;
         size_t written = 0;
+        while (i == x[i2]) {
+            i2 += 1;
+            i += 1;
+        }
         while (i2 < x.size()) {
             const unsigned int ref_val = x[i2++];
             const size_t start = i;
@@ -57,21 +41,25 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
     };
 
     auto compact_block_scalar = [&](auto& dst, 
-                                    const auto& src) {
+                                    auto& src) {
         size_t i = 0;
         size_t i2 = 0;
         size_t written = 0;
+        while (i == x[i2]) {
+            i2 += 1;
+            i += 1;
+        }
         while (i2 < x.size()) {
             const unsigned int ref_val = x[i2++];
             while (i < ref_val) {
-                dst[written] = src[i];
+                dst[written] = std::move(src[i]);
                 i += 1;
                 written += 1;
             };
             i += 1;
         }
         while (i < old_nrow) {
-            dst[written] = src[i];
+            dst[written] = std::move(src[i]);
             i += 1;
             written += 1;
         };
@@ -87,40 +75,40 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
             case 0: 
                 #pragma omp parallel for num_threads(CORES)
                 for (size_t cpos = 0; cpos < ncols_t; ++cpos)
-                    compact_block_scalar(new_str_v[cpos], str_v[cpos]);
+                    compact_block_scalar(str_v[cpos], str_v[cpos]);
                 break;
             case 1:
                 #pragma omp parallel for num_threads(CORES)
                 for (size_t cpos = 0; cpos < ncols_t; ++cpos) {
-                    compact_block_pod.template operator()<CharT>(new_chr_v[cpos],  
+                    compact_block_pod.template operator()<CharT>(chr_v[cpos],  
                                                                  chr_v[cpos]);
                 }
                 break;
             case 2: 
                 #pragma omp parallel for num_threads(CORES)
                 for (size_t cpos = 0; cpos < ncols_t; ++cpos) {
-                    compact_block_pod.template operator()<uint8_t>(new_bool_v[cpos],  
+                    compact_block_pod.template operator()<uint8_t>(bool_v[cpos],  
                                                                    bool_v[cpos]);
                 }
                 break;
             case 3:
                 #pragma omp parallel for num_threads(CORES)
                 for (size_t cpos = 0; cpos < ncols_t; ++cpos) {
-                    compact_block_pod.template operator()<IntT>(new_int_v[cpos], 
+                    compact_block_pod.template operator()<IntT>(int_v[cpos], 
                                                                 int_v[cpos]);
                 }
                 break;
             case 4:
                 #pragma omp parallel for num_threads(CORES)
                 for (size_t cpos = 0; cpos < ncols_t; ++cpos) {
-                    compact_block_pod.template operator()<UIntT>(new_uint_v[cpos], 
+                    compact_block_pod.template operator()<UIntT>(uint_v[cpos], 
                                                                  uint_v[cpos]);
                 }
                 break;
             case 5:
                 #pragma omp parallel for num_threads(CORES)
                 for (size_t cpos = 0; cpos < ncols_t; ++cpos) {
-                    compact_block_pod.template operator()<FloatT>(new_dbl_v[cpos],
+                    compact_block_pod.template operator()<FloatT>(dbl_v[cpos],
                                                                   dbl_v[cpos]);
                 }
                 break;
@@ -131,11 +119,14 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
     #pragma omp parallel for num_threads(CORES)
     for (size_t cpos = 0; cpos < ncol; ++cpos) {
         auto& src_aux = tmp_val_refv[cpos];
-        auto& dst_aux = new_tmp_val_refv[cpos];
-        dst_aux.resize(new_nrow);
+        auto& dst_aux = tmp_val_refv[cpos];
         size_t i = 0;
         size_t i2 = 0;
         size_t written = 0;
+        while (i == x[i2]) {
+            i2 += 1;
+            i += 1;
+        }
         while (i2 < x.size()) {
             const unsigned int ref_val = x[i2++];
             while (i < ref_val) {
@@ -158,6 +149,10 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
         size_t i = 0;
         size_t i2 = 0;
         size_t written = 0;
+        while (i == x[i2]) {
+            i2 += 1;
+            i += 1;
+        }
         while (i2 < x.size()) {
             const unsigned int ref_val = x[i2++];
             while (i < ref_val) {
