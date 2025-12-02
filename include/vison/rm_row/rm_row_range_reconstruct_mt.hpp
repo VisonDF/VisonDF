@@ -19,20 +19,23 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
         size_t i2 = 0;
         size_t written = x[0];
         while (i2 < x.size()) {
-            const unsigned int ref_val = x[i2++];
-            const size_t start = i;
-            while (i < ref_val) {
-                dst[written] = std::move(src[i]);
-                i += 1;
-            };
-            const size_t len = i - start;
+        
+            unsigned ref_val = x[i2++];
+            size_t start = i;
+            while (i < ref_val) ++i;
+        
+            size_t len = i - start;
+            {
+                T* __restrict d = dst.data() + written;
+                T* __restrict s = src.data() + start;
+        
+                for (size_t k = 0; k < len; ++k)
+                    d[k] = s[k];
+            }
+        
             written += len;
             i += 1;
         }
-        while (i < ref_val) {
-            dst[written] = std::move(src[i]);
-            i += 1;
-        };
     };
 
     auto compact_block_scalar = [&](auto& dst, 
