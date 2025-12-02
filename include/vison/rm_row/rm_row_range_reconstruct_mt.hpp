@@ -1,13 +1,11 @@
 #pragma once
 
-template <unsigned int CORES = 4>
+template <unsigned int CORES = 4,
+          bool OnlyView = false>
 void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
 {
     const size_t old_nrow = nrow;
     if (x.empty() || old_nrow == 0) return;
-
-    std::vector<uint8_t> keep(old_nrow, 1);
-    for (unsigned int& rr : x) if (rr < old_nrow) keep[rr] = 0;
 
     const size_t new_nrow = old_nrow - x.size();
 
@@ -37,12 +35,13 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
                                              const std::vector<T>& src) {
         size_t i = 0;
         size_t written = 0;
+        //#pragma omp parallel for num_threads(inner_cores)
         while (i < old_nrow) {
-            while (i < old_nrow && !keep[i]) ++i;
-            const size_t start = i;
-            while (i < old_nrow && keep[i]) ++i;
-            const size_t len = i - start;
-            if (len) {
+            const unsigned int ref_val = x[i];
+            if (i < ref_val) {
+                const size_t start = i;
+                while (i < old_nrow && i < ref_val) ++i;
+                const size_t len = i - start;
                 std::memcpy(dst.data() + written, 
                             src.data() + start, 
                             len * sizeof(T));

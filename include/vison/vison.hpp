@@ -156,13 +156,15 @@ namespace vison {
 
         unsigned int nrow = 0;
         unsigned int ncol = 0;
-      
-        std::vector<std::vector<std::string>> str_v = {};
-        std::vector<std::vector<CharT>>       chr_v = {};
-        std::vector<std::vector<uint8_t>>     bool_v = {};
-        std::vector<std::vector<IntT>>        int_v = {};
-        std::vector<std::vector<UIntT>>       uint_v = {};
-        std::vector<std::vector<FloatT>>      dbl_v = {};
+     
+        std::vector<unsigned int> row_view_idx;
+
+        std::vector<std::vector<std::string>> str_v;
+        std::vector<std::vector<CharT>>       chr_v;
+        std::vector<std::vector<uint8_t>>     bool_v;
+        std::vector<std::vector<IntT>>        int_v;
+        std::vector<std::vector<UIntT>>       uint_v;
+        std::vector<std::vector<FloatT>>      dbl_v;
       
         std::vector<std::vector<unsigned int>> matr_idx = {
                                                            {}, 

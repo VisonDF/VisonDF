@@ -5,9 +5,6 @@ void rm_row_range_reconstruct(std::vector<unsigned int>& x)
     const size_t old_nrow = nrow;
     if (x.empty() || old_nrow == 0) return;
 
-    std::vector<uint8_t> keep(old_nrow, 1);
-    for (unsigned int& rr : x) if (rr < old_nrow) keep[rr] = 0;
-
     const size_t new_nrow = old_nrow - x.size();
 
     std::vector<std::vector<std::string>> new_str_v;  new_str_v .reserve(matr_idx[0].size());
@@ -37,11 +34,11 @@ void rm_row_range_reconstruct(std::vector<unsigned int>& x)
         size_t i = 0;
         size_t written = 0;
         while (i < old_nrow) {
-            while (i < old_nrow && !keep[i]) ++i;
-            const size_t start = i;
-            while (i < old_nrow && keep[i]) ++i;
-            const size_t len = i - start;
-            if (len) {
+            const unsigned int ref_val = x[i];
+            if (i < ref_val) {
+                const size_t start = i;
+                while (i < old_nrow && i < ref_val) ++i;
+                const size_t len = i - start;
                 std::memcpy(dst.data() + written, 
                             src.data() + start, 
                             len * sizeof(T));
