@@ -2,16 +2,17 @@
 
 template <typename T,
           bool SimdHash = true, 
-          LeftJoinMethods Method = LeftJoinMethods::First>
+          LeftJoinMethods Method = LeftJoinMethods::First,
+          unsigned int CORES = 1>
 void transform_left_join(Dataframe &obj, 
                 const unsigned int &key1, 
                 const unsigned int &key2,
+                const CharT, default_chr,
                 const std::string default_str = "NA",
-                const char default_chr = ' ',
-                const bool default_bool = 0,
-                const int default_int = 0,
-                const unsigned int default_uint = 0,
-                const double default_dbl = 0) 
+                const uint8_t default_bool = 0,
+                const IntT default_int = 0,
+                const UIntT default_uint = 0,
+                const FloatT default_dbl = 0) 
 {
   
     const unsigned int& ncol2 = obj.get_ncol();
@@ -78,12 +79,12 @@ void transform_left_join(Dataframe &obj,
     dbl_v.resize(dbl_v.size()   + size_dbl);
 
     for (size_t i = 0; i < ncol2; ++i) {
-        str_v [ncol + i].resize(nrow);
-        chr_v [ncol + i].resize(nrow);
-        bool_v[ncol + i].resize(nrow);
-        int_v [ncol + i].resize(nrow);
-        uint_v[ncol + i].resize(nrow);
-        dbl_v [ncol + i].resize(nrow);
+        str_v [ncol + i].resize(nrow, default_str);
+        chr_v [ncol + i].resize(nrow, default_chr);
+        bool_v[ncol + i].resize(nrow, default_bool);
+        int_v [ncol + i].resize(nrow, default_int);
+        uint_v[ncol + i].resize(nrow, default_uint);
+        dbl_v [ncol + i].resize(nrow, default_dbl);
     }
 
     std::vector<std::vector<unsigned int>> matr_idx2b = matr_idx2;
@@ -182,7 +183,8 @@ void transform_left_join(Dataframe &obj,
     
             auto* dst_val = dst_v[size_offset + t].data();
             const auto* src_val = src_v[t].data();
-    
+   
+            #pragma omp parallel for num_threads(CORES)
             for (size_t i = 0; i < nrow; ++i) {
                 size_t j = match_idx[i];
                 if (j != SIZE_MAX) {
