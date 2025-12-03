@@ -16,7 +16,7 @@ void pivot(Dataframe &obj,
     unsigned int i = 0;
     unsigned int pos_val;
 
-    T* cur_col = nullptr;
+    const std::vector<std::vector<T>>* cur_col = nullptr;
     if constexpr (std::is_same_v<T, IntT>) {
         cur_col = &obj.get_int_vec();
     } else if constexpr (std::is_same_v<T, UIntT>) {
@@ -76,7 +76,7 @@ void pivot(Dataframe &obj,
     nrow = idx_col.size();
     const unsigned int local_nrow = nrow;
 
-    auto* cols = static_cast<std::vector<std::vector<T>>*>(nullptr);
+    std::vector<std::vector<T>>* cols = nullptr;
     if constexpr (std::is_same_v<T, IntT>) {
         idx_type = 3;
         cols = &int_v_view;
@@ -104,7 +104,7 @@ void pivot(Dataframe &obj,
         const int col_idx = idx_col[col_key];
         const int row_idx = idx_row[row_key];
     
-        cols[col_idx][row_idx] = value;
+        (*cols)[col_idx][row_idx] = value;
     
         auto [ptr, ec] = fast_to_chars(buf, buf + sizeof(buf), value);
         tmp_val_refv[col_idx][row_idx].assign(buf, ptr - buf);

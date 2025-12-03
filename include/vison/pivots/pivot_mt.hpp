@@ -17,7 +17,7 @@ void pivot_mt(Dataframe &obj,
     unsigned int i = 0;
     unsigned int pos_val;
 
-    T* cur_col = nullptr;
+    const std::vector<std::vector<T>>* cur_col = nullptr;
     if constexpr (std::is_same_v<T, IntT>) {
         cur_col = &obj.get_int_vec();
     } else if constexpr (std::is_same_v<T, UIntT>) {
@@ -77,7 +77,7 @@ void pivot_mt(Dataframe &obj,
     nrow = idx_col.size();
     const unsigned int local_nrow = nrow;
 
-    auto* cols = static_cast<std::vector<std::vector<T>>*>(nullptr);
+    const std::vector<std::vector<T>>* cols = nullptr;
     if constexpr (std::is_same_v<T, IntT>) {
         idx_type = 3;
         cols = &int_v_view;

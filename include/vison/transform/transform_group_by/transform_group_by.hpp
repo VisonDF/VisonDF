@@ -29,7 +29,7 @@ void transform_group_by(const std::vector<unsigned int>& x,
     std::unordered_map<int, int> pos;
     size_t idx_type;
 
-    const T* key_table = nullptr;
+    const std::vector<std::vector<T>>* key_table = nullptr;
     if constexpr (std::is_same_v<T, std::string>) {
         key_table = &str_v;
         idx_type = 0;
@@ -68,7 +68,7 @@ void transform_group_by(const std::vector<unsigned int>& x,
         key.clear();
     
         for (size_t j = 0; j < x.size(); ++j) {
-            const auto& src = key_table[x[j]][i];
+            const auto& src = (*key_table)[x[j]][i];
     
             key.append(src.data(), src.size()); 
             key.push_back('\x1F');              
@@ -78,7 +78,7 @@ void transform_group_by(const std::vector<unsigned int>& x,
         if constexpr (Occurence) {
             ++(it->second);
         } else if constexpr (!Occurence) {
-            (it->second) += key_table[n_col][i];
+            (it->second) += (*key_table)[n_col][i];
         }
     
         key_vec[i] = &it->first;
