@@ -55,6 +55,7 @@ namespace vison {
 
     #include "types/supported_types.inl"
     #include "types/supported_sorting_methods.inl"
+    #include "types/supported_leftjoin_methods.inl"
     #include "types/comparator.inl"
     #include "types/comparator_assertion.inl"
     #include "types/fapply_assertion.inl"
@@ -411,13 +412,7 @@ namespace vison {
 
         #include "transform/transform_left_join/transform_left_join.hpp"
         #ifdef _OPENMP
-        #include "transform/transform_left_join/transform_left_join_simd.hpp"
         #include "transform/transform_left_join/transform_left_join_mt.hpp"
-        #endif
-        #include "transform/transform_left_join/transform_left_join_aligned.hpp"
-        #ifdef _OPENMP
-        #include "transform/transform_left_join/transform_left_join_aligned_simd.hpp"
-        #include "transform/transform_left_join/transform_left_join_aligned_mt.hpp"
         #endif
         #include "one_to_many_join/otm.hpp"
         #ifdef _OPENMP
