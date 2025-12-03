@@ -1,78 +1,99 @@
 #pragma once
 
-template <unsigned int CORES = 4, bool SimdHash = true>
-void transform_group_by_mt(std::vector<unsigned int>& x,
-                           std::string sumcolname = "n") 
+template <typename T,
+          unsigned int CORES = 4,
+          bool Occurence = false,
+          bool SimdHash = true>
+void transform_group_by_mt(const std::vector<unsigned int>& x,
+                           const n_col int = -1,
+                           const std::string sumcolname = "n") 
 {
-    using map_t = std::conditional_t<
-        SimdHash,
-        ankerl::unordered_dense::map<std::string, unsigned int, simd_hash>,
-        ankerl::unordered_dense::map<std::string, unsigned int>
-    >;
 
-    const size_t n_threads = CORES;
-    const size_t rows_per_thread = (nrow + n_threads - 1) / n_threads;
-
-    std::vector<map_t> thread_maps(n_threads);
-    std::vector<std::string_view> key_vec(nrow); 
-
-    #pragma omp parallel num_threads(n_threads)
-    {
-        const int tid = omp_get_thread_num();
-        map_t& local = thread_maps[tid];
-        local.reserve(rows_per_thread / 1.5);
-
-        std::string key;
-        const size_t total_key_len = 128;
-        key.reserve(total_key_len);
-
-        #pragma omp for schedule(static)
-        for (size_t i = 0; i < nrow; ++i) {
-
-            key.clear();
-            if (key.capacity() < total_key_len) {
-                key.reserve(total_key_len); 
-            }
-            char* dst = key.data(); 
-            for (size_t j = 0; j < x.size(); ++j) { 
-                const auto& src = tmp_val_refv[x[j]][i]; 
-                memcpy(dst, src.data(), src.size()); 
-                dst += src.size(); 
-                *dst++ = '\x1F'; 
-            }
-
-            const size_t used = dst - key.data();
-            key.resize(used);  
-
-            auto [it, inserted] = local.try_emplace(std::move(key), 0);
-            ++(it->second);
-            key_vec[i] = it->first;
-
+    if constexpr (Occurence) {
+        if (n_col < 0) {
+            std::cerr << "Can't take negative columns\n";
+            return;
+        } else if (n_col > ncol) {
+            std::cerr << "Column number out of range\n";
+            return;
         }
     }
 
-    map_t lookup;
-    lookup.reserve(nrow / 1.5);
-    for (auto& local : thread_maps)
-        for (auto& [key, count] : local)
-            lookup[key] += count;
+    using map_t = std::conditional_t<
+        SimdHash,
+        ankerl::unordered_dense::map<T, unsigned int, simd_hash>,
+        ankerl::unordered_dense::map<T, unsigned int>
+    >;
 
-    std::vector<unsigned int> occ_v(nrow);
-    std::vector<std::string> occ_v_str(nrow);
+    const unsigned int local_nrow = nrow;
+    std::vector<unsigned int> x2(x.size());
+    std::unordered_map<int, int> pos;
+    size_t idx_type;
 
-    #pragma omp parallel for schedule(static)
-    for (size_t i = 0; i < nrow; ++i) {
-        const std::string_view key = key_vec[i];
-        unsigned int count = lookup[key];
-        occ_v[i] = count;
-
-        char buf[max_chars_needed<unsigned int>()];
-        auto [ptr, ec] = std::to_chars(buf, buf + sizeof(buf), count);
-        occ_v_str[i].assign(buf, ptr);
+    const T* key_table = nullptr;
+    if constexpr (std::is_same_v<T, std::string>) {
+        key_table = &str_v;
+        idx_type = 0;
+    } else if constexpr (std::is_same_v<T, CharT>) {
+        key_table = &chr_v;
+        idx_type = 1;
+    } else if constexpr (std::is_same_v<T, uint8_t>) {
+        key_table = &bool_v;
+        idx_type = 2;
+    } else if constexpr (std::is_same_v<T, IntT>) {
+        key_table = &int_v;
+        idx_type = 3;
+    } else if constexpr (std::is_same_v<T, UIntT>) {
+        key_table = &uint_v;
+        idx_type = 4;
+    } else if constexpr (std::is_same_v<T, FloatT>) {
+        key_table = &dbl_v;
+        idx_type = 5;
     }
 
+    for (int i = 0; i < matr_idx[idx_type]; ++i)
+        pos[matr_idx[idx_type][i]] = i;
+    for (int v : x)
+        idx.push_back(pos[v]);
+
+    map_t lookup;
+    lookup.reserve(local_nrow);
+
+    std::vector<const T*> key_vec(local_nrow);
+
+    std::string key;
+    key.reserve(256);  
+    
+    for (unsigned int i = 0; i < local_nrow; ++i) {
+    
+        key.clear();
+    
+        for (size_t j = 0; j < x.size(); ++j) {
+            const auto& src = key_table[x[j]][i];
+    
+            key.append(src.data(), src.size()); 
+            key.push_back('\x1F');              
+        }
+    
+        auto [it, inserted] = lookup.try_emplace(key, 0);
+        if constexpr (Occurence) {
+            ++(it->second);
+        } else if constexpr (!Occurence) {
+            (it->second) += key_table[n_col][i];
+        }
+    
+        key_vec[i] = &it->first;
+    }
+
+    std::vector<unsigned int> occ_v(local_nrow);
+
+    #pragma omp parallel for num_threads(CORES)
+    for (size_t i = 0; i < key_vec.size(); ++i) {
+        unsigned int count = lookup.at(*key_vec[i]);
+        occ_v[i] = count;
+    }
+    
     uint_v.insert(uint_v.end(), occ_v.begin(), occ_v.end());
-    tmp_val_refv.push_back(std::move(occ_v_str));
 
     if (!name_v.empty())
         name_v.push_back(sumcolname);
@@ -80,6 +101,5 @@ void transform_group_by_mt(std::vector<unsigned int>& x,
     type_refv.push_back('u');
     ++ncol;
 }
-
 
 

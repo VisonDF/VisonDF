@@ -58,52 +58,44 @@ void sort_by_external_mr(const std::vector<T>& nvec) {
 
      }
 
-     std::vector<std::string> str_v2(nrow);
-     
-     permute_block_mt<std::string, CORES, Simd, InnerThreads>(
+     permute_block_mt<std::string, CORES>(
          str_v,
          tmp_val_refv,
-         str_v2,
          matr_idx[0],
          idx,
          nrow);
 
-     permute_block_mt<CharT, CORES, Simd, InnerThreads>(
+     permute_block_mt<CharT, CORES>(
          chr_v,
          tmp_val_refv,
-         str_v2,
          matr_idx[1],
          idx,
          nrow);
       
-     permute_block_mt<uint8_t, CORES, Simd, InnerThreads>(
+     permute_block_mt<uint8_t, CORES>(
          bool_v,
          tmp_val_refv,
-         str_v2,
          matr_idx[2],
          idx,
          nrow);
       
-     permute_block_mt<IntT, CORES, Simd, InnerThreads>(
+     permute_block_mt<IntT, CORES>(
          int_v,
          tmp_val_refv,
-         str_v2,
          matr_idx[3],
          idx,
          nrow);
      
-     permute_block_mt<UIntT, CORES, Simd, InnerThreads>(
+     permute_block_mt<UIntT, CORES>(
          uint_v,
          tmp_val_refv,
-         str_v2,
          matr_idx[4],
          idx,
          nrow);
      
-     permute_block_mt<FloatT, CORES, Simd, InnerThreads>(
+     permute_block_mt<FloatT, CORES>(
          dbl_v,
          tmp_val_refv,
-         str_v2,
          matr_idx[5],
          idx,
          nrow);

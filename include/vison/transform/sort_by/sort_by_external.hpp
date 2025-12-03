@@ -56,12 +56,9 @@ void sort_by_external(const std::vector<T>& nvec) {
 
    }
 
-   std::vector<std::string> str_v2(nrow);
-   
    permute_block<std::string>(
        str_v,
        tmp_val_refv,
-       str_v2,
        matr_idx[0],
        idx,
        nrow);
@@ -69,7 +66,6 @@ void sort_by_external(const std::vector<T>& nvec) {
    permute_block<CharT>(
        chr_v,
        tmp_val_refv,
-       str_v2,
        matr_idx[1],
        idx,
        nrow);
@@ -77,7 +73,6 @@ void sort_by_external(const std::vector<T>& nvec) {
    permute_block<uint8_t>(
        bool_v,
        tmp_val_refv,
-       str_v2,
        matr_idx[2],
        idx,
        nrow);
@@ -85,7 +80,6 @@ void sort_by_external(const std::vector<T>& nvec) {
     permute_block<IntT>(
         int_v,
         tmp_val_refv,
-        str_v2,
         matr_idx[3],
         idx,
         nrow);
@@ -93,7 +87,6 @@ void sort_by_external(const std::vector<T>& nvec) {
     permute_block<UIntT>(
         uint_v,
         tmp_val_refv,
-        str_v2,
         matr_idx[4],
         idx,
         nrow);
@@ -101,7 +94,6 @@ void sort_by_external(const std::vector<T>& nvec) {
     permute_block<FloatT>(
         dbl_v,
         tmp_val_refv,
-        str_v2,
         matr_idx[5],
         idx,
         nrow);
