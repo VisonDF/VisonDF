@@ -1,8 +1,7 @@
 #pragma once
 
 template <unsigned int CORES = 4,
-          bool MemClean = false,
-          bool OnlyView = false>
+          bool MemClean = false>
 void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
 {
     const size_t old_nrow = nrow;

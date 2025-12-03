@@ -16,7 +16,7 @@ void reorder_col(const std::vector<std::pair<unsigned int, unsigned int>>& swaps
         }
     }
 
-    ankerl::unordered_dense::map<unsigned, std::pair<size_t,size_t>> pos_of;
+    ankerl::unordered_dense::map<unsigned, std::pair<size_t, size_t>> pos_of;
     pos_of.reserve(ncol);
 
     for (size_t i = 0; i < matr_idx.size(); ++i)
