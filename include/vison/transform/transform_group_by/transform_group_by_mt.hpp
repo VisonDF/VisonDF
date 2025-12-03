@@ -87,7 +87,7 @@ void transform_group_by_mt(const std::vector<unsigned int>& x,
 
     std::vector<unsigned int> occ_v(local_nrow);
 
-    #pragma omp parallel for num_threads(CORES)
+    #pragma omp parallel for if(CORES > 1) num_threads(CORES)
     for (size_t i = 0; i < key_vec.size(); ++i) {
         unsigned int count = lookup.at(*key_vec[i]);
         occ_v[i] = count;

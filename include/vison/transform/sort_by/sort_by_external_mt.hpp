@@ -1,13 +1,12 @@
 #pragma once
 
-template <bool ASC = 1,
+template <typename T,
+          bool ASC = true,
           unsigned int CORES = 4,
           bool Simd = true,
-          bool InnerThreads = false,
           SortType S = SortType::Radix,
           bool BoolAsU8 = true,
-          bool IsBoolCompressed = false,
-          typename T>
+          bool IsBoolCompressed = false>
 void sort_by_external_mr(const std::vector<T>& nvec) {
 
      assert(("sort vec must be same size as dataframe nrow", 

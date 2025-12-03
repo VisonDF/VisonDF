@@ -184,7 +184,7 @@ void transform_left_join_mt(Dataframe &obj,
             auto* dst_val = dst_v[size_offset + t].data();
             const auto* src_val = src_v[t].data();
    
-            #pragma omp parallel for num_threads(CORES)
+            #pragma omp parallel for if(CORES > 1) num_threads(CORES)
             for (size_t i = 0; i < nrow; ++i) {
                 size_t j = match_idx[i];
                 if (j != SIZE_MAX) {

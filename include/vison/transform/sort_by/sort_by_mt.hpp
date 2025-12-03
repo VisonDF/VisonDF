@@ -3,16 +3,12 @@
 template <bool ASC = 1, 
           unsigned int CORES = 4,
           bool Simd = true,
-          bool InnerThreads = false,
           SortType S = SortType::Radix,
           typename ComparatorFactory = DefaultComparatorFactory>
 void sort_by_mt(unsigned int& n) {
 
     static_assert(is_supported_sort<S>::value, 
                     "Sorting Method Not Supported");
-
-   int prev_nested = omp_get_nested();
-   omp_set_nested(InnerThreads);
 
     std::vector<size_t> idx(nrow);
     std::iota(idx.begin(), idx.end(), 0);
@@ -129,8 +125,6 @@ void sort_by_mt(unsigned int& n) {
         matr_idx[5],
         idx,
         nrow);
-
-    omp_set_nested(prev_nested);
 
 };
 

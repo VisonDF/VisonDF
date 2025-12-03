@@ -25,7 +25,7 @@ inline void permute_block_mt(
         i3 += 1;
     }
 
-    #pragma omp parallel for num_threads(CORES) schedule(static)
+    #pragma omp parallel for if(CORES > 1) num_threads(CORES) schedule(static)
     for (size_t i = 0; i < matr_idx_pair.size(); ++i) { 
         
         const auto& [el, i2] = matr_idx_pair[i];
