@@ -47,7 +47,7 @@ void sort_by_mt(unsigned int& n) {
     {
         case 's':
         {
-            const std::string* keys = str_v.data() + nrow * col_id;
+            const std::string* keys = str_v[col_id].data();
             sort_string<ASC, CORES, Simd, S, ComparatorFactory>(idx, 
                                                                 keys, 
                                                                 nrow);
@@ -55,7 +55,7 @@ void sort_by_mt(unsigned int& n) {
         }
         case 'c':
         {
-            const int8_t* keys = reinterpret_cast<const int8_t*>(chr_v.data()) + nrow * col_id;
+            const int8_t (*keys)[df_charbuf_size] = reinterpret_cast<const int8_t (*)[df_charbuf_size]>(chr_v[col_id].data());
             sort_char<ASC, CORES, Simd, S, ComparatorFactory>  (idx, 
                                                                 keys,
                                                                 nrow,
@@ -64,25 +64,25 @@ void sort_by_mt(unsigned int& n) {
         }
         case 'b':
         {
-            const uint8_t* keys = dbl_v.data() + nrow * col_id;
+            const uint8_t* keys = dbl_v[col_id].data();
             sort_bool<ASC, CORES, Simd, S, false, ComparatorFactory>(idx, keys, nrow); 
             break;
         }
         case 'i':
         {
-            const IntT* keys = int_v.data() + nrow * col_id;
+            const IntT* keys = int_v[col_id].data();
             sort_integers<ASC, CORES, Simd, S, ComparatorFactory>   (idx, keys, nrow);
             break;
         }
         case 'u':
         {
-            const UIntT* keys = uint_v.data() + nrow * col_id;
+            const UIntT* keys = uint_v[col_id].data();
             sort_uintegers<ASC, CORES, Simd, S, ComparatorFactory>  (idx, keys, nrow);
             break;
         }
         case 'd':
         {
-            const FloatT* keys = dbl_v.data() + nrow * col_id;
+            const FloatT* keys = dbl_v[col_id].data();
             sort_flt<ASC, CORES, Simd, S, ComparatorFactory>        (idx, keys, nrow);
             break;
         }

@@ -42,7 +42,7 @@ void sort_by(unsigned int& n) {
      {
          case 's':
          {
-             const std::string* keys = str_v.data() + nrow * col_id;
+             const std::string* keys = str_v[col_id].data();
              sort_string<ASC, 1, Simd, S, ComparatorFactory>(idx, 
                                                              keys, 
                                                              nrow);
@@ -50,8 +50,7 @@ void sort_by(unsigned int& n) {
          }
          case 'c':
          {
-             const int8_t* keys = reinterpret_cast<const int8_t*>(chr_v.data()) + 
-                                                                  nrow * col_id;
+             const int8_t (*keys)[df_charbuf_size] = reinterpret_cast<const int8_t(*)[df_charbuf_size]>(chr_v[col_id].data());
              sort_char<ASC, 1, Simd, S, ComparatorFactory>(idx, 
                                                            keys, 
                                                            nrow, 
@@ -60,25 +59,25 @@ void sort_by(unsigned int& n) {
          }
          case 'b':
          {
-             const uint8_t* keys = bool_v.data() + nrow * col_id;
+             const uint8_t* keys = bool_v[col_id].data();
              sort_bool<ASC, 1, Simd, S, ComparatorFactory>(idx, keys, nrow); 
              break;
          }
          case 'i':
          {
-             const IntT* keys = int_v.data() + nrow * col_id;
+             const IntT* keys = int_v[col_id].data();
              sort_integers<ASC, 1, Simd, S, ComparatorFactory>(idx, keys, nrow);
              break;
          }
          case 'u':
          {
-             const UIntT* keys = uint_v.data() + nrow * col_id;
+             const UIntT* keys = uint_v[col_id].data();
              sort_uintegers<ASC, 1, Simd, S, ComparatorFactory>(idx, keys, nrow);
              break;
          }
          case 'd':
          {
-             const FloatT* keys = dbl_v.data() + nrow * col_id;
+             const FloatT* keys = dbl_v[col_id].data();
              sort_flt<ASC, 1, Simd, S, ComparatorFactory>(idx, keys, nrow);
              break;
          }
@@ -94,7 +93,7 @@ void sort_by(unsigned int& n) {
          idx,
          nrow);
 
-     permute_block<char>(
+     permute_block<CharT>(
          chr_v,
          tmp_val_refv,
          str_v2,
