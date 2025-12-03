@@ -75,30 +75,13 @@ void rm_row_range_mt(std::vector<unsigned int>& x)
                     
     }
 
-    #pragma omp parallel for num_threads(CORES)
-    for (size_t cpos = 0; cpos < ncol; ++cpos) {
-        auto& aux = tmp_val_refv[cpos];
-        size_t idx = 0;
-        auto it = std::remove_if(aux.begin(), aux.end(),
-                                 [&](auto&) mutable { return !keep[idx++]; });
-        aux.erase(it, aux.end()); 
-    }
-
     if constexpr (MemClean) {
-        for (auto& el : str_v) 
-            el.shrink_to_fit();
-        for (auto& el : chr_v) 
-            el.shrink_to_fit();
-        for (auto& el : bool_v) 
-            el.shrink_to_fit();
-        for (auto& el : int_v) 
-            el.shrink_to_fit();
-        for (auto& el : uint_v) 
-            el.shrink_to_fit();
-        for (auto& el : dbl_v) 
-            el.shrink_to_fit();
-        for (auto& el : tmp_val_refv)
-            el.shrink_to_fit();
+        for (auto& el : str_v)  el.shrink_to_fit();
+        for (auto& el : chr_v)  el.shrink_to_fit();
+        for (auto& el : bool_v) el.shrink_to_fit();
+        for (auto& el : int_v)  el.shrink_to_fit();
+        for (auto& el : uint_v) el.shrink_to_fit();
+        for (auto& el : dbl_v)  el.shrink_to_fit();
     }
 
     if (!name_v_row.empty()) {

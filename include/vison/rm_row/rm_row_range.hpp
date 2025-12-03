@@ -69,28 +69,13 @@ void rm_row_range(std::vector<unsigned int>& x)
                     
     }
 
-    for (auto& el : tmp_val_refv) {
-        size_t idx = 0;
-        auto it = std::remove_if(el.begin(), el.end(),
-                                 [&](auto&) mutable { return !keep[idx++]; });
-        el.erase(it, aux.end()); 
-    }
-
     if constexpr (MemClean) {
-        for (auto& el : str_v) 
-            el.shrink_to_fit();
-        for (auto& el : chr_v) 
-            el.shrink_to_fit();
-        for (auto& el : bool_v) 
-            el.shrink_to_fit();
-        for (auto& el : int_v) 
-            el.shrink_to_fit();
-        for (auto& el : uint_v) 
-            el.shrink_to_fit();
-        for (auto& el : dbl_v) 
-            el.shrink_to_fit();
-        for (auto& el : tmp_val_refv)
-            el.shrink_to_fit();
+        for (auto& el : str_v)  el.shrink_to_fit();
+        for (auto& el : chr_v)  el.shrink_to_fit();
+        for (auto& el : bool_v) el.shrink_to_fit();
+        for (auto& el : int_v)  el.shrink_to_fit();
+        for (auto& el : uint_v) el.shrink_to_fit();
+        for (auto& el : dbl_v)  el.shrink_to_fit();
     }
 
     if (!name_v_row.empty()) {

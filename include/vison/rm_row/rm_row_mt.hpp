@@ -63,27 +63,13 @@ void rm_row_mt(unsigned int x)
             
     }
 
-    #pragma omp parallel for num_threads(CORES)
-    for (size_t cpos = 0; cpos < ncol; ++cpos) {
-        auto& aux = tmp_val_refv[cpos];
-        aux.erase(aux.begin() + x);
-    }
-
     if constexpr (MemClean) {
-        for (auto& el : str_v) 
-            el.shrink_to_fit();
-        for (auto& el : chr_v) 
-            el.shrink_to_fit();
-        for (auto& el : bool_v) 
-            el.shrink_to_fit();
-        for (auto& el : int_v) 
-            el.shrink_to_fit();
-        for (auto& el : uint_v) 
-            el.shrink_to_fit();
-        for (auto& el : dbl_v) 
-            el.shrink_to_fit();
-        for (auto& el : tmp_val_refv)
-            el.shrink_to_fit();
+        for (auto& el : str_v)  el.shrink_to_fit();
+        for (auto& el : chr_v)  el.shrink_to_fit();
+        for (auto& el : bool_v) el.shrink_to_fit();
+        for (auto& el : int_v)  el.shrink_to_fit();
+        for (auto& el : uint_v) el.shrink_to_fit();
+        for (auto& el : dbl_v)  el.shrink_to_fit();
     }
 
     nrow = old_nrow - 1; 

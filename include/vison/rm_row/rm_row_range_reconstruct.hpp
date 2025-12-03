@@ -105,28 +105,6 @@ void rm_row_range_reconstruct(std::vector<unsigned int>& x)
 
     }
 
-    for (size_t cpos = 0; cpos < ncol; ++cpos) {
-        auto& src_aux = tmp_val_refv[cpos];
-        auto& dst_aux = tmp_val_refv[cpos];
-        size_t i = x[0];
-        size_t i2 = 0;
-        size_t written = x[0];
-        while (i2 < x.size()) {
-            const unsigned int ref_val = x[i2++];
-            while (i < ref_val) {
-                dst_aux[written] = std::move(src_aux[i]);
-                i += 1;
-                written += 1;
-            };
-            i += 1;
-        }
-        while (i < old_nrow) {
-            dst_aux[written] = std::move(src_aux[i]);
-            i += 1;
-            written += 1;
-        };
-    }
-
     if (!name_v_row.empty()) {
         size_t i = x[0];
         size_t i2 = 0;
@@ -158,7 +136,6 @@ void rm_row_range_reconstruct(std::vector<unsigned int>& x)
         for (auto& el : int_v)        el.resize(new_nrow); el.shrink_to_fit();
         for (auto& el : uint_v)       el.resize(new_nrow); el.shrink_to_fit();
         for (auto& el : dbl_v)        el.resize(new_nrow); el.shrink_to_fit();
-        for (auto& el : tmp_val_refv) el.resize(new_nrow); el.shrink_to_fit();
     }
 
     nrow = new_nrow;
