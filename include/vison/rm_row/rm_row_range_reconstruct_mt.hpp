@@ -10,8 +10,6 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
 
     const size_t new_nrow = old_nrow - x.size();
 
-    std::vector<std::vector<std::string>> new_tmp_val_refv(tmp_val_refv.size());
-
     auto compact_block_pod = [&]<typename T>(std::vector<T>& dst, 
                                              std::vector<T>& src) {
 
@@ -134,7 +132,6 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
         };
     }
 
-    std::vector<std::string> new_name_v_row;
     if (!name_v_row.empty()) {
         size_t i = x[0];
         size_t i2 = 0;
