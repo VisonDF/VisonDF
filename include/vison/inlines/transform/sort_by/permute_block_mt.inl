@@ -16,6 +16,7 @@ inline void permute_block_mt(
         return;
 
     std::vector<T> tmp_storage(storage.size());
+    for (auto& el : tmp_storage) el.resize(nrow);
 
     std::vector<std::pair<unsigned int, unsigned int>> matr_idx_pair(matr_idx_k.size());
     size_t i3 = 0;
@@ -45,8 +46,6 @@ inline void permute_block_mt(
         for (size_t i = 0; i < matr_idx_pair.size(); ++i) { 
             
             const auto& [el, i2] = matr_idx_pair[i];
-            const size_t pos_vl = i2 * nrow;
-
             auto& ref_row = tmp_val_refv[el];
 
             int thread_id = omp_get_thread_num();
@@ -54,8 +53,8 @@ inline void permute_block_mt(
 
             auto* dst_col = local_results.data();
             auto* src_col = ref_row.data();
-            auto* dst_all = tmp_storage.data() + pos_vl;
-            auto* src_all = storage.data() + pos_vl;
+            auto* dst_all = tmp_storage[i2].data();
+            auto* src_all = storage[i2].data();
 
             if constexpr (Simd) {
 
@@ -104,8 +103,6 @@ inline void permute_block_mt(
         for (size_t i = 0; i < matr_idx_pair.size(); ++i) { 
             
             const auto& [el, i2] = matr_idx_pair[i];
-            const size_t pos_vl = i2 * nrow;
-
             auto& ref_row = tmp_val_refv[el];
 
             int thread_id = omp_get_thread_num();
@@ -113,16 +110,16 @@ inline void permute_block_mt(
 
             auto* dst_col = local_results.data();
             auto* src_col = ref_row.data();
-            auto* dst_all = tmp_storage.data() + pos_vl;
-            auto* src_all = storage.data() + pos_vl;
+            auto* dst_all = tmp_storage[i2].data();
+            auto* src_all = storage[i2].data();
 
             if constexpr (Simd) {
 
+                #pragma omp simd
                 for (size_t r = 0; r < nrow; ++r) {
                     dst_col[r] = std::move(src_col[idx[r]]);  
                 }
 
-                #pragma omp simd
                 for (size_t r = 0; r < nrow; ++r) {
                     dst_all[r] = src_all[idx[r]];
                 }
