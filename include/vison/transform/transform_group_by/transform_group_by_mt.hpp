@@ -6,7 +6,7 @@ template <typename T,
           bool SimdHash = true>
 void transform_group_by_mt(const std::vector<unsigned int>& x,
                            const n_col int = -1,
-                           const std::string sumcolname = "n") 
+                           const std::string colname = "n") 
 {
 
     if constexpr (Occurence) {
@@ -96,7 +96,7 @@ void transform_group_by_mt(const std::vector<unsigned int>& x,
     uint_v.insert(uint_v.end(), occ_v.begin(), occ_v.end());
 
     if (!name_v.empty())
-        name_v.push_back(sumcolname);
+        name_v.push_back(colname);
 
     type_refv.push_back('u');
     ++ncol;
