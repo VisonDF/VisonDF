@@ -1,12 +1,12 @@
 #pragma once
 
-template <typename T,
+template <typename T = void,
           unsigned int CORES = 4,
           bool SimdHash = true, 
           LeftJoinMethods Method = LeftJoinMethods::First>
 void transform_left_join_mt(Dataframe &obj, 
-                const unsigned int &key1, 
-                const unsigned int &key2,
+                const unsigned int key1, 
+                const unsigned int key2,
                 const CharT, default_chr,
                 const std::string default_str = "NA",
                 const uint8_t default_bool = 0,
@@ -35,33 +35,55 @@ void transform_left_join_mt(Dataframe &obj,
     
     const std::vector<char>& vec_type = obj.get_typecol();
 
-    std::vector<std::vector<T>>* pre_col1 = nullptr;
-    const std::vector<std::vector<T>>* pre_col2 = nullptr;
+    using key_variant_t = std::variant<
+        std::nullptr_t,
+        std::vector<std::vector<std::string>>*,
+        std::vector<std::vector<CharT>>*,
+        std::vector<std::vector<uint8_t>>*,
+        std::vector<std::vector<IntT>>*,
+        std::vector<std::vector<UIntT>>*,
+        std::vector<std::vector<FloatT>>*
+    >;
+    
+    key_variant_t pre_col1 = nullptr;
+    const key_variant_t pre_col2 = nullptr;
     size_t idx_type;
-    if constexpr (std::is_same_v<T, std::string>)  {
-        pre_col1 = &str_v;
-        pre_col2 = &obj.get_str_v();
-        idx_type = 0;
-    } else if constexpr (std::is_same_v<T, CharT>) {
-        pre_col1 = &chr_v;
-        pre_col2 = &obj.get_chr_v();
-        idx_type = 1;
-    } else if constexpr (std::is_same_v<T, uint8_t>) {
-        pre_col1 = &bool_v;
-        pre_col2 = &obj.get_bool_v();
-        idx_type = 2;
-    } else if constexpr (std::is_same_v<T, IntT>) {
-        pre_col1 = &int_v;
-        pre_col2 = &obj.get_int_v();
-        idx_type = 3;
-    } else if constexpr (std::is_same_v<T, UIntT>) {
-        pre_col1 = &uint_v;
-        pre_col2 = &obj.get_uint_v();
-        idx_type = 4;
-    } else if constexpr (std::is_same_v<T, FloatT>) {
-        pre_col1 = &dbl_v;
-        pre_col2 = &obj.get_dbl_v();
-        idx_type = 5;
+
+    if constexpr (!std::is_same_v<T, void>) {
+        if constexpr (std::is_same_v<T, std::string>)  {
+            pre_col1 = &str_v;
+            pre_col2 = &obj.get_str_v();
+            idx_type = 0;
+        } else if constexpr (std::is_same_v<T, CharT>) {
+            pre_col1 = &chr_v;
+            pre_col2 = &obj.get_chr_v();
+            idx_type = 1;
+        } else if constexpr (std::is_same_v<T, uint8_t>) {
+            pre_col1 = &bool_v;
+            pre_col2 = &obj.get_bool_v();
+            idx_type = 2;
+        } else if constexpr (std::is_same_v<T, IntT>) {
+            pre_col1 = &int_v;
+            pre_col2 = &obj.get_int_v();
+            idx_type = 3;
+        } else if constexpr (std::is_same_v<T, UIntT>) {
+            pre_col1 = &uint_v;
+            pre_col2 = &obj.get_uint_v();
+            idx_type = 4;
+        } else if constexpr (std::is_same_v<T, FloatT>) {
+            pre_col1 = &dbl_v;
+            pre_col2 = &obj.get_dbl_v();
+            idx_type = 5;
+        }
+    } else {
+        switch (type_refv[key1]) {
+            case 's': pre_col1 = &str_v;  pre_col2 = &obj.get_str_v();  break;
+            case 'c': pre_col1 = &chr_v;  pre_col2 = &obj.get_chr_v();  break;
+            case 'b': pre_col1 = &bool_v; pre_col2 = &obj.get_bool_v(); break;
+            case 'i': pre_col1 = &int_v;  pre_col2 = &obj.get_int_v();  break;
+            case 'u': pre_col1 = &uint_v; pre_col2 = &obj.get_uint_v(); break;
+            case 'd': pre_col1 = &dbl_v;  pre_col2 = &obj.get_dbl_v();  break;
+        }
     }
 
     size_t cur_idx = 0;
