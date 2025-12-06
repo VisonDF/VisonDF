@@ -81,7 +81,7 @@ void transform_group_by_onecol_mt(unsigned int x,
             idx_type = 5;
         }
     } else {
-        switch (type_refv[n_col]) {
+        switch (type_refv[x]) {
             case 's': key_table = &str_v;  break;
             case 'c': key_table = &chr_v;  break;
             case 'b': key_table = &bool_v; break;

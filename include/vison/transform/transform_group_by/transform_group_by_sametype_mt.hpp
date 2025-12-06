@@ -3,7 +3,7 @@
 template <unsigned int CORES = 4,
           bool Occurence = false,
           bool SimdHash = true>
-void transform_group_by_mt(const std::vector<unsigned int>& x,
+void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
                            const n_col int = -1,
                            const std::string colname = "n") 
 {
@@ -37,7 +37,7 @@ void transform_group_by_mt(const std::vector<unsigned int>& x,
 
     const unsigned int local_nrow = nrow;
     std::vector<unsigned int> x2(x.size());
-    std::unordered_map<int, int> pos;
+    std::unordered_map<unsigned int, unsigned int> pos;
     size_t idx_type;
 
     using key_variant_t = std::variant<
@@ -73,7 +73,7 @@ void transform_group_by_mt(const std::vector<unsigned int>& x,
             idx_type = 5;
         }
     } else {
-        switch (type_refv[n_col]) {
+        switch (type_refv[x[0]]) {
             case 's': key_table = &str_v;  break;
             case 'c': key_table = &chr_v;  break;
             case 'b': key_table = &bool_v; break;
@@ -83,6 +83,8 @@ void transform_group_by_mt(const std::vector<unsigned int>& x,
         }
     }
 
+    std::vector<unsigned int> idx;
+    idx.reserve(x.size());
     for (int i = 0; i < matr_idx[idx_type].size(); ++i)
         pos[matr_idx[idx_type][i]] = i;
     for (int v : x)
@@ -91,7 +93,7 @@ void transform_group_by_mt(const std::vector<unsigned int>& x,
     map_t lookup;
     lookup.reserve(local_nrow);
 
-    std::vector<const value_t*> key_vec(local_nrow);
+    std::vector<std::string*> key_vec(local_nrow);
 
     std::string key;
     key.reserve(2048);  
@@ -103,13 +105,13 @@ void transform_group_by_mt(const std::vector<unsigned int>& x,
         for (size_t j = 0; j < x.size(); ++j) {
 
             if constexpr (!std::is_same_v<T, std::string>) {
-                const auto& v = (*key_table)[x[j]][i];
+                const auto& v = (*key_table)[idx[j]][i];
                 key.append(
                     reinterpret_cast<const char*>(std::addressof(v)),
                     sizeof(v)
                 );
             } else {
-                const std::string& src = (*key_table)[x[j]][i];
+                const std::string& src = (*key_table)[idx[j]][i];
                 key.append(src.data(), src.size()); 
             }
             key.push_back('\x1F');              
