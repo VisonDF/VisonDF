@@ -25,7 +25,7 @@ void transform_filter_idx_mt(std::vector<unsigned int>& mask)
     if (to_delete.size() / nrow < 0.08) {
         rm_row_range_mt<CORES, MemClean>(to_delete);
     } else {
-        rm_row_range_reconstruct_mt<CORES>(to_delete);
+        rm_row_range_reconstruct_mt<CORES, true, MemClean>(to_delete);
     }
 
 };

@@ -20,7 +20,7 @@ void transform_filter_idx(std::vector<unsigned int>& mask)
     if (to_delete.size() / nrow < 0.08) {
         rm_row_range<MemClean>(to_delete);
     } else {
-        rm_row_range_reconstruct(to_delete);
+        rm_row_range_reconstruct<1, true, MemClean>(to_delete);
     }
 
 };
