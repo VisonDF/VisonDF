@@ -44,8 +44,6 @@ void transform_group_by_onecol_mt(unsigned int x,
     >;
 
     const unsigned int local_nrow = nrow;
-    std::vector<unsigned int> x2(1);
-    std::unordered_map<int, int> pos;
     size_t idx_type;
 
     using key_variant_t = std::variant<
@@ -82,15 +80,16 @@ void transform_group_by_onecol_mt(unsigned int x,
         }
     } else {
         switch (type_refv[x]) {
-            case 's': key_table = &str_v;  break;
-            case 'c': key_table = &chr_v;  break;
-            case 'b': key_table = &bool_v; break;
-            case 'i': key_table = &int_v;  break;
-            case 'u': key_table = &uint_v; break;
-            case 'd': key_table = &dbl_v;  break;
+            case 's': key_table = &str_v;  idx_type = 0; break;
+            case 'c': key_table = &chr_v;  idx_type = 1; break;
+            case 'b': key_table = &bool_v; idx_type = 2; break;
+            case 'i': key_table = &int_v;  idx_type = 3; break;
+            case 'u': key_table = &uint_v; idx_type = 4; break;
+            case 'd': key_table = &dbl_v;  idx_type = 5; break;
         }
     }
 
+    std::unordered_map<int, int> pos;
     for (int i = 0; i < matr_idx[idx_type].size(); ++i)
         pos[matr_idx[idx_type][i]] = i;
     const size_t real_pos = pos[x];
@@ -100,13 +99,30 @@ void transform_group_by_onecol_mt(unsigned int x,
 
     std::vector<key_t*> key_vec(local_nrow);
 
+    size_t n_col_real;
+    if constexpr (!Occurence) {
+        switch (type_refv[x]) {
+            case 's': key_table2 = &str_v;  idx_type = 0; break;
+            case 'c': key_table2 = &chr_v;  idx_type = 1; break;
+            case 'b': key_table2 = &bool_v; idx_type = 2; break;
+            case 'i': key_table2 = &int_v;  idx_type = 3; break;
+            case 'u': key_table2 = &uint_v; idx_type = 4; break;
+            case 'd': key_table2 = &dbl_v;  idx_type = 5; break;
+        }
+        auto it = std::find(matr_idx[idx_type].begin(), matr_idx[idx_type].end(), n_col);
+        if (it != matr_idx[idx_type].end()) {
+            n_col_real = std::distance(matr_idx[idx_type].begin(), it);
+            break;
+        }
+    }
+
     for (unsigned int i = 0; i < local_nrow; ++i) {
     
         auto [it, inserted] = lookup.try_emplace(&(*key_table)[real_pos][i], 0);
         if constexpr (Occurence) {
             ++(it->second);
         } else if constexpr (!Occurence) {
-            (it->second) += (*key_table)[n_col][i];
+            (it->second) += (*key_table)[n_col_real][i];
         }
     
         key_vec[i] = &it->first;
