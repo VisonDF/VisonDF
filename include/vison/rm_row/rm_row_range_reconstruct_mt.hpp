@@ -1,11 +1,14 @@
 #pragma once
 
 template <unsigned int CORES = 4,
+          bool Sorted = true,
           bool MemClean = false>
 void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
 {
+
     const size_t old_nrow = nrow;
     if (x.empty() || old_nrow == 0) return;
+    if constexpr (!Sorted) std::sort(x.begin(), x.end());
 
     const size_t new_nrow = old_nrow - x.size();
 
@@ -65,40 +68,40 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
 
         switch (t) {
             case 0: 
-                #pragma omp parallel for num_threads(CORES)
+                #pragma omp parallel for if(CORES > 1) num_threads(CORES)
                 for (size_t cpos = 0; cpos < ncols_t; ++cpos)
                     compact_block_scalar(str_v[cpos], str_v[cpos]);
                 break;
             case 1:
-                #pragma omp parallel for num_threads(CORES)
+                #pragma omp parallel for if(CORES > 1) num_threads(CORES)
                 for (size_t cpos = 0; cpos < ncols_t; ++cpos) {
                     compact_block_pod.template operator()<CharT>(chr_v[cpos],  
                                                                  chr_v[cpos]);
                 }
                 break;
             case 2: 
-                #pragma omp parallel for num_threads(CORES)
+                #pragma omp parallel for if(CORES > 1) num_threads(CORES)
                 for (size_t cpos = 0; cpos < ncols_t; ++cpos) {
                     compact_block_pod.template operator()<uint8_t>(bool_v[cpos],  
                                                                    bool_v[cpos]);
                 }
                 break;
             case 3:
-                #pragma omp parallel for num_threads(CORES)
+                #pragma omp parallel for if(CORES > 1) num_threads(CORES)
                 for (size_t cpos = 0; cpos < ncols_t; ++cpos) {
                     compact_block_pod.template operator()<IntT>(int_v[cpos], 
                                                                 int_v[cpos]);
                 }
                 break;
             case 4:
-                #pragma omp parallel for num_threads(CORES)
+                #pragma omp parallel for if(CORES > 1) num_threads(CORES)
                 for (size_t cpos = 0; cpos < ncols_t; ++cpos) {
                     compact_block_pod.template operator()<UIntT>(uint_v[cpos], 
                                                                  uint_v[cpos]);
                 }
                 break;
             case 5:
-                #pragma omp parallel for num_threads(CORES)
+                #pragma omp parallel for if(CORES > 1) num_threads(CORES)
                 for (size_t cpos = 0; cpos < ncols_t; ++cpos) {
                     compact_block_pod.template operator()<FloatT>(dbl_v[cpos],
                                                                   dbl_v[cpos]);
