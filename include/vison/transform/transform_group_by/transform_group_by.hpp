@@ -18,12 +18,12 @@ void transform_group_by(const std::vector<unsigned int>& x,
                                                      n_col,
                                                      colname);
         } else {
-            transform_group_by_mt<T,
-                                  1,
-                                  Occurence,
-                                  SimdHash>(x,
-                                            n_col,
-                                            colname);
+            transform_group_by_difftype_mt<T,
+                                           1,
+                                           Occurence,
+                                           SimdHash>(x,
+                                                     n_col,
+                                                     colname);
         }
     } else {
             transform_group_by_onecol_mt<T,
