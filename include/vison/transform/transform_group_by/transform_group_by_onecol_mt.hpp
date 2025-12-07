@@ -19,13 +19,13 @@ void transform_group_by_onecol_mt(unsigned int x,
     }
 
     using key_t = std::conditional_t<!std::is_same_v<T, void>, 
-                                     T*, 
-                                     std::variant<std::string*, 
-                                        CharT*, 
-                                        uint8_t*, 
-                                        IntT*, 
-                                        UIntT*, 
-                                        FloatT*>>;
+                                     T, 
+                                     std::variant<std::string, 
+                                        CharT, 
+                                        uint8_t, 
+                                        IntT, 
+                                        UIntT, 
+                                        FloatT>>;
     using value_t = std::conditional_t<Occurence, 
                                   unsigned int, 
                                   std::variant<std::string, 
