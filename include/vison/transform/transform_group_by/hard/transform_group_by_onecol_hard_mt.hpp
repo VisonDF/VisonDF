@@ -1,11 +1,5 @@
 #pragma once
 
-template <typename T>
-struct PairGroupBy {
-    std::vector<unsigned int> idx_vec;
-    T value;
-}
-
 template <unsigned int CORES = 4,
           bool Occurence = false,
           bool SimdHash = true>
@@ -62,6 +56,7 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
         const std::vector<std::vector<FloatT>>*
     >; 
     key_variant_t key_table = nullptr;
+    key_variant_t key_table2 = nullptr;
     
     if constexpr (!std::is_same_v<T, void>) {
         if constexpr (std::is_same_v<T, std::string>) {
@@ -128,7 +123,7 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
         if constexpr (Occurence) {
             ++cur_struct.value;
         } else if constexpr (!Occurence) {
-            cur_struct.value += (*key_table)[n_col_real][i];
+            cur_struct.value += (*key_table2)[n_col_real][i];
         }
         cur_struct.idx_vec.push_back(i);
         key_vec[i] = &it->first;

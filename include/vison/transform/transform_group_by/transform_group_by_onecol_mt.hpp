@@ -55,8 +55,8 @@ void transform_group_by_onecol_mt(unsigned int x,
         const std::vector<std::vector<UIntT>>*,
         const std::vector<std::vector<FloatT>>*
     >;
-    
-    key_variant_t key_table = nullptr;
+    key_variant_t key_table = nullptr;  
+    key_variant_t key_table2 = nullptr;
     
     if constexpr (!std::is_same_v<T, void>) {
         if constexpr (std::is_same_v<T, std::string>) {
@@ -122,7 +122,7 @@ void transform_group_by_onecol_mt(unsigned int x,
         if constexpr (Occurence) {
             ++(it->second);
         } else if constexpr (!Occurence) {
-            (it->second) += (*key_table)[n_col_real][i];
+            (it->second) += (*key_table2)[n_col_real][i];
         }
     
         key_vec[i] = &it->first;
