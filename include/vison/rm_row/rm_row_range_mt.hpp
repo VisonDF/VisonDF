@@ -36,37 +36,37 @@ void rm_row_range_mt(std::vector<unsigned int>& x)
         
         switch (t) {
             case 0: {
-                        #pragma omp parallel for num_threads(CORES)
+                        #pragma omp parallel for if(CORES > 1) num_threads(CORES)
                         for (size_t cpos = 0; cpos < ncols_t; ++cpos)
                             compact_block(str_v[cpos]); 
                         break;
                     }
             case 1: {
-                        #pragma omp parallel for num_threads(CORES)
+                        #pragma omp parallel for if(CORES > 1) num_threads(CORES)
                          for (size_t cpos = 0; cpos < ncols_t; ++cpos)                      
                             compact_block(chr_v[cpos]); 
                         break;
                     }
             case 2: {
-                        #pragma omp parallel for num_threads(CORES)
+                        #pragma omp parallel for if(CORES > 1) num_threads(CORES)
                          for (size_t cpos = 0; cpos < ncols_t; ++cpos)
                             compact_block(bool_v[cpos]); 
                         break;
                     }
             case 3: {
-                        #pragma omp parallel for num_threads(CORES)
+                        #pragma omp parallel for if(CORES > 1) num_threads(CORES)
                         for (size_t cpos = 0; cpos < ncols_t; ++cpos)
                             compact_block(int_v[cpos]); 
                         break;
                     }
             case 4: {
-                        #pragma omp parallel for num_threads(CORES)
+                        #pragma omp parallel for if(CORES > 1) num_threads(CORES)
                         for (size_t cpos = 0; cpos < ncols_t; ++cpos)
                             compact_block(uint_v[cpos]); 
                         break;
                     }
             case 5: {
-                        #pragma omp parallel for num_threads(CORES)
+                        #pragma omp parallel for if(CORES > 1) num_threads(CORES)
                         for (size_t cpos = 0; cpos < ncols_t; ++cpos)
                             compact_block(dbl_v[cpos]); 
                         break;
