@@ -389,6 +389,8 @@ namespace vison {
         #include "transform/reorder_col/reorder_col_mt.hpp"
         #include "transform/reorder_col/reorder_col2.hpp"
 
+        #include "inlines/transform/inner_excluding/transform_inner_excluding.inl"
+
         #include "transform/transform_inner/transform_inner.hpp" 
         #ifdef _OPENMP
         #include "transform/transform_inner/transform_inner_mt.hpp"
@@ -432,6 +434,11 @@ namespace vison {
         #endif
 
         #include "transform/transform_unique/transform_unique.hpp"
+
+        #include "transform/transform_group_by/transform_group_by_difftype_mt.hpp"
+        #include "transform/transform_group_by/transform_group_by_sametype_mt.hpp"
+        #include "transform/transform_group_by/transform_group_by_onecol_mt.hpp"
+        #include "transform/transform_group_by/hard/transform_group_by_onecol_hard_mt.hpp"
 
         #include "transform/transform_group_by/transform_group_by.hpp"
         #ifdef _OPENMP
