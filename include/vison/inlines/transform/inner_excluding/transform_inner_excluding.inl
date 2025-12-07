@@ -94,13 +94,13 @@ inline void transform_inner_excluding(Dataframe &cur_obj,
                                   UIntT*, 
                                   FloatT*>;
 
-    using fast_str_set_t = std::conditional_t<
+    using fast_set_t = std::conditional_t<
         SimdHash,
         ankerl::unordered_dense::set<value_t, simd_hash>,
         ankerl::unordered_dense::set<value_t>
     >;
 
-    fast_str_set_t lookup;
+    fast_set_t lookup;
     lookup.reserve(ext_nrow);
 
     for (const auto& el : ext_colv)
