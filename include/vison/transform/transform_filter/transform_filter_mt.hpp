@@ -8,7 +8,7 @@ void transform_filter_mt(std::vector<uint8_t>& mask)
     
     std::vector<unsigned int> x(mask.size(), 0);
 
-    if (SmallProportion) {
+    if constexpr (SmallProportion) {
         size_t i2 = 0;
         for (size_t i = 0; i < mask.size(); ++i) {
             if (!mask[i]) {
