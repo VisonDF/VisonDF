@@ -6,9 +6,10 @@ void transform_excluding(Dataframe &cur_obj,
                 unsigned int ext_col) 
 {
 
-    transform_excluding_mt<1, MemClean, SimdHash>(cur_obj,
-                                                  in_col,
-                                                  ext_col);
+    transform_inner_excluding<1, 
+                              MemClean, 
+                              SimdHash,
+                              false>(cur_obj, in_col, ext_col);
 
 };
 
