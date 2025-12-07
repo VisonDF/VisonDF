@@ -118,7 +118,7 @@ void transform_group_by_onecol_mt(unsigned int x,
 
     for (unsigned int i = 0; i < local_nrow; ++i) {
     
-        auto [it, inserted] = lookup.try_emplace(&(*key_table)[real_pos][i], 0);
+        auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], 0);
         if constexpr (Occurence) {
             ++(it->second);
         } else if constexpr (!Occurence) {
