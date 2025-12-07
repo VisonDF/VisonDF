@@ -15,8 +15,8 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
     auto compact_block_pod = [&]<typename T>(std::vector<T>& dst, 
                                              std::vector<T>& src) {
 
-        size_t i = x[0];
-        size_t i2 = 0;
+        size_t i = x[0] + 1;
+        size_t i2 = 1;
         size_t written = x[0];
         while (i2 < x.size()) {
         
@@ -37,11 +37,16 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
             written += len;
             i += 1;
         }
+        while (i < old_nrow) {
+            dst[written] = std::move(src[i]);
+            i += 1;
+            written += 1;
+        };
     };
 
     auto compact_block_scalar = [&](auto& dst, 
                                     auto& src) {
-        size_t i = x[0];
+        size_t i = x[0] + 1;
         size_t i2 = 0;
         size_t written = x[0];
         while (i2 < x.size()) {
@@ -112,7 +117,7 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
     }
     
     if (!name_v_row.empty()) {
-        size_t i = x[0];
+        size_t i = x[0] + 1;
         size_t i2 = 0;
         size_t written = x[0];
         while (i2 < x.size()) {
