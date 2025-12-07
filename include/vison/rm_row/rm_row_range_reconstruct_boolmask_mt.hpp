@@ -1,7 +1,6 @@
 #pragma once
 
 template <unsigned int CORES = 4,
-          bool Sorted = true,
           bool MemClean = false>
 void rm_row_range_reconstruct_boolmask_mt(std::vector<uint8_t>& x,
                                           const size_t strt_vl)
@@ -9,7 +8,6 @@ void rm_row_range_reconstruct_boolmask_mt(std::vector<uint8_t>& x,
 
     const size_t old_nrow = nrow;
     if (x.empty() || old_nrow == 0) return;
-    if constexpr (!Sorted) std::sort(x.begin(), x.end());
 
     const size_t new_nrow = std::count(x.begin(), x.end(), 0);
     if (new_nrow == nrow) return;

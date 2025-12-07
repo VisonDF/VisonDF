@@ -1,24 +1,26 @@
 #pragma once
 
-template <bool MemClean = false>
+template <bool MemClean = false,
+          bool SmallProportion = false>
 void transform_filter(std::vector<uint8_t>& mask) 
 {
   
-    std::vector<unsigned int> to_delete;
-    to_delete.resize(mask.size());
+    std::vector<uint8_t> x(mask.size, 0);
 
-    size_t i2 = 0;
-    for (size_t i = 0; i < mask.size(); ++i) {
-        if (!mask[i]) {
-            to_delete[i2] = i;
-            i2 += 1;
+    if constexpr (SmallProportion) {
+        size_t i2 = 0;
+        for (size_t i = 0; i < mask.size(); ++i) {
+            if (!mask[i]) {
+                x[i2] = i;
+                i2 += 1;
+            }
         }
-    }
-
-    if (to_delete.size() / nrow < 0.08) {
-        rm_row_range<CORES, MemClean>(to_delete);
+        rm_row_range_mt<CORES, MemClean>(x);
     } else {
-        rm_row_range_reconstruct<CORES>(to_delete);
+        for (size_t i = 0; i < mask.size(); ++i)
+            x[i] = !mask[i];
+        rm_row_range_reconstruct_boolmask_mt<1,
+                                             MemClean>(x, 0);
     }
 
 };
