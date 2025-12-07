@@ -1,14 +1,13 @@
 #pragma once
 
-
 template <typename T = void,
           unsigned int CORES = 4, 
           bool MemClean = false, 
           bool SimdHash = true,
           bool Inner = false>
-inline void transform_excluding_mt(Dataframe &cur_obj, 
-                                   unsigned int in_col, 
-                                   unsigned int ext_col) 
+inline void transform_inner_excluding(Dataframe &cur_obj, 
+                                      unsigned int in_col, 
+                                      unsigned int ext_col) 
 {
 
     auto& type_refv2 = cur_obj.get_typecol();
