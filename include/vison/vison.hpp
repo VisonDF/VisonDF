@@ -435,6 +435,11 @@ namespace vison {
         #include "transform/transform_group_by/transform_group_by_sametype_mt.hpp"
         #include "transform/transform_group_by/transform_group_by_onecol_mt.hpp"
         #include "transform/transform_group_by/hard/transform_group_by_onecol_hard_mt.hpp"
+        #include "transform/transform_group_by/hard/transform_group_by_sametype_hard_mt.hpp"
+        #include "transform/transform_group_by/hard/transform_group_by_difftype_hard_mt.hpp"
+        #include "transform/transform_group_by/soft/transform_group_by_onecol_soft_mt.hpp"
+        #include "transform/transform_group_by/soft/transform_group_by_sametype_soft_mt.hpp"
+        #include "transform/transform_group_by/soft/transform_group_by_difftype_soft_mt.hpp"
 
         #include "transform/transform_group_by/transform_group_by.hpp"
         #ifdef _OPENMP
