@@ -1,6 +1,8 @@
 #pragma once
 
-template <unsigned int CORES = 4, bool Simd = true>
+template <unsigned int CORES = 4, 
+          bool Simd = true,
+          bool MultiLanes = true>
 inline void radix_sort_uint8_mt(const uint8_t* keys,
                                 size_t* idx,
                                 size_t n)
@@ -50,21 +52,21 @@ inline void radix_sort_uint8_mt(const uint8_t* keys,
 
         size_t* h = hist[t].data();
 
-#if defined(__AVX512F__) 
+        #if defined(__AVX512F__) 
         if constexpr (Simd) {
             histogram_pass_u8_avx512_16buckets(keys + beg,
                                                end - beg,
                                                h);
         } else
-#endif
-#if defined(__AVX2__)
+        #endif
+        #if defined(__AVX2__)
         if constexpr (Simd) {
-            if (end - beg < 200'000)
+            if constexpr (!MultiLanes)
                 histogram_pass_u8_avx2(keys + beg, end - beg, h);
             else
                 histogram_pass_u8_avx2_8buckets(keys + beg, end - beg, h);
         } else
-#endif
+        #endif
         {
             for (size_t i = beg; i < end; i++)
                 h[keys[i]]++;

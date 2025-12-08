@@ -1,6 +1,7 @@
 #pragma once
 
-template <bool Simd = true>
+template <bool Simd = true, 
+          bool MultiLanes = true>
 inline void radix_sort_uint8(const uint8_t* keys,
                               size_t* idx,
                               size_t n)
@@ -27,7 +28,7 @@ inline void radix_sort_uint8(const uint8_t* keys,
             
         #elif defined(__AVX2__)
 
-            if (n < 200'000) {
+            if constexpr (!MultiLanes) {
                 histogram_pass_u8_avx2(keys, n, count.data());
             } else {
                 histogram_pass_u8_avx2_8buckets(keys, n, count.data());

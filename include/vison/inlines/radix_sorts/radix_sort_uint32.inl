@@ -1,6 +1,7 @@
 #pragma once
 
-template <bool Simd = true>
+template <bool Simd = true,
+          bool MultiLanes = true>
 inline void radix_sort_uint32(std::vector<uint32_t>& tkeys,
                              size_t* idx,
                              size_t n)
@@ -42,7 +43,7 @@ inline void radix_sort_uint32(std::vector<uint32_t>& tkeys,
             histogram_pass_u32_avx512_16buckets(tkeys.data(), n, shift, count.data());
             
         #elif defined(__AVX2__)
-            if (n < 200'000) {
+            if constexpr (!MultiLanes) {
                 memset(count.data(), 0, RADIX_KI16 * sizeof(size_t));
                 histogram_pass_u32_avx2(tkeys.data(), n, shift, count.data());
             } else {

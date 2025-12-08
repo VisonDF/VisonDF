@@ -1,6 +1,8 @@
 #pragma once
 
-template <unsigned int CORES = 4, bool Simd = true>
+template <unsigned int CORES = 4, 
+          bool Simd = true,
+          bool MultiLanes = true>
 inline void radix_sort_uint64_mt(std::vector<uint64_t>& tkeys,
                                 size_t* idx,
                                 size_t n)
@@ -68,7 +70,7 @@ inline void radix_sort_uint64_mt(std::vector<uint64_t>& tkeys,
         #endif
         #if defined(__AVX2__)
             if constexpr (Simd) {
-                if (len < 200000) {
+                if constexpr (!MultiLanes) {
                     std::memset(h, 0, RADIX_KI16 * sizeof(size_t));
                     histogram_pass_u64_avx2(tkeys.data() + beg,
                                             len, shift, h);
