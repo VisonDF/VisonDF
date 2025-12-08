@@ -24,14 +24,11 @@ inline void radix_sort_uint32_mt(std::vector<uint32_t>& tkeys,
     std::vector<size_t>   tmp(n);
 
     // Per-thread histograms
-    std::vector<std::vector<size_t>>
-        hist(THREADS, std::vector<size_t>(RADIX_KI32));
+    std::vector<std::vector<size_t>>& hist = get_local_hist_u32();
+    std::vector<std::vector<size_t>>& thread_off = get_local_thread_off_u32();
 
-    std::vector<size_t> bucket_size(RADIX_KI32);
-    std::vector<size_t> bucket_base(RADIX_KI32);
-
-    std::vector<std::vector<size_t>>
-        thread_off(THREADS, std::vector<size_t>(RADIX_KI32));
+    std::vector<size_t>& bucket_size = get_local_bucket_size_u32();
+    std::vector<size_t>& bucket_base = get_local_bucket_base_u32();
 
     auto range = [&](int t) {
         size_t chunk = n / THREADS;
