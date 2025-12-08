@@ -11,18 +11,18 @@ inline void histogram_pass_u32_avx2_8buckets(
 {
     const __m256i mask = _mm256_set1_epi32(0xFFFF);
 
-    size_t* __restrict local = get_local_histogram_8x_u32();
-    memset(local, 0, RADIX_LANES * RADIX_KI32 * sizeof(size_t));
+    size_t* __restrict local = get_local_histogram_8x_u16();
+    memset(local, 0, RADIX_LANES * RADIX_KI16 * sizeof(size_t));
 
     size_t* lanes[RADIX_LANES] = {
-        local + 0 * RADIX_KI32,
-        local + 1 * RADIX_KI32,
-        local + 2 * RADIX_KI32,
-        local + 3 * RADIX_KI32,
-        local + 4 * RADIX_KI32,
-        local + 5 * RADIX_KI32,
-        local + 6 * RADIX_KI32,
-        local + 7 * RADIX_KI32
+        local + 0 * RADIX_KI16,
+        local + 1 * RADIX_KI16,
+        local + 2 * RADIX_KI16,
+        local + 3 * RADIX_KI16,
+        local + 4 * RADIX_KI16,
+        local + 5 * RADIX_KI16,
+        local + 6 * RADIX_KI16,
+        local + 7 * RADIX_KI16
     };
 
     size_t i = 0;
@@ -49,7 +49,7 @@ inline void histogram_pass_u32_avx2_8buckets(
     }
 
     // Reduction
-    for (size_t b = 0; b < RADIX_KI32; b++) {
+    for (size_t b = 0; b < RADIX_KI16; b++) {
         size_t s =
             lanes[0][b] +
             lanes[1][b] +
