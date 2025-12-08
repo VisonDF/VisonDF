@@ -16,7 +16,8 @@ inline void radix_sort_uint64(std::vector<uint64_t>& tkeys,
         return;
     }
 
-    std::vector<size_t> count(RADIX_KI64);
+    std::vector<size_t>& count = get_local_count_u16();
+    memset(count.data(), 0, RADIX_KI16 * sizeof(size_t));
     std::vector<size_t> tmp_idx(n);
     std::vector<uint64_t> tmp_keys(n);
 
@@ -31,7 +32,7 @@ inline void radix_sort_uint64(std::vector<uint64_t>& tkeys,
             
         #elif defined(__AVX2__)
             if (n < 200'000) {
-                memset(count.data(), 0, RADIX_KI64 * sizeof(size_t));
+                memset(count.data(), 0, RADIX_KI16 * sizeof(size_t));
                 histogram_pass_u64_avx2(tkeys.data(), n, shift, count.data());
             } else {
                 histogram_pass_u64_avx2_8buckets(tkeys.data(), n, shift, count.data());
@@ -39,13 +40,13 @@ inline void radix_sort_uint64(std::vector<uint64_t>& tkeys,
         #endif
         
         } else {
-            memset(count.data(), 0, RADIX_KI64 * sizeof(size_t));
+            memset(count.data(), 0, RADIX_KI16 * sizeof(size_t));
             for (size_t i = 0; i < n; ++i)
                 count[(tkeys[i] >> shift) & 0xFFFF]++;
         }
 
         size_t sum = 0;
-        for (size_t i = 0; i < RADIX_KI64; i++) {
+        for (size_t i = 0; i < RADIX_KI16; i++) {
             size_t c = count[i];
             count[i] = sum;
             sum += c;

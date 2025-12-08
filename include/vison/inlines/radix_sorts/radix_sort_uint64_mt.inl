@@ -24,14 +24,18 @@ inline void radix_sort_uint64_mt(std::vector<uint64_t>& tkeys,
     std::vector<size_t>   tmp(n);
 
     // Per-thread histograms
-    std::vector<std::vector<size_t>>
-        hist(THREADS, std::vector<size_t>(RADIX_KI64));
+    std::vector<std::vector<size_t>>& hist = get_local_hist_u16();
+    std::vector<std::vector<size_t>>& thread_off = get_local_thread_off_u16();
+    #pragma omp parallel for if(CORES > 1) num_threads(THREADS)
+    for (size_t i = 0; i < THREADS; ++i) {
+        memset(hist[i].data(),       0, RADIX_KI16 * sizeof(size_t));
+        memset(thread_off[i].data(), 0, RADIX_KI16 * sizeof(size_t));
+    }
 
-    std::vector<size_t> bucket_size(RADIX_KI64);
-    std::vector<size_t> bucket_base(RADIX_KI64);
-
-    std::vector<std::vector<size_t>>
-        thread_off(THREADS, std::vector<size_t>(RADIX_KI64));
+    std::vector<size_t>& bucket_size = get_local_bucket_size_u16();
+    std::vector<size_t>& bucket_base = get_local_bucket_base_u16();
+    memset(bucket_size.data(), 0, RADIX_KI16 * sizeof(size_t));
+    memset(bucket_base.data(), 0, RADIX_KI16 * sizeof(size_t));
 
     auto range = [&](int t) {
         size_t chunk = n / THREADS;
@@ -65,9 +69,9 @@ inline void radix_sort_uint64_mt(std::vector<uint64_t>& tkeys,
         #if defined(__AVX2__)
             if constexpr (Simd) {
                 if (len < 200000) {
-                    std::memset(h, 0, RADIX_KI64 * sizeof(size_t));
+                    std::memset(h, 0, RADIX_KI16 * sizeof(size_t));
                     histogram_pass_u64_avx2(tkeys.data() + beg,
-                                          len, shift, h);
+                                            len, shift, h);
                 } else {
                     histogram_pass_u64_avx2_8buckets(tkeys.data() + beg,
                                                      len, shift, h);
@@ -75,7 +79,7 @@ inline void radix_sort_uint64_mt(std::vector<uint64_t>& tkeys,
             } else
         #endif
             {
-                std::memset(h, 0, RADIX_KI64 * sizeof(size_t));
+                std::memset(h, 0, RADIX_KI16 * sizeof(size_t));
                 for (size_t i = beg; i < end; i++)
                     h[(tkeys[i] >> shift) & 0xFFFFu]++;
             }
@@ -85,7 +89,7 @@ inline void radix_sort_uint64_mt(std::vector<uint64_t>& tkeys,
         // Combine histograms
         // ----------------------------------------------------
         #pragma omp parallel for num_threads(THREADS)
-        for (size_t b = 0; b < RADIX_KI64; b++) {
+        for (size_t b = 0; b < RADIX_KI16; b++) {
             size_t sum = 0;
 
             #pragma unroll
@@ -98,7 +102,7 @@ inline void radix_sort_uint64_mt(std::vector<uint64_t>& tkeys,
         // Prefix sum
         // ----------------------------------------------------
         size_t acc = 0;
-        for (size_t b = 0; b < RADIX_KI64; b++) {
+        for (size_t b = 0; b < RADIX_KI16; b++) {
             bucket_base[b] = acc;
             acc += bucket_size[b];
         }
@@ -107,7 +111,7 @@ inline void radix_sort_uint64_mt(std::vector<uint64_t>& tkeys,
         // Thread offsets per bucket
         // ----------------------------------------------------
         #pragma omp parallel for num_threads(THREADS)
-        for (size_t b = 0; b < RADIX_KI64; b++) {
+        for (size_t b = 0; b < RADIX_KI16; b++) {
             size_t base = bucket_base[b];
             for (unsigned t = 0; t < THREADS; t++) {
                 thread_off[t][b] = base;
