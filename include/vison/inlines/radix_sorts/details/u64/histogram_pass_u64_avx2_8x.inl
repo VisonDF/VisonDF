@@ -12,18 +12,18 @@ inline void histogram_pass_u64_avx2_8buckets(
     const __m256i mask = _mm256_set1_epi64x(0xFFFFull);
 
     // 8 independent histograms: [lane][bucket]
-    size_t* __restrict local = get_local_histogram_8x_u64();
-    std::memset(local, 0, RADIX_LANES * RADIX_KI64 * sizeof(size_t));
+    size_t* __restrict local = get_local_histogram_8x_u16();
+    std::memset(local, 0, RADIX_LANES * RADIX_KI16 * sizeof(size_t));
 
     // Lane pointers
-    size_t* lane0 = local + 0 * RADIX_KI64;
-    size_t* lane1 = local + 1 * RADIX_KI64;
-    size_t* lane2 = local + 2 * RADIX_KI64;
-    size_t* lane3 = local + 3 * RADIX_KI64;
-    size_t* lane4 = local + 4 * RADIX_KI64;
-    size_t* lane5 = local + 5 * RADIX_KI64;
-    size_t* lane6 = local + 6 * RADIX_KI64;
-    size_t* lane7 = local + 7 * RADIX_KI64;
+    size_t* lane0 = local + 0 * RADIX_KI16;
+    size_t* lane1 = local + 1 * RADIX_KI16;
+    size_t* lane2 = local + 2 * RADIX_KI16;
+    size_t* lane3 = local + 3 * RADIX_KI16;
+    size_t* lane4 = local + 4 * RADIX_KI16;
+    size_t* lane5 = local + 5 * RADIX_KI16;
+    size_t* lane6 = local + 6 * RADIX_KI16;
+    size_t* lane7 = local + 7 * RADIX_KI16;
 
     size_t i = 0;
 
@@ -66,7 +66,7 @@ inline void histogram_pass_u64_avx2_8buckets(
     }
 
     // Reduce 8 lanes into final count[]
-    for (size_t b = 0; b < RADIX_KI64; ++b) {
+    for (size_t b = 0; b < RADIX_KI16; ++b) {
         count[b] =
             lane0[b] + lane1[b] + lane2[b] + lane3[b] +
             lane4[b] + lane5[b] + lane6[b] + lane7[b];

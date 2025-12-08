@@ -12,13 +12,13 @@ inline void histogram_pass_u64_avx512_16buckets(
     const __m512i mask = _mm512_set1_epi64(0xFFFFull);
 
     // 16 independent histograms: [lane][bucket]
-    size_t* __restrict local = get_local_histogram_16x_u64();
-    std::memset(local, 0, RADIX_LANES_AVX512 * RADIX_KI64 * sizeof(size_t));
+    size_t* __restrict local = get_local_histogram_16x_u16();
+    std::memset(local, 0, RADIX_LANES_AVX512 * RADIX_KI16 * sizeof(size_t));
 
     // lane[bucket] pointers
     size_t* lanes[RADIX_LANES_AVX512];
     for (size_t lane = 0; lane < RADIX_LANES_AVX512; ++lane) {
-        lanes[lane] = local + lane * RADIX_KI64;
+        lanes[lane] = local + lane * RADIX_KI16;
     }
 
     size_t i = 0;
@@ -58,7 +58,7 @@ inline void histogram_pass_u64_avx512_16buckets(
     }
 
     // Reduce 16 lane histograms into final count[]
-    for (size_t b = 0; b < RADIX_KI64; ++b) {
+    for (size_t b = 0; b < RADIX_KI16; ++b) {
         size_t s = 0;
         // unrolled for throughput
         s += lanes[0][b];

@@ -31,11 +31,8 @@ inline std::vector<std::vector<size_t>>& get_local_thread_off_u16() {
 
 inline size_t* get_local_histogram_8x_u16()
 {
-    static thread_local std::vector<size_t> local_hist;
-
-    if (local_hist.size() != RADIX_LANES * RADIX_KI16) {
-        local_hist.resize(RADIX_LANES * RADIX_KI16);
-    }
-
+    static thread_local std::vector<size_t> local_hist(RADIX_LANES * RADIX_KI16);
     return local_hist.data();
 }
+
+
