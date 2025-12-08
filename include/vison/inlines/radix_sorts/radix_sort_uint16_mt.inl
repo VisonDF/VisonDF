@@ -19,14 +19,11 @@ inline void radix_sort_uint16_mt(const uint16_t* keys,
     constexpr unsigned THREADS = (CORES == 0 ? 1u : CORES);
 
     // Working storage
-    std::vector<std::vector<size_t>>
-        hist(THREADS, std::vector<size_t>(RADIX_KI16));
+    std::vector<std::vector<size_t>>& hist = get_local_hist_u16();
+    std::vector<std::vector<size_t>>& thread_off = get_local_thread_off_u16();
 
-    std::vector<size_t> bucket_size(RADIX_KI16);
-    std::vector<size_t> bucket_base(RADIX_KI16);
-
-    std::vector<std::vector<size_t>>
-        thread_off(THREADS, std::vector<size_t>(RADIX_KI16));
+    std::vector<size_t>& bucket_size = get_local_bucket_size_u16();
+    std::vector<size_t>& bucket_base = get_local_bucket_base_u16();
 
     auto range = [&](int t) {
         size_t chunk = n / THREADS;
@@ -46,21 +43,21 @@ inline void radix_sort_uint16_mt(const uint16_t* keys,
 
         size_t* h = hist[t].data();
 
-#if defined(__AVX512F__) 
+        #if defined(__AVX512F__) 
         if constexpr (Simd) {
             histogram_pass_u16_avx512_16buckets(keys + beg,
                                                end - beg,
                                                h);
         } else
-#endif
-#if defined(__AVX2__)
+        #endif
+        #if defined(__AVX2__)
         if constexpr (Simd) {
             if (end - beg < 200'000)
                 histogram_pass_u16_avx2(keys + beg, end - beg, h);
             else
                 histogram_pass_u16_avx2_8buckets(keys + beg, end - beg, h);
         } else
-#endif
+        #endif
         {
             for (size_t i = beg; i < end; i++)
                 h[keys[i]]++;
