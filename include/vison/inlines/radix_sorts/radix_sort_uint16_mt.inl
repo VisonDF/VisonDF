@@ -21,9 +21,15 @@ inline void radix_sort_uint16_mt(const uint16_t* keys,
     // Working storage
     std::vector<std::vector<size_t>>& hist = get_local_hist_u16();
     std::vector<std::vector<size_t>>& thread_off = get_local_thread_off_u16();
+    for (size_t i = 0; i < THREADS: ++i) { 
+        memset(hist[i].data(),       0, RADIX_KI16);
+        memset(thread_off[i].data(), 0, RADIX_KI16);
+    }
 
     std::vector<size_t>& bucket_size = get_local_bucket_size_u16();
     std::vector<size_t>& bucket_base = get_local_bucket_base_u16();
+    memset(bucket_size.data(), 0, RADIX_KI16);
+    memset(bucket_base.data(), 0, RADIX_KI16);
 
     auto range = [&](int t) {
         size_t chunk = n / THREADS;

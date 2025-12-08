@@ -21,7 +21,8 @@ inline void radix_sort_uint32(std::vector<uint32_t>& tkeys,
 
     std::vector<U> tmp_keys(n);
     std::vector<size_t> tmp(n);
-    std::vector<size_t>& count = get_local_count_u32();
+    std::vector<size_t>& count = get_local_count_u16();
+    memset(count.data(), 0, RADIX_KI16 * sizeof(size_t));
 
     // 2 passes, each processing 16 bits of the 32-bit key.
     // pass = 0 → least significant 16 bits
@@ -42,7 +43,7 @@ inline void radix_sort_uint32(std::vector<uint32_t>& tkeys,
             
         #elif defined(__AVX2__)
             if (n < 200'000) {
-                memset(count.data(), 0, RADIX_KI32 * sizeof(size_t));
+                memset(count.data(), 0, RADIX_KI16 * sizeof(size_t));
                 histogram_pass_u32_avx2(tkeys.data(), n, shift, count.data());
             } else {
                 histogram_pass_u32_avx2_8buckets(tkeys.data(), n, shift, count.data());
@@ -50,7 +51,7 @@ inline void radix_sort_uint32(std::vector<uint32_t>& tkeys,
         #endif
         
         } else {
-            memset(count.data(), 0, RADIX_KI32 * sizeof(size_t));
+            memset(count.data(), 0, RADIX_KI16 * sizeof(size_t));
             for (size_t i = 0; i < n; ++i)
                 count[(tkeys[i] >> shift) & 0xFFFF]++;
         }
@@ -58,7 +59,7 @@ inline void radix_sort_uint32(std::vector<uint32_t>& tkeys,
         // Convert histogram to prefix sums:
         // count[b] becomes the starting output index for bucket b.
         size_t sum = 0;
-        for (size_t i = 0; i < RADIX_KI32; i++) {
+        for (size_t i = 0; i < RADIX_KI16; i++) {
             size_t c = count[i];
             count[i] = sum;
             sum += c;

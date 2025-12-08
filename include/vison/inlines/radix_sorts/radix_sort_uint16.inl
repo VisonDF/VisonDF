@@ -17,6 +17,7 @@ inline void radix_sort_uint16(const uint16_t* keys,
     }
 
     std::vector<size_t>& count = get_local_count_u16();
+    memset(count.data(), 0, RADIX_KI16);
 
     // Histogram
     if constexpr (Simd) {
