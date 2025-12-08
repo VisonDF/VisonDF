@@ -3,9 +3,9 @@
 template <unsigned int CORES = 4,
           bool Occurence = false,
           bool SimdHash = true>
-void transform_group_by_onecol_hard_mt(unsigned int x,
-                                       const n_col int = -1,
-                                       const std::string colname = "n") 
+void transform_group_by_difftype_mt(const std::vector<unsigned int>& x,
+                                    const n_col int = -1,
+                                    const std::string colname = "n") 
 {
 
     if constexpr (!Occurence) {
@@ -18,14 +18,6 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
         }
     }
 
-    using key_t = std::conditional_t<!std::is_same_v<T, void>, 
-                                     T, 
-                                     std::variant<std::string, 
-                                        CharT, 
-                                        uint8_t, 
-                                        IntT, 
-                                        UIntT, 
-                                        FloatT>>;
     using value_t = std::conditional_t<Occurence, 
                                   unsigned int, 
                                   std::variant<std::string, 
@@ -36,14 +28,66 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
                                         FloatT>>;
     using map_t = std::conditional_t<
         SimdHash,
-        ankerl::unordered_dense::map<key_t, 
+        ankerl::unordered_dense::map<std::string, 
                                      PairGroupBy<value_t>, 
                                      simd_hash>,
-        ankerl::unordered_dense::map<key_t, 
+        ankerl::unordered_dense::map<std::string, 
                                      PairGroupBy<value_t>>
     >;
 
     const unsigned int local_nrow = nrow;
+    std::vector<unsigned int> x2(x.size());
+
+    idx_str.reserve(x.size()  / 2);
+    idx_chr.reserve(x.size()  / 2);
+    idx_bool.reserve(x.size() / 2);
+    idx_int.reserve(x.size()  / 2);
+    idx_uint.reserve(x.size() / 2);
+    idx_dbl.reserve(x.size()  / 2);
+
+    for (int v : x) {
+        auto it = std::find(matr_idx[0].begin(), matr_idx[0].end(), v);
+        if (it != matr_idx[0].end())
+            idx_str.push_back(std::distance(matr_idx[0].begin(), it));
+    }
+    for (int v : x) {
+        auto it = std::find(matr_idx[1].begin(), matr_idx[1].end(), v);
+        if (it != matr_idx[1].end())
+            idx_chr.push_back(std::distance(matr_idx[1].begin(), it));
+    }
+    for (int v : x) {
+        auto it = std::find(matr_idx[2].begin(), matr_idx[2].end(), v);
+        if (it != matr_idx[2].end())
+            idx_bool.push_back(std::distance(matr_idx[2].begin(), it));
+    }
+    for (int v : x) {
+        auto it = std::find(matr_idx[3].begin(), matr_idx[3].end(), v);
+        if (it != matr_idx[3].end())
+            idx_int.push_back(std::distance(matr_idx[3].begin(), it));
+    }
+    for (int v : x) {
+        auto it = std::find(matr_idx[4].begin(), matr_idx[4].end(), v);
+        if (it != matr_idx[4].end())
+            idx_uint.push_back(std::distance(matr_idx[4].begin(), it));
+    }
+    for (int v : x) {
+        auto it = std::find(matr_idx[5].begin(), matr_idx[5].end(), v);
+        if (it != matr_idx[5].end())
+            idx_dbl.push_back(std::distance(matr_idx[5].begin(), it));
+    }
+
+    std::sort(idx_str.begin(),  idx_str.end()); 
+    std::sort(idx_chr.begin(),  idx_chr.end());
+    std::sort(idx_bool.begin(), idx_bool.end());
+    std::sort(idx_int.begin(),  idx_int.end());
+    std::sort(idx_uint.begin(), idx_uint.end());
+    std::sort(idx_dbl.begin(),  idx_dbl.end());
+
+    map_t lookup;
+    lookup.reserve(local_nrow);
+
+    std::string key;
+    key.reserve(2048);   
     size_t idx_type;
 
     using key_variant_t = std::variant<
@@ -55,51 +99,11 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
         const std::vector<std::vector<UIntT>>*,
         const std::vector<std::vector<FloatT>>*
     >; 
-    key_variant_t key_table = nullptr;
     key_variant_t key_table2 = nullptr;
-    
-    if constexpr (!std::is_same_v<T, void>) {
-        if constexpr (std::is_same_v<T, std::string>) {
-            key_table = &str_v;
-            idx_type = 0;
-        } else if constexpr (std::is_same_v<T, CharT>) {
-            key_table = &chr_v;
-            idx_type = 1;
-        } else if constexpr (std::is_same_v<T, uint8_t>) {
-            key_table = &bool_v;
-            idx_type = 2;
-        } else if constexpr (std::is_same_v<T, IntT>) {
-            key_table = &int_v;
-            idx_type = 3;
-        } else if constexpr (std::is_same_v<T, UIntT>) {
-            key_table = &uint_v;
-            idx_type = 4;
-        } else if constexpr (std::is_same_v<T, FloatT>) {
-            key_table = &dbl_v;
-            idx_type = 5;
-        }
-    } else {
-        switch (type_refv[x]) {
-            case 's': key_table = &str_v;  idx_type = 0; break;
-            case 'c': key_table = &chr_v;  idx_type = 1; break;
-            case 'b': key_table = &bool_v; idx_type = 2; break;
-            case 'i': key_table = &int_v;  idx_type = 3; break;
-            case 'u': key_table = &uint_v; idx_type = 4; break;
-            case 'd': key_table = &dbl_v;  idx_type = 5; break;
-        }
-    }
-
-    std::unordered_map<int, int> pos;
-    for (int i = 0; i < matr_idx[idx_type].size(); ++i)
-        pos[matr_idx[idx_type][i]] = i;
-    const size_t real_pos = pos[x];
-
-    map_t lookup;
-    lookup.reserve(local_nrow);
 
     size_t n_col_real;
     if constexpr (!Occurence) {
-        switch (type_refv[x]) {
+        switch (type_refv[x[0]]) {
             case 's': key_table2 = &str_v;  idx_type = 0; break;
             case 'c': key_table2 = &chr_v;  idx_type = 1; break;
             case 'b': key_table2 = &bool_v; idx_type = 2; break;
@@ -116,7 +120,58 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
 
     for (unsigned int i = 0; i < local_nrow; ++i) {
     
-        auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], 0);
+        key.clear();
+    
+        for (auto idxv : idx_str) {
+            const auto& v = str_v[idxv][i];
+            key.append(
+                       v.data(),
+                       v.size()
+            );
+            key.push_back('\x1F');              
+        }
+        for (auto idxv : idx_chr) {
+            const auto& v = chr_v[idxv][i];
+            key.append(
+                       v,
+                       sizeof(v)
+            );
+            key.push_back('\x1F');              
+        }
+        for (auto idxv : idx_bool) {
+            const auto& v = bool_v[idxv][i];
+            key.append(
+                       reinterpret_cast<const char*>(&v),
+                       sizeof(v)
+            );
+            key.push_back('\x1F');              
+        }
+        for (auto idxv : idx_int) {
+            const auto& v = int_v[idxv][i];
+            key.append(
+                       reinterpret_cast<const char*>(&v),
+                       sizeof(v)
+            );
+            key.push_back('\x1F');              
+        }
+        for (auto idxv : idx_uint) {
+            const auto& v = uint_v[idxv][i];
+            key.append(
+                       reinterpret_cast<const char*>(&v),
+                       sizeof(v)
+            );
+            key.push_back('\x1F');              
+        }
+        for (auto idxv : idx_dbl) {
+            const auto& v = dbl_v[idxv][i];
+            key.append(
+                       reinterpret_cast<const char*>(&v),
+                       sizeof(v)
+            );
+            key.push_back('\x1F');              
+        }
+    
+        auto [it, inserted] = lookup.try_emplace(key, 0);
         auto& cur_struct = it->second;
         if constexpr (Occurence) {
             ++cur_struct.value;
@@ -169,7 +224,7 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
             i2 += pos_vec.size();
         }
     }
-   
+
     if constexpr (Ocurence) {
         uint_v.push_back(value_col);
     } else if (std::is_same_v<value_t, std:string>) {

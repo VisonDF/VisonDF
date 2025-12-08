@@ -3,9 +3,9 @@
 template <unsigned int CORES = 4,
           bool Occurence = false,
           bool SimdHash = true>
-void transform_group_by_mt(const std::vector<unsigned int>& x,
-                           const n_col int = -1,
-                           const std::string colname = "n") 
+void transform_group_by_difftype_mt(const std::vector<unsigned int>& x,
+                                    const n_col int = -1,
+                                    const std::string colname = "n") 
 {
 
     if constexpr (!Occurence) {
