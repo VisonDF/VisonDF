@@ -19,14 +19,18 @@ inline void radix_sort_uint8_mt(const uint8_t* keys,
     constexpr unsigned THREADS = (CORES == 0 ? 1u : CORES);
 
     // Working storage
-    std::vector<std::vector<size_t>>
-        hist(THREADS, std::vector<size_t>(RADIX_KI8));
+    std::vector<std::vector<size_t>>& hist       = get_local_hist_u8();
+    std::vector<std::vector<size_t>>& thread_off = get_local_thread_off_u8();
+    #pragma omp parallel for if(THREADS > 1) num_threads(THREADS)
+    for (size_t i = 0; i < THREADS; ++i) {
+        memset(hist[i].data(), 0, RADIX_KI8 * sizeof(size_t));
+        memset(thread_off[i].data(), 0, RADIX_KI8 * sizeof(size_t));
+    }
 
-    std::vector<size_t> bucket_size(RADIX_KI8);
-    std::vector<size_t> bucket_base(RADIX_KI8);
-
-    std::vector<std::vector<size_t>>
-        thread_off(THREADS, std::vector<size_t>(RADIX_KI8));
+    std::vector<size_t>& bucket_size = get_local_bucket_size_u8();
+    std::vector<size_t>& bucket_base = get_local_bucket_base_u8();
+    memset(bucket_size.data(), 0, RADIX_KI8 * sizeof(size_t));
+    memset(bucket_base.data(), 0, RADIX_KI8 * sizeof(size_t));
 
     auto range = [&](int t) {
         size_t chunk = n / THREADS;
