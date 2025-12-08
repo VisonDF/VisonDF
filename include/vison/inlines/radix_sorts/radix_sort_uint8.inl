@@ -16,7 +16,8 @@ inline void radix_sort_uint8(const uint8_t* keys,
         return;
     }
 
-    std::vector<size_t> count(RADIX_KI8, 0);
+    std::vector<size_t>& count = get_local_count_u8();
+    memset(count.data(), 0, RADIX_KI8 * sizeof(size_t));
 
     // Histogram
     if constexpr (Simd) {
