@@ -6,9 +6,6 @@ inline void histogram_pass_u8_avx2(
     size_t* count
 )
 {
-    //alignas(64) size_t local[RADIX_KI8];
-    //memset(local, 0, sizeof(local));
-
     size_t i = 0;
 
     for (; i + 32 <= n; i += 32)
@@ -34,8 +31,6 @@ inline void histogram_pass_u8_avx2(
     for (; i < n; i++)
         count[data[i]]++;
 
-    //for (size_t b = 0; b < RADIX_KI8; b++)
-    //    count[b] = local[b];
 }
 
 

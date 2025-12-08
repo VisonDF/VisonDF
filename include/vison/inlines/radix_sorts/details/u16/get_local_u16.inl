@@ -35,4 +35,10 @@ inline size_t* get_local_histogram_8x_u16()
     return local_hist.data();
 }
 
+inline size_t* get_local_histogram_16x_u16()
+{
+    static thread_local std::vector<size_t> local_hist(RADIX_LANES_AVX512 * RADIX_KI16);
+    return local_hist.data();
+}
+
 
