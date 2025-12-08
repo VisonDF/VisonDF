@@ -83,13 +83,14 @@ namespace vison {
 
     #include "inlines/radix_sorts/details/constants.inl"
 
+    #include "inlines/radix_sorts/details/u32/get_local_u8.inl"
+    #include "inlines/radix_sorts/details/u32/get_local_u16.inl"
+
     #include "inlines/radix_sorts/details/u8/histogram_pass_u8_avx2.inl"
     #include "inlines/radix_sorts/details/u8/histogram_pass_u8_avx2_8x.inl"
     #include "inlines/radix_sorts/details/u8/histogram_pass_u8_avx512_16x.inl"
     #include "inlines/radix_sorts/details/u8/scatter_pass_u8_avx512.inl"
     #include "inlines/radix_sorts/details/u8/scatter_pass_u8_avx512_mt.inl"
-
-    #include "inlines/radix_sorts/details/u32/get_local_u16.inl"
 
     #include "inlines/radix_sorts/details/u16/histogram_pass_u16_avx2.inl"
     #include "inlines/radix_sorts/details/u16/histogram_pass_u16_avx2_8x.inl"
