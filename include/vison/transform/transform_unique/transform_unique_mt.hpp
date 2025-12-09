@@ -5,7 +5,7 @@ template <unsigned int CORES = 4,
           bool Last = false,
           bool Soft = true,
           bool SimdHash = true>
-void transform_unique(unsigned int n) 
+void transform_unique_mt(unsigned int n) 
 {  
 
     if (in_view && !Soft) {

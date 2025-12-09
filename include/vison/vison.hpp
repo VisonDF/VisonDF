@@ -435,7 +435,7 @@ namespace vison {
         #include "transform/transform_filter/transform_filter_idx_mt.hpp"
         #endif
 
-        #include "transform/transform_unique/transform_unique.hpp"
+        #include "transform/transform_unique/transform_unique_mt.hpp"
 
         #include "transform/transform_group_by/transform_group_by_difftype_mt.hpp"
         #include "transform/transform_group_by/transform_group_by_sametype_mt.hpp"
