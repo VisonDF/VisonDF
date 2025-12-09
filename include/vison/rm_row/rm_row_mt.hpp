@@ -1,6 +1,8 @@
 #pragma once
 
-template <unsigned int CORES = 4, bool MemClean = false>
+template <unsigned int CORES = 4, 
+          bool MemClean = false,
+          bool Soft = false>
 void rm_row_mt(unsigned int x) 
 {
 

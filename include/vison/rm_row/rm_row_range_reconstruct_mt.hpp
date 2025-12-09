@@ -2,7 +2,8 @@
 
 template <unsigned int CORES = 4,
           bool Sorted = true,
-          bool MemClean = false>
+          bool MemClean = false,
+          bool Soft = true>
 void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
 {
 
@@ -28,17 +29,18 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
             {
                 T* __restrict d = dst.data() + written;
                 T* __restrict s = src.data() + start;
-        
-                #pragma GCC ivdep
-                for (size_t k = 0; k < len; ++k)
-                    d[k] = s[k];
+       
+                memmove(d, s, len * sizeof(T))
+                //#pragma GCC ivdep
+                //for (size_t k = 0; k < len; ++k)
+                //    d[k] = s[k];
             }
         
             written += len;
             i += 1;
         }
         while (i < old_nrow) {
-            dst[written] = std::move(src[i]);
+            dst[written] = src[i];
             i += 1;
             written += 1;
         };

@@ -1,6 +1,7 @@
 #pragma once
 
-template <bool MemClean = false>
+template <bool MemClean = false,
+          bool Soft = true>
 void rm_row_range(std::vector<unsigned int>& x) 
 {
 

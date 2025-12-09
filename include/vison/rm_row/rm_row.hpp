@@ -1,6 +1,7 @@
 #pragma once
 
-template <bool MemClean = false>
+template <bool MemClean = false,
+          bool Soft = false>
 void rm_row(unsigned int x) 
 {
 
