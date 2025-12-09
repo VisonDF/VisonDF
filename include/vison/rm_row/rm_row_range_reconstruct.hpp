@@ -2,13 +2,16 @@
 
 template <bool Sorted   = true,
           bool MemClean = false,
-          bool Soft = true>
+          bool Soft = true,
+          bool SanityCheck = true>
 void rm_row_range_reconstruct(std::vector<unsigned int>& x)
 {
 
    rm_row_range_reconstruct_mt<1, 
                                Sorted, 
-                               MemClean>(x);
+                               MemClean,
+                               Soft,
+                               SanityCheck>(x);
 
 }
 

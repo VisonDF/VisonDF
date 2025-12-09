@@ -103,6 +103,7 @@ void sort_by_external_mr(const std::vector<T>& nvec) {
              nrow);
 
     } else {
+        in_view = true;
         memcpy(row_view_idx.data(),
                idx.data(),
                nrow * sizeof(size_t)

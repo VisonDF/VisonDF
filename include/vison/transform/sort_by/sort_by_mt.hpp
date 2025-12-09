@@ -129,6 +129,7 @@ void sort_by_mt(unsigned int& n) {
             nrow);
 
     } else {
+        in_view = true;
         memcpy(row_view_idx.data(),
                idx.data(),
                nrow * sizeof(size_t)
