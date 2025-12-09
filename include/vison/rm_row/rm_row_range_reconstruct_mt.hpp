@@ -75,6 +75,7 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
                 i += 1;
                 written += 1;
             };
+        }
 
     } else {
 
