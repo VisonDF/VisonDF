@@ -74,24 +74,18 @@ void rm_row_range_mt(std::vector<unsigned int>& x)
 
     } else {
 
+        if (in_view) {
+            std::cerr << "Can't perform this operation while `in_view` mode activated, consider applying `.materialize()`\n";
+            return;
+        }
+
         std::vector<uint8_t> keep(old_nrow, 1);
-        if (!in_view) {
-            for (unsigned int& rr : x) {
-                if (rr < old_nrow) [[likely]] {
-                    keep[rr] = 0;
-                } else {
-                    std::cerr << "Row out of bounds in (rm_row_range_reconstruct_mt)\n";
-                    return;
-                }
-            }
-        } else {
-            for (unsigned int& rr : x) {
-                if (rr < old_nrow) [[likely]] {
-                    keep[view_row_idx[rr]] = 0;
-                } else {
-                    std::cerr << "Row out of bounds in (rm_row_range_reconstruct_mt)\n";
-                    return;
-                }
+        for (unsigned int& rr : x) {
+            if (rr < old_nrow) [[likely]] {
+                keep[rr] = 0;
+            } else {
+                std::cerr << "Row out of bounds in (rm_row_range_reconstruct_mt)\n";
+                return;
             }
         }
 
