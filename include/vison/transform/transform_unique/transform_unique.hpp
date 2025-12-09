@@ -1,10 +1,17 @@
 #pragma once
 
-template <bool MemClean = false, 
+template <unsigned int CORES = 4,
+          bool MemClean = false, 
           bool Last = false,
+          bool Soft = true,
           bool SimdHash = true>
 void transform_unique(unsigned int n) 
 {  
+
+    if (in_view && !Soft) {
+        std::cerr << "Can't perform this operation while in `view` mode, consider applying `.materialize()`\n"
+        return;
+    }
 
     const size_t local_nrow = nrow;
     std::vector<uint8_t> mask(local_nrow, 0);
@@ -88,9 +95,10 @@ void transform_unique(unsigned int n)
         }
     }
 
-    this->transform_filter<MemClean, 
-                           false,
-                           Soft>(mask);
+    this->transform_filter_mt<CORES,
+                              MemClean, 
+                              false, //SmallProportion
+                              Soft>(mask);
 
 };
 

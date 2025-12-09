@@ -10,11 +10,12 @@ void transform_excluding(Dataframe &cur_obj,
 {
 
     transform_inner_excluding<T,
-                              1, 
+                              1, //CORES 
                               MemClean, 
                               SimdHash,
                               Soft,
-                              false>(cur_obj, in_col, ext_col);
+                              false //Inner
+                             >(cur_obj, in_col, ext_col);
 
 };
 

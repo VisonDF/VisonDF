@@ -10,12 +10,18 @@ void transform_excluding_mt(Dataframe &cur_obj,
                 unsigned int ext_col) 
 {
 
+    if (in_view && !Soft) {
+        std::cerr << "Can't perform this operation while in `view` mode, consider applying `.materialize()`\n"
+        return;
+    }
+
     transform_inner_excluding<T,
                               CORES, 
                               MemClean, 
                               SimdHash,
                               Soft,
-                              false>(cur_obj, in_col, ext_col);
+                              false //Inner
+                              >(cur_obj, in_col, ext_col);
     
 };
 
