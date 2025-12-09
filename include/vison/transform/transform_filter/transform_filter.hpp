@@ -1,7 +1,8 @@
 #pragma once
 
 template <bool MemClean = false,
-          bool SmallProportion = false>
+          bool SmallProportion = false,
+          bool Soft = true>
 void transform_filter(std::vector<uint8_t>& mask) 
 {
   
@@ -15,12 +16,15 @@ void transform_filter(std::vector<uint8_t>& mask)
                 i2 += 1;
             }
         }
-        rm_row_range_mt<CORES, MemClean>(x);
+        rm_row_range_mt<1, 
+                        MemClean,
+                        Soft>(x);
     } else {
         for (size_t i = 0; i < mask.size(); ++i)
             x[i] = !mask[i];
         rm_row_range_reconstruct_boolmask_mt<1,
-                                             MemClean>(x, 0);
+                                             MemClean,
+                                             Soft>(x, 0);
     }
 
 };

@@ -3,7 +3,8 @@
 template <typename T = void,
           unsigned int CORES = 4, 
           bool MemClean = false, 
-          bool SimdHash = true>
+          bool SimdHash = true,
+          bool Soft = true>
 void transform_inner_mt(Dataframe &cur_obj, 
                         unsigned int in_col, 
                         unsigned int ext_col) 
@@ -13,6 +14,7 @@ void transform_inner_mt(Dataframe &cur_obj,
                               CORES, 
                               MemClean, 
                               SimdHash,
+                              Soft,
                               true>(cur_obj, in_col, ext_col);
 
 };

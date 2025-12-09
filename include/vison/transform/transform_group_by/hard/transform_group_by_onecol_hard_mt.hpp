@@ -186,6 +186,8 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
         dbl_v.push_back(value_col);
     }
 
+    col_alrd_materialized.push_back(ncol);
+
     if (!name_v.empty())
         name_v.push_back(colname);
 

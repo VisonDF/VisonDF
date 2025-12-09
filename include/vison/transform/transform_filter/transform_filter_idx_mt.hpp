@@ -1,7 +1,8 @@
 #pragma once
 
 template<unsigned int CORES = 4, 
-         bool MemClean = false>
+         bool MemClean = false,
+         bool Soft = true>
 void transform_filter_idx_mt(std::vector<unsigned int>& mask) 
 {
 
@@ -15,7 +16,7 @@ void transform_filter_idx_mt(std::vector<unsigned int>& mask)
     std::vector<unsigned> to_delete;
     to_delete.resize(nrow + 1 - mask.size());
     size_t i2 = 0;
-    for (unsigned i = 0; i < nrow; ++i) {
+    for (unsigned int i = 0; i < nrow; ++i) {
         if (!used[i]) {
             to_delete[i2] = i;
             i2 += 1;
@@ -23,12 +24,19 @@ void transform_filter_idx_mt(std::vector<unsigned int>& mask)
     }
 
     if (to_delete.size() / nrow < 0.08) {
-        rm_row_range_mt<CORES, MemClean>(to_delete);
+        rm_row_range_mt<CORES, 
+                        MemClean,
+                        Soft>(to_delete);
     } else {
-        rm_row_range_reconstruct_mt<CORES, true, MemClean>(to_delete);
+        rm_row_range_reconstruct_mt<CORES, 
+                                    true, 
+                                    MemClean,
+                                    Soft>(to_delete);
     }
 
 };
+
+
 
 
 

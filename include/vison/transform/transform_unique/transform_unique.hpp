@@ -88,7 +88,9 @@ void transform_unique(unsigned int n)
         }
     }
 
-    this->transform_filter<MemClean>(mask);
+    this->transform_filter<MemClean, 
+                           false,
+                           Soft>(mask);
 
 };
 

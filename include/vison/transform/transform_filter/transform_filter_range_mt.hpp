@@ -2,7 +2,8 @@
 
 template <unsigned int CORES = 4,
           bool MemClean = false,
-          bool SmallProportion = false>
+          bool SmallProportion = false,
+          bool Soft = true>
 void transform_filter_range_mt(std::vector<uint8_t>& mask,
                                const size_t strt_vl) 
 {
@@ -17,16 +18,20 @@ void transform_filter_range_mt(std::vector<uint8_t>& mask,
                 i2 += 1;
             }
         }
-        rm_row_range_mt<CORES, MemClean>(x);
+        rm_row_range_mt<CORES, 
+                        MemClean,
+                        Soft>(x);
     } else {
         #pragma omp parallel for if(CORES > 1) num_threads(CORES)
         for (size_t i = 0; i < mask.size(); ++i)
             x[i] = !mask[i];
-        rm_row_range_reconstruct_boolmask_mt<1,
-                                             MemClean>(x, strt_vl);
+        rm_row_range_reconstruct_boolmask_mt<CORES,
+                                             MemClean,
+                                             Soft>(x, strt_vl);
     }
 
 };
+
 
 
 

@@ -154,7 +154,8 @@ namespace vison {
         unsigned int nrow = 0;
         unsigned int ncol = 0;
      
-        std::vector<unsigned int> row_view_idx;
+        std::vector<size_t> row_view_idx;
+        std::vector<unsigned int> col_alrd_materialized;
 
         std::vector<std::vector<std::string>> str_v;
         std::vector<std::vector<CharT>>       chr_v;

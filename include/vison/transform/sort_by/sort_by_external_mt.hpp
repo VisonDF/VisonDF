@@ -4,6 +4,7 @@ template <typename T,
           bool ASC = true,
           unsigned int CORES = 4,
           bool Simd = true,
+          bool Soft = true,
           SortType S = SortType::Radix,
           bool BoolAsU8 = true,
           bool IsBoolCompressed = false>
@@ -57,47 +58,56 @@ void sort_by_external_mr(const std::vector<T>& nvec) {
 
      }
 
-     permute_block_mt<std::string, CORES>(
-         str_v,
-         tmp_val_refv,
-         matr_idx[0],
-         idx,
-         nrow);
+     if constexpr (!Soft)
 
-     permute_block_mt<CharT, CORES>(
-         chr_v,
-         tmp_val_refv,
-         matr_idx[1],
-         idx,
-         nrow);
-      
-     permute_block_mt<uint8_t, CORES>(
-         bool_v,
-         tmp_val_refv,
-         matr_idx[2],
-         idx,
-         nrow);
-      
-     permute_block_mt<IntT, CORES>(
-         int_v,
-         tmp_val_refv,
-         matr_idx[3],
-         idx,
-         nrow);
-     
-     permute_block_mt<UIntT, CORES>(
-         uint_v,
-         tmp_val_refv,
-         matr_idx[4],
-         idx,
-         nrow);
-     
-     permute_block_mt<FloatT, CORES>(
-         dbl_v,
-         tmp_val_refv,
-         matr_idx[5],
-         idx,
-         nrow);
+         permute_block_mt<std::string, CORES>(
+             str_v,
+             tmp_val_refv,
+             matr_idx[0],
+             idx,
+             nrow);
+
+         permute_block_mt<CharT, CORES>(
+             chr_v,
+             tmp_val_refv,
+             matr_idx[1],
+             idx,
+             nrow);
+          
+         permute_block_mt<uint8_t, CORES>(
+             bool_v,
+             tmp_val_refv,
+             matr_idx[2],
+             idx,
+             nrow);
+          
+         permute_block_mt<IntT, CORES>(
+             int_v,
+             tmp_val_refv,
+             matr_idx[3],
+             idx,
+             nrow);
+         
+         permute_block_mt<UIntT, CORES>(
+             uint_v,
+             tmp_val_refv,
+             matr_idx[4],
+             idx,
+             nrow);
+         
+         permute_block_mt<FloatT, CORES>(
+             dbl_v,
+             tmp_val_refv,
+             matr_idx[5],
+             idx,
+             nrow);
+
+    } else {
+        memcpy(row_view_idx.data(),
+               idx.data(),
+               nrow * sizeof(size_t)
+              )
+    }
       
 };
 

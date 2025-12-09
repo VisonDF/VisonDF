@@ -2,7 +2,8 @@
 
 template <typename T = void,
           bool MemClean = false, 
-          bool SimdHash = true>
+          bool SimdHash = true,
+          bool Soft = true>
 void transform_excluding(Dataframe &cur_obj, 
                 unsigned int in_col, 
                 unsigned int ext_col) 
@@ -12,6 +13,7 @@ void transform_excluding(Dataframe &cur_obj,
                               1, 
                               MemClean, 
                               SimdHash,
+                              Soft,
                               false>(cur_obj, in_col, ext_col);
 
 };

@@ -4,8 +4,8 @@ template <unsigned int CORES = 4,
           bool Occurence = false,
           bool SimdHash = true>
 void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
-                                        const n_col int = -1,
-                                        const std::string colname = "n") 
+                                         const n_col int = -1,
+                                         const std::string colname = "n") 
 {
 
     if constexpr (!Occurence) {
@@ -241,11 +241,15 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
         dbl_v.push_back(value_col);
     }
 
+    col_alrd_materialized.push_back(ncol);
+
     if (!name_v.empty())
         name_v.push_back(colname);
 
     type_refv.push_back('u');
     ++ncol;
 }
+
+
 
 
