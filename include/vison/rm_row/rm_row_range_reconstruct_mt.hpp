@@ -16,6 +16,8 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
 
     if constexpr (Soft) {
 
+        in_view = true;
+
         if (row_view_idx.empty())
             std::iota(row_view_idx.begin(), row_view_idx.end(), 0);
 
