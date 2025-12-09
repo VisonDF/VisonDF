@@ -29,7 +29,7 @@ void transform_filter_idx_mt(std::vector<unsigned int>& mask)
                         Soft>(to_delete);
     } else {
         rm_row_range_reconstruct_mt<CORES, 
-                                    true, 
+                                    true, //Sorted 
                                     MemClean,
                                     Soft>(to_delete);
     }
