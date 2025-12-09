@@ -7,6 +7,12 @@ void transform_group_by_sametype_soft_mt(const std::vector<unsigned int>& x,
                                          const std::string colname = "n") 
 {
 
+    if (in_view) {
+        std::cerr << "Can't use this operation while in `view` mode, " 
+                  << "consider applying `.materialize()`\n";
+        return;
+    }
+
     if constexpr (!Occurence) {
         if (n_col < 0) {
             std::cerr << "Can't take negative columns\n";
