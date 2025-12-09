@@ -15,6 +15,12 @@ void sort_by_external_mr(const std::vector<T>& nvec) {
      static_assert(is_supported_sort<S>::value, 
                      "Sorting Method Not Supported");
 
+    if (!Soft && in_view) {
+        std::cerr << "Can't use this operation while in `view` mode, " 
+                  << "consider applying `.materialize()`\n";
+        return;
+    }
+
      std::vector<size_t> idx(nrow);
      std::iota(idx.begin(), idx.end(), 0);
     
