@@ -120,7 +120,7 @@ inline void transform_inner_excluding(Dataframe &cur_obj,
 
     this->transform_filter_mt<CORES, 
                               MemClean,
-                              false,
+                              false, //SmallProportion
                               Soft>(mask);
 
 }
