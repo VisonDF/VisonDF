@@ -387,7 +387,9 @@ namespace vison {
 
         #include "transform/reorder_col/reorder_col.hpp"
         #include "transform/reorder_col/reorder_col_mt.hpp"
-        #include "transform/reorder_col/reorder_col2.hpp"
+
+        #include "transform/reorder_row/reorder_row.hpp"
+        #include "transform/reorder_row/reorder_row_mt.hpp"
 
         #include "inlines/transform/inner_excluding/transform_inner_excluding.inl"
 
