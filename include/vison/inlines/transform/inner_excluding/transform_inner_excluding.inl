@@ -4,6 +4,7 @@ template <typename T = void,
           unsigned int CORES = 4, 
           bool MemClean = false, 
           bool SimdHash = true,
+          bool Soft = true,
           bool Inner = false>
 inline void transform_inner_excluding(Dataframe &cur_obj, 
                                       unsigned int in_col, 
@@ -117,6 +118,12 @@ inline void transform_inner_excluding(Dataframe &cur_obj,
         }
     }
 
-    this->transform_filter_mt<CORES, MemClean>(mask);
+    this->transform_filter_mt<CORES, 
+                              MemClean,
+                              false,
+                              Soft>(mask);
 
 }
+
+
+
