@@ -393,6 +393,9 @@ namespace vison {
         #include "transform/reorder_row/reorder_row.hpp"
         #include "transform/reorder_row/reorder_row_mt.hpp"
 
+        #include "transform/one_hot_encoding/one_hot_encoding.hpp"
+        #include "transform/one_hot_encoding/one_hot_encoding_mt.hpp"
+
         #include "inlines/transform/inner_excluding/transform_inner_excluding.inl"
 
         #include "transform/transform_inner/transform_inner.hpp" 
