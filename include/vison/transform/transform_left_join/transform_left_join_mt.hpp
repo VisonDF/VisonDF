@@ -14,7 +14,13 @@ void transform_left_join_mt(Dataframe &obj,
                 const UIntT default_uint = 0,
                 const FloatT default_dbl = 0) 
 {
-  
+ 
+    if (in_view) {
+        std::cerr << "Can't perform this operation while in" << 
+                  "`view` mode, consider applying `.materialize()`\n";
+        return;
+    }
+
     const unsigned int& ncol2 = obj.get_ncol();
 
     const std::vector<std::vector<unsigned int>>& matr_idx2 = obj.get_matr_idx();

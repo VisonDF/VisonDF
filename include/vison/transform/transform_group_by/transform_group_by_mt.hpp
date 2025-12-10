@@ -10,6 +10,12 @@ void transform_group_by(const std::vector<unsigned int>& x,
                         const std::string colname = "n") 
 {
 
+    if (in_view) {
+        std::cerr << "Can't use this operation while in `view` mode, " 
+                  << "consider applying `.materialize()`\n";
+        return;
+    }
+
     if (x.size() > 1) {
         if constexpr (SameType) {
             transform_group_by_sametype_mt<T,
