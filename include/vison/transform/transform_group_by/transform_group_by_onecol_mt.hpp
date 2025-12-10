@@ -122,16 +122,48 @@ void transform_group_by_onecol_mt(unsigned int x,
         }
     }
 
-    for (unsigned int i = 0; i < local_nrow; ++i) {
-    
-        auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], 0);
-        if constexpr (Occurence) {
-            ++(it->second);
-        } else if constexpr (!Occurence) {
-            (it->second) += (*key_table2)[n_col_real][i];
+    if constexpr (CORES == 1) {
+        for (unsigned int i = 0; i < local_nrow; ++i) {
+            auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], 0);
+            if constexpr (Occurence) {
+                ++(it->second);
+            } else if constexpr (!Occurence) {
+                (it->second) += (*key_table2)[n_col_real][i];
+            }
+            key_vec[i] = &it->first;
         }
-    
-        key_vec[i] = &it->first;
+    } else if constexpr (CORES > 1) {
+        const unsigned int chunks = local_nrow / CORES + 1;
+        std::vector<map_t> vec_map(CORES);
+        #pragma omp parallel num_threads(CORES)
+        {
+            const unsigned int tid   = omp_get_thread_num();
+            const unsigned int start = tid * chunks;
+            const unsigned int end   = std::min(local_nrow, start + chunks);
+            map_t& cur_map           = vec_map[tid];
+            cur_map.reserve(local_nrow / CORES);
+            for (size_t i = start; i < end; ++i) {
+                auto [it, inserted] = cur_map.try_emplace((*key_table)[real_pos][i], 0);
+                if constexpr (Occurence) {
+                    ++(it->second);
+                } else if constexpr (!Occurence) {
+                    (it->second) += (*key_table2)[n_col_real][i];
+                }
+            }
+        }
+        for (auto& cur_map : vec_map) {
+            for (auto& [k, v] : cur_map) {
+                auto [it, inserted] = lookup.try_emplace(k, 0);
+                if constexpr (Occurence) {
+                    (it->second) += v;
+                } else if constexpr (!Occurence) {
+                    (it->second) += v;
+                }
+            }
+        }
+        #pragma omp parallel for num_threads(CORES)
+        for (size_t i = 0; i < local_nrow; ++i)
+            key_vec[i] = &lookup.find((*key_table)[real_pos][i])->first;
     }
 
     std::vector<value_t> value_col(local_nrow);
