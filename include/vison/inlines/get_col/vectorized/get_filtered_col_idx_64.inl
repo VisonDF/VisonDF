@@ -11,9 +11,9 @@ inline void get_filtered_col_idx_64(
     size_t i = 0;
 
     #if defined(__AVX512F__)
-    for (; i + 16 <= n_el; i += 16) {
+    for (; i + 8 <= n_el; i += 8) {
 
-        __m512i idx = _mm512_loadu_si512((const void*)&mask[i]);
+        __m256i idx = _mm256_loadu_si256((const void*)&mask[i]);
 
         if constexpr (std::is_same_v<T, double>) {
             __m512d vals = _mm512_i32gather_pd(idx, src.data(), 8);
