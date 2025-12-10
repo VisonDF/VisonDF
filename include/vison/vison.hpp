@@ -63,6 +63,7 @@ namespace vison {
 
     #include "inlines/inplace_permutation.inl"
     #include "inlines/no_inplace_permutation.inl"
+    #include "materialize/materialize_mt.hpp"
 
     #include "inlines/warning.inl"
 

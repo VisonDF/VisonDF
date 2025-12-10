@@ -7,12 +7,12 @@ inline void no_inplace_permutation(std::vector<std::vector<T>>& v,
 {
     const size_t local_nrow = v[0].size();
     const size_t local_ncol = v.size();
+    std::vector<T> tmp(local_nrow);
 
-    #pragma omp parallel for if (CORES > 1) num_threads(CORES)
+    #pragma omp parallel for if (CORES > 1) num_threads(CORES) firstprivate(tmp)
     for (size_t col = 0; col < local_ncol; ++col) {
 
         auto& vc = v[col];
-        std::vector<T> tmp(nrow);
         size_t i = 0;
 
         if constexpr (sizeof(T) == 4) {
