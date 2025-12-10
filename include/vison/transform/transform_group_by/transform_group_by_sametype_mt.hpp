@@ -119,41 +119,98 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
     std::vector<std::string*> key_vec(local_nrow);
     std::string key;
     key.reserve(2048);  
-    
-    for (unsigned int i = 0; i < local_nrow; ++i) {
-    
-        key.clear();
-    
-        for (size_t j = 0; j < x.size(); ++j) {
 
-            if constexpr (!std::is_same_v<T, std::string>) {
-                if constexpr (std::is_same_v<T, CharT>) {
-                    key.append(
-                        (*key_table)[idx[j]][i],
-                        sizeof(v)
-                    );
+    if constexpr (CORES == 1) {
+        for (unsigned int i = 0; i < local_nrow; ++i) {
+        
+            key.clear();
+        
+            for (size_t j = 0; j < x.size(); ++j) {
+
+                if constexpr (!std::is_same_v<T, std::string>) {
+                    if constexpr (std::is_same_v<T, CharT>) {
+                        key.append(
+                            (*key_table)[idx[j]][i],
+                            sizeof(v)
+                        );
+                    } else {
+                        const auto& v = (*key_table)[idx[j]][i]; 
+                        key.append(
+                            reinterpret_cast<const char*>(std::addressof(v)),
+                            sizeof(v)
+                        );
+                    }
                 } else {
-                    const auto& v = (*key_table)[idx[j]][i]; 
-                    key.append(
-                        reinterpret_cast<const char*>(std::addressof(v)),
-                        sizeof(v)
-                    );
+                    const std::string& src = (*key_table)[idx[j]][i];
+                    key.append(src.data(), src.size()); 
                 }
-            } else {
-                const std::string& src = (*key_table)[idx[j]][i];
-                key.append(src.data(), src.size()); 
+                key.push_back('\x1F');              
             }
-            key.push_back('\x1F');              
+        
+            auto [it, inserted] = lookup.try_emplace(key, 0);
+            if constexpr (Occurence) {
+                ++(it->second);
+            } else if constexpr (!Occurence) {
+                (it->second) += (*key_table2)[n_col_real][i];
+            }
+        
+            key_vec[i] = &it->first;
         }
+    } else if constexpr (CORES > 1) {
+        const unsigned int chunks = local_nrow / CORES + 1;
+        std::vector<map_t> vec_map(CORES);
+        #pragma omp parallel num_threads(CORES)
+        {
+            const unsigned int tid   = omp_get_thread_num();
+            const unsigned int start = tid * chunks;
+            const unsigned int end   = std::min(local_nrow, start + chunks);
+            map_t& cur_map           = vec_map[tid];
+            cur_map.reserve(local_nrow / CORES);
+            for (size_t i = start; i < end; ++i) {
+                key.clear();
+            
+                for (size_t j = 0; j < x.size(); ++j) {
     
-        auto [it, inserted] = lookup.try_emplace(key, 0);
-        if constexpr (Occurence) {
-            ++(it->second);
-        } else if constexpr (!Occurence) {
-            (it->second) += (*key_table2)[n_col_real][i];
+                    if constexpr (!std::is_same_v<T, std::string>) {
+                        if constexpr (std::is_same_v<T, CharT>) {
+                            key.append(
+                                (*key_table)[idx[j]][i],
+                                sizeof(v)
+                            );
+                        } else {
+                            const auto& v = (*key_table)[idx[j]][i]; 
+                            key.append(
+                                reinterpret_cast<const char*>(std::addressof(v)),
+                                sizeof(v)
+                            );
+                        }
+                    } else {
+                        const std::string& src = (*key_table)[idx[j]][i];
+                        key.append(src.data(), src.size()); 
+                    }
+                    key.push_back('\x1F');              
+                } 
+                auto [it, inserted] = cur_map.try_emplace(key, 0);
+                if constexpr (Occurence) {
+                    ++(it->second);
+                } else if constexpr (!Occurence) {
+                    (it->second) += (*key_table2)[n_col_real][i];
+                }
+            }
         }
-    
-        key_vec[i] = &it->first;
+        for (auto& cur_map : vec_map) {
+            for (auto& [k, v] : cur_map) {
+                auto [it, inserted] = lookup.try_emplace(k, 0);
+                if constexpr (Occurence) {
+                    (it->second) += v;
+                } else if constexpr (!Occurence) {
+                    (it->second) += v;
+                }
+            }
+        }
+        #pragma omp parallel for num_threads(CORES)
+        for (size_t i = 0; i < local_nrow; ++i)
+            key_vec[i] = &lookup.find((*key_table)[real_pos][i])->first;
     }
 
     std::vector<value_t> value_col(local_nrow);
