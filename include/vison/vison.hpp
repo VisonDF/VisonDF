@@ -61,6 +61,7 @@ namespace vison {
     #include "types/fapply_assertion.inl"
     #include "types/group_by.inl"
     #include "types/supported_group_methods.inl"    
+    #include "types/group_function_assertion.inl"    
 
     #include "inlines/inplace_permutation.inl"
     #include "inlines/no_inplace_permutation.inl"

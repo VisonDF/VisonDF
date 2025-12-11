@@ -5,15 +5,15 @@ concept FapplyFn =
     std::is_invocable_r_v<void, F, T&>;
 
 template <typename F>
-struct first_arg;
+struct first_arg : first_arg<decltype(&F::operator())> {};
 
-// matches free funtions
+// matches free functions
 template <typename R, typename T>
 struct first_arg<R(*)(T&)> {
     using type = T;
 };
 
-//matches lambdas
+// matches lambdas
 template <typename R, typename C, typename T>
 struct first_arg<R(C::*)(T&) const> {
     using type = T;

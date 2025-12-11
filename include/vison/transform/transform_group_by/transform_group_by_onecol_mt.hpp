@@ -1,11 +1,14 @@
 #pragma once
 
 template <unsigned int CORES = 4,
-          bool Occurence = false,
-          bool SimdHash = true>
+          GroupFunction Function = GroupFunction::Occurence,
+          bool SimdHash = true,
+          typename F = decltype(&default_groupfn_impl)>
+requires GroupFn<F, first_arg_grp_t<F>>
 void transform_group_by_onecol_mt(unsigned int x,
                                   const n_col int = -1,
-                                  const std::string colname = "n") 
+                                  const std::string colname = "n",
+                                  F f = &default_groupfn_impl) 
 {
 
     if (in_view) {
@@ -14,7 +17,7 @@ void transform_group_by_onecol_mt(unsigned int x,
         return;
     }
 
-    if constexpr (!Occurence) {
+    if constexpr (Function != GroupFunction::Occurence) {
         if (n_col < 0) {
             std::cerr << "Can't take negative columns\n";
             return;
@@ -34,12 +37,20 @@ void transform_group_by_onecol_mt(unsigned int x,
                                         FloatT>>;
     using value_t = std::conditional_t<Occurence, 
                                   unsigned int, 
-                                  std::variant<std::string, 
+                                  std::variant<
+                                        std::string, 
                                         CharT, 
                                         uint8_t, 
                                         IntT, 
                                         UIntT, 
-                                        FloatT>>;
+                                        FloatT,
+                                        std::vector<std::string>,
+                                        std::vector<CharT>, 
+                                        std::vector<uint8_t>, 
+                                        std::vector<IntT>, 
+                                        std::vector<UIntT>, 
+                                        std::vector<FloatT>
+                                        >>;
     using map_t = std::conditional_t<
         SimdHash,
         ankerl::unordered_dense::map<key_t, 
@@ -106,7 +117,7 @@ void transform_group_by_onecol_mt(unsigned int x,
     std::vector<key_t*> key_vec(local_nrow);
 
     size_t n_col_real;
-    if constexpr (!Occurence) {
+    if constexpr (Function != GroupFunction::Occurence) {
         switch (type_refv[x]) {
             case 's': key_table2 = &str_v;  idx_type = 0; break;
             case 'c': key_table2 = &chr_v;  idx_type = 1; break;
@@ -124,11 +135,16 @@ void transform_group_by_onecol_mt(unsigned int x,
 
     if constexpr (CORES == 1) {
         for (unsigned int i = 0; i < local_nrow; ++i) {
-            auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], 0);
-            if constexpr (Occurence) {
+            if constexpr (Function == GroupFunction::Occurence) {
+                auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], 0);
                 ++(it->second);
-            } else if constexpr (!Occurence) {
+            } else if constexpr (Function == GroupFunction::Sum 
+                                 || Function == GroupFunction::Mean) {
+                auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], 0);
                 (it->second) += (*key_table2)[n_col_real][i];
+            } else {
+                auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], {});
+                it->second.push_back((*key_table2)[n_col_real][i]);
             }
             key_vec[i] = &it->first;
         }
@@ -143,21 +159,35 @@ void transform_group_by_onecol_mt(unsigned int x,
             map_t& cur_map           = vec_map[tid];
             cur_map.reserve(local_nrow / CORES);
             for (size_t i = start; i < end; ++i) {
-                auto [it, inserted] = cur_map.try_emplace((*key_table)[real_pos][i], 0);
-                if constexpr (Occurence) {
+                if constexpr (Function == GroupFunction::Occurence) {
+                    auto [it, inserted] = cur_map.try_emplace((*key_table)[real_pos][i], 0);
                     ++(it->second);
-                } else if constexpr (!Occurence) {
+                } else if constexpr (Function == GroupFunction::Sum
+                                     || Function == GroupFunction::Mean) {
+                    auto [it, inserted] = cur_map.try_emplace((*key_table)[real_pos][i], 0);
                     (it->second) += (*key_table2)[n_col_real][i];
+                } else {
+                    auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], {});
+                    it->second.push_back((*key_table2)[n_col_real][i]);
                 }
             }
         }
         for (const auto& cur_map : vec_map) {
             for (const auto& [k, v] : cur_map) {
-                auto [it, inserted] = lookup.try_emplace(k, 0);
-                if constexpr (Occurence) {
+                if constexpr (Function == GroupFunction::Occurence) {
+                    auto [it, inserted] = lookup.try_emplace(k, 0);
                     (it->second) += v;
-                } else if constexpr (!Occurence) {
+                } else if constexpr (Function == GroupFunction::Sum
+                                     || Function == GroupFunction::Mean) {
+                    auto [it, inserted] = lookup.try_emplace(k, 0);
                     (it->second) += v;
+                } else {
+                    auto [it, inserted] = lookup.try_emplace(k, {});
+                    const unsigned int n_old_size = it->second.size();
+                    it->second.resize(n_old_size + v.size());
+                    memcpy(it->second.data() + n_old_size, 
+                           v.data(), 
+                           sizeof(key_t) * v.size());
                 }
             }
         }
@@ -170,7 +200,14 @@ void transform_group_by_onecol_mt(unsigned int x,
 
     #pragma omp parallel for if(CORES > 1) num_threads(CORES)
     for (size_t i = 0; i < key_vec.size(); ++i) {
-        unsigned int count = lookup.at(*key_vec[i]);
+        unsigned int count;
+        if constexpr (Function == GroupFunction::Occurence || Function == GroupFunction::Sum) {
+            count = lookup.at(*key_vec[i]);
+        } else if constexpr (Function == GroupFunction::Mean) {
+            count = lookup.at(*key_vec[i]) / local_nrow;
+        } else if constexpr (Function == GroupFunction::Gather) {
+            count = f(lookup.at(*key_vec[i]));
+        }
         value_col[i] = count;
     }
    
