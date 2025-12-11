@@ -59,7 +59,8 @@ namespace vison {
     #include "types/comparator.inl"
     #include "types/comparator_assertion.inl"
     #include "types/fapply_assertion.inl"
-    #include "types/group_by.inl"    
+    #include "types/group_by.inl"
+    #include "types/supported_group_methods.inl"    
 
     #include "inlines/inplace_permutation.inl"
     #include "inlines/no_inplace_permutation.inl"
