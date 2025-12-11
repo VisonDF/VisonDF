@@ -151,8 +151,8 @@ void transform_group_by_onecol_mt(unsigned int x,
                 }
             }
         }
-        for (auto& cur_map : vec_map) {
-            for (auto& [k, v] : cur_map) {
+        for (const auto& cur_map : vec_map) {
+            for (const auto& [k, v] : cur_map) {
                 auto [it, inserted] = lookup.try_emplace(k, 0);
                 if constexpr (Occurence) {
                     (it->second) += v;

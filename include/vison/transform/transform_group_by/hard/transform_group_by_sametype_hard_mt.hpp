@@ -180,7 +180,7 @@ void transform_group_by_sametype_hard_mt(const std::vector<unsigned int>& x,
                 cur_struct.idx_vec.push_back(i);
             }
         }
-        for (auto& cur_map : vec_map) {
+        for (const auto& cur_map : vec_map) {
             for (const auto& [k, v] : cur_map) {
                 auto [it, inserted] = lookup.try_emplace(k, 0);
                 auto& cur_struct = it->second;

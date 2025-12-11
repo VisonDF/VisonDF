@@ -112,7 +112,7 @@ void transform_group_by_onecol_soft_mt(unsigned int x,
                 it->second.push_back(i);
             }
         }
-        for (auto& cur_map : vec_map) {
+        for (const auto& cur_map : vec_map) {
             for (const auto& [k, v] : cur_map) {
                 auto [it, inserted] = lookup.try_emplace(k, 0);
                 const unsigned int n_old_size = it->second.size();
