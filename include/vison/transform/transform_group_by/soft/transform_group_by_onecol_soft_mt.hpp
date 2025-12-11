@@ -113,10 +113,10 @@ void transform_group_by_onecol_soft_mt(unsigned int x,
             }
         }
         for (auto& cur_map : vec_map) {
-            for (auto& [k, v] : cur_map) {
+            for (const auto& [k, v] : cur_map) {
                 auto [it, inserted] = lookup.try_emplace(k, 0);
                 const unsigned int n_old_size = it->second.size();
-                it->second.resize(it->second.size() + v.size());
+                it->second.resize(n_old_size + v.size());
                 memcpy(it->second.data() + n_old_size,
                        v.data(),
                        v.size() * sizeof(T)

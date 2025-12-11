@@ -214,7 +214,7 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
             }
         }
         for (auto& cur_map : vec_map) {
-            for (auto& [k, v] : cur_map) {
+            for (const auto& [k, v] : cur_map) {
                 auto [it, inserted] = lookup.try_emplace(k, 0);
                 auto& cur_struct = it->second;
                 if constexpr (Occurence) {
@@ -223,7 +223,7 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
                     cur_struct.value += v.value;
                 }
                 const unsigned int n_old_size = cur_struct.idx_vec.size();
-                cur_struct.idx_vec.resize(cur_struct.idx_vec.size() + v.idx_vec.size());
+                cur_struct.idx_vec.resize(n_old_size + v.idx_vec.size());
                 memcpy(cur_struct.idx_vec.data() + n_old_size,
                        v.idx_vec.data(),
                        v.idx_vec.size() * sizeof(T)
