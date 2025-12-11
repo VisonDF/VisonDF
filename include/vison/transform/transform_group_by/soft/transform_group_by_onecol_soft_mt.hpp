@@ -92,10 +92,41 @@ void transform_group_by_onecol_soft_mt(unsigned int x,
     map_t lookup;
     lookup.reserve(local_nrow);
 
-    for (unsigned int i = 0; i < local_nrow; ++i) {
-    
-        auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], 0);
-        it->second.push_back(i);
+    if constexpr (CORES == 1) {
+        for (unsigned int i = 0; i < local_nrow; ++i) {    
+            auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], 0);
+            it->second.push_back(i);
+        }
+    } else if constexpr (CORES > 1) {
+        const unsigned int chunks = local_nrow / CORES + 1;
+        std::vector<map_t> vec_map(CORES);
+        #pragma omp parallel num_threads(CORES)
+        {
+            const unsigned int tid   = omp_get_thread_num();
+            const unsigned int start = tid * chunks;
+            const unsigned int end   = std::min(local_nrow, start + chunks);
+            map_t& cur_map           = vec_map[tid];
+            cur_map.reserve(local_nrow / CORES);
+            for (size_t i = start; i < end; ++i) {
+                auto [it, inserted] = cur_map.try_emplace((*key_table)[real_pos][i], 0);
+                it->second.push_back(i);
+            }
+        }
+        for (auto& cur_map : vec_map) {
+            for (auto& [k, v] : cur_map) {
+                auto [it, inserted] = lookup.try_emplace(k, 0);
+                const unsigned int n_old_size = it->second.size();
+                it->second.resize(it->second.size() + v.size());
+                memcpy(it->second.data() + n_old_size,
+                       v.data(),
+                       v.size() * sizeof(T)
+                       );
+            }
+        }
+        #pragma omp parallel for num_threads(CORES)
+        for (size_t i = 0; i < local_nrow; ++i) {
+            key_vec[i] = &lookup.find((*key_table)[real_pos][i])->first;
+        }
     }
 
     if constexpr (CORES > 1) {

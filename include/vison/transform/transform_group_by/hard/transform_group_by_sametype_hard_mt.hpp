@@ -189,20 +189,12 @@ void transform_group_by_sametype_hard_mt(const std::vector<unsigned int>& x,
                 } else if constexpr (!Occurence) {
                     cur_struct.value += v.value;
                 }
-                if constexpr (std::is_trivially_copyable<T>) {
-                     const unsigned int n_old_size = cur_struct.idx_vec.size();
-                     cur_struct.idx_vec.resize(cur_struct.idx_vec.size() + v.idx_vec.size());
-                     memcpy(cur_struct.idx_vec.data() + n_old_size,
-                            v.idx_vec.data(),
-                            v.idx_vec.size() * sizeof(T)
-                            );
-                } else {
-                    cur_struct.idx_vec.reserve(cur_struct.idx_vec.size() + v.idx_vec.size());
-                    cur_struct.idx_vec.insert(cur_struct.idx_vec.end(), 
-                                              v.idx_vec.begin(), 
-                                              v.idx_vec.end()
-                                              );
-                }
+                const unsigned int n_old_size = cur_struct.idx_vec.size();
+                cur_struct.idx_vec.resize(cur_struct.idx_vec.size() + v.idx_vec.size());
+                memcpy(cur_struct.idx_vec.data() + n_old_size,
+                       v.idx_vec.data(),
+                       v.idx_vec.size() * sizeof(T)
+                       );
             }
         }
         #pragma omp parallel for num_threads(CORES)
