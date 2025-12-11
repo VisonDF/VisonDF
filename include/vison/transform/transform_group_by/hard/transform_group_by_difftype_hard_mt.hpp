@@ -124,10 +124,7 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
         }
     }
 
-    for (unsigned int i = 0; i < local_nrow; ++i) {
-    
-        key.clear();
-    
+    auto build_key = [&] (std::string& key, unsigned int i) {
         for (auto idxv : idx_str) {
             const auto& v = str_v[idxv][i];
             key.append(
@@ -176,15 +173,78 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
             );
             key.push_back('\x1F');              
         }
-    
-        auto [it, inserted] = lookup.try_emplace(key, 0);
-        auto& cur_struct = it->second;
-        if constexpr (Occurence) {
-            ++cur_struct.value;
-        } else if constexpr (!Occurence) {
-            cur_struct.value += (*key_table2)[n_col_real][i];
+    }
+
+    if constexpr (CORES == 1) {
+        for (unsigned int i = 0; i < local_nrow; ++i) { 
+            key.clear();
+            key_build(key, i);
+            auto [it, inserted] = lookup.try_emplace(key, 0);
+            auto& cur_struct = it->second;
+            if constexpr (Occurence) {
+                ++cur_struct.value;
+            } else if constexpr (!Occurence) {
+                cur_struct.value += (*key_table2)[n_col_real][i];
+            }
+            cur_struct.idx_vec.push_back(i);
         }
-        cur_struct.idx_vec.push_back(i);
+    } else if constexpr (CORES > 1) {    
+        const unsigned int chunks = local_nrow / CORES + 1;
+        std::vector<map_t> vec_map(CORES);
+        #pragma omp parallel num_threads(CORES)
+        {
+            std::string key;
+            key.reserve(2048);
+            const unsigned int tid   = omp_get_thread_num();
+            const unsigned int start = tid * chunks;
+            const unsigned int end   = std::min(local_nrow, start + chunks);
+            map_t& cur_map           = vec_map[tid];
+            cur_map.reserve(local_nrow / CORES);
+            for (size_t i = start; i < end; ++i) {
+                key.clear();
+                key_build(key, i);
+                auto [it, inserted] = cur_map.try_emplace(key, 0);
+                auto& cur_struct = it->second;
+                if constexpr (Occurence) {
+                    ++(cur_struct.value);
+                } else if constexpr (!Occurence) {
+                    cur_struct.value += (*key_table2)[n_col_real][i];
+                }
+                cur_struct.idx_vec.push_back(i);
+            }
+        }
+        for (auto& cur_map : vec_map) {
+            for (auto& [k, v] : cur_map) {
+                auto [it, inserted] = lookup.try_emplace(k, 0);
+                auto& cur_struct = it->second;
+                if constexpr (Occurence) {
+                    cur_struct.value += v.value;
+                } else if constexpr (!Occurence) {
+                    cur_struct.value += v.value;
+                }
+                if constexpr (std::is_trivially_copyable<T>) {
+                     const unsigned int n_old_size = cur_struct.idx_vec.size();
+                     cur_struct.idx_vec.resize(cur_struct.idx_vec.size() + v.idx_vec.size());
+                     memcpy(cur_struct.idx_vec.data() + n_old_size,
+                            v.idx_vec.data(),
+                            v.idx_vec.size() * sizeof(T)
+                            );
+                } else {
+                    cur_struct.idx_vec.reserve(cur_struct.idx_vec.size() + v.idx_vec.size());
+                    cur_struct.idx_vec.insert(cur_struct.idx_vec.end(), 
+                                              v.idx_vec.begin(), 
+                                              v.idx_vec.end()
+                                              );
+                }
+            }
+        }
+        #pragma omp parallel for num_threads(CORES)
+        for (size_t i = 0; i < local_nrow; ++i) {
+            std::string key;
+            key.reserve(2048);
+            key_build(key, i);
+            key_vec[i] = &lookup.find(key)->first;
+        }
     }
 
     std::vector<value_t> value_col(local_nrow);
