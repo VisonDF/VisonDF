@@ -3,7 +3,6 @@
 template <unsigned int CORES = 4,
           bool SimdHash = true>
 void transform_group_by_sametype_soft_mt(const std::vector<unsigned int>& x,
-                                         const n_col int = -1,
                                          const std::string colname = "n") 
 {
 
@@ -11,16 +10,6 @@ void transform_group_by_sametype_soft_mt(const std::vector<unsigned int>& x,
         std::cerr << "Can't use this operation while in `view` mode, " 
                   << "consider applying `.materialize()`\n";
         return;
-    }
-
-    if constexpr (!Occurence) {
-        if (n_col < 0) {
-            std::cerr << "Can't take negative columns\n";
-            return;
-        } else if (n_col > ncol) {
-            std::cerr << "Column number out of range\n";
-            return;
-        }
     }
 
     using map_t = std::conditional_t<
