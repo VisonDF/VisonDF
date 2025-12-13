@@ -13,12 +13,6 @@ struct first_arg<R(*)(T&)> {
     using type = T;
 };
 
-// matches lambdas
-template <typename R, typename C, typename T>
-struct first_arg<R(C::*)(T&) const> {
-    using type = T;
-};
-
 template <typename F>
 using first_arg_t = typename first_arg<F>::type;
 
