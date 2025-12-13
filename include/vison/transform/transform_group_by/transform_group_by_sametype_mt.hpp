@@ -1,11 +1,16 @@
 #pragma once
 
-template <unsigned int CORES = 4,
-          bool Occurence = false,
-          bool SimdHash = true>
+template <typename T  = void,
+          typename T2 = void,
+          unsigned int CORES = 4,
+          GroupFunction Function = GroupFunction::Ocurence,
+          bool SimdHash = true,
+          typename F = decltype(&default_groupfn_impl)>
+requires GroupFn<F, first_arg_grp_t<F>>
 void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
                            const n_col int = -1,
-                           const std::string colname = "n") 
+                           const std::string colname = "n",
+                           F f = &default_groupfn_impl) 
 {
 
     if (in_view) {
@@ -14,7 +19,7 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
         return;
     }
 
-    if constexpr (!Occurence) {
+    if constexpr (Function != GroupFunction::Occurence) {
         if (n_col < 0) {
             std::cerr << "Can't take negative columns\n";
             return;
@@ -24,14 +29,25 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
         }
     }
 
-    using value_t = std::conditional_t<Occurence, 
-                                  unsigned int, 
-                                  std::variant<std::string, 
+    using value_t = std::conditional_t<(Function == GroupFunction::Occurence), 
+                                  unsigned int,
+                                  std::conditional_t<
+                                  !(std::is_same_v<T2, void>),
+                                  T2,
+                                  std::variant<
+                                        std::string, 
                                         CharT, 
                                         uint8_t, 
                                         IntT, 
                                         UIntT, 
-                                        FloatT>>;
+                                        FloatT,
+                                        std::vector<std::string>, 
+                                        std::vector<CharT>, 
+                                        std::vector<uint8_t>, 
+                                        std::vector<IntT>, 
+                                        std::vector<UIntT>, 
+                                        std::vector<FloatT>
+                                        >>>;
     using map_t = std::conditional_t<
         SimdHash,
         ankerl::unordered_dense::map<std::string, 
@@ -98,7 +114,7 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
 
     key_variant_t key_table2 = nullptr;
     size_t n_col_real;
-    if constexpr (!Occurence) {
+    if constexpr (Function != GroupFunction::Occurence) {
         switch (type_refv[n_col]) {
             case 's': key_table2 = &str_v;  idx_type = 0; break;
             case 'c': key_table2 = &chr_v;  idx_type = 1; break;
@@ -150,11 +166,16 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
             key.clear();
             key_build(key, i);
                 
-            auto [it, inserted] = lookup.try_emplace(key, 0);
-            if constexpr (Occurence) {
+            if constexpr (Function == GroupFunction::Occurence) {
+                auto [it, inserted] = lookup.try_emplace(key, value_t(0));
                 ++(it->second);
-            } else if constexpr (!Occurence) {
+            } else if constexpr (Function == GroupFunction::Sum ||
+                                 Function == GroupFunction::Mean) {
+                auto [it, inserted] = lookup.try_emplace(key, value_t(0));
                 (it->second) += (*key_table2)[n_col_real][i];
+            } else {
+                auto [it, inserted] = lookup.try_emplace(key, std::vector<value_t>{});
+                it->second.push_back((*key_table2)[n_col_real][i]);
             }
         
             key_vec[i] = &it->first;
@@ -175,21 +196,35 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
             for (size_t i = start; i < end; ++i) {
                 key.clear();
                 key_build(key, i);
-                auto [it, inserted] = cur_map.try_emplace(key, 0);
-                if constexpr (Occurence) {
+                if constexpr (Function == GroupFunction::Occurence) {
+                    auto [it, inserted] = cur_map.try_emplace(key, value_t(0));
                     ++(it->second);
-                } else if constexpr (!Occurence) {
+                } else if constexpr (Function == GroupFunction::Sum ||
+                                     Function == GroupFunction::Mean) {
+                    auto [it, inserted] = cur_map.try_emplace(key, value_t(0));
                     (it->second) += (*key_table2)[n_col_real][i];
+                } else {
+                    auto [it, inserted] = cur_map.try_emplace(key, std::vector<value_t>{});
+                    it->second.push_back((*key_table2)[n_col_real][i]);
                 }
             }
         }
         for (const auto& cur_map : vec_map) {
             for (const auto& [k, v] : cur_map) {
-                auto [it, inserted] = lookup.try_emplace(k, 0);
-                if constexpr (Occurence) {
+                if constexpr (Function == GroupFunction::Occurence) {
+                    auto [it, inserted] = lookup.try_emplace(k, value_t(0));
                     (it->second) += v;
-                } else if constexpr (!Occurence) {
+                } else if constexpr (Function == GroupFunction::Sum || 
+                                     Function == GroupFunction::Mean) {
+                    auto [it, inserted] = lookup.try_emplace(k, value_t(0));
                     (it->second) += v;
+                } else {
+                    auto [it, inserted] = lookup.try_emplace(k, std::vector<value_t>{});
+                    const unsigned int n_old_size = it->second.size();
+                    it->second.resize(n_old_size + v.size());
+                    memcpy(it->second.data() + n_old_size,
+                           v.data(),
+                           sizeof(T2) * v.size());
                 }
             }
         }

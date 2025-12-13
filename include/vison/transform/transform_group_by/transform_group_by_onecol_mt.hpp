@@ -1,6 +1,8 @@
 #pragma once
 
-template <unsigned int CORES = 4,
+template <typename T  = void,
+          typename T2 = void,
+          unsigned int CORES = 4,
           GroupFunction Function = GroupFunction::Occurence,
           bool SimdHash = true,
           typename F = decltype(&default_groupfn_impl)>
@@ -35,8 +37,11 @@ void transform_group_by_onecol_mt(unsigned int x,
                                         IntT, 
                                         UIntT, 
                                         FloatT>>;
-    using value_t = std::conditional_t<Occurence, 
+    using value_t = std::conditional_t<(Function == GroupFunction::Occurence), 
                                   unsigned int, 
+                                  std::conditional_t<
+                                  !(std::is_same_v<T2, void>),
+                                  T2,
                                   std::variant<
                                         std::string, 
                                         CharT, 
@@ -50,7 +55,7 @@ void transform_group_by_onecol_mt(unsigned int x,
                                         std::vector<IntT>, 
                                         std::vector<UIntT>, 
                                         std::vector<FloatT>
-                                        >>;
+                                        >>>;
     using map_t = std::conditional_t<
         SimdHash,
         ankerl::unordered_dense::map<key_t, 
