@@ -10,7 +10,10 @@ struct GetColFilter {
     template<typename T = void, typename DF>
     auto operator()(const DF& df) const {
         std::vector<T> out;
-        df.template get_col_filter<T, MC, IB>(idx, out, *mask);
+        df.template get_col_filter<T, 
+                                   MC, // MeMoryClean
+                                   IB  // IsBool
+                                   >(idx, out, *mask);
         return out;
     }
 };
