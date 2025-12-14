@@ -141,14 +141,27 @@ void transform_group_by_onecol_mt(unsigned int x,
     if constexpr (CORES == 1) {
         for (unsigned int i = 0; i < local_nrow; ++i) {
             if constexpr (Function == GroupFunction::Occurence) {
-                auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], 0);
+                if constexpr (!std::is_same_v<T2, void>) {
+                    auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], value_t(0));
+                } else {
+                    auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], 0);
+                }
                 ++(it->second);
             } else if constexpr (Function == GroupFunction::Sum 
                                  || Function == GroupFunction::Mean) {
-                auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], 0);
+                if constexpr (!std::is_same_v<T2, void>) {
+                    auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], value_t(0));
+                } else {
+                    auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], 0);
+                }
                 (it->second) += (*key_table2)[n_col_real][i];
             } else {
-                auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], {});
+                if constexpr (!std::is_same_v<T2, void>) {
+                    auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], 
+                                          std::vector<value_t>{});
+                } else {
+                    auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], {});
+                }
                 it->second.push_back((*key_table2)[n_col_real][i]);
             }
             key_vec[i] = &it->first;
@@ -165,14 +178,29 @@ void transform_group_by_onecol_mt(unsigned int x,
             cur_map.reserve(local_nrow / CORES);
             for (size_t i = start; i < end; ++i) {
                 if constexpr (Function == GroupFunction::Occurence) {
-                    auto [it, inserted] = cur_map.try_emplace((*key_table)[real_pos][i], 0);
+                    if constexpr (!std::is_same_v<T2, void>) {
+                        auto [it, inserted] = cur_map.try_emplace((*key_table)[real_pos][i], 
+                                        value_t(0));
+                    } else {
+                        auto [it, inserted] = cur_map.try_emplace((*key_table)[real_pos][i], 0);
+                    }
                     ++(it->second);
                 } else if constexpr (Function == GroupFunction::Sum
                                      || Function == GroupFunction::Mean) {
-                    auto [it, inserted] = cur_map.try_emplace((*key_table)[real_pos][i], 0);
+                    if constexpr (!std::is_same_v<T2, void>) {
+                        auto [it, inserted] = cur_map.try_emplace((*key_table)[real_pos][i], 
+                                        value_t(0));
+                    } else {
+                        auto [it, inserted] = cur_map.try_emplace((*key_table)[real_pos][i], 0);
+                    }
                     (it->second) += (*key_table2)[n_col_real][i];
                 } else {
-                    auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], {});
+                    if constexpr (!std::is_same_v<T2, void>) {
+                        auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], 
+                                        std::vector<value_t>{});
+                    } else {
+                        auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], {});
+                    }
                     it->second.push_back((*key_table2)[n_col_real][i]);
                 }
             }
@@ -201,7 +229,7 @@ void transform_group_by_onecol_mt(unsigned int x,
             key_vec[i] = &lookup.find((*key_table)[real_pos][i])->first;
     }
 
-    std::vector<value_t> value_col(local_nrow);
+    std::vector<strip_vector_t<value_t>> value_col(local_nrow);
 
     #pragma omp parallel for if(CORES > 1) num_threads(CORES)
     for (size_t i = 0; i < key_vec.size(); ++i) {

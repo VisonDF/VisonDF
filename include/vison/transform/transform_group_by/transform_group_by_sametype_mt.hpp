@@ -41,7 +41,7 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
                                         IntT, 
                                         UIntT, 
                                         FloatT,
-                                        std::vector<std::string>, 
+                                        std::vector<std::string>,
                                         std::vector<CharT>, 
                                         std::vector<uint8_t>, 
                                         std::vector<IntT>, 
@@ -167,14 +167,26 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
             key_build(key, i);
                 
             if constexpr (Function == GroupFunction::Occurence) {
-                auto [it, inserted] = lookup.try_emplace(key, value_t(0));
+                if constexpr (!std::is_same_v<T2, void>) {
+                    auto [it, inserted] = lookup.try_emplace(key, value_t(0));
+                } else {
+                    auto [it, inserted] = lookup.try_emplace(key, 0);
+                }
                 ++(it->second);
             } else if constexpr (Function == GroupFunction::Sum ||
                                  Function == GroupFunction::Mean) {
-                auto [it, inserted] = lookup.try_emplace(key, value_t(0));
+                if constexpr (!std::is_same_v<T2, void>) {
+                    auto [it, inserted] = lookup.try_emplace(key, value_t(0));
+                } else {
+                    auto [it, inserted] = lookup.try_emplace(key, 0);
+                }
                 (it->second) += (*key_table2)[n_col_real][i];
             } else {
-                auto [it, inserted] = lookup.try_emplace(key, std::vector<value_t>{});
+                if constexpr (!std::is_same_v<T2, void>) {
+                    auto [it, inserted] = lookup.try_emplace(key, std::vector<value_t>{});
+                } else {
+                    auto [it, inserted] = lookup.try_emplace(key, {});
+                }
                 it->second.push_back((*key_table2)[n_col_real][i]);
             }
         
@@ -197,14 +209,26 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
                 key.clear();
                 key_build(key, i);
                 if constexpr (Function == GroupFunction::Occurence) {
-                    auto [it, inserted] = cur_map.try_emplace(key, value_t(0));
+                    if constexpr (!std::is_same_v<T2, void>) {
+                        auto [it, inserted] = cur_map.try_emplace(key, value_t(0));
+                    } else {
+                        auto [it, inserted] = cur_map.try_emplace(key, 0);
+                    }
                     ++(it->second);
                 } else if constexpr (Function == GroupFunction::Sum ||
                                      Function == GroupFunction::Mean) {
-                    auto [it, inserted] = cur_map.try_emplace(key, value_t(0));
+                    if constexpr (!std::is_same_v<T2, void>) {
+                        auto [it, inserted] = cur_map.try_emplace(key, value_t(0));
+                    } else {
+                        auto [it, inserted] = cur_map.try_emplace(key, 0);
+                    }
                     (it->second) += (*key_table2)[n_col_real][i];
                 } else {
-                    auto [it, inserted] = cur_map.try_emplace(key, std::vector<value_t>{});
+                    if constexpr (!std::is_same_v<T2, void>) {
+                        auto [it, inserted] = cur_map.try_emplace(key, std::vector<value_t>{});
+                    } else {
+                        auto [it, inserted] = cur_map.try_emplace(key, {});
+                    }
                     it->second.push_back((*key_table2)[n_col_real][i]);
                 }
             }
@@ -212,14 +236,26 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
         for (const auto& cur_map : vec_map) {
             for (const auto& [k, v] : cur_map) {
                 if constexpr (Function == GroupFunction::Occurence) {
-                    auto [it, inserted] = lookup.try_emplace(k, value_t(0));
+                    if constexpr (!std::is_same_v<T2, void>) {
+                        auto [it, inserted] = lookup.try_emplace(k, value_t(0));
+                    } else {
+                        auto [it, inserted] = lookup.try_emplace(k, 0);
+                    }
                     (it->second) += v;
                 } else if constexpr (Function == GroupFunction::Sum || 
                                      Function == GroupFunction::Mean) {
-                    auto [it, inserted] = lookup.try_emplace(k, value_t(0));
+                    if constexpr (!std::is_same_v<T2, void>) {
+                        auto [it, inserted] = lookup.try_emplace(k, value_t(0));
+                    } else {
+                        auto [it, inserted] = lookup.try_emplace(k, 0);
+                    }
                     (it->second) += v;
                 } else {
-                    auto [it, inserted] = lookup.try_emplace(k, std::vector<value_t>{});
+                    if constexpr (!std::is_same_v<T2, void>) {
+                        auto [it, inserted] = lookup.try_emplace(k, std::vector<value_t>{});
+                    } else {
+                        auto [it, inserted] = lookup.try_emplace(k, {});
+                    }
                     const unsigned int n_old_size = it->second.size();
                     it->second.resize(n_old_size + v.size());
                     memcpy(it->second.data() + n_old_size,
@@ -237,7 +273,7 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
         }
     }
 
-    std::vector<value_t> value_col(local_nrow);
+    std::vector<strip_vector_t<value_t>> value_col(local_nrow);
 
     #pragma omp parallel for if(CORES > 1) num_threads(CORES)
     for (size_t i = 0; i < key_vec.size(); ++i) {
