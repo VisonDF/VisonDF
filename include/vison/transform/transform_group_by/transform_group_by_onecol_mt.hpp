@@ -1,17 +1,17 @@
 #pragma once
 
-template <typename T  = void,
-          typename T2 = void,
+template <typename TContainer  = void,
+          typename TColVal = void,
           unsigned int CORES = 4,
           GroupFunction Function = GroupFunction::Occurence,
           bool SimdHash = true,
           unsigned int NPerGroup = 4,
           typename F = decltype(&default_groupfn_impl)>
 requires GroupFn<F, first_arg_grp_t<F>>
-void transform_group_by_onecol_mt(unsigned int x,
-                                  const n_col int = -1,
+void transform_group_by_onecol_mt(const unsigned int x,
+                                  const n_col int,
                                   const std::string colname = "n",
-                                  F f = &default_groupfn_impl) 
+                                  const F f = &default_groupfn_impl) 
 {
 
     if (in_view) {
@@ -30,8 +30,8 @@ void transform_group_by_onecol_mt(unsigned int x,
         }
     }
 
-    using key_t = std::conditional_t<!std::is_same_v<T, void>, 
-                                     T, 
+    using key_t = std::conditional_t<!std::is_same_v<TContainer, void>, 
+                                     TContainer, 
                                      std::variant<std::string, 
                                         CharT, 
                                         uint8_t, 
@@ -41,17 +41,21 @@ void transform_group_by_onecol_mt(unsigned int x,
     using value_t = std::conditional_t<(Function == GroupFunction::Occurence), 
                                   unsigned int,
                                   std::conditional_t<
-                                  !(std::is_same_v<T2, void>),
-                                  T2,
+                                  !(std::is_same_v<TColVal, void>),
+                                  std::conditional_t<Function == GroupFunction::Gather,
+                                                     ReservingVec<TColVal>,
+                                                     TColVal>,
                                   std::variant<
                                         uint8_t, 
                                         IntT, 
                                         UIntT, 
                                         FloatT,
-                                        std::vector<uint8_t>, 
-                                        std::vector<IntT>, 
-                                        std::vector<UIntT>, 
-                                        std::vector<FloatT>
+                                        ReservingVec<std::string>,
+                                        ReservingVec<CharT>,
+                                        ReservingVec<uint8_t>, 
+                                        ReservingVec<IntT>, 
+                                        ReservingVec<UIntT>, 
+                                        ReservingVec<FloatT>
                                         >>>;
     using map_t = std::conditional_t<
         SimdHash,
@@ -77,23 +81,23 @@ void transform_group_by_onecol_mt(unsigned int x,
     key_variant_t key_table = nullptr;  
     key_variant_t key_table2 = nullptr;
 
-    if constexpr (!std::is_same_v<T, void>) {
-        if constexpr (std::is_same_v<T, std::string>) {
+    if constexpr (!std::is_same_v<TContainer, void>) {
+        if constexpr (std::is_same_v<TContainer, std::string>) {
             key_table = &str_v;
             idx_type = 0;
-        } else if constexpr (std::is_same_v<T, CharT>) {
+        } else if constexpr (std::is_same_v<TContainer, CharT>) {
             key_table = &chr_v;
             idx_type = 1;
-        } else if constexpr (std::is_same_v<T, uint8_t>) {
+        } else if constexpr (std::is_same_v<TContainer, uint8_t>) {
             key_table = &bool_v;
             idx_type = 2;
-        } else if constexpr (std::is_same_v<T, IntT>) {
+        } else if constexpr (std::is_same_v<TContainer, IntT>) {
             key_table = &int_v;
             idx_type = 3;
-        } else if constexpr (std::is_same_v<T, UIntT>) {
+        } else if constexpr (std::is_same_v<TContainer, UIntT>) {
             key_table = &uint_v;
             idx_type = 4;
-        } else if constexpr (std::is_same_v<T, FloatT>) {
+        } else if constexpr (std::is_same_v<TContainer, FloatT>) {
             key_table = &dbl_v;
             idx_type = 5;
         }
@@ -131,13 +135,20 @@ void transform_group_by_onecol_mt(unsigned int x,
                 std::abort();
         }
         if constexpr (Function == GroupFunction::Gather) {
-            if constexpr (std::is_same_v<F, uint8_t>) {
+            using R = std::remove_cvref_t<
+                std::invoke_result_t<F, std::vector<TContainer>&>
+            >;
+            if constexpr (std::is_same_v<R, std::string>) {
+                idx_type = 0;
+            } else if constexpr (std::is_same_v<R, CharT>) {
+                idx_type = 1;
+            } else if constexpr (std::is_same_v<R, uint8_t>) {
                 idx_type = 2;
-            } else if constexpr (std::is_same_v<F, IntT>) {
+            } else if constexpr (std::is_same_v<R, IntT>) {
                 idx_type = 3;
-            } else if constexpr (std::is_same_v<F, UIntT>) {
+            } else if constexpr (std::is_same_v<R, UIntT>) {
                 idx_type = 4;
-            } else if constexpr (std::is_same_v<F, FloatT>) {
+            } else if constexpr (std::is_same_v<R, FloatT>) {
                 idx_type = 5;
             } else {
                 static_assert(always_false<F>, "Unsupported type F");
@@ -152,13 +163,18 @@ void transform_group_by_onecol_mt(unsigned int x,
         idx_vec = 4;
     }
 
-    const value_t zero = make_zero(idx_type);
-    const value_t vec  = make_vec(idx_type);
+    value_t zero;
+    value_t vec;
+
+    if constexpr (std::is_same_v<TColVal, void>) {
+        zero = make_zero(idx_type);
+        vec  = make_vec(idx_type);
+    }
 
     if constexpr (CORES == 1) {
         for (unsigned int i = 0; i < local_nrow; ++i) {
             if constexpr (Function == GroupFunction::Occurence) {
-                if constexpr (std::is_same_v<T2, void>) {
+                if constexpr (std::is_same_v<TColVal, void>) {
                     auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], 
                                                              zero);
                     ++(it->second);
@@ -169,7 +185,7 @@ void transform_group_by_onecol_mt(unsigned int x,
                 }
             } else if constexpr (Function == GroupFunction::Sum 
                                  || Function == GroupFunction::Mean) {
-                if constexpr (std::is_same_v<T2, void>) {
+                if constexpr (std::is_same_v<TColVal, void>) {
                     auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], 
                                                              zero);
                     (it->second) += (*key_table2)[n_col_real][i];
@@ -179,7 +195,7 @@ void transform_group_by_onecol_mt(unsigned int x,
                     (it->second) += (*key_table2)[n_col_real][i];
                 }
             } else {
-                if constexpr (std::is_same_v<T2, void>) {
+                if constexpr (std::is_same_v<TColVal, void>) {
                     auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], 
                                                               vec);
                     it->second.push_back((*key_table2)[n_col_real][i]);
@@ -204,7 +220,7 @@ void transform_group_by_onecol_mt(unsigned int x,
             cur_map.reserve(local_nrow / CORES);
             for (size_t i = start; i < end; ++i) {
                 if constexpr (Function == GroupFunction::Occurence) {
-                    if constexpr (std::is_same_v<T2, void>) {
+                    if constexpr (std::is_same_v<TColVal, void>) {
                        auto [it, inserted] = cur_map.try_emplace((*key_table)[real_pos][i], 
                                                                  zero);
                         ++(it->second);
@@ -215,7 +231,7 @@ void transform_group_by_onecol_mt(unsigned int x,
                     }
                 } else if constexpr (Function == GroupFunction::Sum
                                      || Function == GroupFunction::Mean) {
-                    if constexpr (std::is_same_v<T2, void>) {
+                    if constexpr (std::is_same_v<TColVal, void>) {
                         auto [it, inserted] = cur_map.try_emplace((*key_table)[real_pos][i], 
                                                                   zero);
                         (it->second) += (*key_table2)[n_col_real][i];
@@ -225,16 +241,13 @@ void transform_group_by_onecol_mt(unsigned int x,
                         (it->second) += (*key_table2)[n_col_real][i];
                     }
                 } else {
-                    if constexpr (std:::is_same_v<T2, void>) {
+                    if constexpr (std:::is_same_v<TColVal, void>) {
                         auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], 
                                                                   vec);
-                        if constexpr (NPerGroup > 0) {
-                            if (inserted) it->second.reserve(NPerGroup);
-                        }
                         it->second.push_back((*key_table2)[n_col_real][i]);
                     } else {
                         auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], 
-                                                                 {});
+                                                                 NPerGroup);
                         if constexpr (NPerGroup > 0) {
                             if (inserted) it->second.reserve(NPerGroup);
                         }
@@ -248,7 +261,7 @@ void transform_group_by_onecol_mt(unsigned int x,
                 if constexpr (Function == GroupFunction::Occurence ||
                               Function == GroupFunction::Sum ||
                               Function == GroupFunction::Mean) {
-                    if constexpr (std::is_same_v<T2, void>) {
+                    if constexpr (std::is_same_v<TColVal, void>) {
                         auto [it, inserted] = lookup.try_emplace(k, zero);
                         (it->second) += v;
                     } else {
@@ -256,12 +269,9 @@ void transform_group_by_onecol_mt(unsigned int x,
                         (it->second) += v;
                     }
                 } else {
-                    if constexpr (std::is_same_v<T2, void>) {
+                    if constexpr (std::is_same_v<TColVal, void>) {
                         auto [it, inserted] = lookup.try_emplace(k, vec);
                         const unsigned int n_old_size = it->second.size();
-                        if constexpr (NPerGroup > 0) {
-                            if (inserted) it->second.reserve(NPerGroup);
-                        }
                         it->second.resize(n_old_size + v.size());
                         if constexpr (triv_copy) {
                             memcpy(it->second.data() + n_old_size, 
@@ -273,10 +283,10 @@ void transform_group_by_onecol_mt(unsigned int x,
                                               v.end());
                         }
                     } else {
-                        auto [it, inserted] = lookup.try_emplace(k, {});
+                        auto [it, inserted] = lookup.try_emplace(k, NPerGroup);
                         const unsigned int n_old_size = it->second.size();
                         it->second.resize(n_old_size + v.size());
-                        if constexpr (std::is_trivially_copyable<T2>) {
+                        if constexpr (std::is_trivially_copyable<TColVal>) {
                             memcpy(it->second.data() + n_old_size, 
                                    v.data(), 
                                    sizeof(key_t) * v.size());
@@ -310,23 +320,13 @@ void transform_group_by_onecol_mt(unsigned int x,
         value_col[i] = count;
     }
 
-    if constexpr (Ocurence) {
-        uint_v.push_back(value_col);
-    } else if (std:is_same_v<value_t, uint8_t>) {
-        bool_v.push_back(value_col);
-    } else if (std::is_same_v<value_t, IntT>) {
-        int_v.push_back(value_col);
-    } else if (std::is_same_v<value_t, UIntT>) {
-        uint_v.push_back(value_col);
-    } else if (std::is_same_v<value_t, FloatT>) {
-        dbl_v.push_back(value_col);
-    }
-
     switch (idx_type) {
-        case 2: type_refv.push_back('b'); break;
-        case 3: type_refv.push_back('i'); break;
-        case 4: type_refv.push_back('u'); break;
-        case 5: type_refv.push_back('d'); break;
+        case 0: type_refv.push_back('s'); str_v.push_back(value_col);  break;
+        case 1: type_refv.push_back('c'); chr_v.push_back(value_col);  break;
+        case 2: type_refv.push_back('b'); bool_v.push_back(value_col); break;
+        case 3: type_refv.push_back('i'); int_v.push_back(value_col);  break;
+        case 4: type_refv.push_back('u'); uint_v.push_back(value_col); break;
+        case 5: type_refv.push_back('d'); dbl_v.push_back(value_col);  break;
     }
 
     if (!name_v.empty())

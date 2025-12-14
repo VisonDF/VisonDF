@@ -14,9 +14,10 @@ using first_arg_grp_t = typename first_arg_grp<F>::type;
 
 template <typename F, typename T>
 concept GroupFn =
-requires (F f, std::vector<T>& v) {
-    { f(v) } -> std::same_as<T>;
-};
+    SupportedType<T> &&
+    requires (F f, std::vector<T>& v) {
+        { f(v) } -> SupportedType;
+    };
 
 int default_groupfn_impl(std::vector<int>& v)
 {

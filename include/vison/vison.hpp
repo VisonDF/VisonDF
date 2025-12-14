@@ -62,7 +62,8 @@ namespace vison {
     #include "types/group_by.inl"
     #include "types/supported_group_methods.inl"    
     #include "types/group_function_assertion.inl"    
-    #include "types/infer_minimal_type.inl"
+    #include "types/make_zero_variants.inl"
+    #include "types/make_vec_variants.inl"
 
     #include "inlines/inplace_permutation.inl"
     #include "inlines/no_inplace_permutation.inl"
@@ -234,6 +235,7 @@ namespace vison {
                                               };
 
         #include "types/stringify_types.inl"
+        #include "types/df_supported_types.inl"
 
         #include "inlines/radix_sorts/radix_sort_charbuf.inl"
         #include "inlines/radix_sorts/radix_sort_charbuf_mt.inl"
