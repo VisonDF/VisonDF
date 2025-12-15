@@ -64,6 +64,8 @@ namespace vison {
     #include "types/group_function_assertion.inl"    
     #include "types/make_zero_variants.inl"
     #include "types/make_vec_variants.inl"
+    #include "types/element_type.inl"
+    #include "types/ReservingVec.inl"
 
     #include "inlines/inplace_permutation.inl"
     #include "inlines/no_inplace_permutation.inl"

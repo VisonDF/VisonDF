@@ -43,8 +43,8 @@ void transform_group_by_onecol_mt(const unsigned int x,
                                   std::conditional_t<
                                   !(std::is_same_v<TColVal, void>),
                                   std::conditional_t<Function == GroupFunction::Gather,
-                                                     ReservingVec<TColVal>,
-                                                     TColVal>,
+                                                     ReservingVec<element_type_t<TColVal>>,
+                                                     element_type_t<TColVal>>,
                                   std::variant<
                                         uint8_t, 
                                         IntT, 
