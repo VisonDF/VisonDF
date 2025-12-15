@@ -304,7 +304,7 @@ void transform_group_by_onecol_mt(const unsigned int x,
             key_vec[i] = &lookup.find((*key_table)[real_pos][i])->first;
     }
 
-    value_t value_col = make_vec(idx_type_const);
+    value_t value_col = make_vec(idx_type, 0);
     value_col.resize(local_nrow);
     #pragma omp parallel for if(CORES > 1) num_threads(CORES)
     for (size_t i = 0; i < key_vec.size(); ++i) {

@@ -321,7 +321,7 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
         }
     }
 
-    value_t value_col = make_vec(idx_type);
+    value_t value_col = make_vec(idx_type, 0);
     value_col.resize(local_nrow);
     #pragma omp parallel for if(CORES > 1) num_threads(CORES)
     for (size_t i = 0; i < key_vec.size(); ++i) {
