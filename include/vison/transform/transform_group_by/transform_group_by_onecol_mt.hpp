@@ -168,7 +168,7 @@ void transform_group_by_onecol_mt(const unsigned int x,
 
     if constexpr (std::is_same_v<TColVal, void>) {
         zero = make_zero(idx_type);
-        vec  = make_vec(idx_type);
+        vec  = make_vec(idx_type, NPerGroup);
     }
 
     if constexpr (CORES == 1) {
