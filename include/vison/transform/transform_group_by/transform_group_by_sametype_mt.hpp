@@ -9,7 +9,7 @@ template <typename TContainer = void,
           typename F = decltype(&default_groupfn_impl)>
 requires GroupFn<F, first_arg_grp_t<F>>
 void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
-                           const n_col int = -1,
+                           const n_col int,
                            const std::string colname = "n",
                            F f = &default_groupfn_impl) 
 {
