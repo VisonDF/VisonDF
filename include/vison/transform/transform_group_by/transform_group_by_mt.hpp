@@ -1,13 +1,17 @@
 #pragma once
 
-template <typename T = void,
+template <typename TContainer = void,
+          typename TColVal = void,
           unsigned int CORES = 4,
-          bool Occurence = false,
-          bool SameType  = false,
-          bool SimdHash  = true>
-void transform_group_by(const std::vector<unsigned int>& x,
-                        const n_col int = -1,
-                        const std::string colname = "n") 
+          GroupFunction Function = GroupFunction::Occurence,
+          bool SimdHash  = true,
+          unsigned int NPerGroup = 4,
+          typename F = decltype(&default_groupfn_impl)>
+requires Group<F, first_arg_grp_t<F>>
+void transform_group_by_mt(const std::vector<unsigned int>& x,
+                           const n_col int,
+                           const std::string colname = "n",
+                           const F f = &default_groupfn_impl) 
 {
 
     if (in_view) {
@@ -16,29 +20,88 @@ void transform_group_by(const std::vector<unsigned int>& x,
         return;
     }
 
-    if (x.size() > 1) {
-        if constexpr (SameType) {
-            transform_group_by_sametype_mt<T,
-                                           CORES,
-                                           Occurence,
-                                           SimdHash>(x,
-                                                     n_col,
-                                                     colname);
-        } else {
-            transform_group_by_difftype_mt<T,
-                                           CORES,
-                                           Occurence,
-                                           SimdHash>(x,
-                                                     n_col,
-                                                     colname);
+    if constexpr (std::is_same_v<TColVal, void>) {
+        switch(type_refv[n]) {
+            case 's': group_by_dispatch1<TContainer, 
+                                        std::string, 
+                                        CORES, 
+                                        Function, 
+                                        SimdHash, 
+                                        NPerGroup, 
+                                        F>(x, ncol, colname, f); break;
+            case 'c': group_by_dispatch1<TContainer, 
+                                        CharT, 
+                                        CORES, 
+                                        Function, 
+                                        SimdHash, 
+                                        NPerGroup, 
+                                        F>(x, ncol, colname, f); break;
+            case 'b': group_by_dispatch1<TContainer, 
+                                        uint8_t, 
+                                        CORES, 
+                                        Function, 
+                                        SimdHash, 
+                                        NPerGroup, 
+                                        F>(x, ncol, colname, f); break;
+            case 'i': group_by_dispatch1<TContainer, 
+                                        IntT, 
+                                        CORES, 
+                                        Function, 
+                                        SimdHash, 
+                                        NPerGroup, 
+                                        F>(x, ncol, colname, f); break;
+            case 'u': group_by_dispatch1<TContainer, 
+                                        UIntT, 
+                                        CORES, 
+                                        Function, 
+                                        SimdHash, 
+                                        NPerGroup, 
+                                        F>(x, ncol, colname, f); break;
+            case 'd': group_by_dispatch1<TContainer, 
+                                        FloatT, 
+                                        CORES, 
+                                        Function, 
+                                        SimdHash, 
+                                        NPerGroup, 
+                                        F>(x, ncol, colname, f); break;
         }
     } else {
-            transform_group_by_onecol_mt<T,
-                                         CORES,
-                                         Occurence,
-                                         SimdHash>(x[0],
-                                                   n_col,
-                                                   colname);
+        if (x.size() > 1) {
+            if constexpr (std::is_same_v<TContainer, TColVal>) {
+                transform_group_by_sametype_mt<TContainer,
+                                               TColVal,
+                                               CORES,
+                                               Function,
+                                               SimdHash,
+                                               NPerGroup,
+                                               F>(x,
+                                                  n_col,
+                                                  colname,
+                                                  f);
+            } else {
+                transform_group_by_difftype_mt<TContainer,
+                                               TColVal,
+                                               CORES, 
+                                               Function,
+                                               SimdHash,
+                                               NPerGroup,
+                                               F>(x,
+                                                  n_col,
+                                                  colname,
+                                                  f);
+            }
+        } else {
+                transform_group_by_onecol_mt<TContainer,
+                                             TColVal,
+                                             CORES,
+                                             Function,
+                                             SimdHash,
+                                             NPerGroup,
+                                             F>(x[0],
+                                                n_col,
+                                                colname,
+                                                f);
+        }
     }
 
 }
