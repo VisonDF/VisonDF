@@ -239,6 +239,7 @@ namespace vison {
 
         #include "types/stringify_types.inl"
         #include "types/df_supported_types.inl"
+        #include "inlines/get_types_size.inl"
 
         #include "inlines/radix_sorts/radix_sort_charbuf.inl"
         #include "inlines/radix_sorts/radix_sort_charbuf_mt.inl"
