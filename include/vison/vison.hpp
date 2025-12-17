@@ -66,6 +66,7 @@ namespace vison {
     #include "types/make_vec_variants.inl"
     #include "types/element_type.inl"
     #include "types/ReservingVec.inl"
+    #include "types/is_reserving_vec.inl"
 
     #include "inlines/inplace_permutation.inl"
     #include "inlines/no_inplace_permutation.inl"

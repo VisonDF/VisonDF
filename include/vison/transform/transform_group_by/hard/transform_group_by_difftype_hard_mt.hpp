@@ -1,11 +1,17 @@
 #pragma once
 
-template <unsigned int CORES = 4,
-          bool Occurence = false,
-          bool SimdHash = true>
+template <typename TContainer = void,
+          typename TColVal = void,
+          unsigned int CORES = 4,
+          GroupFunction Function = GroupFunction::Occurence,
+          bool SimdHash = true,
+          NPerGroup = 4,
+          typename F = decltype(&default_groupfn_impl)>
+requires GroupFn<F, first_arg_grp_t<F>>
 void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
-                                         const n_col int = -1,
-                                         const std::string colname = "n") 
+                                         const n_col int,
+                                         const std::string colname = "n",
+                                         const F f = &default_groupfn_impl) 
 {
 
     if (in_view) {
@@ -14,7 +20,7 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
         return;
     }
 
-    if constexpr (!Occurence) {
+    if constexpr (Function != GroupFunction::Occurence) {
         if (n_col < 0) {
             std::cerr << "Can't take negative columns\n";
             return;
@@ -26,12 +32,20 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
 
     using value_t = std::conditional_t<Occurence, 
                                   unsigned int, 
-                                  std::variant<std::string, 
+                                  std::variant<
+                                        std::string, 
                                         CharT, 
                                         uint8_t, 
                                         IntT, 
                                         UIntT, 
-                                        FloatT>>;
+                                        FloatT,
+                                        ReservingVec<std::string>, 
+                                        ReservingVec<CharT>, 
+                                        ReservingVec<uint8_t>, 
+                                        ReservingVec<IntT>, 
+                                        ReservingVec<UIntT>, 
+                                        ReservingVec<FloatT>,
+                                        >>;
     using map_t = std::conditional_t<
         SimdHash,
         ankerl::unordered_dense::map<std::string, 
@@ -108,7 +122,7 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
     key_variant_t key_table2 = nullptr;
 
     size_t n_col_real;
-    if constexpr (!Occurence) {
+    if constexpr (Function != GroupFunction::Occurence) {
         switch (type_refv[x[0]]) {
             case 's': key_table2 = &str_v;  idx_type = 0; break;
             case 'c': key_table2 = &chr_v;  idx_type = 1; break;
@@ -123,6 +137,9 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
             break;
         }
     }
+
+    constexpr value_t zero_struct = make_zero<value_t>(idx_type);
+    constexpr value_t vec_struct  = make_vec<value_t>(idx_type);
 
     auto build_key = [&] (std::string& key, unsigned int i) {
         for (auto idxv : idx_str) {
@@ -179,16 +196,28 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
         for (unsigned int i = 0; i < local_nrow; ++i) { 
             key.clear();
             key_build(key, i);
-            auto [it, inserted] = lookup.try_emplace(key, 0);
-            auto& cur_struct = it->second;
-            if constexpr (Occurence) {
+            if constexpr (Function == GroupFunction::Occurence) {
+                auto [it, inserted] = lookup.try_emplace(key, zero_struct);
+                auto& cur_struct = it->second;
                 ++cur_struct.value;
-            } else if constexpr (!Occurence) {
+                cur_struct.idx_vec.push_back(i);
+            } else if constexpr (Function == GroupFunction::Sum ||
+                                 Function == GroupFunction :: Mean) {
+                auto [it, inserted] = lookup.try_emplace(key, zero_struct);
+                auto& cur_struct = it->second;
                 cur_struct.value += (*key_table2)[n_col_real][i];
+                cur_struct.idx_vec.push_back(i);
+            } else {
+                auto [it, inserted] = lookup.try_emplace(key, zero_struct);
+                auto& cur_struct = it->second;
+                cur_struct.value += (*key_table2)[n_col_real][i];
+                cur_struct.idx_vec.push_back(i);
             }
-            cur_struct.idx_vec.push_back(i);
         }
-    } else if constexpr (CORES > 1) {    
+    } else if constexpr (CORES > 1) { 
+        constexpr auto& size_table = get_types_size();
+        const size_t val_size = size_table[idx_type - 1];
+        const bool triv_copy = (idx_type != 0);
         const unsigned int chunks = local_nrow / CORES + 1;
         std::vector<map_t> vec_map(CORES);
         #pragma omp parallel num_threads(CORES)
@@ -203,31 +232,54 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
             for (size_t i = start; i < end; ++i) {
                 key.clear();
                 key_build(key, i);
-                auto [it, inserted] = cur_map.try_emplace(key, 0);
-                auto& cur_struct = it->second;
-                if constexpr (Occurence) {
+                if constexpr (Function == GroupFunction::Occurence) {
+                    auto [it, inserted] = cur_map.try_emplace(key, zero_struct);
+                    auto& cur_struct = it->second;
                     ++(cur_struct.value);
-                } else if constexpr (!Occurence) {
+                    cur_struct.idx_vec.push_back(i);
+                } else if constexpr (Function == GroupFunction::Sum ||
+                                     Function == GroupFunction::Mean) {
+                    auto [it, inserted] = cur_map.try_emplace(key, zero_struct);
+                    auto& cur_struct = it->second;
                     cur_struct.value += (*key_table2)[n_col_real][i];
+                    cur_struct.idx_vec.push_back(i);
+                } else {
+                    auto [it, inserted] = cur_map.try_emplace(key, vec_struct);
+                    auto& cur_struct = it->second;
+                    cur_struct.value.push_back((*key_table2)[n_col_real][i]);
+                    cur_struct.idx_vec.push_back(i);
                 }
-                cur_struct.idx_vec.push_back(i);
             }
         }
         for (const auto& cur_map : vec_map) {
             for (const auto& [k, v] : cur_map) {
-                auto [it, inserted] = lookup.try_emplace(k, 0);
-                auto& cur_struct = it->second;
-                if constexpr (Occurence) {
+                if constexpr (Function == GroupFunction::Occurence ||
+                              Function == GroupFunction::Sum       ||
+                              Function == GroupFunction::Mean) {
+                    auto [it, inserted] = lookup.try_emplace(k, zero_struct);
+                    auto& cur_struct = it->second;
                     cur_struct.value += v.value;
-                } else if constexpr (!Occurence) {
-                    cur_struct.value += v.value;
+                    const unsigned int n_old_size = cur_struct.idx_vec.size();
+                    cur_struct.idx_vec.resize(n_old_size + v.idx_vec.size());
+                    memcpy(cur_struct.idx_vec.data() + n_old_size,
+                           v.idx_vec.data(),
+                           v.idx_vec.size() * sizeof(unsigned int)
+                           );
+                } else {
+                    auto [it, inserted] = lookup.try_emplace(k, vec_struct);
+                    auto& cur_struct = it->second;
+                    const unsigned int n_old_size_val = cur_struct.value.size();
+                    cur_struct.value.resize(n_old_size_val + v.size());
+                    memcpy(cur_struct.value.data() + n_old_size_val,
+                           v.data(),
+                           v.size() * val_size);
+                    const unsigned int n_old_size = cur_struct.idx_vec.size();
+                    cur_struct.idx_vec.resize(n_old_size + v.idx_vec.size());
+                    memcpy(cur_struct.idx_vec.data() + n_old_size,
+                           v.idx_vec.data(),
+                           v.idx_vec.size() * sizeof(unsigned int)
+                           );
                 }
-                const unsigned int n_old_size = cur_struct.idx_vec.size();
-                cur_struct.idx_vec.resize(n_old_size + v.idx_vec.size());
-                memcpy(cur_struct.idx_vec.data() + n_old_size,
-                       v.idx_vec.data(),
-                       v.idx_vec.size() * sizeof(T)
-                       );
             }
         }
         #pragma omp parallel for num_threads(CORES)
@@ -239,8 +291,8 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
         }
     }
 
-    std::vector<value_t> value_col(local_nrow);
-
+    value_t value_col = make_vec(idx_type, 0);
+    value_col.resize(local_nrow);
     if constexpr (CORES > 1) {
         using group_vec_t = std::vector<unsigned int>;
         
@@ -262,8 +314,16 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
             size_t len   = pos_boundaries[g + 1] - pos_boundaries[g];
             const group_vec_t& vec = (it0 + g)->second.idx_vec;
             const auto& cur_val    = (it0 + g)->second.value;
-            for (size_t t = 0; t < vec.size(); ++t)
-                value_col[start + t] = cur_val;
+            for (size_t t = 0; t < vec.size(); ++t) {
+                if constexpr (Function == GroupFunction::Occurence ||
+                              Function == GroupFunction::Sum) {
+                    value_col[start + t] = cur_val;
+                } else if constexpr (Function == GroupFunction::Mean) {
+                    value_col[start + t] = cur_val / local_nrow;
+                } else {
+                    value_col[start + t] = f(cur_val);
+                }
+            }
             memcpy(row_view_idx.data() + start,
                    vec.data(),
                    len * sizeof(unsigned int));
@@ -274,8 +334,16 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
         for (size_t i = 0; i < lookup.size(); ++i) {
             const auto& pos_vec = (it + i)->second.idx_vec;
             const auto& cur_val = (it + i)->second.value;
-            for (size_t t = 0; t < pos_vec.size(); ++t)
-                value_col[i2 + t] = cur_val;
+            for (size_t t = 0; t < pos_vec.size(); ++t) {
+                if constexpr (Function == GroupFunction::Occurence ||
+                              Function == GroupFunction::Sum) {
+                    value_col[i2 + t] = cur_val;
+                } else if constexpr (Function == GroupFunction::Mean) {
+                    value_col[i2 + t] = cur_val / local_nrow;
+                } else {
+                    value_col[i2 + t] = f(cur_val);
+                }
+            }
             memcpy(row_view_idx.data() + i2, 
                    pos_vec.data(), 
                    sizeof(unsigned int) * pos_vec.size());
@@ -283,20 +351,13 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
         }
     }
 
-    if constexpr (Ocurence) {
-        uint_v.push_back(value_col);
-    } else if (std::is_same_v<value_t, std:string>) {
-        str_v.push_back(value_col);
-    } else if (std:is_same_v<value_t, CharT>) {
-        chr_v.push_back(value_col);
-    } else if (std:is_same_v<value_t, uint8_t>) {
-        bool_v.push_back(value_col);
-    } else if (std::is_same_v<value_t, IntT>) {
-        int_v.push_back(value_col);
-    } else if (std::is_same_v<value_t, UIntT>) {
-        uint_v.push_back(value_col);
-    } else if (std::is_same_v<value_t, FloatT>) {
-        dbl_v.push_back(value_col);
+    switch (idx_type) {
+        case 0: type_refv.push_back('s'); str_v.push_back(value_col);  break;
+        case 1: type_refv.push_back('c'); chr_v.push_back(value_col);  break;
+        case 2: type_refv.push_back('b'); bool_v.push_back(value_col); break;
+        case 3: type_refv.push_back('i'); int_v.push_back(value_col);  break;
+        case 4: type_refv.push_back('u'); uint_v.push_back(value_col); break;
+        case 5: type_refv.push_back('d'); dbl_v.push_back(value_col);  break;
     }
 
     col_alrd_materialized.push_back(ncol);
@@ -304,7 +365,6 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
     if (!name_v.empty())
         name_v.push_back(colname);
 
-    type_refv.push_back('u');
     ++ncol;
 }
 
