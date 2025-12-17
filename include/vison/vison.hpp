@@ -465,7 +465,10 @@ namespace vison {
         #ifdef _OPENMP
         #include "transform/transform_group_by/transform_group_by_mt.hpp"
         #endif
-        
+               
+        #include "inlines/transform/transform_group_by/group_by_dispatch2.inl"
+        #include "inlines/transform/transform_group_by/group_by_dispatch1.inl"
+
         #include "pivots/pivot.hpp"
         #ifdef _OPENMP
         #include "pivots/pivot_mt.hpp"
