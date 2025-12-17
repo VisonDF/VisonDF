@@ -186,7 +186,7 @@ void transform_group_by_onecol_mt(const unsigned int x,
         }
     } else if constexpr (CORES > 1) {
         constexpr auto& size_table = get_types_size();
-        const size_t val_size = size_table[idx_type - 1];
+        const size_t val_size = size_table[idx_type];
         const bool triv_copy = (idx_type != 0);
         const unsigned int chunks = local_nrow / CORES + 1;
         std::vector<map_t> vec_map(CORES);
