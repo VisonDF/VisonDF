@@ -182,25 +182,77 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
        }
     }
 
-    if constexpr (CORES == 1) {
-        std::string key;
-        key.reserve(2048);  
-        for (unsigned int i = 0; i < local_nrow; ++i) {
+    const void* val_col = nullptr;
+    std::visit([&](auto ptr) {
+		using T = std::decay_t<>decltype(ptr);
+		if constexpr (!std::is_same_v<T, std::nullptr_t>) {
+		   val_col = &((*ptr)[n_col_real_pos]);
+		}
+		} , key_table2);
+
+    auto cast_from_void = [&] (auto&& f, size_t start, size_t end) {
+	    switch (idx_type) {
+	      case 0: {
+		          f(*static_cast<const std::vector<std::string>*>(val_col), start, end); break;
+		       }
+	      case 1: {
+		          f(*static_cast<const std::vector<CharT>*>(val_col), start, end); break;
+		       }
+	      case 2: {
+		          f(*static_cast<const std::vector<uint8_t>*>(val_col), start, end); break;
+		       }
+	      case 3: {
+		          f(*static_cast<const std::vector<IntT>*>(val_col), start, end); break;
+		       }
+	      case 4: {
+		          f(*static_cast<const std::vector<UIntT>*>(val_col), start, end); break;
+		       }
+	      case 5: {
+		          f(*static_cast<const std::vector<FloatT>*>(val_col), start, end); break;
+		      }
+    };
+
+    auto occ_lookup = [&](std::string& key, size_t start, size_t end) {
+        for (unsigned int i = start; i < end; ++i) {
             key.clear();
             key_build(key, i);
-            if constexpr (Function == GroupFunction::Occurence) {
-                auto [it, inserted] = lookup.try_emplace(key, zero);
-                ++(it->second);
-            } else if constexpr (Function == GroupFunction::Sum ||
-                                 Function == GroupFunction::Mean) {
-                auto [it, inserted] = lookup.try_emplace(key, zero);
-                (it->second) += (*key_table2)[n_col_real][i];
-            } else {
-                auto [it, inserted] = lookup.try_emplace(key, vec);
-                it->second.push_back((*key_table2)[n_col_real][i]);
-            } 
+            auto [it, inserted] = lookup.try_emplace(key, zero);
+            ++it->second;
             key_vec[i] = &it->first;
         }
+    };
+
+    auto add_lookup = [&](const auto& val_col2, std::string& key, size_t start, size_t end) {
+        for (unsigned int i = start; i < end; ++i) {
+            key.clear();
+            key_build(key, i);
+            auto [it, inserted] = lookup.try_emplace(key, zero);
+            (it->second) += val_col2[i];
+            key_vec[i] = &it->first;
+        }
+    };
+
+    auto fill_lookup = [&](const auto& val_col2, std::string& key, size_t start, size_t end) {
+        for (unsigned int i = start; i < end; ++i) {
+            key.clear();
+            key_build(key, i);
+            auto [it, inserted] = lookup.try_emplace(key, vec);
+            it->second.push_back(val_col2[i]);
+            key_vec[i] = &it->first;
+        }
+    };
+
+    if constexpr (CORES == 1) {
+        std::string key;
+        key.reserve(2048);
+        if constexpr (Function == GroupFunction::Occurence) {
+	    occ_lookup(key, 0, local_nrow);
+	} else if constexpr (Function == GroupFunction::Sum ||
+			     Function == GroupFunction::Mean) {
+	    cast_from_void(add_lookup, key, 0, local_nrow);
+	} else {
+	    cast_from_void(fill_lookup, key, 0, local_nrow);
+	}
     } else if constexpr (CORES > 1) {
         const bool triv_copy = (idx_type != 0);
         const unsigned int chunks = local_nrow / CORES + 1;
@@ -217,21 +269,14 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
             const unsigned int end   = std::min(local_nrow, start + chunks);
             map_t& cur_map           = vec_map[tid];
             cur_map.reserve(local_nrow / CORES);
-            for (size_t i = start; i < end; ++i) {
-                key.clear();
-                key_build(key, i);
-                if constexpr (Function == GroupFunction::Occurence) {
-                    auto [it, inserted] = cur_map.try_emplace(key, zero);
-                    ++(it->second);
-                } else if constexpr (Function == GroupFunction::Sum ||
-                                     Function == GroupFunction::Mean) {
-                    auto [it, inserted] = cur_map.try_emplace(key, zero);
-                    (it->second) += (*key_table2)[n_col_real][i];
-                } else {
-                    auto [it, inserted] = cur_map.try_emplace(key, vec);
-                    it->second.push_back((*key_table2)[n_col_real][i]);
-                }
-            }
+            if constexpr (Function == GroupFunction::Occurence) {
+	        occ_lookup(key, start, end);
+	    } else if constexpr (Function == GroupFunction::Sum ||
+	    		     Function == GroupFunction::Mean) {
+	        cast_from_void(add_lookup, key, start, end);
+	    } else {
+	        cast_from_void(fill_lookup, key, start, end);
+	    }
         }
         if (triv_copy) {
             for (const auto& cur_map : vec_map) {
