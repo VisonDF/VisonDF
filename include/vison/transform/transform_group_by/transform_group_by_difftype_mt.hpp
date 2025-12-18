@@ -223,7 +223,7 @@ void transform_group_by_difftype_mt(const std::vector<unsigned int>& x,
 		}
 		} , key_table2);
 
-    auto cast_from_void = [&] (auto&& f, size_t start, size_t end) {
+    auto dispatch_from_void = [&] (auto&& f, size_t start, size_t end) {
 	    switch (idx_type) {
 	      case 0: {
 		          f(*static_cast<const std::vector<std::string>*>(val_col), start, end); break;
@@ -282,9 +282,9 @@ void transform_group_by_difftype_mt(const std::vector<unsigned int>& x,
 	    occ_lookup(key, 0, local_nrow);
 	} else if constexpr (Function == GroupFunction::Sum ||
 			     Function == GroupFunction::Mean) {
-	    cast_from_void(add_lookup, key, 0, local_nrow);
+	    dispatch_from_void(add_lookup, key, 0, local_nrow);
 	} else {
-	    cast_from_void(fill_lookup, key, 0, local_nrow);
+	    dispatch_from_void(fill_lookup, key, 0, local_nrow);
 	}
     } else if constexpr (CORES > 1) {
         constexpr auto& size_table = get_types_size();
@@ -306,9 +306,9 @@ void transform_group_by_difftype_mt(const std::vector<unsigned int>& x,
 	        occ_lookup(key, start, end);
 	    } else if constexpr (Function == GroupFunction::Sum ||
 	    		     Function == GroupFunction::Mean) {
-	        cast_from_void(add_lookup, key, start, end);
+	        dispatch_from_void(add_lookup, key, start, end);
 	    } else {
-	        cast_from_void(fill_lookup, key, start, end);
+	        dispatch_from_void(fill_lookup, key, start, end);
 	    }
         }
         if (triv_copy) {
