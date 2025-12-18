@@ -141,13 +141,6 @@ void transform_group_by_sametype_soft_mt(const std::vector<unsigned int>& x,
                        );
             }
         }
-        #pragma omp parallel for num_threads(CORES)
-        for (size_t i = 0; i < local_nrow; ++i) {
-            std::string key;
-            key.reserve(2048);
-            key_build(key, i);
-            key_vec[i] = &lookup.find(key)->first;
-        }
     }
 
     if constexpr (CORES > 1) {

@@ -112,10 +112,6 @@ void transform_group_by_onecol_soft_mt(unsigned int x,
                        );
             }
         }
-        #pragma omp parallel for num_threads(CORES)
-        for (size_t i = 0; i < local_nrow; ++i) {
-            key_vec[i] = &lookup.find((*key_table)[real_pos][i])->first;
-        }
     }
 
     if constexpr (CORES > 1) {
