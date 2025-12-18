@@ -194,25 +194,25 @@ void transform_group_by_onecol_mt(const unsigned int x,
 		      }
     };
 
-    auto occ_lookup = [&](size_t start, size_t end) {
+    auto occ_lookup = [&](size_t start, size_t end, map_t& cmap) {
         for (unsigned int i = start; i < end; ++i) {
-            auto [it, inserted] = lookup.try_emplace(key_col[i], zero);
+            auto [it, inserted] = cmap.try_emplace(key_col[i], zero);
             ++it->second;
             key_vec[i] = &it->first;
         }
     };
 
-    auto add_lookup = [&](const auto& val_col2, size_t start, size_t end) {
+    auto add_lookup = [&](const auto& val_col2, size_t start, size_t end, map_t& cmap) {
         for (unsigned int i = start; i < end; ++i) {
-            auto [it, inserted] = lookup.try_emplace(key_col[i], zero);
+            auto [it, inserted] = cmap.try_emplace(key_col[i], zero);
             (it->second) += val_col2[i];
             key_vec[i] = &it->first;
         }
     };
 
-    auto fill_lookup = [&](const auto& val_col2, size_t start, size_t end) {
+    auto fill_lookup = [&](const auto& val_col2, size_t start, size_t end, map_t& cmap) {
         for (unsigned int i = start; i < end; ++i) {
-            auto [it, inserted] = lookup.try_emplace(key_col[i], vec);
+            auto [it, inserted] = cmap.try_emplace(key_col[i], vec);
             it->second.push_back(val_col2[i]);
             key_vec[i] = &it->first;
         }
@@ -220,12 +220,12 @@ void transform_group_by_onecol_mt(const unsigned int x,
 
     if constexpr (CORES == 1) {
 	if constexpr (Function == GroupFunction::Occurence) {
-	    occ_lookup(0, local_nrow);
+	    occ_lookup(0, local_nrow, lookup);
 	} else if constexpr (Function == GroupFunction::Sum ||
 			     Function == GroupFunction::Mean) {
-	    dispatch_from_void(add_lookup, 0, local_nrow);
+	    dispatch_from_void(add_lookup, 0, local_nrow, lookup);
 	} else {
-	    dispatch_from_void(fill_lookup, 0, local_nrow);
+	    dispatch_from_void(fill_lookup, 0, local_nrow, lookup);
 	}
     } else if constexpr (CORES > 1) {
         constexpr auto& size_table = get_types_size();
@@ -241,12 +241,12 @@ void transform_group_by_onecol_mt(const unsigned int x,
             map_t& cur_map           = vec_map[tid];
             cur_map.reserve(local_nrow / CORES);
 	    if constexpr (Function == GroupFunction::Occurence) {
-	        occ_lookup(start, end);
+	        occ_lookup(start, end, cur_map);
 	    } else if constexpr (Function == GroupFunction::Sum ||
 	    		     Function == GroupFunction::Mean) {
-	        dispatch_from_void(add_lookup, start, end);
+	        dispatch_from_void(add_lookup, start, end, cur_map);
 	    } else {
-	        dispatch_from_void(fill_lookup, start, end);
+	        dispatch_from_void(fill_lookup, start, end, cur_map);
 	    }
         }
         if (is_triv) {

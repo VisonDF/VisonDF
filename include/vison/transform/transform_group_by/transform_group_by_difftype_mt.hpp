@@ -245,31 +245,31 @@ void transform_group_by_difftype_mt(const std::vector<unsigned int>& x,
 		      }
     };
 
-    auto occ_lookup = [&](std::string& key, size_t start, size_t end) {
+    auto occ_lookup = [&](std::string& key, size_t start, size_t end, map_t& cmap) {
         for (unsigned int i = start; i < end; ++i) {
             key.clear();
             key_build(key, i);
-            auto [it, inserted] = lookup.try_emplace(key, zero);
+            auto [it, inserted] = cmap.try_emplace(key, zero);
             ++it->second;
             key_vec[i] = &it->first;
         }
     };
 
-    auto add_lookup = [&](const auto& val_col2, std::string& key, size_t start, size_t end) {
+    auto add_lookup = [&](const auto& val_col2, std::string& key, size_t start, size_t end, map_t& cmap) {
         for (unsigned int i = start; i < end; ++i) {
             key.clear();
             key_build(key, i);
-            auto [it, inserted] = lookup.try_emplace(key, zero);
+            auto [it, inserted] = cmap.try_emplace(key, zero);
             (it->second) += val_col2[i];
             key_vec[i] = &it->first;
         }
     };
 
-    auto fill_lookup = [&](const auto& val_col2, std::string& key, size_t start, size_t end) {
+    auto fill_lookup = [&](const auto& val_col2, std::string& key, size_t start, size_t end, map_t& cmap) {
         for (unsigned int i = start; i < end; ++i) {
             key.clear();
             key_build(key, i);
-            auto [it, inserted] = lookup.try_emplace(key, vec);
+            auto [it, inserted] = cmap.try_emplace(key, vec);
             it->second.push_back(val_col2[i]);
             key_vec[i] = &it->first;
         }
