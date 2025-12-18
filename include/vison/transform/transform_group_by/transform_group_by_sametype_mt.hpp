@@ -190,25 +190,25 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
 		}
 		} , key_table2);
 
-    auto dispatch_from_void = [&] (auto&& f, size_t start, size_t end, map_t& cmap) {
+    auto dispatch_from_void = [&] (auto&& f, std::string& key, size_t start, size_t end, map_t& cmap) {
 	    switch (idx_type) {
 	      case 0: {
-		          f(*static_cast<const std::vector<std::string>*>(val_col), start, end, cmap); break;
+		          f(*static_cast<const std::vector<std::string>*>(val_col), key, start, end, cmap); break;
 		       }
 	      case 1: {
-		          f(*static_cast<const std::vector<CharT>*>(val_col), start, end, cmap); break;
+		          f(*static_cast<const std::vector<CharT>*>(val_col), key, start, end, cmap); break;
 		       }
 	      case 2: {
-		          f(*static_cast<const std::vector<uint8_t>*>(val_col), start, end, cmap); break;
+		          f(*static_cast<const std::vector<uint8_t>*>(val_col), key, start, end, cmap); break;
 		       }
 	      case 3: {
-		          f(*static_cast<const std::vector<IntT>*>(val_col), start, end, cmap); break;
+		          f(*static_cast<const std::vector<IntT>*>(val_col), key, start, end, cmap); break;
 		       }
 	      case 4: {
-		          f(*static_cast<const std::vector<UIntT>*>(val_col), start, end, cmap); break;
+		          f(*static_cast<const std::vector<UIntT>*>(val_col), key, start, end, cmap); break;
 		       }
 	      case 5: {
-		          f(*static_cast<const std::vector<FloatT>*>(val_col), start, end, cmap); break;
+		          f(*static_cast<const std::vector<FloatT>*>(val_col), key, start, end, cmap); break;
 		      }
     };
 
@@ -246,12 +246,12 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
         std::string key;
         key.reserve(2048);
         if constexpr (Function == GroupFunction::Occurence) {
-	    occ_lookup(key, 0, local_nrow);
+	    occ_lookup(key, 0, local_nrow, lookup);
 	} else if constexpr (Function == GroupFunction::Sum ||
 			     Function == GroupFunction::Mean) {
-	    dispatch_from_void(add_lookup, key, 0, local_nrow);
+	    dispatch_from_void(add_lookup, key, 0, local_nrow, lookup);
 	} else {
-	    dispatch_from_void(fill_lookup, key, 0, local_nrow);
+	    dispatch_from_void(fill_lookup, key, 0, local_nrow, lookup);
 	}
     } else if constexpr (CORES > 1) {
         const bool triv_copy = (idx_type != 0);
@@ -270,12 +270,12 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
             map_t& cur_map           = vec_map[tid];
             cur_map.reserve(local_nrow / CORES);
             if constexpr (Function == GroupFunction::Occurence) {
-	        occ_lookup(key, start, end);
+	        occ_lookup(key, start, end, cur_map);
 	    } else if constexpr (Function == GroupFunction::Sum ||
 	    		     Function == GroupFunction::Mean) {
-	        dispatch_from_void(add_lookup, key, start, end);
+	        dispatch_from_void(add_lookup, key, start, end, cur_map);
 	    } else {
-	        dispatch_from_void(fill_lookup, key, start, end);
+	        dispatch_from_void(fill_lookup, key, start, end, cur_map);
 	    }
         }
         if (triv_copy) {
