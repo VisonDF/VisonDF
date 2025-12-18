@@ -8,10 +8,10 @@ template <typename TContainer = void
           unsigned int NPerGroup,
           typename F
         >
-inline group_by_dispatch1 (const std::vector<unsigned int>& x,
-                           unsigned int ncol,
-                           const std::string colname = "n",
-                           const F f)
+inline group_by_dispatch2(const std::vector<unsigned int>& x,
+                          unsigned int ncol,
+                          const std::string colname = "n",
+                          const F f)
 { 
     if (x.size() > 1) {
         if (std::is_same_v<TContainer, TColVal>) {
