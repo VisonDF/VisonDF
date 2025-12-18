@@ -9,7 +9,7 @@ template <typename TContainer  = void,
           typename F = decltype(&default_groupfn_impl)>
 requires GroupFn<F, first_arg_grp_t<F>>
 void transform_group_by_onecol_mt(const unsigned int x,
-                                  const n_col int,
+                                  const n_col unsigned int,
                                   const std::string colname = "n",
                                   const F f = &default_groupfn_impl) 
 {
@@ -21,10 +21,7 @@ void transform_group_by_onecol_mt(const unsigned int x,
     }
 
     if constexpr (Function != GroupFunction::Occurence) {
-        if (n_col < 0) {
-            std::cerr << "Can't take negative columns\n";
-            return;
-        } else if (n_col > ncol) {
+        if (n_col > ncol) {
             std::cerr << "Column number out of range\n";
             return;
         }

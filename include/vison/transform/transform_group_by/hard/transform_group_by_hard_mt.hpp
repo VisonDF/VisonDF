@@ -7,10 +7,10 @@ template <typename TContainer = void,
           unsigned int NPerGroup = 4,
           typename F = decltype(&default_groupfn_impl)>
 requires Group<F, first_arg_grp_t<F>>
-void transform_group_by_hard(const std::vector<unsigned int>& x,
-                             const n_col int,
-                             const std::string colname = "n",
-                             const F f = &default_groupfn_impl) 
+void transform_group_by_hard_mt(const std::vector<unsigned int>& x,
+                                const n_col int,
+                                const std::string colname = "n",
+                                const F f = &default_groupfn_impl) 
 {
 
     if (in_view) {

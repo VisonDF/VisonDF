@@ -21,10 +21,7 @@ void transform_group_by_difftype_mt(const std::vector<unsigned int>& x,
     }
 
     if constexpr (Function != GroupFunction::Occurence) {
-        if (n_col < 0) {
-            std::cerr << "Can't take negative columns\n";
-            return;
-        } else if (n_col > ncol) {
+        if (n_col > ncol) {
             std::cerr << "Column number out of range\n";
             return;
         }
