@@ -139,25 +139,72 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
     constexpr value_t zero_struct = make_zero_struct<value_t>(idx_type, NPerGroup);
     constexpr value_t vec_struct  = make_vec_struct<value_t>(idx_type);
 
+    const auto& key_col = (*key_table)[real_pos];
+    const void* val_col = nullptr;
+    std::visit([&](auto ptr) {
+          using T = std::decay_t<decltype(ptr)>;
+          if constexpr (!std::is_same_v<T, std::nullptr_t>) {
+    	      val_col = &((*ptr)[n_col_real]);
+          }
+    }, key_table2);
+
+    auto dispatch_from_void = [&] (auto&& f, size_t start, size_t end, map_t& cmap) {
+	    switch (idx_type) {
+	      case 0: {
+		          f(*static_cast<const std::vector<std::string>*>(val_col), start, end, cmap); break;
+		       }
+	      case 1: {
+		          f(*static_cast<const std::vector<CharT>*>(val_col), start, end, cmap); break;
+		       }
+	      case 2: {
+		          f(*static_cast<const std::vector<uint8_t>*>(val_col), start, end, cmap); break;
+		       }
+	      case 3: {
+		          f(*static_cast<const std::vector<IntT>*>(val_col), start, end, cmap); break;
+		       }
+	      case 4: {
+		          f(*static_cast<const std::vector<UIntT>*>(val_col), start, end, cmap); break;
+		       }
+	      case 5: {
+		          f(*static_cast<const std::vector<FloatT>*>(val_col), start, end, cmap); break;
+		      }
+    };
+
+    auto occ_lookup = [&](size_t start, size_t end, map_t& cmap) {
+        for (unsigned int i = start; i < end; ++i) {
+            auto [it, inserted] = cmap.try_emplace(key_col[i], zero_struct);
+            auto& cur_struct = it->second;
+            ++cur_struct.value;
+            cur_struct.idx_vec.push_back(i);
+        }
+    };
+
+    auto add_lookup = [&](const auto& val_col2, size_t start, size_t end, map_t& cmap) {
+        for (unsigned int i = start; i < end; ++i) {
+            auto [it, inserted] = cmap.try_emplace(key_col[i], zero_struct);
+            auto& cur_struct = it->second;
+            cur_struct.value += val_col[i];
+            cur_struct.idx_vec.push_back(i);
+        }
+    };
+
+    auto fill_lookup = [&](const auto& val_col2, size_t start, size_t end, map_t& cmap) {
+        for (unsigned int i = start; i < end; ++i) {
+             auto [it, inserted] = cmap.try_emplace(key_col[i], vec_struct);
+             auto& cur_struct = it->second;
+             cur_struct.value.push_back(val_col[i]);
+             cur_struct.idx_vec.push_back(i);
+        }
+    };
+
     if constexpr (CORES == 1) {
-        for (unsigned int i = 0; i < local_nrow; ++i) {    
-            if constexpr (Function == GroupFunction::Occurence) {
-                auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], zero_struct);
-                auto& cur_struct = it->second;
-                ++cur_struct.value;
-                cur_struct.idx_vec.push_back(i);
-            } else if constexpr (Function == GroupFunction::Sum ||
-                                 Function == GroupFunction::Mean) {
-                auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], zero_struct);
-                auto& cur_struct = it->second;
-                cur_struct.value += (*key_table2)[n_col_real][i];
-                cur_struct.idx_vec.push_back(i);
-            } else {
-                auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], vec_struct);
-                auto& cur_struct = it->second;
-                cur_struct.value.push_back((*key_table2)[n_col_real][i]);
-                cur_struct.idx_vec.push_back(i);
-            }
+        if constexpr (Function == GroupFunction::Occurence) {
+	    occ_lookup(0, local_nrow, lookup);
+        } else if constexpr (Function == GroupFunction::Sum ||
+                             Function == GroupFunction::Mean) {
+	    dispatch_from_void(add_lookup, 0, local_nrow, lookup);
+        } else {
+	    dispatch_from_void(fill_lookup, 0, local_nrow, lookup);
         }
     } else if constexpr (CORES > 1) {
         constexpr auto& size_table = get_types_size();
@@ -172,24 +219,13 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
             const unsigned int end   = std::min(local_nrow, start + chunks);
             map_t& cur_map           = vec_map[tid];
             cur_map.reserve(local_nrow / CORES);
-            for (size_t i = start; i < end; ++i) {
-                if constexpr (Function == GroupFunction::Occurence) {
-                    auto [it, inserted] = cur_map.try_emplace((*key_table)[real_pos][i], zero_struct);
-                    auto& cur_struct = it->second;
-                    ++(cur_struct.value);
-                    cur_struct.idx_vec.push_back(i);
-                } else if constexpr (Function == GroupFunction::Sum ||
-                                     Function == GroupFunction::Mean) {
-                    auto [it, inserted] = cur_map.try_emplace((*key_table)[real_pos][i], zero_struct);
-                    auto& cur_struct = it->second;
-                    cur_struct.value += (*key_table2)[n_col_real][i];
-                    cur_struct.idx_vec.push_back(i);
-                } else {
-                    auto [it, inserted] = cur_map.try_emplace((*key_table)[real_pos][i], zero_struct);
-                    auto& cur_struct = it->second;
-                    cur_struct.value.push_back((*key_table2)[n_col_real][i]);
-                    cur_struct.idx_vec.push_back(i);
-                }
+            if constexpr (Function == GroupFunction::Occurence) {
+	        occ_lookup(start, end, cur_map);
+            } else if constexpr (Function == GroupFunction::Sum ||
+                                 Function == GroupFunction::Mean) {
+	        dispatch_from_void(add_lookup, start, end, cur_map);
+            } else {
+	        dispatch_from_void(fill_lookup, start, end, cur_map);
             }
         }
         if (triv_copy) {
@@ -255,10 +291,6 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
                 }
             }
         }
-        #pragma omp parallel for num_threads(CORES)
-        for (size_t i = 0; i < local_nrow; ++i) {
-            key_vec[i] = &lookup.find((*key_table)[real_pos][i])->first;
-        }
     }
 
     value_t value_col = make_vec<value_t>(idx_type, 0);
@@ -284,16 +316,17 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
             size_t len   = pos_boundaries[g + 1] - pos_boundaries[g];
             const group_vec_t& vec = (it0 + g)->second.idx_vec;
             const auto& cur_val    = (it0 + g)->second.value;
-            for (size_t t = 0; t < vec.size(); ++t) {
-                if constexpr (Function == GroupFunction::Occurence ||
-                              Function == GroupFunction::Sum) {
+	    if constexpr (Function == GroupFunction::Occurence ||
+			  Function == GroupFunction::Sum) {
+		for (size_t t = 0; t < vec.size(); ++t)
                     value_col[start + t] = cur_val;
-                } else if constexpr (Function == GroupFunction::Mean) {
+	    } else if constexpr (Function == GroupFunction::Mean) {
+		for (size_t t = 0; t < vec.size(); ++t)
                     value_col[start + t] = cur_val / local_nrow;
-                } else {
+	    } else {
+		for (size_t t = 0; t < vec.size(); ++t)
                     value_col[start + t] = f(cur_val);
-                }
-            }
+	    }
             memcpy(row_view_idx.data() + start,
                    vec.data(),
                    len * sizeof(unsigned int));
@@ -304,16 +337,17 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
         for (size_t i = 0; i < lookup.size(); ++i) {
             const auto& pos_vec = (it + i)->second.idx_vec;
             const auto& cur_val = (it + i)->second.value;
-            for (size_t t = 0; t < pos_vec.size(); ++t) {
-                if constexpr (Function == GroupFunction::Occurence ||
-                              Function == GroupFunction::Sum) {
+	    if constexpr (Function == GroupFunction::Occurence ||
+			  Function == GroupFunction::Sum) {
+		for (size_t t = 0; t < pos_vec.size(); ++t)
                     value_col[i2 + t] = cur_val;
-                } else if constexpr (Function == GroupFunction::Mean) {
+	    } else if constexpr (Function == GroupFunction::Mean) {
+		for (size_t t = 0; t < pos_vec.size(); ++t)
                     value_col[i2 + t] = cur_val / local_nrow;
-                } else {
+	    } else {
+		for (size_t t = 0; t < pos_vec.size(); ++t)
                     value_col[i2 + t] = f(cur_val);
-                }
-            }
+	    }
             memcpy(row_view_idx.data() + i2, 
                    pos_vec.data(), 
                    sizeof(unsigned int) * pos_vec.size());
