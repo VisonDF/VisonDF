@@ -190,25 +190,25 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
 		}
 		} , key_table2);
 
-    auto dispatch_from_void = [&] (auto&& f, size_t start, size_t end) {
+    auto dispatch_from_void = [&] (auto&& f, size_t start, size_t end, map_t& cmap) {
 	    switch (idx_type) {
 	      case 0: {
-		          f(*static_cast<const std::vector<std::string>*>(val_col), start, end); break;
+		          f(*static_cast<const std::vector<std::string>*>(val_col), start, end, cmap); break;
 		       }
 	      case 1: {
-		          f(*static_cast<const std::vector<CharT>*>(val_col), start, end); break;
+		          f(*static_cast<const std::vector<CharT>*>(val_col), start, end, cmap); break;
 		       }
 	      case 2: {
-		          f(*static_cast<const std::vector<uint8_t>*>(val_col), start, end); break;
+		          f(*static_cast<const std::vector<uint8_t>*>(val_col), start, end, cmap); break;
 		       }
 	      case 3: {
-		          f(*static_cast<const std::vector<IntT>*>(val_col), start, end); break;
+		          f(*static_cast<const std::vector<IntT>*>(val_col), start, end, cmap); break;
 		       }
 	      case 4: {
-		          f(*static_cast<const std::vector<UIntT>*>(val_col), start, end); break;
+		          f(*static_cast<const std::vector<UIntT>*>(val_col), start, end, cmap); break;
 		       }
 	      case 5: {
-		          f(*static_cast<const std::vector<FloatT>*>(val_col), start, end); break;
+		          f(*static_cast<const std::vector<FloatT>*>(val_col), start, end, cmap); break;
 		      }
     };
 
