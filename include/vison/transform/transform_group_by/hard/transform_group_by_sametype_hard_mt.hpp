@@ -27,7 +27,7 @@ void transform_group_by_sametype_hard_mt(const std::vector<unsigned int>& x,
     }
 
     using value_t = std::conditional_t<Occurence, 
-                                  unsigned int,
+                                  UIntT,
                                   std::conditional_t<
                                   !(std::is_same_v<TColVal, void>),
                                   std::conditional_t<

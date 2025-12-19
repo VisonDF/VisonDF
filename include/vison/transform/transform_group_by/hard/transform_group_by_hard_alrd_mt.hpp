@@ -16,7 +16,7 @@ void transform_group_by_hard_alrd_mt()
     }
 
     using value_t = std::conditional_t<Occurence, 
-                                  std::vector<unsigned int>,
+                                  std::vector<PairGroupBy<UIntT>>,
                                   std::conditional_t<
                                   !(std::is_same_v<TColVal, void>),
                                   std::conditional_t<Function == GroupFunction::Gather,
@@ -40,7 +40,7 @@ void transform_group_by_hard_alrd_mt()
     auto& grb_by_vl = grp_by_col[Id];
     const unsigned int local_nrow = nrow;
     const unsigned int unique_grps = unique_grp[Id];
-    value_t vec_grp(unique_grps);
+    value_t vec_grp;
     for (auto& el: vec_grp)
         el.reserve(NPerGroup);
 
