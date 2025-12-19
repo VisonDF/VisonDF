@@ -12,6 +12,10 @@ inline void no_inplace_permutation(std::vector<std::vector<T>>& v,
     #pragma omp parallel for if (CORES > 1) num_threads(CORES) firstprivate(tmp)
     for (size_t col = 0; col < local_ncol; ++col) {
 
+	if (std::find(col_alrd_materialized.begin(), 
+	              col_alrd_materialized.end(), col) != col_alrd_materialized.end())
+		continue;
+
         auto& vc = v[col];
         size_t i = 0;
 
@@ -73,6 +77,9 @@ inline void no_inplace_permutation(std::vector<std::vector<T>>& v,
         for (size_t r = 0; r < nrow; ++r)
             vc[r] = tmp[r];
     }
+    col_alrd_materialized.clear();
 }
+
+
 
 
