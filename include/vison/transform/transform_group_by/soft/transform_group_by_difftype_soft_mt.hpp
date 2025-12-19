@@ -3,10 +3,25 @@
 template <typename TContainer = void,
 	  unsigned int CORES = 4,
           bool SimdHash = true,
-	  unsigned int NPerGroup = 4>
+	  unsigned int NPerGroup = 4,
+	  bool SanityCheck = true>
 void transform_group_by_difftype_soft_mt(const std::vector<unsigned int>& x,
                                          const std::string colname = "n") 
 {
+
+    if constexpr (SanityCheck) {
+	unsigned int I = 0;
+        for (auto& el : x) {
+	    if (std::sort(el.begin(), el.end()) == x) {
+	        transform_group_by_soft_alrd_mt<I, 
+			                        CORES, 
+						NPerGroup, 
+						SanityCheck>(x, colname);
+		return;
+	    }
+	    I += 1;
+	}
+    }
 
     if (in_view) {
         std::cerr << "Can't use this operation while in `view` mode, " 
