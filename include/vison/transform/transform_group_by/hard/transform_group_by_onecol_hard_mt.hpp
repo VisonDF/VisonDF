@@ -40,8 +40,8 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
                                   std::conditional_t<
                                   !(std::is_same_v<TColVal, void>),
                                   std::conditional_t<Function == GroupFunction::Gather,
-                                                     PairGroupBy<ReservingVec<element_type_t<TColVal>>>,
-                                                     PairGroupBy<element_type_t<TColVal>>>
+                                                     ReservingVec<element_type_t<TColVal>>,
+                                                     element_type_t<TColVal>>
                                   std::variant<
                                         std::string, 
                                         CharT, 
