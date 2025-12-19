@@ -1,7 +1,8 @@
 #pragma once
 
 template <unsigned int CORES = 4,
-          bool SimdHash = true>
+          bool SimdHash = true,
+	  unsigned int NPerGroup>
 void transform_group_by_onecol_soft_mt(unsigned int x,
                                        const std::string colname = "n") 
 {
@@ -21,10 +22,10 @@ void transform_group_by_onecol_soft_mt(unsigned int x,
     using map_t = std::conditional_t<
         SimdHash,
         ankerl::unordered_dense::set<key_t, 
-                                     std::vector<unsigned int>, 
+                                     ReservingVec<unsigned int>, 
                                      simd_hash>,
         ankerl::unordered_dense::set<key_t, 
-                                     std::vector<unsigned int>>
+                                     ReservingVec<unsigned int>>
     >;
 
     const unsigned int local_nrow = nrow;
@@ -80,10 +81,11 @@ void transform_group_by_onecol_soft_mt(unsigned int x,
 
     map_t lookup;
     lookup.reserve(local_nrow);
+    ReservingVec midx_vec<unsigned int>(NPerGroup);
 
     if constexpr (CORES == 1) {
         for (unsigned int i = 0; i < local_nrow; ++i) {    
-            auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], 0);
+            auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], midx_vec);
             it->second.push_back(i);
         }
     } else if constexpr (CORES > 1) {
@@ -97,13 +99,13 @@ void transform_group_by_onecol_soft_mt(unsigned int x,
             map_t& cur_map           = vec_map[tid];
             cur_map.reserve(local_nrow / CORES);
             for (size_t i = start; i < end; ++i) {
-                auto [it, inserted] = cur_map.try_emplace((*key_table)[real_pos][i], 0);
+                auto [it, inserted] = cur_map.try_emplace((*key_table)[real_pos][i], midx_vec);
                 it->second.push_back(i);
             }
         }
         for (const auto& cur_map : vec_map) {
             for (const auto& [k, v] : cur_map) {
-                auto [it, inserted] = lookup.try_emplace(k, 0);
+                auto [it, inserted] = lookup.try_emplace(k, midx_vec);
                 const unsigned int n_old_size = it->second.size();
                 it->second.resize(n_old_size + v.size());
                 memcpy(it->second.data() + n_old_size,

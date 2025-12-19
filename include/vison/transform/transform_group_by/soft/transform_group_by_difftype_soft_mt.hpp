@@ -1,7 +1,8 @@
 #pragma once
 
 template <unsigned int CORES = 4,
-          bool SimdHash = true>
+          bool SimdHash = true,
+	  unsigned int NPerGroup = 4>
 void transform_group_by_difftype_soft_mt(const std::vector<unsigned int>& x,
                                          const std::string colname = "n") 
 {
@@ -71,6 +72,7 @@ void transform_group_by_difftype_soft_mt(const std::vector<unsigned int>& x,
 
     map_t lookup;
     lookup.reserve(local_nrow);
+    ReservingVec midx_vec<unsigned int>(NPerGroup);
 
     auto build_key = [&] (std::string& key, unsigned int i) {
         for (auto idxv : idx_str) {
@@ -129,7 +131,7 @@ void transform_group_by_difftype_soft_mt(const std::vector<unsigned int>& x,
         for (unsigned int i = 0; i < local_nrow; ++i) { 
             key.clear();
             key_build(key, i);
-            auto [it, inserted] = lookup.try_emplace(key, 0);
+            auto [it, inserted] = lookup.try_emplace(key, midx_vec);
             it->second.push_back(i);
         }
     } else if constexpr (CORES > 1) {    
@@ -147,13 +149,13 @@ void transform_group_by_difftype_soft_mt(const std::vector<unsigned int>& x,
             for (size_t i = start; i < end; ++i) {
                 key.clear();
                 key_build(key, i);
-                auto [it, inserted] = cur_map.try_emplace(key, 0);
+                auto [it, inserted] = cur_map.try_emplace(key, midx_vec);
                 it->second.push_back(i);
             }
         }
         for (const auto& cur_map : vec_map) {
             for (const auto& [k, v] : cur_map) {
-                auto [it, inserted] = lookup.try_emplace(k, 0);
+                auto [it, inserted] = lookup.try_emplace(k, midx_vec);
                 const unsigned int n_old_size = it->second.size();
                 it->second.resize(n_old_size + v.size());
                 memcpy(it->second.data() + n_old_size,
