@@ -237,6 +237,9 @@ namespace vison {
                                                 type_print_vec[5].size()  
                                               };
 
+	std::vector<std::vector<unsigned int>> grp_by_col;
+	std::vector<unsigned int> unqiue_grp;
+
         #include "types/stringify_types.inl"
         #include "types/df_supported_types.inl"
         #include "inlines/get_types_size.inl"
