@@ -1,6 +1,7 @@
 #pragma once
 
-template <unsigned int CORES = 4,
+template <typename TContainer = void,
+	  unsigned int CORES = 4,
           bool SimdHash = true,
 	  unsigned int NPerGroup = 4>
 void transform_group_by_difftype_soft_mt(const std::vector<unsigned int>& x,
@@ -146,7 +147,7 @@ void transform_group_by_difftype_soft_mt(const std::vector<unsigned int>& x,
             const unsigned int end   = std::min(local_nrow, start + chunks);
             map_t& cur_map           = vec_map[tid];
             cur_map.reserve(local_nrow / CORES);
-            for (size_t i = start; i < end; ++i) {
+            for (unsigned int i = start; i < end; ++i) {
                 key.clear();
                 key_build(key, i);
                 auto [it, inserted] = cur_map.try_emplace(key, midx_vec);
@@ -160,7 +161,7 @@ void transform_group_by_difftype_soft_mt(const std::vector<unsigned int>& x,
                 it->second.resize(n_old_size + v.size());
                 memcpy(it->second.data() + n_old_size,
                        v.data(),
-                       v.size() * sizeof(T)
+                       v.size() * sizeof(unsigned int)
                        );
             }
         }

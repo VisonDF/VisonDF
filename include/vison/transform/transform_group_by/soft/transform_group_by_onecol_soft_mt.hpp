@@ -1,11 +1,27 @@
 #pragma once
 
-template <unsigned int CORES = 4,
+template <typename TContainer = void,
+	  unsigned int CORES = 4,
           bool SimdHash = true,
-	  unsigned int NPerGroup>
+	  unsigned int NPerGroup,
+	  bool SanityCheck = true>
 void transform_group_by_onecol_soft_mt(unsigned int x,
                                        const std::string colname = "n") 
 {
+
+    if constexpr (SanityCheck) {
+	unsigned int I = 0;
+	for (auto& el : grp_by_col) {
+	    if (el.size() == 1 && el[0] == x) {
+	        transform_group_by_onecol_soft_alrd_mt<I, 
+			                               CORES, 
+						       NPerGroup, 
+						       SanityCheck>(x, colname);
+	        return;
+	    }
+	    I += 1;
+	}
+    }
 
     if (in_view) {
         std::cerr << "Can't use this operation while in `view` mode, " 
@@ -43,23 +59,23 @@ void transform_group_by_onecol_soft_mt(unsigned int x,
     key_variant_t key_table = nullptr;
     key_variant_t key_table2 = nullptr;
     
-    if constexpr (!std::is_same_v<T, void>) {
-        if constexpr (std::is_same_v<T, std::string>) {
+    if constexpr (!std::is_same_v<TContainer, void>) {
+        if constexpr (std::is_same_v<TContainer, std::string>) {
             key_table = &str_v;
             idx_type = 0;
-        } else if constexpr (std::is_same_v<T, CharT>) {
+        } else if constexpr (std::is_same_v<TContainer, CharT>) {
             key_table = &chr_v;
             idx_type = 1;
-        } else if constexpr (std::is_same_v<T, uint8_t>) {
+        } else if constexpr (std::is_same_v<TContainer, uint8_t>) {
             key_table = &bool_v;
             idx_type = 2;
-        } else if constexpr (std::is_same_v<T, IntT>) {
+        } else if constexpr (std::is_same_v<TContainer, IntT>) {
             key_table = &int_v;
             idx_type = 3;
-        } else if constexpr (std::is_same_v<T, UIntT>) {
+        } else if constexpr (std::is_same_v<TContainer, UIntT>) {
             key_table = &uint_v;
             idx_type = 4;
-        } else if constexpr (std::is_same_v<T, FloatT>) {
+        } else if constexpr (std::is_same_v<TContainer, FloatT>) {
             key_table = &dbl_v;
             idx_type = 5;
         }
@@ -82,10 +98,11 @@ void transform_group_by_onecol_soft_mt(unsigned int x,
     map_t lookup;
     lookup.reserve(local_nrow);
     ReservingVec midx_vec<unsigned int>(NPerGroup);
+    auto& key_col = (*key_table)[real_pos];
 
     if constexpr (CORES == 1) {
         for (unsigned int i = 0; i < local_nrow; ++i) {    
-            auto [it, inserted] = lookup.try_emplace((*key_table)[real_pos][i], midx_vec);
+            auto [it, inserted] = lookup.try_emplace(key_col[i], midx_vec);
             it->second.push_back(i);
         }
     } else if constexpr (CORES > 1) {
@@ -98,8 +115,8 @@ void transform_group_by_onecol_soft_mt(unsigned int x,
             const unsigned int end   = std::min(local_nrow, start + chunks);
             map_t& cur_map           = vec_map[tid];
             cur_map.reserve(local_nrow / CORES);
-            for (size_t i = start; i < end; ++i) {
-                auto [it, inserted] = cur_map.try_emplace((*key_table)[real_pos][i], midx_vec);
+            for (unsigned int i = start; i < end; ++i) {
+                auto [it, inserted] = cur_map.try_emplace(key_col[i], midx_vec);
                 it->second.push_back(i);
             }
         }
@@ -110,7 +127,7 @@ void transform_group_by_onecol_soft_mt(unsigned int x,
                 it->second.resize(n_old_size + v.size());
                 memcpy(it->second.data() + n_old_size,
                        v.data(),
-                       v.size() * sizeof(T)
+                       v.size() * sizeof(unsigned int)
                        );
             }
         }

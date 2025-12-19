@@ -1,6 +1,7 @@
 #pragma once
 
-template <unsigned int CORES = 4,
+template <typename TContainer = void,
+	  unsigned int CORES = 4,
           bool SimdHash = true,
 	  unsigned int NPerGroup = 4>
 void transform_group_by_sametype_soft_mt(const std::vector<unsigned int>& x,
@@ -37,23 +38,23 @@ void transform_group_by_sametype_soft_mt(const std::vector<unsigned int>& x,
     
     key_variant_t key_table = nullptr;
     
-    if constexpr (!std::is_same_v<T, void>) {
-        if constexpr (std::is_same_v<T, std::string>) {
+    if constexpr (!std::is_same_v<TContainer, void>) {
+        if constexpr (std::is_same_v<TContainer, std::string>) {
             key_table = &str_v;
             idx_type = 0;
-        } else if constexpr (std::is_same_v<T, CharT>) {
+        } else if constexpr (std::is_same_v<TContainer, CharT>) {
             key_table = &chr_v;
             idx_type = 1;
-        } else if constexpr (std::is_same_v<T, uint8_t>) {
+        } else if constexpr (std::is_same_v<TContainer, uint8_t>) {
             key_table = &bool_v;
             idx_type = 2;
-        } else if constexpr (std::is_same_v<T, IntT>) {
+        } else if constexpr (std::is_same_v<TContainer, IntT>) {
             key_table = &int_v;
             idx_type = 3;
-        } else if constexpr (std::is_same_v<T, UIntT>) {
+        } else if constexpr (std::is_same_v<TContainer, UIntT>) {
             key_table = &uint_v;
             idx_type = 4;
-        } else if constexpr (std::is_same_v<T, FloatT>) {
+        } else if constexpr (std::is_same_v<TContainer, FloatT>) {
             key_table = &dbl_v;
             idx_type = 5;
         }
@@ -83,8 +84,8 @@ void transform_group_by_sametype_soft_mt(const std::vector<unsigned int>& x,
 
     auto build_key = [&] (std::string& key, unsigned int i) {
         for (size_t j = 0; j < x.size(); ++j) {
-            if constexpr (!std::is_same_v<T, std::string>) {
-                if constexpr (std::is_same_v<T, CharT>) {
+            if constexpr (!std::is_same_v<TContainer, std::string>) {
+                if constexpr (std::is_same_v<TContainer, CharT>) {
                     key.append(
                         (*key_table)[idx[j]][i],
                         sizeof(v)
@@ -125,7 +126,7 @@ void transform_group_by_sametype_soft_mt(const std::vector<unsigned int>& x,
             const unsigned int end   = std::min(local_nrow, start + chunks);
             map_t& cur_map           = vec_map[tid];
             cur_map.reserve(local_nrow / CORES);
-            for (size_t i = start; i < end; ++i) {
+            for (unsigned int i = start; i < end; ++i) {
                 key.clear();
                 key_build(key, i);
                 auto [it, inserted] = cur_map.try_emplace(key, midx_vec);
@@ -139,7 +140,7 @@ void transform_group_by_sametype_soft_mt(const std::vector<unsigned int>& x,
                 it->second.resize(n_old_size + v.size());
                 memcpy(it->second.data() + n_old_size,
                        v.data(),
-                       v.size() * sizeof(T)
+                       v.size() * sizeof(unsigned int)
                        );
             }
         }
