@@ -3,6 +3,7 @@
 template <typename TContainer = void,
           typename TColVal = void,
           unsigned int CORES = 4,
+          bool SanityCheck = true,
           GroupFunction Function = GroupFunction::Occurence,
           bool SimdHash = true,
           NPerGroup = 4,
@@ -24,6 +25,25 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
         if (n_col > ncol) {
             std::cerr << "Column number out of range\n";
             return;
+        }
+    }
+
+    if constexpr (SanityCheck) {
+        if constexpr (!std::is_same_v<TContainer, void>) {
+            char t_vl;
+            
+            for (auto& el : x) {
+                if (type_ref_v[el] != t_vl) {
+                    std::cerr << "`TContainer` type missmatch\n";
+                    return;
+                }
+            }
+        }
+        if constexpr (!std::is_same_v<TColVal, void>) {
+            if (type_ref_v[n_col] != t_vl) {
+                std::cerr << "`TContainer` type missmatch\n";
+                return;
+            }
         }
     }
 
@@ -158,6 +178,9 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
         if (it != matr_idx[idx_type].end()) {
             n_col_real = std::distance(matr_idx[idx_type].begin(), it);
             break;
+        } else {
+            std::cerr << "Error: `TColVal` type missmatch\n";
+            return;
         }
         if constexpr (Function == GroupFunction::Gather) {
             using R = std::remove_cvref_t<
