@@ -5,14 +5,14 @@ template <typename T = void,
           bool SimdHash = true, 
           LeftJoinMethods Method = LeftJoinMethods::First>
 void transform_left_join_mt(Dataframe &obj, 
-                const unsigned int key1, 
-                const unsigned int key2,
-                const CharT, default_chr,
-                const std::string default_str = "NA",
-                const uint8_t default_bool = 0,
-                const IntT default_int = 0,
-                const UIntT default_uint = 0,
-                const FloatT default_dbl = 0) 
+                            const unsigned int key1, 
+                            const unsigned int key2,
+                            const CharT default_chr,
+                            const std::string default_str = "NA",
+                            const uint8_t default_bool = 0,
+                            const IntT default_int = 0,
+                            const UIntT default_uint = 0,
+                            const FloatT default_dbl = 0) 
 {
  
     if (in_view) {
@@ -83,21 +83,21 @@ void transform_left_join_mt(Dataframe &obj,
         }
     } else {
         switch (type_refv[key1]) {
-            case 's': pre_col1 = &str_v;  pre_col2 = &obj.get_str_v();  break;
-            case 'c': pre_col1 = &chr_v;  pre_col2 = &obj.get_chr_v();  break;
-            case 'b': pre_col1 = &bool_v; pre_col2 = &obj.get_bool_v(); break;
-            case 'i': pre_col1 = &int_v;  pre_col2 = &obj.get_int_v();  break;
-            case 'u': pre_col1 = &uint_v; pre_col2 = &obj.get_uint_v(); break;
-            case 'd': pre_col1 = &dbl_v;  pre_col2 = &obj.get_dbl_v();  break;
+            case 's': pre_col1 = &str_v;  idx_type = 0; pre_col2 = &obj.get_str_v();  break;
+            case 'c': pre_col1 = &chr_v;  idx_type = 1; pre_col2 = &obj.get_chr_v();  break;
+            case 'b': pre_col1 = &bool_v; idx_type = 2; pre_col2 = &obj.get_bool_v(); break;
+            case 'i': pre_col1 = &int_v;  idx_type = 3; pre_col2 = &obj.get_int_v();  break;
+            case 'u': pre_col1 = &uint_v; idx_type = 4; pre_col2 = &obj.get_uint_v(); break;
+            case 'd': pre_col1 = &dbl_v;  idx_type = 5; pre_col2 = &obj.get_dbl_v();  break;
         }
     }
 
     size_t cur_idx = 0;
     while (key1 != matr_idx[idx_type][cur_idx]) ++cur_idx;
-    const std::vector<T>& col1 = (*pre_col1)[cur_idx];
+    const auto& col1 = (*pre_col1)[cur_idx];
     cur_idx = 0;
     while (key2 != matr_idx2[idx_type][cur_idx]) ++cur_idx;
-    const std::vector<T>& col2 = (*pre_col2)[cur_idx];
+    const auto& col2 = (*pre_col2)[cur_idx];
    
     str_v.resize(str_v.size()   + size_str);
     chr_v.resize(chr_v.size()   + size_chr);
@@ -154,13 +154,38 @@ void transform_left_join_mt(Dataframe &obj,
             ankerl::unordered_dense::map<std::string_view, VALUE_TYPE>
         >,
         std::conditional_t<
-            SimdHash,
-            ankerl::unordered_dense::map<T, VALUE_TYPE, simd_hash>,
-            ankerl::unordered_dense::map<T, VALUE_TYPE>
+          !std::is_same_v<T, void>,
+          std::conditional_t<
+              SimdHash,
+              ankerl::unordered_dense::map<T, VALUE_TYPE, simd_hash>,
+              ankerl::unordered_dense::map<T, VALUE_TYPE>
+          >,
+          std::conditional_t<
+              SimdHash,
+              std::variant<
+                  ankerl::unordered_dense::map<std::string_view, VALUE_TYPE, simd_hash>,
+                  ankerl::unordered_dense::map<CharT,            VALUE_TYPE, simd_hash>,
+                  ankerl::unordered_dense::map<uint8_t,          VALUE_TYPE, simd_hash>,
+                  ankerl::unordered_dense::map<IntT,             VALUE_TYPE, simd_hash>,
+                  ankerl::unordered_dense::map<UIntT,            VALUE_TYPE, simd_hash>,
+                  ankerl::unordered_dense::map<FloatT,           VALUE_TYPE, simd_hash>
+              >,
+              std::variant<
+                  ankerl::unordered_dense::map<std::string_view, VALUE_TYPE>,
+                  ankerl::unordered_dense::map<CharT,            VALUE_TYPE>,
+                  ankerl::unordered_dense::map<uint8_t,          VALUE_TYPE>,
+                  ankerl::unordered_dense::map<IntT,             VALUE_TYPE>,
+                  ankerl::unordered_dense::map<UIntT,            VALUE_TYPE>,
+                  ankerl::unordered_dense::map<FloatT,           VALUE_TYPE>
+              >
+          >
         >
     >;
 
     map_t lookup;
+    if constexpr (std::is_same_v<T, void>) {
+        lookkup.emplace<idx_type>();
+    }
     lookup.reserve(col2.size());
 
     std::vector<size_t> match_idx(nrow, SIZE_MAX);
