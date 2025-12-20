@@ -184,6 +184,13 @@ void transform_group_by_difftype_mt(const std::vector<unsigned int>& x,
     }
 
     map_t lookup;
+    if constexpr (std::is_same_v<TColVal, void>) {
+        if constexpr (Function != GroupFunction::Gather) {
+           lookup.emplace<idx_type>();
+        } else {
+           lookup.emplace<idx_type + 6>();
+        }
+    }
     lookup.reserve(local_nrow);
 
     auto key_build = [&] (std::string& key, unsigned int i) {
@@ -237,37 +244,35 @@ void transform_group_by_difftype_mt(const std::vector<unsigned int>& x,
         }
     }
 
-    const void* val_col = nullptr;
-    std::visit([&](auto ptr) {
-        using T = std::decay_t<>decltype(ptr);
-        if constexpr (!std::is_same_v<T, std::nullptr_t>) {
-           val_col = &((*ptr)[n_col_real_pos]);
-        }
-        } , key_table2);
-
-    auto dispatch_from_void = [&] (auto&& f, std::string& key, size_t start, size_t end, map_t& cmap) {
-        switch (idx_type) {
-          case 0: {
-                  f(*static_cast<const std::vector<std::string>*>(val_col), start, end, cmap); break;
-               }
-          case 1: {
-                  f(*static_cast<const std::vector<CharT>*>(val_col), start, end, cmap); break;
-               }
-          case 2: {
-                  f(*static_cast<const std::vector<uint8_t>*>(val_col), start, end, cmap); break;
-               }
-          case 3: {
-                  f(*static_cast<const std::vector<IntT>*>(val_col), start, end, cmap); break;
-               }
-          case 4: {
-                  f(*static_cast<const std::vector<UIntT>*>(val_col), start, end, cmap); break;
-               }
-          case 5: {
-                  f(*static_cast<const std::vector<FloatT>*>(val_col), start, end, cmap); break;
-              }
+    auto dispatch_from_void = [&](auto&& f, 
+                                  std::string& key, 
+                                  size_t start, 
+                                  size_t end, 
+                                  map_t& cmap) {
+        std::visit([&](auto&& tbl_ptr) {
+            using TP = std::remove_cvref_t<decltype(tbl_ptr)>;    
+            if constexpr (!std::is_same_v<TP, std::nullptr_t>) {
+                auto const& val_col = (*tbl_ptr)[n_col_real]; 
+                using Elem = typename std::decay_t<decltype(val_col)>::value_type;
+                if constexpr (Function == GroupFunction::Occurence) {
+                    Elem zero = 0;
+                    f(key, start, end, cmap, zero);
+                } else if constexpr (Function != GroupFunction::Gather) {
+                    Elem zero = 0;
+                    f(val_col, key, start, end, cmap, zero);
+                } else {
+                    ReservingVec<Elem> vec(NPerGroup);
+                    f(val_col, key, start, end, cmap, vec);
+                }
+            }
+        }, key_table2);
     };
 
-    auto occ_lookup = [&](std::string& key, size_t start, size_t end, map_t& cmap) {
+    auto occ_lookup = [&](std::string& key, 
+                          size_t start, 
+                          size_t end, 
+                          map_t& cmap,
+                          const auto& zero) {
         for (unsigned int i = start; i < end; ++i) {
             key.clear();
             key_build(key, i);
@@ -277,22 +282,32 @@ void transform_group_by_difftype_mt(const std::vector<unsigned int>& x,
         }
     };
 
-    auto add_lookup = [&](const auto& val_col2, std::string& key, size_t start, size_t end, map_t& cmap) {
+    auto add_lookup = [&](const auto& val_col, 
+                          std::string& key, 
+                          size_t start, 
+                          size_t end, 
+                          map_t& cmap,
+                          const auto& zero) {
         for (unsigned int i = start; i < end; ++i) {
             key.clear();
             key_build(key, i);
             auto [it, inserted] = cmap.try_emplace(key, zero);
-            (it->second) += val_col2[i];
+            (it->second) += val_col[i];
             key_vec[i] = &it->first;
         }
     };
 
-    auto fill_lookup = [&](const auto& val_col2, std::string& key, size_t start, size_t end, map_t& cmap) {
+    auto fill_lookup = [&](const auto& val_col, 
+                           std::string& key, 
+                           size_t start, 
+                           size_t end, 
+                           map_t& cmap,
+                           const auto& vec) {
         for (unsigned int i = start; i < end; ++i) {
             key.clear();
             key_build(key, i);
             auto [it, inserted] = cmap.try_emplace(key, vec);
-            it->second.push_back(val_col2[i]);
+            it->second.push_back(val_col[i]);
             key_vec[i] = &it->first;
         }
     };
@@ -301,13 +316,13 @@ void transform_group_by_difftype_mt(const std::vector<unsigned int>& x,
         std::string key;
         key.reserve(2048);
         if constexpr (Function == GroupFunction::Occurence) {
-        occ_lookup(key, 0, local_nrow, lookup);
-    } else if constexpr (Function == GroupFunction::Sum ||
+            dispatch_from_void(occ_lookup, key, 0, local_nrow, lookup);
+        } else if constexpr (Function == GroupFunction::Sum ||
                  Function == GroupFunction::Mean) {
-        dispatch_from_void(add_lookup, key, 0, local_nrow, lookup);
-    } else {
-        dispatch_from_void(fill_lookup, key, 0, local_nrow, lookup);
-    }
+            dispatch_from_void(add_lookup, key, 0, local_nrow, lookup);
+        } else {
+            dispatch_from_void(fill_lookup, key, 0, local_nrow, lookup);
+        }
     } else if constexpr (CORES > 1) {
         constexpr auto& size_table = get_types_size();
         const size_t val_size = size_table[idx_type];
@@ -325,48 +340,68 @@ void transform_group_by_difftype_mt(const std::vector<unsigned int>& x,
             map_t& cur_map           = vec_map[tid];
             cur_map.reserve(local_nrow / CORES);
             if constexpr (Function == GroupFunction::Occurence) {
-            occ_lookup(key, start, end, cur_map);
-        } else if constexpr (Function == GroupFunction::Sum ||
-                     Function == GroupFunction::Mean) {
-            dispatch_from_void(add_lookup, key, start, end, cur_map);
-        } else {
-            dispatch_from_void(fill_lookup, key, start, end, cur_map);
-        }
+                dispatch_from_void(occ_lookup, key, start, end, cur_map);
+            } else if constexpr (Function == GroupFunction::Sum ||
+                                 Function == GroupFunction::Mean) {
+                dispatch_from_void(add_lookup, key, start, end, cur_map);
+            } else {
+                dispatch_from_void(fill_lookup, key, start, end, cur_map);
+            }
         }
         if (triv_copy) {
-            for (const auto& cur_map : vec_map) {
-                for (const auto& [k, v] : cur_map) {
-                    if constexpr (Function == GroupFunction::Occurence ||
-                                  Function == GroupFunction::Sum       ||
-                                  Function == GroupFunction::Mean) {
-                        auto [it, inserted] = lookup.try_emplace(k, zero);
-                        (it->second) += v;
-                    } else {
-                        auto [it, inserted] = lookup.try_emplace(k, vec);
-                        const unsigned int n_old_size = it->second.size();
-                        it->second.resize(n_old_size + v.size());
-                        memcpy(it->second.data() + n_old_size,
-                               v.data(),
-                               val_size * v.size());
+            std::visit([&](auto&& tbl_ptr) {
+                using TP = std::remove_cvref_t<decltype(tbl_ptr)>;    
+                if constexpr (!std::is_same_v<TP, std::nullptr_t>) {
+                    auto const& val_col = (*tbl_ptr)[n_col_real]; 
+                    using Elem = typename std::decay_t<decltype(val_col)>::value_type;
+                    Elem zero = 0;
+                    ReservingVec<Elem> vec(NPerGroup);
+                    for (const auto& cur_map : vec_map) {
+                        for (const auto& [k, v] : cur_map) {
+                            if constexpr (Function == GroupFunction::Occurence ||
+                                          Function == GroupFunction::Sum       ||
+                                          Function == GroupFunction::Mean) {
+                                auto [it, inserted] = lookup.try_emplace(k, zero);
+                                (it->second) += v;
+                            } else {
+                                auto [it, inserted] = lookup.try_emplace(k, vec);
+                                const unsigned int n_old_size = it->second.size();
+                                it->second.resize(n_old_size + v.size());
+                                memcpy(it->second.data() + n_old_size,
+                                       v.data(),
+                                       val_size * v.size());
+                            }
+                        }
                     }
                 }
             }
+            , key_table2);
         } else {
-            for (const auto& cur_map : vec_map) {
-                for (const auto& [k, v] : cur_map) {
-                    if constexpr (Function == GroupFunction::Occurence ||
-                                  Function == GroupFunction::Sum       ||
-                                  Function == GroupFunction::Mean) {
-                        auto [it, inserted] = lookup.try_emplace(k, zero);
-                        (it->second) += v;
-                    } else {
-                        auto [it, inserted] = lookup.try_emplace(k, vec);
-                        it->second.insert(it->second.end(),
-                                          v.begin(),
-                                          v.end());
-                    }
+            std::visit([&](auto&& tbl_ptr) {
+                using TP = std::remove_cvref_t<decltype(tbl_ptr)>;    
+                if constexpr (!std::is_same_v<TP, std::nullptr_t>) {
+                    auto const& val_col = (*tbl_ptr)[n_col_real]; 
+                    using Elem = typename std::decay_t<decltype(val_col)>::value_type;
+                    Elem zero = 0;
+                    ReservingVec<Elem> vec(NPerGroup);
+                   for (const auto& cur_map : vec_map) {
+                       for (const auto& [k, v] : cur_map) {
+                           if constexpr (Function == GroupFunction::Occurence ||
+                                         Function == GroupFunction::Sum       ||
+                                         Function == GroupFunction::Mean) {
+                               auto [it, inserted] = lookup.try_emplace(k, zero);
+                               (it->second) += v;
+                           } else {
+                               auto [it, inserted] = lookup.try_emplace(k, vec);
+                               it->second.insert(it->second.end(),
+                                                 v.begin(),
+                                                 v.end());
+                           }
+                       }
+                   }
                 }
-            }
+            },
+            key_table2);
         }
        #pragma omp parallel for num_threads(CORES)
         for (size_t i = 0; i < local_nrow; ++i) {
@@ -377,7 +412,10 @@ void transform_group_by_difftype_mt(const std::vector<unsigned int>& x,
         }
     }
 
-    value_t value_col = make_vec<value_t>(idx_type, 0);
+    col_value_t value_col;
+    if constexpr (std::is_same_v<TColVal, void>) {
+        value_col.emplace<idx_type>();
+    }
     value_col.resize(local_nrow);
     #pragma omp parallel for if(CORES > 1) num_threads(CORES)
     for (size_t i = 0; i < key_vec.size(); ++i) {

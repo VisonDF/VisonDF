@@ -10,7 +10,7 @@ void transform_group_by_sametype_soft_mt(const std::vector<unsigned int>& x,
 {
 
     if constexpr (SanityCheck) {
-        unsigned int I = 0;
+t       unsigned int I = 0;
         for (auto& el : x) {
             if (std::sort(el.begin(), el.end()) == x) {
                 transform_group_by_soft_alrd_mt<I, 
