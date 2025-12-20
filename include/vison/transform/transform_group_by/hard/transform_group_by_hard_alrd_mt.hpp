@@ -15,34 +15,71 @@ void transform_group_by_hard_alrd_mt()
       }
     }
 
-    using value_t = std::conditional_t<Occurence, 
-                                  std::vector<PairGroupBy<UIntT>>,
-                                  std::conditional_t<
-                                  !(std::is_same_v<TColVal, void>),
-                                  std::conditional_t<Function == GroupFunction::Gather,
-                                                     std::vector<PairGroupBy<ReservingVec<element_type_t<TColVal>>>>,
-                                                     std::vector<PairGroupBy<element_type_t<TColVal>>>>
-                                  std::variant<
-                                        std::vector<std::string>, 
-                                        std::vector<CharT>, 
-                                        std::vector<uint8_t>, 
-                                        std::vector<IntT>, 
-                                        std::vector<UIntT>, 
-                                        std::vector<FloatT>,
-                                        std::vector<ReservingVec<std::string>>, 
-                                        std::vector<ReservingVec<CharT>>, 
-                                        std::vector<ReservingVec<uint8_t>>, 
-                                        std::vector<ReservingVec<IntT>>, 
-                                        std::vector<ReservingVec<UIntT>>, 
-                                        std::vector<ReservingVec<FloatT>>
-                                        >>>;
+    using value_t =  std::conditional_t<!std::is_same_v<TColVal, void>, 
+	  			std::conditional_t<
+					Function == GroupFunction::Gather,
+					PairGroupBy<ReservingVec<element_type_t<TColVal>>>,
+					PairGroupBy<element_type_t<TColVal>>>, 
+				std::variant<
+			        std::monostate,
+                                std::vector<PairGroupBy<std::string>>, 
+                                std::vector<PairGroupBy<CharT>>, 
+                                std::vector<PairGroupBy<uint8_t>>, 
+                                std::vector<PairGroupBy<IntT>>, 
+                                std::vector<PairGroupBy<UIntT>>, 
+                                std::vector<PairGroupBy<FloatT>>,
+                                std::vector<PairGroupBy<ReservingVec<std::string>>>, 
+                                std::vector<PairGroupBy<ReservingVec<CharT>>>, 
+                                std::vector<PairGroupBy<ReservingVec<uint8_t>>>, 
+                                std::vector<PairGroupBy<ReservingVec<IntT>>>, 
+                                std::vector<PairGroupBy<ReservingVec<UIntT>>>, 
+                                std::vector<PairGroupBy<ReservingVec<FloatT>>>
+                                >>;
 
     auto& grb_by_vl = grp_by_col[Id];
     const unsigned int local_nrow = nrow;
     const unsigned int unique_grps = unique_grp[Id];
     value_t vec_grp;
-    for (auto& el: vec_grp)
-        el.reserve(NPerGroup);
+    if constexpr (std::is_same_v<TColVal, void>) {
+        if constexpr (Function != GroupFunction::Gather) {
+            switch (type_refv[grp_by_col[0]]) {
+                case 's': vec_grp.emplace<std::vector<PairGroupBy<std::string>>>(unique_grps, 
+            			      					     PairGroupBy<std::string>(NPerGroup)); break;
+                case 'c': vec_grp.emplace<std::vector<PairGroupBy<CharT>>>(unique_grps,       
+            			      				       PairGroupBy<CharT>(NPerGroup)); break;
+                case 'b': vec_grp.emplace<std::vector<PairGroupBy<uint8_t>>>(unique_grps,     
+            			      					 PairGroupBy<uint8_t>(NPerGroup)); break;
+                case 'i': vec_grp.emplace<std::vector<PairGroupBy<IntT>>>(unique_grps, 	  
+            			      				      PairGroupBy<IntT>(NPerGroup)); break;
+                case 'u': vec_grp.emplace<std::vector<PairGroupBy<UIntT>>>(unique_grps, 	  
+            			      				       PairGroupBy<UIntT>(NPerGroup)); break;
+                case 'd': vec_grp.emplace<std::vector<PairGroupBy<FloatT>>>(unique_grps, 	  
+            			      					PairGroupBy<FloatT>(NPerGroup)); break;
+            }
+        } else {
+            switch (type_refv[grp_by_col[0]]) {
+                case 's': vec_grp.emplace<std::vector<PairGroupBy<ReservingVec<std::string>>>>(unique_grps,
+            			      				PairGroupBy<ReservingVec<std::string>>(NPerGroup)); break;
+                case 'c': vec_grp.emplace<std::vector<PairGroupBy<ReservingVec<CharT>>>>(unique_grps,
+            			      				PairGroupBy<ReservingVec<CharT>>(NPerGroup));       break;
+                case 'b': vec_grp.emplace<std::vector<PairGroupBy<ReservingVec<uint8_t>>>>(unique_grps,
+            			      				PairGroupBy<ReservingVec<uint8_t>>(NPerGroup));     break;
+                case 'i': vec_grp.emplace<std::vector<PairGroupBy<ReservingVec<IntT>>>>(unique_grps,
+            			      				PairGroupBy<ReservingVec<IntT>>(NPerGroup));        break;
+                case 'u': vec_grp.emplace<std::vector<PairGroupBy<ReservingVec<UIntT>>>>(unique_grps,
+            			      				PairGroupBy<ReservingVec<UIntT>>(NPerGroup));        break;
+                case 'd': vec_grp.emplace<std::vector<PairGroupBy<ReservingVec<FloatT>>>>(unique_grps,
+            			      				PairGroupBy<ReservingVec<FloatT>>(NPerGroup));      break;
+            }
+        }
+    } else {
+	if constexpr (Function == GroupFunction::Gather) {
+	    vec_grp = std::vector<PairGroupBy<TColVal>>(unique_grps, 
+			    			        PairGroupBy<ReservingVec<element_type_t<TColVal>>>(NPerGroup));
+	} else {
+            vec_grp = std::vector<PairGroupBy<TColVal>>(unique_grps, PairGroupBy<element_type_t<TColVal>>(NPerGroup));
+	}
+    }
 
     if constexpr (CORES == 1) {
         for (size_t i = 0; i < local_nrow; ++i)
