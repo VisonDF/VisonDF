@@ -1,18 +1,12 @@
 #pragma once
 
-std::span<const UIntT> view_coluint(unsigned int &x) const {
-  unsigned int i2 = 0;
-
-  while (i2 < matr_idx[4].size()) {
-
-    if (x == matr_idx[4][i2]) {
-      break;
-    };
-
-    i2 += 1;
+std::vector<const UIntT>& view_coluint(unsigned int x) const {
+  const auto& pos_idx = matr_idx[4];
+  for (size_t i2 = 0; i2 < pos_idx.size(); ++i2) {
+      if (x == pos_idx[i2]) {
+          return uint_v[i2];
+      };
   };
-  i2 = nrow * i2;
-
-  return std::span<const UIntT>(uint_v.data() + i2, nrow);
-
 };
+
+

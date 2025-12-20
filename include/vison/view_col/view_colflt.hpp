@@ -1,18 +1,12 @@
 #pragma once
 
-std::span<const FloatT> view_coldbl(unsigned int &x) const {
-  unsigned int i2 = 0;
-
-  while (i2 < matr_idx[5].size()) {
-
-    if (x == matr_idx[5][i2]) {
-      break;
+std::vector<const FloatT>& view_colflt(unsigned int x) const {
+    const auto& pos_idx = matr_idx[5];
+    for (size_t i2 = 0; i2 < pos_idx.size(); ++i2) {
+        if (x == pos_idx[i2]) {
+            return dbl_v[i2];
+        };
     };
-
-    i2 += 1;
-  };
-  i2 = nrow * i2;
-
-  return std::span<const FloatT>(dbl_v.data() + i2, nrow);
-
 };
+
+
