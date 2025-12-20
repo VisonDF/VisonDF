@@ -1,4 +1,4 @@
-#pragma once
+tpragma once
 
 template <typename T = void,
           unsigned int CORES = 4,
@@ -171,7 +171,7 @@ void transform_left_join_mt(Dataframe &obj,
         for (size_t i = 0; i < col2.size(); i += 1) {
             if constexpr (Method == LeftJoinMethods::First) {
                 lookup.try_emplace(col2[i], i);
-            } else if constexpr (Method == LeftJoinMethods::First) {
+            } else if constexpr (Method == LeftJoinMethods::Last) {
                 lookup[col2[i]] = i;
             }
         };
