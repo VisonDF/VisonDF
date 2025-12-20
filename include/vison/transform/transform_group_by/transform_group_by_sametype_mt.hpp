@@ -27,34 +27,56 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
         }
     }
 
-    using value_t = std::conditional_t<(Function == GroupFunction::Occurence), 
-                                  UIntT,
-                                  std::condistional_t<
-                                  !(std::is_same_v<TColVal, void>),
-                                  std::conditional_t<Function == GroupFunction::Gather,
-                                                     ReservingVec<element_type_t<TColVal>>,
-                                                     element_type_t<TColVal>>,
-                                  std::variant<
-                                        std::string, 
-                                        CharT, 
-                                        uint8_t, 
-                                        IntT, 
-                                        UIntT, 
-                                        FloatT,
-                                        ReservingVec<std::string>,
-                                        ReservingVec<CharT>, 
-                                        ReservingVec<uint8_t>, 
-                                        ReservingVec<IntT>, 
-                                        ReservingVec<UIntT>, 
-                                        ReservingVec<FloatT>
-                                        >>>;
+    using col_value_t = std::conditional_t<Function == GroupFunction::Occurence, 
+                                           std::vector<UIntT>,
+                                           std::conditional_t<!(std::is_same_v<TColVal, void>),
+                                                              std::vector<element_type_t<TColVal>>,
+                                           std::variant<
+                                                 std::vector<std::string>, 
+                                                 std::vector<CharT>, 
+                                                 std::vector<uint8_t>, 
+                                                 std::vector<IntT>, 
+                                                 std::vector<UIntT>, 
+                                                 std::vector<FloatT>
+                                                 >>>;
     using map_t = std::conditional_t<
         SimdHash,
-        ankerl::unordered_dense::map<std::string, 
-                                     value_t, 
-                                     simd_hash>,
-        ankerl::unordered_dense::map<std::string, 
-                                     value_t>
+	std::conditional_t<Function == GroupFunction::Occurence,
+                           ankerl::unordered_dense::map<key_t, UIntT, simd_hash>,	
+                           std::variant<
+                                   ankerl::unordered_dense::map<key_t, std::string>, 		     simd_hash>, 
+                                   ankerl::unordered_dense::map<key_t, CharT>,       		     simd_hash>, 
+                                   ankerl::unordered_dense::map<key_t, uint8_t>,     		     simd_hash>, 
+                                   ankerl::unordered_dense::map<key_t, IntT>,        		     simd_hash>, 
+                                   ankerl::unordered_dense::map<key_t, UIntT>,       		     simd_hash>, 
+                                   ankerl::unordered_dense::map<key_t, FloatT>,      		     simd_hash>,
+                                   ankerl::unordered_dense::map<key_t, ReservingVec<std::string>, simd_hash>, 
+                                   ankerl::unordered_dense::map<key_t, ReservingVec<CharT>,       simd_hash>, 
+                                   ankerl::unordered_dense::map<key_t, ReservingVec<uint8_t>,     simd_hash>, 
+                                   ankerl::unordered_dense::map<key_t, ReservingVec<IntT>,        simd_hash>, 
+                                   ankerl::unordered_dense::map<key_t, ReservingVec<UIntT>,       simd_hash>, 
+                                   ankerl::unordered_dense::map<key_t, ReservingVec<FloatT>,      simd_hash>
+					   >
+
+			   >,
+	std::conditional_t<Function == GroupFunction::Occurence,
+                           ankerl::unordered_dense::map<key_t, UIntT>,	
+                           std::variant<
+                                   ankerl::unordered_dense::map<key_t, std::string>, 
+                                   ankerl::unordered_dense::map<key_t, CharT>, 
+                                   ankerl::unordered_dense::map<key_t, uint8_t>, 
+                                   ankerl::unordered_dense::map<key_t, IntT>, 
+                                   ankerl::unordered_dense::map<key_t, UIntT>, 
+                                   ankerl::unordered_dense::map<key_t, FloatT>,
+                                   ankerl::unordered_dense::map<key_t, ReservingVec<std::string>>, 
+                                   ankerl::unordered_dense::map<key_t, ReservingVec<CharT>>, 
+                                   ankerl::unordered_dense::map<key_t, ReservingVec<uint8_t>>, 
+                                   ankerl::unordered_dense::map<key_t, ReservingVec<IntT>>, 
+                                   ankerl::unordered_dense::map<key_t, ReservingVec<UIntT>>, 
+                                   ankerl::unordered_dense::map<key_t, ReservingVec<FloatT>>
+					   >
+
+			   >
     >;
 
     const unsigned int local_nrow = nrow;
@@ -123,6 +145,11 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
             case 'u': key_table2 = &uint_v; idx_type = 4; break;
             case 'd': key_table2 = &dbl_v;  idx_type = 5; break;
         }
+        auto it = std::find(matr_idx[idx_type].begin(), matr_idx[idx_type].end(), n_col);
+        if (it != matr_idx[idx_type].end()) {
+            n_col_real = std::distance(matr_idx[idx_type].begin(), it);
+            break;
+        }
         if constexpr (Function == GroupFunction::Gather) {
             using R = std::remove_cvref_t<
                 std::invoke_result_t<F, std::vector<TContainer>&>
@@ -143,19 +170,18 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
                 static_assert(always_false<F>, "Unsupported type F");
             }
         }
-        auto it = std::find(matr_idx[idx_type].begin(), matr_idx[idx_type].end(), n_col);
-        if (it != matr_idx[idx_type].end()) {
-            n_col_real = std::distance(matr_idx[idx_type].begin(), it);
-            break;
-        }
     } else {
-        idx_vec = 4;
+        idx_type = 4;
     }
 
-    constexpr value_t zero = make_zero<value_t>(idx_type);
-    constexpr value_t vec  = make_vec<value_t>(idx_type, NPerGroup);
-
     map_t lookup;
+    if constexpr (std::is_same_v<TColVal; void>) {
+	if constexpr (Function != GroupFunction::Gather) {
+	    lookup.emplace<idx_type>();
+	} else {
+	    lookup.emplace<idx_type + 6>();
+	}
+    }
     lookup.reserve(local_nrow);
     std::vector<std::string*> key_vec(local_nrow);
 
@@ -182,37 +208,35 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
        }
     }
 
-    const void* val_col = nullptr;
-    std::visit([&](auto ptr) {
-		using T = std::decay_t<>decltype(ptr);
-		if constexpr (!std::is_same_v<T, std::nullptr_t>) {
-		   val_col = &((*ptr)[n_col_real_pos]);
-		}
-		} , key_table2);
-
-    auto dispatch_from_void = [&] (auto&& f, std::string& key, size_t start, size_t end, map_t& cmap) {
-	    switch (idx_type) {
-	      case 0: {
-		          f(*static_cast<const std::vector<std::string>*>(val_col), key, start, end, cmap); break;
-		       }
-	      case 1: {
-		          f(*static_cast<const std::vector<CharT>*>(val_col), key, start, end, cmap); break;
-		       }
-	      case 2: {
-		          f(*static_cast<const std::vector<uint8_t>*>(val_col), key, start, end, cmap); break;
-		       }
-	      case 3: {
-		          f(*static_cast<const std::vector<IntT>*>(val_col), key, start, end, cmap); break;
-		       }
-	      case 4: {
-		          f(*static_cast<const std::vector<UIntT>*>(val_col), key, start, end, cmap); break;
-		       }
-	      case 5: {
-		          f(*static_cast<const std::vector<FloatT>*>(val_col), key, start, end, cmap); break;
-		      }
+    auto dispatch_from_void = [&](auto&& f, 
+		                  std::string& key, 
+				  size_t start, 
+				  size_t end, 
+				  map_t& cmap) {
+        std::visit([&](auto&& tbl_ptr) {
+            using TP = std::remove_cvref_t<decltype(tbl_ptr)>;    
+            if constexpr (!std::is_same_v<TP, std::nullptr_t>) {
+                auto const& val_col = (*tbl_ptr)[n_col_real]; 
+                using Elem = typename std::decay_t<decltype(val_col)>::value_type;
+		if constexpr (Function == GroupFunction::Occurence) {
+                    Elem zero = 0;
+                    f(key, start, end, cmap, zero);
+		} if constexpr (Function != GroupFunction::Gather) {
+                    Elem zero = 0;
+                    f(val_col, key, start, end, cmap, zero);
+                } else {
+		    ReservingVec<Elem> vec(NPerGroup);
+                    f(val_col, key, start, end, cmap, vec);
+                }
+            }
+        }, key_table2);
     };
 
-    auto occ_lookup = [&](std::string& key, size_t start, size_t end, map_t& cmap) {
+    auto occ_lookup = [&](std::string& key, 
+		          size_t start, 
+			  size_t end, 
+			  map_t& cmap,
+			  const auto& zero) {
         for (unsigned int i = start; i < end; ++i) {
             key.clear();
             key_build(key, i);
@@ -222,22 +246,32 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
         }
     };
 
-    auto add_lookup = [&](const auto& val_col2, std::string& key, size_t start, size_t end, map_t& cmap) {
+    auto add_lookup = [&](const auto& val_col, 
+		          std::string& key, 
+			  size_t start, 
+			  size_t end, 
+			  map_t& cmap,
+			  const auto& zero) {
         for (unsigned int i = start; i < end; ++i) {
             key.clear();
             key_build(key, i);
             auto [it, inserted] = cmap.try_emplace(key, zero);
-            (it->second) += val_col2[i];
+            (it->second) += val_col[i];
             key_vec[i] = &it->first;
         }
     };
 
-    auto fill_lookup = [&](const auto& val_col2, std::string& key, size_t start, size_t end, map_t& cmap) {
+    auto fill_lookup = [&](const auto& val_col, 
+		           std::string& key, 
+			   size_t start, 
+			   size_t end, 
+			   map_t& cmap,
+			   const auto& vec) {
         for (unsigned int i = start; i < end; ++i) {
             key.clear();
             key_build(key, i);
             auto [it, inserted] = cmap.try_emplace(key, vec);
-            it->second.push_back(val_col2[i]);
+            it->second.push_back(val_col[i]);
             key_vec[i] = &it->first;
         }
     };
@@ -246,7 +280,7 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
         std::string key;
         key.reserve(2048);
         if constexpr (Function == GroupFunction::Occurence) {
-	    occ_lookup(key, 0, local_nrow, lookup);
+	    dispatch_from_void(occ_lookup, key, 0, local_nrow, lookup);
 	} else if constexpr (Function == GroupFunction::Sum ||
 			     Function == GroupFunction::Mean) {
 	    dispatch_from_void(add_lookup, key, 0, local_nrow, lookup);
@@ -270,7 +304,7 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
             map_t& cur_map           = vec_map[tid];
             cur_map.reserve(local_nrow / CORES);
             if constexpr (Function == GroupFunction::Occurence) {
-	        occ_lookup(key, start, end, cur_map);
+	        dispatch_from_void(occ_lookup, key, start, end, cur_map);
 	    } else if constexpr (Function == GroupFunction::Sum ||
 	    		     Function == GroupFunction::Mean) {
 	        dispatch_from_void(add_lookup, key, start, end, cur_map);
@@ -279,39 +313,59 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
 	    }
         }
         if (triv_copy) {
-            for (const auto& cur_map : vec_map) {
-                for (const auto& [k, v] : cur_map) {
-                    if constexpr (Function == GroupFunction::Occurence ||
-                                  Function == GroupFunction::Sum ||
-                                  Function == GroupFunction::Mean) {
-                        auto [it, inserted] = lookup.try_emplace(k, zero);
-                        (it->second) += v;
-                    } else {
-                        auto [it, inserted] = lookup.try_emplace(k, vec);
-                        const unsigned int n_old_size = it->second.size();
-                        memcpy(it->second.data() + n_old_size,
-                               v.data(),
-                               val_size * v.size());
+            std::visit([&](auto&& tbl_ptr) {
+                using TP = std::remove_cvref_t<decltype(tbl_ptr)>;    
+                if constexpr (!std::is_same_v<TP, std::nullptr_t>) {
+                    auto const& val_col = (*tbl_ptr)[n_col_real]; 
+                    using Elem = typename std::decay_t<decltype(val_col)>::value_type;
+		    Elem zero = 0;
+		    ReservingVec<Elem> vec(NPerGroup);
+                    for (const auto& cur_map : vec_map) {
+                        for (const auto& [k, v] : cur_map) {
+                            if constexpr (Function == GroupFunction::Occurence ||
+                                          Function == GroupFunction::Sum ||
+                                          Function == GroupFunction::Mean) {
+                                auto [it, inserted] = lookup.try_emplace(k, zero);
+                                (it->second) += v;
+                            } else {
+                                auto [it, inserted] = lookup.try_emplace(k, vec);
+                                const unsigned int n_old_size = it->second.size();
+                                memcpy(it->second.data() + n_old_size,
+                                       v.data(),
+                                       val_size * v.size());
+                            }
+                        }
                     }
-                }
-            }
+		}
+	    }
+	    , key_table2);
         } else {
-            for (const auto& cur_map : vec_map) {
-                for (const auto& [k, v] : cur_map) {
-                    if constexpr (Function == GroupFunction::Occurence ||
-                                  Function == GroupFunction::Sum ||
-                                  Function == GroupFunction::Mean) {
-                        auto [it, inserted] = lookup.try_emplace(k, zero);
-                        (it->second) += v;
-                    } else {
-                        auto [it, inserted] = lookup.try_emplace(k, vec);
-                        it->second.resize(n_old_size + v.size());
-                        it->second.insert(it->second.end(),
-                                          v.begin(),
-                                          v.end());
+            std::visit([&](auto&& tbl_ptr) {
+                using TP = std::remove_cvref_t<decltype(tbl_ptr)>;    
+                if constexpr (!std::is_same_v<TP, std::nullptr_t>) {
+                    auto const& val_col = (*tbl_ptr)[n_col_real]; 
+                    using Elem = typename std::decay_t<decltype(val_col)>::value_type;
+		    Elem zero = 0;
+		    ReservingVec<Elem> vec(NPerGroup);
+                    for (const auto& cur_map : vec_map) {
+                        for (const auto& [k, v] : cur_map) {
+                            if constexpr (Function == GroupFunction::Occurence ||
+                                          Function == GroupFunction::Sum ||
+                                          Function == GroupFunction::Mean) {
+                                auto [it, inserted] = lookup.try_emplace(k, zero);
+                                (it->second) += v;
+                            } else {
+                                auto [it, inserted] = lookup.try_emplace(k, vec);
+                                it->second.resize(n_old_size + v.size());
+                                it->second.insert(it->second.end(),
+                                                  v.begin(),
+                                                  v.end());
+                            }
+                        }
                     }
-                }
-            }
+		}
+	    }
+	    , key_table2);
         }
        #pragma omp parallel for num_threads(CORES)
         for (size_t i = 0; i < local_nrow; ++i) {
@@ -322,7 +376,10 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
         }
     }
 
-    value_t value_col = make_vec<value_t>(idx_type, 0);
+    col_value_t value_col;
+    if constexpr (std::is_same_v<TColVal, void>) {
+        value_col.emplace<idx_type>();	
+    }
     value_col.resize(local_nrow);
     #pragma omp parallel for if(CORES > 1) num_threads(CORES)
     for (size_t i = 0; i < key_vec.size(); ++i) {
