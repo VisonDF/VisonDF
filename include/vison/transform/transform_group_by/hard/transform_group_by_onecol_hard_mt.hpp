@@ -200,7 +200,7 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
 		if constexpr (Function == GroupFunction::Occurence) {
                     PairGroupBy<Elem> vec_struct(NPerGRoup);
                     f(start, end, cmap, vec_struct);
-		} if constexpr (Function != GroupFunction::Gather) {
+		} else if constexpr (Function != GroupFunction::Gather) {
                     PairGroupBy<Elem> vec_struct(NPerGRoup);
                     f(val_col, start, end, cmap, vec_struct);
                 } else {

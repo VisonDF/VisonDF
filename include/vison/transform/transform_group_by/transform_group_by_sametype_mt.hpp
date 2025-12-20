@@ -221,7 +221,7 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
 		if constexpr (Function == GroupFunction::Occurence) {
                     Elem zero = 0;
                     f(key, start, end, cmap, zero);
-		} if constexpr (Function != GroupFunction::Gather) {
+		} else if constexpr (Function != GroupFunction::Gather) {
                     Elem zero = 0;
                     f(val_col, key, start, end, cmap, zero);
                 } else {

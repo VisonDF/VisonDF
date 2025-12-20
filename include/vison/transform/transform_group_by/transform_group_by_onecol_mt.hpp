@@ -202,7 +202,7 @@ void transform_group_by_onecol_mt(const unsigned int x,
 		if constexpr (Function == GroupFunction::Occurence) {
                     Elem zero = 0;
                     f(start, end, cmap, zero);
-		} if constexpr (Function != GroupFunction::Gather) {
+		} else if constexpr (Function != GroupFunction::Gather) {
                     Elem zero = 0;
                     f(val_col, start, end, cmap, zero);
                 } else {
