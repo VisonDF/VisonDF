@@ -1,15 +1,15 @@
 #pragma once
 
 template <unsigned int Id,
-	  unsigned int CORES = 4,
-	  unsigned int NPerGroup = 4,
-	  bool SanityCheck = true>
+      unsigned int CORES = 4,
+      unsigned int NPerGroup = 4,
+      bool SanityCheck = true>
 void transform_group_by_soft_alrd_mt()
 {
     if constexpr (SanityCheck) {
-      if (Id > grp_by_col.size()) {
-	std::cerr << "Can't perform this operation because no group on these/this col have been performed\n'";
-	return;
+        if (Id > grp_by_col.size()) {
+            std::cerr << "Can't perform this operation because no group on these/this col have been performed\n'";
+            return;
       }
     }
 
@@ -24,38 +24,38 @@ void transform_group_by_soft_alrd_mt()
         for (size_t i = 0; i < local_nrow; ++i)
             vec_grp[grp_by_vl[i]].push_back(i);        
     } else {
-	    const unsigned int chunks = local_nrow / CORES + 1;
-	    std::vector<std::vector<std::vector<unsigned int>>> grp_by_cols(chunks,
-			     						    std::vector<unsigned int>(unique_grps));
-	    #pragma omp prallel num_threads(CORES)
-	    {
-                const unsigned int tid   = omp_get_thread_num();
-                const unsigned int start = tid * chunks;
-                const unsigned int end   = std::min(local_nrow, start + chunks);
-		auto& cur_grp_by         = grp_by_cols[tid];
-                for (auto& el: cur_grp_by)
-            	    el.reserve(NPerGroup);
-                for (size_t i = 0; i < local_nrow; ++i)
-                    cur_grp_by[grp_by_vl[i]].push_back(i);
-	    }
-	    #pragma omp parallel for num_threads(CORES)
-            for (size_t i = 0; i < unique_grps; ++i) {
-		size_t sz = 0;
-	        for (size_t i2 = 0; i2 < chunks; ++i2) {
-		   const auto& cur_grp_by      = grp_by_cols[i2][i];
-		   const unsigned int cur_size = cur_grp_by.size();
-		   memcpy(vec_grp.data() + sz, 
-			  cur_grp_by.data(), 
-			  cur_grp_by_size * sizeof(unsigned int)); 
-		   sz += cur_size;
-		}	        
-	    }
+        const unsigned int chunks = local_nrow / CORES + 1;
+        std::vector<std::vector<std::vector<unsigned int>>> grp_by_cols(chunks,
+                                             std::vector<unsigned int>(unique_grps));
+        #pragma omp prallel num_threads(CORES)
+        {
+             const unsigned int tid   = omp_get_thread_num();
+             const unsigned int start = tid * chunks;
+             const unsigned int end   = std::min(local_nrow, start + chunks);
+             auto& cur_grp_by         = grp_by_cols[tid];
+             for (auto& el: cur_grp_by)
+                 el.reserve(NPerGroup);
+             for (size_t i = 0; i < local_nrow; ++i)
+                 cur_grp_by[grp_by_vl[i]].push_back(i);
+        }
+        #pragma omp parallel for num_threads(CORES)
+        for (size_t i = 0; i < unique_grps; ++i) {
+            size_t sz = 0;
+            for (size_t i2 = 0; i2 < chunks; ++i2) {
+                const auto& cur_grp_by      = grp_by_cols[i2][i];
+                const unsigned int cur_size = cur_grp_by.size();
+                memcpy(vec_grp.data() + sz, 
+                   cur_grp_by.data(), 
+                   cur_grp_by_size * sizeof(unsigned int)); 
+                sz += cur_size;
+            }            
+        }
     }
 
     
     if constexpr (CORES > 1) {
        
-	std::vector<size_t> pos_boundaries;
+        std::vector<size_t> pos_boundaries;
         pos_boundaries.reserve(unique_grps);
         pos_boundaries.push_back(0);
         
