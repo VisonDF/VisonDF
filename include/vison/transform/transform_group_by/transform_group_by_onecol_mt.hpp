@@ -27,14 +27,9 @@ void transform_group_by_onecol_mt(const unsigned int x,
         }
     }
 
-    using key_t = std::conditional_t<!std::is_same_v<TContainer, void>, 
-                                     TContainer, 
-                                     std::variant<std::string, 
-                                        CharT, 
-                                        uint8_t, 
-                                        IntT, 
-                                        UIntT, 
-                                        FloatT>>;
+    using key_t = std::conditional_t<!std::is_same_v<element_type_t<TContainer>, std::string>, 
+                                     std::string_view, 
+                                     std::string>;
 
     using col_value_t = std::conditional_t<Function == GroupFunction::Occurence, 
                                            std::vector<UIntT>,
@@ -50,7 +45,7 @@ void transform_group_by_onecol_mt(const unsigned int x,
                                                  >>>;
     using map_t = std::conditional_t<
         SimdHash,
-    std::conditional_t<Function == GroupFunction::Occurence,
+        std::conditional_t<Function == GroupFunction::Occurence,
                            ankerl::unordered_dense::map<key_t, UIntT, simd_hash>,   
                            std::variant<
                                    ankerl::unordered_dense::map<key_t, std::string>,             simd_hash>, 
@@ -68,7 +63,7 @@ void transform_group_by_onecol_mt(const unsigned int x,
                        >
 
                >,
-    std::conditional_t<Function == GroupFunction::Occurence,
+        std::conditional_t<Function == GroupFunction::Occurence,
                            ankerl::unordered_dense::map<key_t, UIntT>,  
                            std::variant<
                                    ankerl::unordered_dense::map<key_t, std::string>, 
@@ -207,8 +202,32 @@ void transform_group_by_onecol_mt(const unsigned int x,
     }
     lookup.reserve(local_nrow);
 
+    auto key_build = [&] (std::string& key, unsigned int i) {
+           if constexpr (!std::is_same_v<TContainer, std::string>) {
+               if constexpr (std::is_same_v<TContainer, CharT>) {
+                   key.append(
+                       (*key_table)[real_pos][i],
+                       sizeof(v)
+                   );
+               } else {
+                   const auto& v = (*key_table)[real_pos][i]; 
+                   key.append(
+                       reinterpret_cast<const char*>(std::addressof(v)),
+                       sizeof(v)
+                   );
+               }
+           } else {
+               const std::string& src = (*key_table)[real_pos][i];
+               key.append(src.data(), src.size()); 
+           }
+    }
+
     const auto& key_col = (*key_table)[real_pos];
-    auto dispatch_from_void = [&](auto&& f, size_t start, size_t end, map_t& cmap) {
+    auto dispatch_from_void = [&](auto&& f, 
+                                  std::string& key, 
+                                  size_t start, 
+                                  size_t end, 
+                                  map_t& cmap) {
         std::visit([&](auto&& tbl_ptr) {
             using TP = std::remove_cvref_t<decltype(tbl_ptr)>;    
             if constexpr (!std::is_same_v<TP, std::nullptr_t>) {
@@ -216,61 +235,93 @@ void transform_group_by_onecol_mt(const unsigned int x,
                 using Elem = typename std::decay_t<decltype(val_col)>::value_type;
                 if constexpr (Function == GroupFunction::Occurence) {
                     Elem zero = 0;
-                    f(start, end, cmap, zero);
+                    f(key, start, end, cmap, zero);
                 } else if constexpr (Function != GroupFunction::Gather) {
                     Elem zero = 0;
-                    f(val_col, start, end, cmap, zero);
+                    f(key, val_col, start, end, cmap, zero);
                 } else {
                     ReservingVec<Elem> vec(NPerGroup);
-                    f(val_col, start, end, cmap, vec);
+                    f(key, val_col, start, end, cmap, vec);
                 }
             }
         }, key_table2);
     };
 
     auto occ_lookup = [&](size_t start, 
-                  size_t end, 
-              map_t& cmap,
-              const auto& zero) {
-        for (unsigned int i = start; i < end; ++i) {
-            auto [it, inserted] = cmap.try_emplace(key_col[i], zero);
-            ++it->second;
-            key_vec[i] = &it->first;
+                          size_t end, 
+                          map_t& cmap,
+                          const auto& zero) {
+        if constexpr (std::is_same_v<TConatiner, std::string>) {
+            for (unsigned int i = start; i < end; ++i) {
+                auto [it, inserted] = cmap.try_emplace(key_col[i], zero);
+                ++it->second;
+                key_vec[i] = &it->first;
+            }
+        } else {
+            for (unsigned int i = start; i < end; ++i) {
+                key.clear();
+                key_build(key, i);
+                auto [it, inserted] = cmap.try_emplace(key, zero);
+                ++it->second;
+                key_vec[i] = &it->first;
+            }
         }
     };
 
     auto add_lookup = [&](const auto& val_col, 
-                  size_t start, 
-              size_t end, 
-              map_t& cmap,
-              const auto& zero) {
-        for (unsigned int i = start; i < end; ++i) {
-            auto [it, inserted] = cmap.try_emplace(key_col[i], zero);
-            (it->second) += val_col[i];
-            key_vec[i] = &it->first;
+                          size_t start, 
+                          size_t end, 
+                          map_t& cmap,
+                          const auto& zero) {
+        if constexpr (std::is_same_v<TConatiner, std::string>) {
+            for (unsigned int i = start; i < end; ++i) {
+                auto [it, inserted] = cmap.try_emplace(key_col[i], zero);
+                (it->second) += val_col[i];
+                key_vec[i] = &it->first;
+            }
+        } else {
+            for (unsigned int i = start; i < end; ++i) {
+                key.clear();
+                key_build(key, i);
+                auto [it, inserted] = cmap.try_emplace(key, zero);
+                (it->second) += val_col[i];
+                key_vec[i] = &it->first;
+            }
         }
     };
 
     auto fill_lookup = [&](const auto& val_col, 
-                   size_t start, 
-               size_t end, 
-               map_t& cmap,
-               const auto& vec) {
-        for (unsigned int i = start; i < end; ++i) {
-            auto [it, inserted] = cmap.try_emplace(key_col[i], vec);
-            it->second.push_back(val_col[i]);
-            key_vec[i] = &it->first;
+                           size_t start, 
+                           size_t end, 
+                           map_t& cmap,
+                           const auto& vec) {
+        if constexpr (std::is_same_v<TContainer, std::string>) {
+            for (unsigned int i = start; i < end; ++i) {
+                auto [it, inserted] = cmap.try_emplace(key_col[i], vec);
+                it->second.push_back(val_col[i]);
+                key_vec[i] = &it->first;
+            }
+        } else {
+            for (unsigned int i = start; i < end; ++i) {
+                key.clear();
+                key_build(key, i);
+                auto [it, inserted] = cmap.try_emplace(key, vec);
+                it->second.push_back(val_col[i]);
+                key_vec[i] = &it->first;
+            }
         }
     };
 
     if constexpr (CORES == 1) {
+        std::string key;
+        key.reserve(1024);
         if constexpr (Function == GroupFunction::Occurence) {
-            dispatch_from_void(occ_lookup, 0, local_nrow, lookup);
+            dispatch_from_void(occ_lookup, key, 0, local_nrow, lookup);
         } else if constexpr (Function == GroupFunction::Sum ||
                      Function == GroupFunction::Mean) {
-            dispatch_from_void(add_lookup, 0, local_nrow, lookup);
+            dispatch_from_void(add_lookup, key, 0, local_nrow, lookup);
         } else {
-            dispatch_from_void(fill_lookup, 0, local_nrow, lookup);
+            dispatch_from_void(fill_lookup, key, 0, local_nrow, lookup);
         }
     } else if constexpr (CORES > 1) {
         constexpr auto& size_table = get_types_size();
@@ -280,18 +331,20 @@ void transform_group_by_onecol_mt(const unsigned int x,
         std::vector<map_t> vec_map(CORES);
         #pragma omp parallel num_threads(CORES)
         {
+            std::string key;
+            key.reserve(1024);
             const unsigned int tid   = omp_get_thread_num();
             const unsigned int start = tid * chunks;
             const unsigned int end   = std::min(local_nrow, start + chunks);
             map_t& cur_map           = vec_map[tid];
             cur_map.reserve(local_nrow / CORES);
             if constexpr (Function == GroupFunction::Occurence) {
-                dispatch_from_void(occ_lookup, start, end, cur_map);
+                dispatch_from_void(occ_lookup, key, start, end, cur_map);
             } else if constexpr (Function == GroupFunction::Sum ||
                 Function == GroupFunction::Mean) {
-                dispatch_from_void(add_lookup, start, end, cur_map);
+                dispatch_from_void(add_lookup, key, start, end, cur_map);
             } else {
-                dispatch_from_void(fill_lookup, start, end, cur_map);
+                dispatch_from_void(fill_lookup, key, start, end, cur_map);
             }
         }
         if (is_triv) {
