@@ -26,36 +26,66 @@ void transform_group_by_sametype_hard_mt(const std::vector<unsigned int>& x,
         }
     }
 
-    using value_t = std::conditional_t<Occurence, 
-                                  UIntT,
-                                  std::conditional_t<
-                                  !(std::is_same_v<TColVal, void>),
-                                  std::conditional_t<
-                                          Function == GroupFunction::Gather,
-                                          ReservingVec<element_type_t<TColVal>>,
-                                          element_type_t<TColVal>
-                                                    >
-                                  std::variant<
-                                        std::string, 
-                                        CharT, 
-                                        uint8_t, 
-                                        IntT, 
-                                        UIntT, 
-                                        FloatT,
-                                        ReservingVec<std::string>, 
-                                        ReservingVec<CharT>, 
-                                        ReservingVec<uint8_t>, 
-                                        ReservingVec<IntT>, 
-                                        ReservingVec<UIntT>, 
-                                        ReservingVec<FloatT>
-                                        >>>;
+    using col_value_t = std::conditional_t<Occurence, 
+                                           std::vector<UIntT>,
+                                           std::conditional_t<!(std::is_same_v<TColVal, void>),
+                                                              std::vector<element_type_t<TColVal>>,
+                                           std::variant<
+                                                 std::vector<std::string>, 
+                                                 std::vector<CharT>, 
+                                                 std::vector<uint8_t>, 
+                                                 std::vector<IntT>, 
+                                                 std::vector<UIntT>, 
+                                                 std::vector<FloatT>
+                                                 >>>;
     using map_t = std::conditional_t<
         SimdHash,
-        ankerl::unordered_dense::map<std::string, 
-                                     PairGroupBy<value_t>, 
-                                     simd_hash>,
-        ankerl::unordered_dense::map<std::string, 
-                                     PairGroupBy<value_t>>
+	std::conditional_t<Function == GroupFunction::Occurence,
+                           std::conditional_t<
+                                !(std::is_same_v<TColVal, void>),
+                                std::conditional_t<Function == GroupFunction::Gather,
+                                    ankerl::unordered_dense::map<key_t, PairGroupBy<ReservingVec<element_type_t<TColVal>>>, simd_hash>,
+                                    ankerl::unordered_dense::map<key_t, PairGroupBy<element_type_t<TColVal>>>, 		    simd_hash>
+				>,
+                                std::variant<
+                                        ankerl::unordered_dense::map<PairGroupBy<std::string>, 		     simd_hash>, 
+                                        ankerl::unordered_dense::map<PairGroupBy<CharT>,       		     simd_hash>, 
+                                        ankerl::unordered_dense::map<PairGroupBy<uint8_t>,     		     simd_hash>, 
+                                        ankerl::unordered_dense::map<PairGroupBy<IntT>,        		     simd_hash>, 
+                                        ankerl::unordered_dense::map<PairGroupBy<UIntT>,       		     simd_hash>, 
+                                        ankerl::unordered_dense::map<PairGroupBy<FloatT>,      		     simd_hash>,
+                                        ankerl::unordered_dense::map<PairGroupBy<ReservingVec<std::string>>, simd_hash>, 
+                                        ankerl::unordered_dense::map<PairGroupBy<ReservingVec<CharT>>,       simd_hash>, 
+                                        ankerl::unordered_dense::map<PairGroupBy<ReservingVec<uint8_t>>,     simd_hash>, 
+                                        ankerl::unordered_dense::map<PairGroupBy<ReservingVec<IntT>>,        simd_hash>, 
+                                        ankerl::unordered_dense::map<PairGroupBy<ReservingVec<UIntT>>,       simd_hash>, 
+                                        ankerl::unordered_dense::map<PairGroupBy<ReservingVec<FloatT>>,      simd_hash>
+                                >
+
+			  >,
+	std::conditional_t<Function == GroupFunction::Occurence,
+                           std::conditional_t<
+                                !(std::is_same_v<TColVal, void>),
+                                std::conditional_t<Function == GroupFunction::Gather,
+                                    ankerl::unordered_dense::map<key_t, PairGroupBy<ReservingVec<element_type_t<TColVal>>>>,
+                                    ankerl::unordered_dense::map<key_t, PairGroupBy<element_type_t<TColVal>>>,            >
+				>,
+                                std::variant<
+                                        ankerl::unordered_dense::map<PairGroupBy<std::string>, 		     >, 
+                                        ankerl::unordered_dense::map<PairGroupBy<CharT>,       		     >, 
+                                        ankerl::unordered_dense::map<PairGroupBy<uint8_t>,     		     >, 
+                                        ankerl::unordered_dense::map<PairGroupBy<IntT>,        		     >, 
+                                        ankerl::unordered_dense::map<PairGroupBy<UIntT>,       		     >, 
+                                        ankerl::unordered_dense::map<PairGroupBy<FloatT>,      		     >,
+                                        ankerl::unordered_dense::map<PairGroupBy<ReservingVec<std::string>>, >, 
+                                        ankerl::unordered_dense::map<PairGroupBy<ReservingVec<CharT>>,       >, 
+                                        ankerl::unordered_dense::map<PairGroupBy<ReservingVec<uint8_t>>,     >, 
+                                        ankerl::unordered_dense::map<PairGroupBy<ReservingVec<IntT>>,        >, 
+                                        ankerl::unordered_dense::map<PairGroupBy<ReservingVec<UIntT>>,       >, 
+                                        ankerl::unordered_dense::map<PairGroupBy<ReservingVec<FloatT>>,      >
+                                >
+
+			  >
     >;
 
     const unsigned int local_nrow = nrow;
@@ -132,6 +162,13 @@ void transform_group_by_sametype_hard_mt(const std::vector<unsigned int>& x,
     }
 
     map_t lookup;
+    if constexpr (std::is_same_v<TColVal, void>) {
+	if constexpr (Function != GroupFunction::Gather) {
+	    lookup.emplace<idx_type>();
+	} else {
+	    lookup.emplace<idx_type + 6>();
+	}
+    }
     lookup.reserve(local_nrow);
 
     constexpr value_t zero_struct = make_zero<value_t>(idx_type);
@@ -160,59 +197,61 @@ void transform_group_by_sametype_hard_mt(const std::vector<unsigned int>& x,
         }
     }
 
-    const void* val_col = nullptr;
-    std::visit([&](auto ptr) {
-          using T = std::decay_t<decltype(ptr)>;
-          if constexpr (!std::is_same_v<T, std::nullptr_t>) {
-    	      val_col = &((*ptr)[n_col_real]);
-          }
-    }, key_table2);
-
-    auto dispatch_from_void = [&] (auto&& f, std::string& key, size_t start, size_t end, map_t& cmap) {
-	    switch (idx_type) {
-	      case 0: {
-		          f(*static_cast<const std::vector<std::string>*>(val_col), key, start, end, cmap); break;
-		       }
-	      case 1: {
-		          f(*static_cast<const std::vector<CharT>*>(val_col), key, start, end, cmap); break;
-		       }
-	      case 2: {
-		          f(*static_cast<const std::vector<uint8_t>*>(val_col), key, start, end, cmap); break;
-		       }
-	      case 3: {
-		          f(*static_cast<const std::vector<IntT>*>(val_col), key, start, end, cmap); break;
-		       }
-	      case 4: {
-		          f(*static_cast<const std::vector<UIntT>*>(val_col), key, start, end, cmap); break;
-		       }
-	      case 5: {
-		          f(*static_cast<const std::vector<FloatT>*>(val_col), key, start, end, cmap); break;
-		      }
+    auto dispatch_from_void = [&](auto&& f, 
+		                  std::string& key, 
+				  size_t start, 
+				  size_t end, 
+				  map_t& cmap) {
+        std::visit([&](auto&& tbl_ptr) {
+            using TP = std::remove_cvref_t<decltype(tbl_ptr)>;
+    
+            if constexpr (!std::is_same_v<TP, std::nullptr_t>) {
+                auto const& val_col = (*tbl_ptr)[n_col_real]; 
+                using Elem = typename std::decay_t<decltype(val_col)>::value_type; 
+                if constexpr (Function != GroupFunction::Gather) {
+                    PairGroupBy<Elem> vec_struct(NPerGRoup);
+                    f(val_col, key, start, end, cmap, vec_struct);
+                } else {
+                    PairGroupBy<ReservingVec<Elem>> vec_struct(NPerGRoup);
+                    f(val_col, key, start, end, cmap, vec_struct);
+                }
+            }
+        }, key_table2);
     };
 
     auto occ_lookup = [&](std::string& key, size_t start, size_t end, map_t& cmap) {
         for (unsigned int i = start; i < end; ++i) {
             key.clear();
             key_build(key, i);
-            auto [it, inserted] = cmap.try_emplace(key, zero_struct);
+            auto [it, inserted] = cmap.try_emplace(key, 0);
             auto& cur_struct = it->second;
             ++cur_struct.value;
             cur_struct.idx_vec.push_back(i);
         }
     };
 
-    auto add_lookup = [&](const auto& val_col2, std::string& key, size_t start, size_t end, map_t& cmap) {
+    auto add_lookup = [&](const auto& val_col, 
+		          std::string& key, 
+			  size_t start, 
+			  size_t end, 
+			  map_t& cmap,
+			  const auto& vec_struct) {
         for (unsigned int i = start; i < end; ++i) {
             key.clear();
             key_build(key, i);
-            auto [it, inserted] = cmap.try_emplace(key, zero_struct);
+            auto [it, inserted] = cmap.try_emplace(key, vec_struct);
             auto& cur_struct = it->second;
             cur_struct.value += val_col[i];
             cur_struct.idx_vec.push_back(i);
         }
     };
 
-    auto fill_lookup = [&](const auto& val_col2, std::string& key, size_t start, size_t end, map_t& cmap) {
+    auto fill_lookup = [&](const auto& val_col, 
+		           std::string& key, 
+			   size_t start, 
+			   size_t end, 
+			   map_t& cmap,
+			   const auto& vec_struct) {
         for (unsigned int i = start; i < end; ++i) {
              key.clear();
              key_build(key, i);
@@ -322,8 +361,11 @@ void transform_group_by_sametype_hard_mt(const std::vector<unsigned int>& x,
             }
         }
     }
-
-    value_t value_col = make_vec<value_t>(idx_type, 0);
+ 
+    col_value_t value_col;
+    if constexpr (std::is_same_v<TColVal, void>) {
+	value_col.emplace<idx_type>();
+    }
     value_col.resize(local_nrow);
     if constexpr (CORES > 1) {
         using group_vec_t = std::vector<unsigned int>;
