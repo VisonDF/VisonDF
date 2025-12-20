@@ -139,7 +139,22 @@ void transform_group_by_onecol_mt(const unsigned int x,
         pos[matr_idx[idx_type][i]] = i;
     const size_t real_pos = pos[x];
 
-    std::vector<key_t*> key_vec(local_nrow);
+    using key_vec_t = std::conditional_t<!std::is_same_v<TColVal, void>, 
+                                         std::vector<element_type_t<TColVal>*>,
+                                         std::variant<
+                                               std::vector<std::string*>,
+                                               std::vector<CharT*>,
+                                               std::vector<uint8_t*>,
+                                               std::vector<IntT*>,
+                                               std::vector<UIntT*>,
+                                               std::vector<FloatT*>
+                                         >
+                                        >;
+    key_vec_t key_vec;
+    if constexpr (std::is_same_v<TcolVal, void>) {
+        key_vec.emplace<idx_type>();
+    }
+    key_vec.resize(local_nrow);
 
     size_t n_col_real;
     if constexpr (Function != GroupFunction::Occurence) {

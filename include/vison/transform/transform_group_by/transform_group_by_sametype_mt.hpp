@@ -176,11 +176,11 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
 
     map_t lookup;
     if constexpr (std::is_same_v<TColVal; void>) {
-    if constexpr (Function != GroupFunction::Gather) {
-        lookup.emplace<idx_type>();
-    } else {
-        lookup.emplace<idx_type + 6>();
-    }
+        if constexpr (Function != GroupFunction::Gather) {
+            lookup.emplace<idx_type>();
+        } else {
+            lookup.emplace<idx_type + 6>();
+        }
     }
     lookup.reserve(local_nrow);
     std::vector<std::string*> key_vec(local_nrow);
