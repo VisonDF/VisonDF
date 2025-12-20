@@ -20,6 +20,7 @@ void materialize()
         inplace_permutation<UIntT, 1>      (uint_v, row_view_idx);
         inplace_permutation<FloatT, 1>     (dbl_v,  row_view_idx);
     }
+    in_view = false;
 }
 
 
