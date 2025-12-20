@@ -53,36 +53,36 @@ void transform_group_by_onecol_mt(const unsigned int x,
 	std::conditional_t<Function == GroupFunction::Occurence,
                            ankerl::unordered_dense::map<key_t, UIntT, simd_hash>,	
                            std::variant<
-                                   ankerl::unordered_dense::map<std::string>, 		     simd_hash>, 
-                                   ankerl::unordered_dense::map<CharT>,       		     simd_hash>, 
-                                   ankerl::unordered_dense::map<uint8_t>,     		     simd_hash>, 
-                                   ankerl::unordered_dense::map<IntT>,        		     simd_hash>, 
-                                   ankerl::unordered_dense::map<UIntT>,       		     simd_hash>, 
-                                   ankerl::unordered_dense::map<FloatT>,      		     simd_hash>,
-                                   ankerl::unordered_dense::map<ReservingVec<std::string>, simd_hash>, 
-                                   ankerl::unordered_dense::map<ReservingVec<CharT>,       simd_hash>, 
-                                   ankerl::unordered_dense::map<ReservingVec<uint8_t>,     simd_hash>, 
-                                   ankerl::unordered_dense::map<ReservingVec<IntT>,        simd_hash>, 
-                                   ankerl::unordered_dense::map<ReservingVec<UIntT>,       simd_hash>, 
-                                   ankerl::unordered_dense::map<ReservingVec<FloatT>,      simd_hash>
+                                   ankerl::unordered_dense::map<key_t, std::string>, 		     simd_hash>, 
+                                   ankerl::unordered_dense::map<key_t, CharT>,       		     simd_hash>, 
+                                   ankerl::unordered_dense::map<key_t, uint8_t>,     		     simd_hash>, 
+                                   ankerl::unordered_dense::map<key_t, IntT>,        		     simd_hash>, 
+                                   ankerl::unordered_dense::map<key_t, UIntT>,       		     simd_hash>, 
+                                   ankerl::unordered_dense::map<key_t, FloatT>,      		     simd_hash>,
+                                   ankerl::unordered_dense::map<key_t, ReservingVec<std::string>, simd_hash>, 
+                                   ankerl::unordered_dense::map<key_t, ReservingVec<CharT>,       simd_hash>, 
+                                   ankerl::unordered_dense::map<key_t, ReservingVec<uint8_t>,     simd_hash>, 
+                                   ankerl::unordered_dense::map<key_t, ReservingVec<IntT>,        simd_hash>, 
+                                   ankerl::unordered_dense::map<key_t, ReservingVec<UIntT>,       simd_hash>, 
+                                   ankerl::unordered_dense::map<key_t, ReservingVec<FloatT>,      simd_hash>
 					   >
 
 			   >,
 	std::conditional_t<Function == GroupFunction::Occurence,
                            ankerl::unordered_dense::map<key_t, UIntT>,	
                            std::variant<
-                                   ankerl::unordered_dense::map<std::string>, 
-                                   ankerl::unordered_dense::map<CharT>, 
-                                   ankerl::unordered_dense::map<uint8_t>, 
-                                   ankerl::unordered_dense::map<IntT>, 
-                                   ankerl::unordered_dense::map<UIntT>, 
-                                   ankerl::unordered_dense::map<FloatT>,
-                                   ankerl::unordered_dense::map<ReservingVec<std::string>>, 
-                                   ankerl::unordered_dense::map<ReservingVec<CharT>>, 
-                                   ankerl::unordered_dense::map<ReservingVec<uint8_t>>, 
-                                   ankerl::unordered_dense::map<ReservingVec<IntT>>, 
-                                   ankerl::unordered_dense::map<ReservingVec<UIntT>>, 
-                                   ankerl::unordered_dense::map<ReservingVec<FloatT>>
+                                   ankerl::unordered_dense::map<key_t, std::string>, 
+                                   ankerl::unordered_dense::map<key_t, CharT>, 
+                                   ankerl::unordered_dense::map<key_t, uint8_t>, 
+                                   ankerl::unordered_dense::map<key_t, IntT>, 
+                                   ankerl::unordered_dense::map<key_t, UIntT>, 
+                                   ankerl::unordered_dense::map<key_t, FloatT>,
+                                   ankerl::unordered_dense::map<key_t, ReservingVec<std::string>>, 
+                                   ankerl::unordered_dense::map<key_t, ReservingVec<CharT>>, 
+                                   ankerl::unordered_dense::map<key_t, ReservingVec<uint8_t>>, 
+                                   ankerl::unordered_dense::map<key_t, ReservingVec<IntT>>, 
+                                   ankerl::unordered_dense::map<key_t, ReservingVec<UIntT>>, 
+                                   ankerl::unordered_dense::map<key_t, ReservingVec<FloatT>>
 					   >
 
 			   >
@@ -139,16 +139,6 @@ void transform_group_by_onecol_mt(const unsigned int x,
         pos[matr_idx[idx_type][i]] = i;
     const size_t real_pos = pos[x];
 
-    map_t lookup;
-    if constexpr (std::is_same_v<TColVal, void>) {
-	if constexpr  (Function != GroupFunction::Gather) {
-	    lookup.emplace<idx_type>();
-	} else {
-	    lookup.emplace<idx_type + 6>();
-	}
-    }
-    lookup.reserve(local_nrow);
-
     std::vector<key_t*> key_vec(local_nrow);
 
     size_t n_col_real;
@@ -162,6 +152,11 @@ void transform_group_by_onecol_mt(const unsigned int x,
             case 'd': key_table2 = &dbl_v;  idx_type = 5; break;
             default:
                 std::abort();
+        }
+        auto it = std::find(matr_idx[idx_type].begin(), matr_idx[idx_type].end(), n_col);
+        if (it != matr_idx[idx_type].end()) {
+            n_col_real = std::distance(matr_idx[idx_type].begin(), it);
+            break;
         }
         if constexpr (Function == GroupFunction::Gather) {
             using R = std::remove_cvref_t<
@@ -183,14 +178,19 @@ void transform_group_by_onecol_mt(const unsigned int x,
                 static_assert(always_false<F>, "Unsupported type F");
             }
         }
-        auto it = std::find(matr_idx[idx_type].begin(), matr_idx[idx_type].end(), n_col);
-        if (it != matr_idx[idx_type].end()) {
-            n_col_real = std::distance(matr_idx[idx_type].begin(), it);
-            break;
-        }
     } else {
-        idx_vec = 4;
+        idx_type = 4;
     }
+
+    map_t lookup;
+    if constexpr (std::is_same_v<TColVal, void>) {
+	if constexpr  (Function != GroupFunction::Gather) {
+	    lookup.emplace<idx_type>();
+	} else {
+	    lookup.emplace<idx_type + 6>();
+	}
+    }
+    lookup.reserve(local_nrow);
 
     const auto& key_col = (*key_table)[real_pos];
     auto dispatch_from_void = [&](auto&& f, size_t start, size_t end, map_t& cmap) {
