@@ -47,54 +47,45 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
                                                  std::vector<UIntT>, 
                                                  std::vector<FloatT>
                                                  >>>;
+
     using map_t = std::conditional_t<
         SimdHash,
 	std::conditional_t<Function == GroupFunction::Occurence,
-                           std::conditional_t<
-                                !(std::is_same_v<TColVal, void>),
-                                std::conditional_t<Function == GroupFunction::Gather,
-                                    ankerl::unordered_dense::map<key_t, PairGroupBy<ReservingVec<element_type_t<TColVal>>>, simd_hash>,
-                                    ankerl::unordered_dense::map<key_t, PairGroupBy<element_type_t<TColVal>>>, 		    simd_hash>
-				>,
-                                std::variant<
-                                        ankerl::unordered_dense::map<PairGroupBy<std::string>, 		     simd_hash>, 
-                                        ankerl::unordered_dense::map<PairGroupBy<CharT>,       		     simd_hash>, 
-                                        ankerl::unordered_dense::map<PairGroupBy<uint8_t>,     		     simd_hash>, 
-                                        ankerl::unordered_dense::map<PairGroupBy<IntT>,        		     simd_hash>, 
-                                        ankerl::unordered_dense::map<PairGroupBy<UIntT>,       		     simd_hash>, 
-                                        ankerl::unordered_dense::map<PairGroupBy<FloatT>,      		     simd_hash>,
-                                        ankerl::unordered_dense::map<PairGroupBy<ReservingVec<std::string>>, simd_hash>, 
-                                        ankerl::unordered_dense::map<PairGroupBy<ReservingVec<CharT>>,       simd_hash>, 
-                                        ankerl::unordered_dense::map<PairGroupBy<ReservingVec<uint8_t>>,     simd_hash>, 
-                                        ankerl::unordered_dense::map<PairGroupBy<ReservingVec<IntT>>,        simd_hash>, 
-                                        ankerl::unordered_dense::map<PairGroupBy<ReservingVec<UIntT>>,       simd_hash>, 
-                                        ankerl::unordered_dense::map<PairGroupBy<ReservingVec<FloatT>>,      simd_hash>
-                                >
+                           ankerl::unordered_dense::map<key_t, PairGroupBy<UIntT>, simd_hash>,	
+                           std::variant<
+                                   ankerl::unordered_dense::map<PairGroupBy<std::string>, 		     simd_hash>, 
+                                   ankerl::unordered_dense::map<PairGroupBy<CharT>,       		     simd_hash>, 
+                                   ankerl::unordered_dense::map<PairGroupBy<uint8_t>,     		     simd_hash>, 
+                                   ankerl::unordered_dense::map<PairGroupBy<IntT>,        		     simd_hash>, 
+                                   ankerl::unordered_dense::map<PairGroupBy<UIntT>,       		     simd_hash>, 
+                                   ankerl::unordered_dense::map<PairGroupBy<FloatT>,      		     simd_hash>,
+                                   ankerl::unordered_dense::map<PairGroupBy<ReservingVec<std::string>>, simd_hash>, 
+                                   ankerl::unordered_dense::map<PairGroupBy<ReservingVec<CharT>>,       simd_hash>, 
+                                   ankerl::unordered_dense::map<PairGroupBy<ReservingVec<uint8_t>>,     simd_hash>, 
+                                   ankerl::unordered_dense::map<PairGroupBy<ReservingVec<IntT>>,        simd_hash>, 
+                                   ankerl::unordered_dense::map<PairGroupBy<ReservingVec<UIntT>>,       simd_hash>, 
+                                   ankerl::unordered_dense::map<PairGroupBy<ReservingVec<FloatT>>,      simd_hash>
+					   >
 
-			  >,
+			   >,
 	std::conditional_t<Function == GroupFunction::Occurence,
-                           std::conditional_t<
-                                !(std::is_same_v<TColVal, void>),
-                                std::conditional_t<Function == GroupFunction::Gather,
-                                    ankerl::unordered_dense::map<key_t, PairGroupBy<ReservingVec<element_type_t<TColVal>>>>,
-                                    ankerl::unordered_dense::map<key_t, PairGroupBy<element_type_t<TColVal>>>,            >
-				>,
-                                std::variant<
-                                        ankerl::unordered_dense::map<PairGroupBy<std::string>, 		     >, 
-                                        ankerl::unordered_dense::map<PairGroupBy<CharT>,       		     >, 
-                                        ankerl::unordered_dense::map<PairGroupBy<uint8_t>,     		     >, 
-                                        ankerl::unordered_dense::map<PairGroupBy<IntT>,        		     >, 
-                                        ankerl::unordered_dense::map<PairGroupBy<UIntT>,       		     >, 
-                                        ankerl::unordered_dense::map<PairGroupBy<FloatT>,      		     >,
-                                        ankerl::unordered_dense::map<PairGroupBy<ReservingVec<std::string>>, >, 
-                                        ankerl::unordered_dense::map<PairGroupBy<ReservingVec<CharT>>,       >, 
-                                        ankerl::unordered_dense::map<PairGroupBy<ReservingVec<uint8_t>>,     >, 
-                                        ankerl::unordered_dense::map<PairGroupBy<ReservingVec<IntT>>,        >, 
-                                        ankerl::unordered_dense::map<PairGroupBy<ReservingVec<UIntT>>,       >, 
-                                        ankerl::unordered_dense::map<PairGroupBy<ReservingVec<FloatT>>,      >
-                                >
+                           ankerl::unordered_dense::map<key_t, PairGroupBy<UIntT>>,	
+                           std::variant<
+                                   ankerl::unordered_dense::map<PairGroupBy<std::string>>, 
+                                   ankerl::unordered_dense::map<PairGroupBy<CharT>>, 
+                                   ankerl::unordered_dense::map<PairGroupBy<uint8_t>>, 
+                                   ankerl::unordered_dense::map<PairGroupBy<IntT>>, 
+                                   ankerl::unordered_dense::map<PairGroupBy<UIntT>>, 
+                                   ankerl::unordered_dense::map<PairGroupBy<FloatT>>,
+                                   ankerl::unordered_dense::map<PairGroupBy<ReservingVec<std::string>>>, 
+                                   ankerl::unordered_dense::map<PairGroupBy<ReservingVec<CharT>>>, 
+                                   ankerl::unordered_dense::map<PairGroupBy<ReservingVec<uint8_t>>>, 
+                                   ankerl::unordered_dense::map<PairGroupBy<ReservingVec<IntT>>>, 
+                                   ankerl::unordered_dense::map<PairGroupBy<ReservingVec<UIntT>>>, 
+                                   ankerl::unordered_dense::map<PairGroupBy<ReservingVec<FloatT>>>
+					   >
 
-			  >
+			   >
     >;
 
     const unsigned int local_nrow = nrow;

@@ -38,6 +38,7 @@ void transform_group_by_sametype_hard_mt(const std::vector<unsigned int>& x,
                                                  std::vector<UIntT>, 
                                                  std::vector<FloatT>
                                                  >>>;
+
     using map_t = std::conditional_t<
         SimdHash,
 	std::conditional_t<Function == GroupFunction::Occurence,
