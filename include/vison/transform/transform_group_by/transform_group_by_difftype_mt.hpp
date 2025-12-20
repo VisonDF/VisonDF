@@ -158,6 +158,9 @@ void transform_group_by_difftype_mt(const std::vector<unsigned int>& x,
         if (it != matr_idx[idx_type].end()) {
             n_col_real = std::distance(matr_idx[idx_type].begin(), it);
             break;
+        } else {
+            std::err << "`TColVal` type missmatch\n";
+            return;
         }
         if constexpr (Function == GroupFunction::Gather) {
             using R = std::remove_cvref_t<

@@ -167,6 +167,9 @@ void transform_group_by_onecol_mt(const unsigned int x,
         if (it != matr_idx[idx_type].end()) {
             n_col_real = std::distance(matr_idx[idx_type].begin(), it);
             break;
+        } else {
+            std::cerr << "`TColVal` type missmatch\n";
+            return;
         }
         if constexpr (Function == GroupFunction::Gather) {
             using R = std::remove_cvref_t<
@@ -247,7 +250,8 @@ void transform_group_by_onecol_mt(const unsigned int x,
         }, key_table2);
     };
 
-    auto occ_lookup = [&](size_t start, 
+    auto occ_lookup = [&](std::string& key,
+                          size_t start, 
                           size_t end, 
                           map_t& cmap,
                           const auto& zero) {
@@ -268,7 +272,8 @@ void transform_group_by_onecol_mt(const unsigned int x,
         }
     };
 
-    auto add_lookup = [&](const auto& val_col, 
+    auto add_lookup = [&](std::string& key,
+                          const auto& val_col, 
                           size_t start, 
                           size_t end, 
                           map_t& cmap,
@@ -290,7 +295,8 @@ void transform_group_by_onecol_mt(const unsigned int x,
         }
     };
 
-    auto fill_lookup = [&](const auto& val_col, 
+    auto fill_lookup = [&](std::string& key,
+                           const auto& val_col, 
                            size_t start, 
                            size_t end, 
                            map_t& cmap,
