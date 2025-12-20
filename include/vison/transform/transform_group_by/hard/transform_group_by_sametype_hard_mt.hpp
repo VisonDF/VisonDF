@@ -171,9 +171,6 @@ void transform_group_by_sametype_hard_mt(const std::vector<unsigned int>& x,
     }
     lookup.reserve(local_nrow);
 
-    constexpr value_t zero_struct = make_zero<value_t>(idx_type);
-    constexpr value_t vec_struct  = make_vec<value_t>(idx_type);
-
     auto build_key = [&] (std::string& key, unsigned int i) {
         for (size_t j = 0; j < x.size(); ++j) {
             if constexpr (!std::is_same_v<T, std::string>) {

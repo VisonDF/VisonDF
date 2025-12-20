@@ -138,6 +138,13 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
     std::sort(idx_dbl.begin(),  idx_dbl.end());
 
     map_t lookup;
+    if constexpr (std::is_same_v<TColVal, void>) {
+	if constexpr (Function != GroupFunction::Gather) {
+	    lookup.emplace<idx_type>();
+	} else {
+	    lookup.emplace<idx_type + 6>();
+	}
+    }
     lookup.reserve(local_nrow);
 
     std::string key;
@@ -171,9 +178,6 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
             break;
         }
     }
-
-    constexpr value_t zero_struct = make_zero<value_t>(idx_type);
-    constexpr value_t vec_struct  = make_vec<value_t>(idx_type);
 
     auto build_key = [&] (std::string& key, unsigned int i) {
         for (auto idxv : idx_str) {
@@ -417,7 +421,10 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
 	}
     }
 
-    value_t value_col = make_vec(idx_type, 0);
+    value_t value_col;
+    if constexpr (std::is_same_v<TColVal, void>) {
+	value_col.emplace<idx_type>();
+    }
     value_col.resize(local_nrow);
     if constexpr (CORES > 1) {
         using group_vec_t = std::vector<unsigned int>;
