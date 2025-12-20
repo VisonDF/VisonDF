@@ -421,7 +421,7 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
 	}
     }
 
-    value_t value_col;
+    col_value_t value_col;
     if constexpr (std::is_same_v<TColVal, void>) {
 	value_col.emplace<idx_type>();
     }
