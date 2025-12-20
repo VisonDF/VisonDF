@@ -129,16 +129,6 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
     std::sort(idx_uint.begin(), idx_uint.end());
     std::sort(idx_dbl.begin(),  idx_dbl.end());
 
-    map_t lookup;
-    if constexpr (std::is_same_v<TColVal, void>) {
-	if constexpr (Function != GroupFunction::Gather) {
-	    lookup.emplace<idx_type>();
-	} else {
-	    lookup.emplace<idx_type + 6>();
-	}
-    }
-    lookup.reserve(local_nrow);
-
     std::string key;
     key.reserve(2048);   
     size_t idx_type;
@@ -169,7 +159,39 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
             n_col_real = std::distance(matr_idx[idx_type].begin(), it);
             break;
         }
+        if constexpr (Function == GroupFunction::Gather) {
+            using R = std::remove_cvref_t<
+                std::invoke_result_t<F, std::vector<TContainer>&>
+            >;
+            if constexpr (std::is_same_v<R, std::string>) {
+                idx_type = 0;
+            } else if constexpr (std::is_same_v<R, CharT>) {
+                idx_type = 1;
+            } else if constexpr (std::is_same_v<R, uint8_t>) {
+                idx_type = 2;
+            } else if constexpr (std::is_same_v<R, IntT>) {
+                idx_type = 3;
+            } else if constexpr (std::is_same_v<R, UIntT>) {
+                idx_type = 4;
+            } else if constexpr (std::is_same_v<R, FloatT>) {
+                idx_type = 5;
+            } else {
+                static_assert(always_false<F>, "Unsupported type F");
+            }
+        }
+    } else {
+	idx_type = 4;
     }
+
+    map_t lookup;
+    if constexpr (std::is_same_v<TColVal, void>) {
+	if constexpr (Function != GroupFunction::Gather) {
+	    lookup.emplace<idx_type>();
+	} else {
+	    lookup.emplace<idx_type + 6>();
+	}
+    }
+    lookup.reserve(local_nrow);
 
     auto build_key = [&] (std::string& key, unsigned int i) {
         for (auto idxv : idx_str) {
