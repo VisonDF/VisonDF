@@ -149,6 +149,9 @@ void transform_group_by_sametype_hard_mt(const std::vector<unsigned int>& x,
         if (it != matr_idx[idx_type].end()) {
             n_col_real = std::distance(matr_idx[idx_type].begin(), it);
             break;
+        } else {
+            std::cerr << "`TColVal` type missmatch;";
+            return;
         }
         if constexpr (Function == GroupFunction::Gather) {
             using R = std::remove_cvref_t<
@@ -184,7 +187,7 @@ void transform_group_by_sametype_hard_mt(const std::vector<unsigned int>& x,
     }
     lookup.reserve(local_nrow);
 
-    auto build_key = [&] (std::string& key, unsigned int i) {
+    auto key_build = [&] (std::string& key, unsigned int i) {
         for (size_t j = 0; j < x.size(); ++j) {
             if constexpr (!std::is_same_v<T, std::string>) {
                 if constexpr (std::is_same_v<T, CharT>) {

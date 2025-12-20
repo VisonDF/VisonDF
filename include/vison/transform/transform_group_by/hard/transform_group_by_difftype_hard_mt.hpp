@@ -216,7 +216,7 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
     }
     lookup.reserve(local_nrow);
 
-    auto build_key = [&] (std::string& key, unsigned int i) {
+    auto key_build = [&] (std::string& key, unsigned int i) {
         for (auto idxv : idx_str) {
             const auto& v = str_v[idxv][i];
             key.append(
