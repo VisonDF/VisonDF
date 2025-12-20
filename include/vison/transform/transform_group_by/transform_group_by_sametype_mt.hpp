@@ -209,10 +209,10 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
     }
 
     auto dispatch_from_void = [&](auto&& f, 
-                          std::string& key, 
-                  size_t start, 
-                  size_t end, 
-                  map_t& cmap) {
+                                  std::string& key, 
+                                  size_t start, 
+                                  size_t end, 
+                                  map_t& cmap) {
         std::visit([&](auto&& tbl_ptr) {
             using TP = std::remove_cvref_t<decltype(tbl_ptr)>;    
             if constexpr (!std::is_same_v<TP, std::nullptr_t>) {
