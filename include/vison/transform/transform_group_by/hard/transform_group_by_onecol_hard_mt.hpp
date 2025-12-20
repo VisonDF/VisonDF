@@ -183,8 +183,11 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
     
             if constexpr (!std::is_same_v<TP, std::nullptr_t>) {
                 auto const& val_col = (*tbl_ptr)[n_col_real]; 
-                using Elem = typename std::decay_t<decltype(val_col)>::value_type; 
-                if constexpr (Function != GroupFunction::Gather) {
+                using Elem = typename std::decay_t<decltype(val_col)>::value_type;
+		if constexpr (Function == GroupFunction::Occurence) {
+                    PairGroupBy<Elem> vec_struct(NPerGRoup);
+                    f(start, end, cmap, vec_struct);
+		} if constexpr (Function != GroupFunction::Gather) {
                     PairGroupBy<Elem> vec_struct(NPerGRoup);
                     f(val_col, start, end, cmap, vec_struct);
                 } else {
@@ -197,9 +200,10 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
 
     auto occ_lookup = [&](size_t start, 
 		          size_t end, 
-			  map_t& cmap) {
+			  map_t& cmap,
+			  const auto& vec_struct) {
         for (unsigned int i = start; i < end; ++i) {
-            auto [it, inserted] = cmap.try_emplace(key_col[i], 0);
+            auto [it, inserted] = cmap.try_emplace(key_col[i], vec_struct);
             auto& cur_struct = it->second;
             ++cur_struct.value;
             cur_struct.idx_vec.push_back(i);
@@ -234,7 +238,7 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
 
     if constexpr (CORES == 1) {
         if constexpr (Function == GroupFunction::Occurence) {
-	    occ_lookup(0, local_nrow, lookup);
+	    dispatch_from_void(occ_lookup, 0, local_nrow, lookup);
         } else if constexpr (Function == GroupFunction::Sum ||
                              Function == GroupFunction::Mean) {
 	    dispatch_from_void(add_lookup, 0, local_nrow, lookup);
@@ -264,67 +268,87 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
             }
         }
         if (triv_copy) {
-            for (const auto& cur_map : vec_map) {
-                for (const auto& [k, v] : cur_map) {
-                    if constexpr (Function == GroupFunction::Occurence ||
-                                  Function == GroupFunction::Mean ||
-                                  Function == GroupFunction::Sum) {
-                        auto [it, inserted] = lookup.try_emplace(k, zero_struct);
-                        auto& cur_struct = it->second;
-                        cur_struct.value += v.value;
-                        const unsigned int n_old_size = cur_struct.idx_vec.size();
-                        cur_struct.idx_vec.resize(n_old_size + v.idx_vec.size());
-                        memcpy(cur_struct.idx_vec.data() + n_old_size,
-                               v.idx_vec.data(),
-                               v.idx_vec.size() * sizeof(unsigned int)
-                               );
-                    } else {
-                        auto [it, inserted] = lookup.try_emplace(k, vec_struct);
-                        auto& cur_struct = it->second;
-                        const unsigned int n_old_size_val = cur_struct.size();
-                        cur_struct.value.resize(n_old_size_val + v.size());
-                        memcpy(cur_struct.value.data() + n_old_size_val,
-                               v.value.data(),
-                               v.value.size() * val_size);
-                        const unsigned int n_old_size = cur_struct.idx_vec.size();
-                        cur_struct.idx_vec.resize(n_old_size + v.idx_vec.size());
-                        memcpy(cur_struct.idx_vec.data() + n_old_size,
-                               v.idx_vec.data(),
-                               v.idx_vec.size() * sizeof(unsigned int)
-                               );
+            std::visit([&](auto&& tbl_ptr) {
+                using TP = std::remove_cvref_t<decltype(tbl_ptr)>;
+                if constexpr (!std::is_same_v<TP, std::nullptr_t>) {
+                    auto const& val_col = (*tbl_ptr)[n_col_real]; 
+                    using Elem = typename std::decay_t<decltype(val_col)>::value_type;
+		    PairGroupBy<Elem> zero_struct(NPerGroup);
+		    PairGroupBy<ReservingVec<Elem>> zero_struct(NPerGroup);
+                    for (const auto& cur_map : vec_map) {
+                        for (const auto& [k, v] : cur_map) {
+                            if constexpr (Function == GroupFunction::Occurence ||
+                                          Function == GroupFunction::Mean ||
+                                          Function == GroupFunction::Sum) {
+                                auto [it, inserted] = lookup.try_emplace(k, zero_struct);
+                                auto& cur_struct = it->second;
+                                cur_struct.value += v.value;
+                                const unsigned int n_old_size = cur_struct.idx_vec.size();
+                                cur_struct.idx_vec.resize(n_old_size + v.idx_vec.size());
+                                memcpy(cur_struct.idx_vec.data() + n_old_size,
+                                       v.idx_vec.data(),
+                                       v.idx_vec.size() * sizeof(unsigned int)
+                                       );
+                            } else {
+                                auto [it, inserted] = lookup.try_emplace(k, vec_struct);
+                                auto& cur_struct = it->second;
+                                const unsigned int n_old_size_val = cur_struct.size();
+                                cur_struct.value.resize(n_old_size_val + v.size());
+                                memcpy(cur_struct.value.data() + n_old_size_val,
+                                       v.value.data(),
+                                       v.value.size() * val_size);
+                                const unsigned int n_old_size = cur_struct.idx_vec.size();
+                                cur_struct.idx_vec.resize(n_old_size + v.idx_vec.size());
+                                memcpy(cur_struct.idx_vec.data() + n_old_size,
+                                       v.idx_vec.data(),
+                                       v.idx_vec.size() * sizeof(unsigned int)
+                                       );
+                            }
+                        }
                     }
-                }
-            }
+		}
+	    }
+	    , key_table2);
         } else {
-            for (const auto& cur_map : vec_map) {
-                for (const auto& [k, v] : cur_map) {
-                    if constexpr (Function == GroupFunction::Occurence ||
-                                  Function == GroupFunction::Mean ||
-                                  Function == GroupFunction::Sum) {
-                        auto [it, inserted] = lookup.try_emplace(k, zero_struct);
-                        auto& cur_struct = it->second;
-                        cur_struct.value += v.value;
-                        const unsigned int n_old_size = cur_struct.idx_vec.size();
-                        cur_struct.idx_vec.resize(n_old_size + v.idx_vec.size());
-                        memcpy(cur_struct.idx_vec.data() + n_old_size,
-                               v.idx_vec.data(),
-                               v.idx_vec.size() * sizeof(unsigned int)
-                               );
-                    } else {
-                        auto [it, inserted] = lookup.try_emplace(k, vec_struct);
-                        auto& cur_struct = it->second;
-                        cur_struct.value.insert(cur_struct.value.end(),
-                                                v.value.begin(),
-                                                v.value.end());
-                        const unsigned int n_old_size = cur_struct.idx_vec.size();
-                        cur_struct.idx_vec.resize(n_old_size + v.idx_vec.size());
-                        memcpy(cur_struct.idx_vec.data() + n_old_size,
-                               v.idx_vec.data(),
-                               v.idx_vec.size() * sizeof(unsigned int)
-                               );
+            std::visit([&](auto&& tbl_ptr) {
+                using TP = std::remove_cvref_t<decltype(tbl_ptr)>;
+                if constexpr (!std::is_same_v<TP, std::nullptr_t>) {
+                    auto const& val_col = (*tbl_ptr)[n_col_real]; 
+                    using Elem = typename std::decay_t<decltype(val_col)>::value_type;
+		    PairGroupBy<Elem> zero_struct(NPerGroup);
+		    PairGroupBy<ReservingVec<Elem>> zero_struct(NPerGroup);
+                    for (const auto& cur_map : vec_map) {
+                        for (const auto& [k, v] : cur_map) {
+                            if constexpr (Function == GroupFunction::Occurence ||
+                                          Function == GroupFunction::Mean ||
+                                          Function == GroupFunction::Sum) {
+                                auto [it, inserted] = lookup.try_emplace(k, zero_struct);
+                                auto& cur_struct = it->second;
+                                cur_struct.value += v.value;
+                                const unsigned int n_old_size = cur_struct.idx_vec.size();
+                                cur_struct.idx_vec.resize(n_old_size + v.idx_vec.size());
+                                memcpy(cur_struct.idx_vec.data() + n_old_size,
+                                       v.idx_vec.data(),
+                                       v.idx_vec.size() * sizeof(unsigned int)
+                                       );
+                            } else {
+                                auto [it, inserted] = lookup.try_emplace(k, vec_struct);
+                                auto& cur_struct = it->second;
+                                cur_struct.value.insert(cur_struct.value.end(),
+                                                        v.value.begin(),
+                                                        v.value.end());
+                                const unsigned int n_old_size = cur_struct.idx_vec.size();
+                                cur_struct.idx_vec.resize(n_old_size + v.idx_vec.size());
+                                memcpy(cur_struct.idx_vec.data() + n_old_size,
+                                       v.idx_vec.data(),
+                                       v.idx_vec.size() * sizeof(unsigned int)
+                                       );
+                            }
+                        }
                     }
-                }
-            }
+		}
+	    }
+	    , key_table2);
         }
     }
 
