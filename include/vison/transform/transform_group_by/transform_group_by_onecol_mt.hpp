@@ -50,26 +50,26 @@ void transform_group_by_onecol_mt(const unsigned int x,
                                                  >>>;
     using map_t = std::conditional_t<
         SimdHash,
-	std::conditional_t<Function == GroupFunction::Occurence,
-                           ankerl::unordered_dense::map<key_t, UIntT, simd_hash>,	
+    std::conditional_t<Function == GroupFunction::Occurence,
+                           ankerl::unordered_dense::map<key_t, UIntT, simd_hash>,   
                            std::variant<
-                                   ankerl::unordered_dense::map<key_t, std::string>, 		     simd_hash>, 
-                                   ankerl::unordered_dense::map<key_t, CharT>,       		     simd_hash>, 
-                                   ankerl::unordered_dense::map<key_t, uint8_t>,     		     simd_hash>, 
-                                   ankerl::unordered_dense::map<key_t, IntT>,        		     simd_hash>, 
-                                   ankerl::unordered_dense::map<key_t, UIntT>,       		     simd_hash>, 
-                                   ankerl::unordered_dense::map<key_t, FloatT>,      		     simd_hash>,
+                                   ankerl::unordered_dense::map<key_t, std::string>,             simd_hash>, 
+                                   ankerl::unordered_dense::map<key_t, CharT>,                   simd_hash>, 
+                                   ankerl::unordered_dense::map<key_t, uint8_t>,                 simd_hash>, 
+                                   ankerl::unordered_dense::map<key_t, IntT>,                    simd_hash>, 
+                                   ankerl::unordered_dense::map<key_t, UIntT>,                   simd_hash>, 
+                                   ankerl::unordered_dense::map<key_t, FloatT>,                  simd_hash>,
                                    ankerl::unordered_dense::map<key_t, ReservingVec<std::string>, simd_hash>, 
                                    ankerl::unordered_dense::map<key_t, ReservingVec<CharT>,       simd_hash>, 
                                    ankerl::unordered_dense::map<key_t, ReservingVec<uint8_t>,     simd_hash>, 
                                    ankerl::unordered_dense::map<key_t, ReservingVec<IntT>,        simd_hash>, 
                                    ankerl::unordered_dense::map<key_t, ReservingVec<UIntT>,       simd_hash>, 
                                    ankerl::unordered_dense::map<key_t, ReservingVec<FloatT>,      simd_hash>
-					   >
+                       >
 
-			   >,
-	std::conditional_t<Function == GroupFunction::Occurence,
-                           ankerl::unordered_dense::map<key_t, UIntT>,	
+               >,
+    std::conditional_t<Function == GroupFunction::Occurence,
+                           ankerl::unordered_dense::map<key_t, UIntT>,  
                            std::variant<
                                    ankerl::unordered_dense::map<key_t, std::string>, 
                                    ankerl::unordered_dense::map<key_t, CharT>, 
@@ -83,9 +83,9 @@ void transform_group_by_onecol_mt(const unsigned int x,
                                    ankerl::unordered_dense::map<key_t, ReservingVec<IntT>>, 
                                    ankerl::unordered_dense::map<key_t, ReservingVec<UIntT>>, 
                                    ankerl::unordered_dense::map<key_t, ReservingVec<FloatT>>
-					   >
+                       >
 
-			   >
+               >
     >;
 
     const unsigned int local_nrow = nrow;
@@ -199,14 +199,14 @@ void transform_group_by_onecol_mt(const unsigned int x,
             if constexpr (!std::is_same_v<TP, std::nullptr_t>) {
                 auto const& val_col = (*tbl_ptr)[n_col_real]; 
                 using Elem = typename std::decay_t<decltype(val_col)>::value_type;
-												    if constexpr (Function == GroupFunction::Occurence) {
+                if constexpr (Function == GroupFunction::Occurence) {
                     Elem zero = 0;
                     f(start, end, cmap, zero);
-																} else if constexpr (Function != GroupFunction::Gather) {
+                } else if constexpr (Function != GroupFunction::Gather) {
                     Elem zero = 0;
                     f(val_col, start, end, cmap, zero);
                 } else {
-																    ReservingVec<Elem> vec(NPerGroup);
+                    ReservingVec<Elem> vec(NPerGroup);
                     f(val_col, start, end, cmap, vec);
                 }
             }
@@ -214,9 +214,9 @@ void transform_group_by_onecol_mt(const unsigned int x,
     };
 
     auto occ_lookup = [&](size_t start, 
-		          size_t end, 
-			  map_t& cmap,
-			  const auto& zero) {
+                  size_t end, 
+              map_t& cmap,
+              const auto& zero) {
         for (unsigned int i = start; i < end; ++i) {
             auto [it, inserted] = cmap.try_emplace(key_col[i], zero);
             ++it->second;
@@ -225,10 +225,10 @@ void transform_group_by_onecol_mt(const unsigned int x,
     };
 
     auto add_lookup = [&](const auto& val_col, 
-		          size_t start, 
-			  size_t end, 
-			  map_t& cmap,
-			  const auto& zero) {
+                  size_t start, 
+              size_t end, 
+              map_t& cmap,
+              const auto& zero) {
         for (unsigned int i = start; i < end; ++i) {
             auto [it, inserted] = cmap.try_emplace(key_col[i], zero);
             (it->second) += val_col[i];
@@ -237,10 +237,10 @@ void transform_group_by_onecol_mt(const unsigned int x,
     };
 
     auto fill_lookup = [&](const auto& val_col, 
-		           size_t start, 
-			   size_t end, 
-			   map_t& cmap,
-			   const auto& vec) {
+                   size_t start, 
+               size_t end, 
+               map_t& cmap,
+               const auto& vec) {
         for (unsigned int i = start; i < end; ++i) {
             auto [it, inserted] = cmap.try_emplace(key_col[i], vec);
             it->second.push_back(val_col[i]);
@@ -252,7 +252,7 @@ void transform_group_by_onecol_mt(const unsigned int x,
         if constexpr (Function == GroupFunction::Occurence) {
             dispatch_from_void(occ_lookup, 0, local_nrow, lookup);
         } else if constexpr (Function == GroupFunction::Sum ||
-        		     Function == GroupFunction::Mean) {
+                     Function == GroupFunction::Mean) {
             dispatch_from_void(add_lookup, 0, local_nrow, lookup);
         } else {
             dispatch_from_void(fill_lookup, 0, local_nrow, lookup);
@@ -270,14 +270,14 @@ void transform_group_by_onecol_mt(const unsigned int x,
             const unsigned int end   = std::min(local_nrow, start + chunks);
             map_t& cur_map           = vec_map[tid];
             cur_map.reserve(local_nrow / CORES);
-												if constexpr (Function == GroupFunction::Occurence) {
-	    							    dispatch_from_void(occ_lookup, start, end, cur_map);
-	    							} else if constexpr (Function == GroupFunction::Sum ||
-	    									     Function == GroupFunction::Mean) {
-	    							    dispatch_from_void(add_lookup, start, end, cur_map);
-	    							} else {
-	    							    dispatch_from_void(fill_lookup, start, end, cur_map);
-	    							}
+            if constexpr (Function == GroupFunction::Occurence) {
+                dispatch_from_void(occ_lookup, start, end, cur_map);
+            } else if constexpr (Function == GroupFunction::Sum ||
+                Function == GroupFunction::Mean) {
+                dispatch_from_void(add_lookup, start, end, cur_map);
+            } else {
+                dispatch_from_void(fill_lookup, start, end, cur_map);
+            }
         }
         if (is_triv) {
             std::visit([&](auto&& tbl_ptr) {
@@ -285,8 +285,8 @@ void transform_group_by_onecol_mt(const unsigned int x,
                 if constexpr (!std::is_same_v<TP, std::nullptr_t>) {
                     auto const& val_col = (*tbl_ptr)[n_col_real]; 
                     using Elem = typename std::decay_t<decltype(val_col)>::value_type;
-																				Elem zero = 0;
-																				ReservingVec<Elem> vec(NPerGroup);
+                    Elem zero = 0;
+                    ReservingVec<Elem> vec(NPerGroup);
                     for (const auto& cur_map : vec_map) {
                         for (const auto& [k, v] : cur_map) {
                             if constexpr (Function == GroupFunction::Occurence ||
@@ -305,16 +305,16 @@ void transform_group_by_onecol_mt(const unsigned int x,
                         }
                     }
                 }
-	           }
-												, key_table2);
+               }
+               , key_table2);
         } else {
             std::visit([&](auto&& tbl_ptr) {
                 using TP = std::remove_cvref_t<decltype(tbl_ptr)>;    
                 if constexpr (!std::is_same_v<TP, std::nullptr_t>) {
                     auto const& val_col = (*tbl_ptr)[n_col_real]; 
                     using Elem = typename std::decay_t<decltype(val_col)>::value_type;
-																				Elem zero = 0;
-																				ReservingVec<Elem> vec(NPerGroup);
+                    Elem zero = 0;
+                    ReservingVec<Elem> vec(NPerGroup);
                     for (const auto& cur_map : vec_map) {
                         for (const auto& [k, v] : cur_map) {
                             if constexpr (Function == GroupFunction::Occurence ||
@@ -330,8 +330,8 @@ void transform_group_by_onecol_mt(const unsigned int x,
                             }
                         }
                     }
-																}
-												}
+                }
+            }
         }
         #pragma omp parallel for num_threads(CORES)
         for (size_t i = 0; i < local_nrow; ++i)
