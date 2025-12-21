@@ -184,25 +184,6 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
     }
     lookup.reserve(local_nrow);
 
-    auto key_build = [&] (std::string& key, unsigned int i) {
-           if constexpr (!std::is_same_v<TContainer, std::string>) {
-               if constexpr (std::is_same_v<TContainer, CharT>) {
-                   key.append(
-                       (*key_table)[real_pos][i],
-                       sizeof(v)
-                   );
-               } else {
-                   const auto& v = (*key_table)[real_pos][i]; 
-                   key.append(
-                       reinterpret_cast<const char*>(std::addressof(v)),
-                       sizeof(v)
-                   );
-               }
-           } else {
-               const std::string& src = (*key_table)[real_pos][i];
-               key.append(src.data(), src.size()); 
-           }
-    }
     const auto& key_col = (*key_table)[real_pos];
 
     auto dispatch_from_void = [&](auto&& f,
@@ -244,13 +225,22 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
                 cur_struct.idx_vec.push_back(i);
             }
         } else {
-            for (unsigned int i = start; i < end; ++i) {
-                auto [it, inserted] = cmap.try_emplace(std::string_view{
-                                                          reinterpret_cast<const char*>(&key_col[i]),
-                                                          val_size}, vec_struct);
-                auto& cur_struct = it->second;
-                ++cur_struct.value;
-                cur_struct.idx_vec.push_back(i);
+            if (idx_type != 0) {
+                for (unsigned int i = start; i < end; ++i) {
+                    auto [it, inserted] = cmap.try_emplace(std::string_view{
+                                                              reinterpret_cast<const char*>(&key_col[i]),
+                                                              val_size}, vec_struct);
+                    auto& cur_struct = it->second;
+                    ++cur_struct.value;
+                    cur_struct.idx_vec.push_back(i);
+                }
+            } else {
+                for (unsigned int i = start; i < end; ++i) {
+                    auto [it, inserted] = cmap.try_emplace(key_col[i], vec_struct);
+                    auto& cur_struct = it->second;
+                    ++cur_struct.value;
+                    cur_struct.idx_vec.push_back(i);
+                }
             }
         }
     };
@@ -268,13 +258,22 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
                 cur_struct.idx_vec.push_back(i);
             }
         } else {
-            for (unsigned int i = start; i < end; ++i) {
-                auto [it, inserted] = cmap.try_emplace(std::string_view{
-                                                          reinterpret_cast<const char*>(&key_col[i]),
-                                                          val_size}, vec_struct);
-                auto& cur_struct = it->second;
-                cur_struct.value += val_col[i];
-                cur_struct.idx_vec.push_back(i);
+            if (idx_type != 0) {
+                for (unsigned int i = start; i < end; ++i) {
+                    auto [it, inserted] = cmap.try_emplace(std::string_view{
+                                                              reinterpret_cast<const char*>(&key_col[i]),
+                                                              val_size}, vec_struct);
+                    auto& cur_struct = it->second;
+                    cur_struct.value += val_col[i];
+                    cur_struct.idx_vec.push_back(i);
+                }
+            } else {
+                for (unsigned int i = start; i < end; ++i) {
+                    auto [it, inserted] = cmap.try_emplace(key_col[i], vec_struct);
+                    auto& cur_struct = it->second;
+                    cur_struct.value += val_col[i];
+                    cur_struct.idx_vec.push_back(i);
+                }
             }
         }
     };
@@ -292,13 +291,22 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
                   cur_struct.idx_vec.push_back(i);
              }
         } else {
-             for (unsigned int i = start; i < end; ++i) {
-                  auto [it, inserted] = cmap.try_emplace(std::string_view{
-                                                          reinterpret_cast<const char*>(&key_col[i]),
-                                                          val_size}, vec_struct);
-                  auto& cur_struct = it->second;
-                  cur_struct.value.push_back(val_col[i]);
-                  cur_struct.idx_vec.push_back(i);
+             if (idx_type != 0) {
+                 for (unsigned int i = start; i < end; ++i) {
+                      auto [it, inserted] = cmap.try_emplace(std::string_view{
+                                                              reinterpret_cast<const char*>(&key_col[i]),
+                                                              val_size}, vec_struct);
+                      auto& cur_struct = it->second;
+                      cur_struct.value.push_back(val_col[i]);
+                      cur_struct.idx_vec.push_back(i);
+                 }
+             } else {
+                 for (unsigned int i = start; i < end; ++i) {
+                      auto [it, inserted] = cmap.try_emplace(key_col[i], vec_struct);
+                      auto& cur_struct = it->second;
+                      cur_struct.value.push_back(val_col[i]);
+                      cur_struct.idx_vec.push_back(i);
+                 }
              }
         }
     };
