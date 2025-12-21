@@ -225,12 +225,20 @@ void transform_group_by_onecol_mt(const unsigned int x,
                 key_vec[i] = &it->first;
             }
         } else {
-            for (unsigned int i = start; i < end; ++i) {
-                auto [it, inserted] = cmap.try_emplace(std::string_view{
-                                                        reinterpret_cast<const char*>(&key_col[i]),
-                                                         val_size}, zero);
-                ++it->second;
-                key_vec[i] = &it->first;
+            if (idx_type != 0) {
+                for (unsigned int i = start; i < end; ++i) {
+                    auto [it, inserted] = cmap.try_emplace(std::string_view{
+                                                            reinterpret_cast<const char*>(&key_col[i]),
+                                                             val_size}, zero);
+                    ++it->second;
+                    key_vec[i] = &it->first;
+                }
+            } else {
+                for (unsigned int i = start; i < end; ++i) {
+                    auto [it, inserted] = cmap.try_emplace(key_col[i], zero);
+                    ++it->second;
+                    key_vec[i] = &it->first;
+                }
             }
         }
     };
@@ -247,12 +255,20 @@ void transform_group_by_onecol_mt(const unsigned int x,
                 key_vec[i] = &it->first;
             }
         } else {
-            for (unsigned int i = start; i < end; ++i) {
-                auto [it, inserted] = cmap.try_emplace(std::string_view{
-                                                        reinterpret_cast<const char*>(&key_col[i]),
-                                                         val_size}, zero);
-                (it->second) += val_col[i];
-                key_vec[i] = &it->first;
+            if (idx_type != 0) {
+                for (unsigned int i = start; i < end; ++i) {
+                    auto [it, inserted] = cmap.try_emplace(std::string_view{
+                                                            reinterpret_cast<const char*>(&key_col[i]),
+                                                             val_size}, zero);
+                    (it->second) += val_col[i];
+                    key_vec[i] = &it->first;
+                }
+            } else {
+                for (unsigned int i = start; i < end; ++i) {
+                    auto [it, inserted] = cmap.try_emplace(key_col[i], zero);
+                    (it->second) += val_col[i];
+                    key_vec[i] = &it->first;
+                }
             }
         }
     };
@@ -269,12 +285,20 @@ void transform_group_by_onecol_mt(const unsigned int x,
                 key_vec[i] = &it->first;
             }
         } else {
-            for (unsigned int i = start; i < end; ++i) {
-                auto [it, inserted] = cmap.try_emplace(std::string_view{
-                                                        reinterpret_cast<const char*>(&key_col[i]),
-                                                         val_size}, vec);
-                it->second.push_back(val_col[i]);
-                key_vec[i] = &it->first;
+            if (idx_type != 0) {
+                for (unsigned int i = start; i < end; ++i) {
+                    auto [it, inserted] = cmap.try_emplace(std::string_view{
+                                                            reinterpret_cast<const char*>(&key_col[i]),
+                                                             val_size}, vec);
+                    it->second.push_back(val_col[i]);
+                    key_vec[i] = &it->first;
+                }
+            } else {
+                for (unsigned int i = start; i < end; ++i) {
+                    auto [it, inserted] = cmap.try_emplace(key_col[i], vec);
+                    it->second.push_back(val_col[i]);
+                    key_vec[i] = &it->first;
+                }
             }
         }
     };
