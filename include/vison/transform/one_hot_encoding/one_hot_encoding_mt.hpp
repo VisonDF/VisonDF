@@ -7,20 +7,21 @@ void one_hot_encoding_mt(unsigned int x)
 {
 
     const unsigned int local_nrow = nrow;
-    using variant_t = std::variant<std::string,
-                                    CharT,
-                                    uint8_t,
-                                    IntT,
-                                    UIntT,
-                                    FloatT>;
+    using variant_t = std::variant<std::vector<std::string>&,
+                                   std::vector<CharT>&,
+                                   std::vector<uint8_t>&,
+                                   std::vector<IntT>&,
+                                   std::vector<UIntT>&,
+                                   std::vector<FloatT>&
+                                   >;
 
-    using value_t = std::conditional_t<!(std::is_same_v<T, void>),
-                                        T,
+    using value_t = std::conditional_t<!std::is_same_v<T, void>,
+                                        std::vector<T>&,
                                         variant_t>;
 
     using set_t = std::conditional_t<SimdHash,
-                ankerl::unordered_dense::set<value_t, simd_hash>,
-                ankerl::unordered_dense::set<value_t>
+                ankerl::unordered_dense::set<std::string_view, simd_hash>,
+                ankerl::unordered_dense::set<std::string_view>
                 >;
 
     using container_t = std::variant<
@@ -70,23 +71,40 @@ void one_hot_encoding_mt(unsigned int x)
     for (int i = 0; i < matr_idx[idx_type].size(); ++i)
         pos[matr_idx[idx_type][i]] = i;
 
-    cons unsigned int real_pos = pos[x];
+    const unsigned int real_pos = pos[x];
 
-    auto get_key_col = [&](auto ptr) -> const std::vector<value_t>& {
-        return (*ptr)[real_pos];
-    };
-    const std::vector<value_t>& key_col = std::visit(get_key_col, key_table);
+    value_t key_col = [&]() -> value_t {
+        if constexpr (std::is_same_v<T, void>) {
+            return std::visit(
+                [&](auto* ptr) -> value_t {
+                    return (*ptr)[real_pos];
+                },
+                key_table
+            );
+        } else {
+            return (*key_table)[real_pos];
+        }
+    }();
 
-    unsigned int n_unique;
+    set_t final_set;
+    final_set.reserve(local_nrow / 5);
     if constexpr (CORES == 1) {
-        
-        set_t cur_set;
-        cur_set.reserve(local_nrow / 5);
-        for (auto& el : key_col)
-            cur_set.try_emplace(el);
-
-        n_unique = cur_set.size();
-
+        if constexpr (std::is_same_v<T, std::string>) {
+            for (auto& el : key_col)
+                final_set.try_emplace(el);
+        } else {
+            constexpr auto& size_table = get_types_size();
+            const size_t val_size = size_table[idx_type];
+            if (idx_type != 0) {
+                for (auto& el : key_col) {
+                    final_set.try_emplace(std::string_view{reinterpret_cast<const char*>(el), 
+                                        val_size});
+                }
+            } else {
+                for (auto& el : key_col)
+                    final_set.try_emplace(el);
+            }
+        }
     } else {
 
         const unsigned int chunks = local_nrow / CORES + 1;
@@ -101,29 +119,39 @@ void one_hot_encoding_mt(unsigned int x)
             const unsigned int start = tid * chunks;
             const unsigned int end   = std::min(local_nrow, (start + chunks));
 
-            for (size_t i = start; i < end; ++i)
-                cur_set.try_emplace(key_col[i]);
+            if constexpr (std::is_same_v<T, std::string>) {
+                for (size_t i = start; i < end; ++i)
+                    cur_set.try_emplace(key_col[i]);
+            } else {
+                if (idx_type != 0) {
+                    constexpr auto& size_table = get_types_size();
+                    const size_t val_size = size_table[idx_type];
+                    for (size_t i = start; i < end; ++i) {
+                        cur_set.try_emplace(std::string_view{reinterpret_cast<const char*>(key_col[i]), 
+                                            val_size});
+                    }
+                } else {
+                    for (size_t i = start; i < end; ++i)
+                        cur_set.try_emplace(key_col[i]);
+                }
+            }
 
         }
 
-        set_t final_set;
-        final_set.reserve(local_nrow / 5);
         for (auto& cur_set : set_vec)
             for (auto& el : cur_set)
                 final_set.try_emplace(el);
 
-        n_unique = final_set.size();
-
     }
+    
+    const unsigned int n_unique = final_set.size();
 
-    ankerl::unordered_dense::map<value_t, unsigned int> hash_col;
+    ankerl::unordered_dense::map<std::string_view, unsigned int> hash_col;
     hash_col.reserve(n_unique);
-    {
-        size_t i = 0;
-        for (auto& el : final_set) {
-            hash_col[el] = i;
-            i += 1;
-        }
+    size_t i = 0;
+    for (auto& el : final_set) {
+        hash_col[el] = i;
+        i += 1;
     }
 
     std::vector<std::vector<uint8_t>> cols_to_add(n_unique), std::vector<uint8_t>(local_nrow, 0);
