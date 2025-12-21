@@ -169,17 +169,27 @@ void transform_left_join_mt(Dataframe &obj,
                 }
             };
         } else {
-            constexpr auto& size_table = get_types_size();
-            const size_t val_size = size_table[idx_type];
-            for (size_t i = 0; i < col2.size(); i += 1) {
-                if constexpr (Method == LeftJoinMethods::First) {
-                    lookup.try_emplace(std::string_view{static_cast<const char*>(&col2[i]), 
-                                                        val_size}, i);
-                } else if constexpr (Method == LeftJoinMethods::Last) {
-                    lookup[std::string_view{static_cast<const char*>(&col2[i]), 
-                                                        val_size}] = i;
-                }
-            };
+            if (idx_type != 0) {
+                constexpr auto& size_table = get_types_size();
+                const size_t val_size = size_table[idx_type];
+                for (size_t i = 0; i < col2.size(); i += 1) {
+                    if constexpr (Method == LeftJoinMethods::First) {
+                        lookup.try_emplace(std::string_view{reinterpret_cast<const char*>(&col2[i]), 
+                                                            val_size}, i);
+                    } else if constexpr (Method == LeftJoinMethods::Last) {
+                        lookup[std::string_view{reinterpret_cast<const char*>(&col2[i]), 
+                                                            val_size}] = i;
+                    }
+                };
+            } else {
+                for (size_t i = 0; i < col2.size(); i += 1) {
+                    if constexpr (Method == LeftJoinMethods::First) {
+                        lookup.try_emplace(col2[i], i);
+                    } else if constexpr (Method == LeftJoinMethods::Last) {
+                        lookup[col2[i]] = i;
+                    }
+                };
+            }
         }
 
         nrow2 = obj.get_nrow();
@@ -201,16 +211,26 @@ void transform_left_join_mt(Dataframe &obj,
                 it->second.idxs.push_back(i);
             };
         } else {
-            constexpr auto& size_table = get_types_size();
-            const size_t val_size = size_table[idx_type];
-            for (size_t i = 0; i < col2.size(); i += 1) {
-                auto [it, inserted] = lookup.try_emplace(std::string_view{static_cast<const char*>(&col2[i]), 
-                                                             val_size}, MatchGroup{});
-                if (inserted) {
-                    it->second.idxs.reserve(3);
-                }
-                it->second.idxs.push_back(i);
-            };
+            if (idx_type != 0) {
+                constexpr auto& size_table = get_types_size();
+                const size_t val_size = size_table[idx_type];
+                for (size_t i = 0; i < col2.size(); i += 1) {
+                    auto [it, inserted] = lookup.try_emplace(std::string_view{reinterpret_cast<const char*>(&col2[i]), 
+                                                                 val_size}, MatchGroup{});
+                    if (inserted) {
+                        it->second.idxs.reserve(3);
+                    }
+                    it->second.idxs.push_back(i);
+                };
+            } else {
+                for (size_t i = 0; i < col2.size(); i += 1) {
+                    auto [it, inserted] = lookup.try_emplace(col2[i], MatchGroup{});
+                    if (inserted) {
+                        it->second.idxs.reserve(3);
+                    }
+                    it->second.idxs.push_back(i);
+                };
+            }
         }
 
         nrow2 = obj.get_nrow();
