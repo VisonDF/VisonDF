@@ -1,4 +1,4 @@
-tpragma once
+#pragma once
 
 template <typename T = void,
           unsigned int CORES = 4,
@@ -147,45 +147,12 @@ void transform_left_join_mt(Dataframe &obj,
         size_t>;
 
     using map_t = std::conditional_t<
-        std::is_same_v<T, std::string>,
-        std::conditional_t<
             SimdHash,
             ankerl::unordered_dense::map<std::string_view, VALUE_TYPE, simd_hash>,
             ankerl::unordered_dense::map<std::string_view, VALUE_TYPE>
-        >,
-        std::conditional_t<
-          !std::is_same_v<T, void>,
-          std::conditional_t<
-              SimdHash,
-              ankerl::unordered_dense::map<T, VALUE_TYPE, simd_hash>,
-              ankerl::unordered_dense::map<T, VALUE_TYPE>
-          >,
-          std::conditional_t<
-              SimdHash,
-              std::variant<
-                  ankerl::unordered_dense::map<std::string_view, VALUE_TYPE, simd_hash>,
-                  ankerl::unordered_dense::map<CharT,            VALUE_TYPE, simd_hash>,
-                  ankerl::unordered_dense::map<uint8_t,          VALUE_TYPE, simd_hash>,
-                  ankerl::unordered_dense::map<IntT,             VALUE_TYPE, simd_hash>,
-                  ankerl::unordered_dense::map<UIntT,            VALUE_TYPE, simd_hash>,
-                  ankerl::unordered_dense::map<FloatT,           VALUE_TYPE, simd_hash>
-              >,
-              std::variant<
-                  ankerl::unordered_dense::map<std::string_view, VALUE_TYPE>,
-                  ankerl::unordered_dense::map<CharT,            VALUE_TYPE>,
-                  ankerl::unordered_dense::map<uint8_t,          VALUE_TYPE>,
-                  ankerl::unordered_dense::map<IntT,             VALUE_TYPE>,
-                  ankerl::unordered_dense::map<UIntT,            VALUE_TYPE>,
-                  ankerl::unordered_dense::map<FloatT,           VALUE_TYPE>
-              >
-          >
-        >
-    >;
+        >;
 
     map_t lookup;
-    if constexpr (std::is_same_v<T, void>) {
-        lookkup.emplace<idx_type>();
-    }
     lookup.reserve(col2.size());
 
     std::vector<size_t> match_idx(nrow, SIZE_MAX);
@@ -193,13 +160,27 @@ void transform_left_join_mt(Dataframe &obj,
     if constexpr (Method == LeftJoinMethods::First || 
                   Method == LeftJoinMethods::Last) {
 
-        for (size_t i = 0; i < col2.size(); i += 1) {
-            if constexpr (Method == LeftJoinMethods::First) {
-                lookup.try_emplace(col2[i], i);
-            } else if constexpr (Method == LeftJoinMethods::Last) {
-                lookup[col2[i]] = i;
-            }
-        };
+        if constexpr (std::is_same_v<T, std::string>) {
+            for (size_t i = 0; i < col2.size(); i += 1) {
+                if constexpr (Method == LeftJoinMethods::First) {
+                    lookup.try_emplace(col2[i], i);
+                } else if constexpr (Method == LeftJoinMethods::Last) {
+                    lookup[col2[i]] = i;
+                }
+            };
+        } else {
+            constexpr auto& size_table = get_types_size();
+            const size_t val_size = size_table[idx_type];
+            for (size_t i = 0; i < col2.size(); i += 1) {
+                if constexpr (Method == LeftJoinMethods::First) {
+                    lookup.try_emplace(std::string_view{static_cast<const char*>(&col2[i]), 
+                                                        val_size}, i);
+                } else if constexpr (Method == LeftJoinMethods::Last) {
+                    lookup[std::string_view{static_cast<const char*>(&col2[i]), 
+                                                        val_size}] = i;
+                }
+            };
+        }
 
         nrow2 = obj.get_nrow();
 
@@ -211,13 +192,26 @@ void transform_left_join_mt(Dataframe &obj,
 
     } else if constexpr (Method == LeftJoinMethods::Aligned) {
 
-        for (size_t i = 0; i < col2.size(); i += 1) {
-          auto [it, inserted] = lookup.try_emplace(col2[i]);
-          if (inserted) {
-            it->second.idxs.reserve(2);
-          }
-          it->second.idxs.push_back(i);
-        };
+        if constexpr (std::is_same_v<T, std::string>) {
+            for (size_t i = 0; i < col2.size(); i += 1) {
+                auto [it, inserted] = lookup.try_emplace(col2[i], MatchGroup{});
+                if (inserted) {
+                    it->second.idxs.reserve(3);
+                }
+                it->second.idxs.push_back(i);
+            };
+        } else {
+            constexpr auto& size_table = get_types_size();
+            const size_t val_size = size_table[idx_type];
+            for (size_t i = 0; i < col2.size(); i += 1) {
+                auto [it, inserted] = lookup.try_emplace(std::string_view{static_cast<const char*>(&col2[i]), 
+                                                             val_size}, MatchGroup{});
+                if (inserted) {
+                    it->second.idxs.reserve(3);
+                }
+                it->second.idxs.push_back(i);
+            };
+        }
 
         nrow2 = obj.get_nrow();
 
