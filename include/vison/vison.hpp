@@ -71,6 +71,7 @@ namespace vison {
     #include "inlines/inplace_permutation.inl"
     #include "inlines/no_inplace_permutation.inl"
     #include "materialize/materialize_mt.hpp"
+    #include "unmaterialize/unmaterialize_mt.hpp"
 
     #include "inlines/warning.inl"
 
@@ -167,6 +168,7 @@ namespace vison {
      
         bool in_view = false;
         std::vector<size_t> row_view_idx;
+        ankerl::unordered_dense::map<unsigned int, unsigned int> row_view_map;
         std::vector<unsigned int> col_alrd_materialized;
 
         std::vector<std::vector<std::string>> str_v;
@@ -460,6 +462,9 @@ namespace vison {
         #include "transform/transform_group_by/hard/transform_group_by_onecol_hard_mt.hpp"
         #include "transform/transform_group_by/hard/transform_group_by_sametype_hard_mt.hpp"
         #include "transform/transform_group_by/hard/transform_group_by_difftype_hard_mt.hpp"
+
+        #include "transform/transform_group_by/soft/transform_group_by_soft_alrd_mt.hpp"
+
         #include "transform/transform_group_by/soft/transform_group_by_onecol_soft_mt.hpp"
         #include "transform/transform_group_by/soft/transform_group_by_sametype_soft_mt.hpp"
         #include "transform/transform_group_by/soft/transform_group_by_difftype_soft_mt.hpp"

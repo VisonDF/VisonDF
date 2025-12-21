@@ -21,6 +21,7 @@ void materialize()
         inplace_permutation<FloatT, 1>     (dbl_v,  row_view_idx);
     }
     in_view = false;
+    row_view_map.clear();
 }
 
 

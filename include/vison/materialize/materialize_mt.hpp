@@ -20,6 +20,8 @@ void materialize_mt()
         inplace_permutation<UIntT, CORES>      (uint_v, row_view_idx);
         inplace_permutation<FloatT, CORES>     (dbl_v,  row_view_idx);
     }
+    in_view = false;
+    row_view_map.clear();
 }
 
 
