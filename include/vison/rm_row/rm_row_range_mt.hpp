@@ -33,11 +33,9 @@ void rm_row_range_mt(std::vector<unsigned int>& x)
                     return;
                 }
             }
-            std::vector<unsigned int> x2 = x;
-            std::sort(x2.begin(), x2.end());
             row_view_idx.resize(old_nrow);
             std::iota(row_view_idx.begin(), row_view_idx.end(), 0);
-            compact_block(row_view_idx);
+            compact_block(row_view_idx, keep);
             for (size_t i = 0; i < n_old_row; ++i)
                 row_view_map.emplace(i, i);
             for (auto& el : x)
@@ -52,9 +50,7 @@ void rm_row_range_mt(std::vector<unsigned int>& x)
                     return;
                 }
             }
-            row_view_idx.resize(old_nrow);
-            std::iota(row_view_idx.begin(), row_view_idx.end(), 0);
-            compact_block(row_view_idx);
+            compact_block(row_view_idx, keep);
             for (auto& el : x)
                 row_view_map.erase(el);
         }
@@ -89,37 +85,37 @@ void rm_row_range_mt(std::vector<unsigned int>& x)
                 case 0: {
                             #pragma omp parallel for if(CORES > 1) num_threads(CORES)
                             for (size_t cpos = 0; cpos < ncols_t; ++cpos)
-                                compact_block(str_v[cpos]); 
+                                compact_block(str_v[cpos], keep); 
                             break;
                         }
                 case 1: {
                             #pragma omp parallel for if(CORES > 1) num_threads(CORES)
                              for (size_t cpos = 0; cpos < ncols_t; ++cpos)                      
-                                compact_block(chr_v[cpos]); 
+                                compact_block(chr_v[cpos], keep); 
                             break;
                         }
                 case 2: {
                             #pragma omp parallel for if(CORES > 1) num_threads(CORES)
                              for (size_t cpos = 0; cpos < ncols_t; ++cpos)
-                                compact_block(bool_v[cpos]); 
+                                compact_block(bool_v[cpos], keep); 
                             break;
                         }
                 case 3: {
                             #pragma omp parallel for if(CORES > 1) num_threads(CORES)
                             for (size_t cpos = 0; cpos < ncols_t; ++cpos)
-                                compact_block(int_v[cpos]); 
+                                compact_block(int_v[cpos], keep); 
                             break;
                         }
                 case 4: {
                             #pragma omp parallel for if(CORES > 1) num_threads(CORES)
                             for (size_t cpos = 0; cpos < ncols_t; ++cpos)
-                                compact_block(uint_v[cpos]); 
+                                compact_block(uint_v[cpos], keep); 
                             break;
                         }
                 case 5: {
                             #pragma omp parallel for if(CORES > 1) num_threads(CORES)
                             for (size_t cpos = 0; cpos < ncols_t; ++cpos)
-                                compact_block(dbl_v[cpos]); 
+                                compact_block(dbl_v[cpos], keep); 
                             break;
                         }
             }

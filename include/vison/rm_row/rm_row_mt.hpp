@@ -6,13 +6,22 @@ template <unsigned int CORES = 4,
 void rm_row_mt(unsigned int x) 
 {
 
+    const size_t old_nrow = nrow;
+
     if constexpr (Soft) {
 
-      row_view_idx.erase(row_view_idx.begin() + x);
+        if (!in_view) {
+            in_view = true;
+            row_view_idx.erase(row_view_idx.begin() + x);
+            for (size_t i = 0; i < old_nrow; ++i)
+                row_view_map.emplace(i, i);
+            row_view_map.erase(x);
+        } else {
+            row_view_map.erase(row_view_idx.begin() + row_view_map[x]);
+            row_view_map.erase(x);
+        }
 
     } else {
-
-        const size_t old_nrow = nrow;
 
         for (size_t t = 0; t < 6; ++t) {
             
