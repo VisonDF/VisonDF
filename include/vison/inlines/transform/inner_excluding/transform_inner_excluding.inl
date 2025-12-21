@@ -11,6 +11,11 @@ inline void transform_inner_excluding(Dataframe &cur_obj,
                                       unsigned int ext_col) 
 {
 
+    if (in_view && !Soft) {
+        std::cerr << "Can't perform this operation while in `view` mode, consider applying `.materialize()`\n"
+        return;
+    }
+
     auto& type_refv2 = cur_obj.get_typecol();
     unsigned int& ncol2 = cur_obj.get_ncol();
     if (in_col > ncol) {
