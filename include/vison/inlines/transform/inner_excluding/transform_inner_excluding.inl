@@ -88,33 +88,73 @@ inline void transform_inner_excluding(Dataframe &cur_obj,
     const unsigned int& ext_nrow = cur_obj.get_nrow();
     const unsigned int nrow2 = nrow;
 
-    using value_t =  std::variant<std::string*, 
-                                  CharT*, 
-                                  uint8_t*, 
-                                  IntT*, 
-                                  UIntT*, 
-                                  FloatT*>;
-
     using fast_set_t = std::conditional_t<
         SimdHash,
-        ankerl::unordered_dense::set<value_t, simd_hash>,
-        ankerl::unordered_dense::set<value_t>
+        ankerl::unordered_dense::set<std::string_view, simd_hash>,
+        ankerl::unordered_dense::set<std::string_view>
     >;
 
     fast_set_t lookup;
     lookup.reserve(ext_nrow);
 
-    for (const auto& el : ext_colv)
-        lookup.insert(el);
+    if constexpr () {
+        for (const auto& el : ext_colv)
+            lookup.insert(el);
+    } else {
+        if (idx_type != 0) {
+            constexpr auto& size_table = get_types_size();
+            const size_t val_size = size_table[idx_type];
+            for (const auto& el : ext_colv) {
+                lookup.insert(std::string_view{reinterpret_cast<const char*>(&el), 
+                              val_size});
+            }
+        } else {
+            for (const auto& el : ext_colv)
+                lookup.insert(el);
+        }
+    }
 
     std::vector<uint8_t> mask(nrow2);
 
-    #pragma omp parallel for if (CORES > 1) num_threads(CORES) schedule(static)
-    for (unsigned int i = 0; i < nrow2; ++i) {
+    if constexpr (std::is_same_v<T, std::string>) {
         if constexpr (!Inner) {
-            mask[i] = !lookup.contains(in_colv[i]);
+            #pragma omp parallel for if (CORES > 1) num_threads(CORES) schedule(static)
+            for (unsigned int i = 0; i < nrow2; ++i) {
+                mask[i] = !lookup.contains(in_colv[i]);
+            }
         } else {
-            mask[i] = lookup.contains(in_colv[i]);
+            #pragma omp parallel for if (CORES > 1) num_threads(CORES) schedule(static)
+            for (unsigned int i = 0; i < nrow2; ++i) {
+                mask[i] = lookup.contains(in_colv[i]);
+            }
+        }
+    } else {
+        if (idx_type != 0) {
+            if constexpr (!Inner) {
+                #pragma omp parallel for if (CORES > 1) num_threads(CORES) schedule(static)
+                for (unsigned int i = 0; i < nrow2; ++i) {
+                    mask[i] = !lookup.contains(std::string_view{reinterpret_cast<const char*>(&in_colv[i]), 
+                                                                val_size});
+                }
+            } else {
+                #pragma omp parallel for if (CORES > 1) num_threads(CORES) schedule(static)
+                for (unsigned int i = 0; i < nrow2; ++i) {
+                    mask[i] = lookup.contains(std::string_view{reinterpret_cast<const char*>(&in_colv[i]), 
+                                                                val_size});
+                }
+            }
+        } else {
+            if constexpr (!Inner) {
+                #pragma omp parallel for if (CORES > 1) num_threads(CORES) schedule(static)
+                for (unsigned int i = 0; i < nrow2; ++i) {
+                    mask[i] = !lookup.contains(in_colv[i]);
+                }
+            } else {
+                #pragma omp parallel for if (CORES > 1) num_threads(CORES) schedule(static)
+                for (unsigned int i = 0; i < nrow2; ++i) {
+                    mask[i] = lookup.contains(in_colv[i]);
+                }
+            }
         }
     }
 
