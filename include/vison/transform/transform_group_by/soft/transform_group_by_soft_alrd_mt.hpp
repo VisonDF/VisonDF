@@ -52,6 +52,8 @@ void transform_group_by_soft_alrd_mt()
         }
     }
 
+    if (!in_view)
+        row_view_idx.resize(local_nrow);
     
     if constexpr (CORES > 1) {
        
