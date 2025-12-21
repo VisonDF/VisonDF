@@ -6,7 +6,12 @@ template<unsigned int CORES = 4,
          bool Soft = true>
 void transform_filter_mt(std::vector<uint8_t>& mask) 
 {
-    
+
+    if (in_view && !Soft) {
+        std::cerr << "Can't perform this operation while in `view` mode, consider applying `.materialize()`\n"
+        return;
+    }
+
     std::vector<unsigned int> x(mask.size(), 0);
 
     if constexpr (SmallProportion) {

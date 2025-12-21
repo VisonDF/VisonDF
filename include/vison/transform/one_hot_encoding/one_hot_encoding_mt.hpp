@@ -6,6 +6,11 @@ template <typename T = void,
 void one_hot_encoding_mt(unsigned int x)
 {
 
+    if (in_view) {
+        std::cerr << "Can't perform this operation while in `view` mode \n";
+        return;
+    }
+
     const unsigned int local_nrow = nrow;
     using variant_t = std::variant<std::vector<std::string>&,
                                    std::vector<CharT>&,
