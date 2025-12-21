@@ -161,34 +161,40 @@ void transform_left_join_mt(Dataframe &obj,
                   Method == LeftJoinMethods::Last) {
 
         if constexpr (std::is_same_v<T, std::string>) {
-            for (size_t i = 0; i < col2.size(); i += 1) {
-                if constexpr (Method == LeftJoinMethods::First) {
+            if constexpr (Method == LeftJoinMethod::First) {
+                for (size_t i = 0; i < col2.size(); i += 1) {
                     lookup.try_emplace(col2[i], i);
-                } else if constexpr (Method == LeftJoinMethods::Last) {
+                };
+            } else {
+                for (size_t i = 0; i < col2.size(); i += 1) {
                     lookup[col2[i]] = i;
-                }
-            };
+                };
+            }
         } else {
             if (idx_type != 0) {
                 constexpr auto& size_table = get_types_size();
                 const size_t val_size = size_table[idx_type];
-                for (size_t i = 0; i < col2.size(); i += 1) {
-                    if constexpr (Method == LeftJoinMethods::First) {
+                if constexpr (Method == LeftJoinMethod::First) {
+                    for (size_t i = 0; i < col2.size(); i += 1) {
                         lookup.try_emplace(std::string_view{reinterpret_cast<const char*>(&col2[i]), 
-                                                            val_size}, i);
-                    } else if constexpr (Method == LeftJoinMethods::Last) {
+                                                                val_size}, i);
+                    };
+                } else {
+                    for (size_t i = 0; i < col2.size(); i += 1) {
                         lookup[std::string_view{reinterpret_cast<const char*>(&col2[i]), 
-                                                            val_size}] = i;
-                    }
-                };
+                                                                val_size}] = i;
+                    };
+                }
             } else {
-                for (size_t i = 0; i < col2.size(); i += 1) {
-                    if constexpr (Method == LeftJoinMethods::First) {
+                if constexpr (Method == LeftJoinMethod::First) {
+                    for (size_t i = 0; i < col2.size(); i += 1) {
                         lookup.try_emplace(col2[i], i);
-                    } else if constexpr (Method == LeftJoinMethods::Last) {
+                    };
+                } else {
+                    for (size_t i = 0; i < col2.size(); i += 1) {
                         lookup[col2[i]] = i;
-                    }
-                };
+                    };
+                }
             }
         }
 
