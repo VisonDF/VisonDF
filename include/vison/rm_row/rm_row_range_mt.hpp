@@ -36,7 +36,8 @@ void rm_row_range_mt(std::vector<unsigned int>& x)
             row_view_idx.resize(old_nrow);
             std::iota(row_view_idx.begin(), row_view_idx.end(), 0);
             compact_block(row_view_idx, keep);
-            for (size_t i = 0; i < n_old_row; ++i)
+            row_view_map.reserve(old_nrow);
+            for (size_t i = 0; i < old_nrow; ++i)
                 row_view_map.emplace(i, i);
             for (auto& el : x)
                 row_view_map.erase(el);

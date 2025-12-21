@@ -53,8 +53,9 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
                     }
                     sort_assumption = true;
                 }
-            } 
-            for (size_t i = 0; i < n_old_row; ++i)
+            }
+            row_view_map.reserve(old_nrow);
+            for (size_t i = 0; i < old_nrow; ++i)
                 row_view_map.emplace(i, i);
             for (auto& el : x)
                 row_view_map.erase(el);

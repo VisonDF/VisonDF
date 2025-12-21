@@ -13,6 +13,7 @@ void rm_row_mt(unsigned int x)
         if (!in_view) {
             in_view = true;
             row_view_idx.erase(row_view_idx.begin() + x);
+            row_view_map.reserve(old_nrow);
             for (size_t i = 0; i < old_nrow; ++i)
                 row_view_map.emplace(i, i);
             row_view_map.erase(x);

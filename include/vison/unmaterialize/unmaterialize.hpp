@@ -9,6 +9,7 @@ void unmaterialize()
     const unsigned int local_nrow = nrow;
     row_view_idx.resize(local_nrow);
     std::iota(row_view_idx.begin(), row_view_idx.end(), 0);
+    row_view_map.reserve(local_nrow);
     for (size_t i = 0; i < local_nrow; ++i)
         row_view_map.emplace(i, i);
     in_view = false;
