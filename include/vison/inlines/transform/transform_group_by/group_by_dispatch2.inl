@@ -14,29 +14,32 @@ inline group_by_dispatch2(const std::vector<unsigned int>& x,
                           const F f)
 { 
     if (x.size() > 1) {
-        if (std::is_same_v<TContainer, TColVal>) {
-            transform_group_by_sametype_mt<TContainer,
-                                           TColVal,
-                                           CORES,
-                                           Function,
-                                           SimdHash,
-                                           NPerGroup,
-                                           F>(x,
-                                              n_col,
-                                              colname,
-                                              f);
-        } else {
-            transform_group_by_difftype_mt<TContainer,
-                                           TColVal,
-                                           CORES,
-                                           Function,
-                                           SimdHash,
-                                           NPerGroup,
-                                           F>(x,
-                                              n_col,
-                                              colname,
-                                              f);
+        const char ref_t = type_refv[x[0]];
+        for (auto& ii : x) {
+            if (type_refv[ii] != ref_t) {
+                transform_group_by_difftype_mt<TContainer,
+                                               TColVal,
+                                               CORES,
+                                               Function,
+                                               SimdHash,
+                                               NPerGroup,
+                                               F>(x,
+                                                  n_col,
+                                                  colname,
+                                                  f);
+                return;
+            }
         }
+        transform_group_by_sametype_mt<TContainer,
+                                       TColVal,
+                                       CORES,
+                                       Function,
+                                       SimdHash,
+                                       NPerGroup,
+                                       F>(x,
+                                          n_col,
+                                          colname,
+                                          f);
     } else {
             transform_group_by_onecol_mt<TContainer,
                                          TColVal,
