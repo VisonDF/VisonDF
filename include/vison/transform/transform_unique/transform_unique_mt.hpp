@@ -1,6 +1,7 @@
 #pragma once
 
-template <unsigned int CORES = 4,
+template <typename T = void,
+          unsigned int CORES = 4,
           bool MemClean = false, 
           bool Last = false,
           bool Soft = true,
@@ -63,34 +64,64 @@ void transform_unique_mt(unsigned int n)
         pos[matr_idx[idx_type]] = t;
     auto& key_col = key_table[pos[in_col]];
 
-    using key_t =  std::variant<std::string, 
-                                  CharT, 
-                                  uint8_t, 
-                                  IntT, 
-                                  UIntT, 
-                                  FloatT>;
-    
     using fast_set_t = std::conditional_t<
         SimdHash,
-        ankerl::unordered_dense::set<key_t, simd_hash>,
-        ankerl::unordered_dense::set<key_t>
+        ankerl::unordered_dense::set<std::string_view, simd_hash>,
+        ankerl::unordered_dense::set<std::string_view>
     >;
+
+    constexpr auto& size_table = get_types_size();
+    const size_t val_size = size_table[idx_type];
 
     fast_str_set_t lookup;
     lookup.reserve(local_nrow);
 
     if constexpr (!Last) {
-        for (size_t i = 0; i < local_nrow; ++i) {
-            if (!lookup.contains(key_col[i])) {
-                mask[i] = 1;
-                lookup.emplace(key_col[i]);
+        if constexpr (std::is_same_v<T, std::string>) {
+             for (size_t i = 0; i < local_nrow; ++i) {
+                 if (!lookup.contains(key_col[i])) {
+                     mask[i] = 1;
+                     lookup.emplace(key_col[i]);
+                 }
+             }
+        } else {
+            if (idx_type != 0) {
+                for (size_t i = 0; i < local_nrow; ++i) {
+                    if (!lookup.contains(std::string_view{reinterpret_cast<const char*>(&key_col[i]), val_size})) {
+                        mask[i] = 1;
+                        lookup.emplace(std::string_view{reinterpret_cast<const char*>(&key_col[i]), val_size});
+                    }
+                }
+            } else {
+                for (size_t i = 0; i < local_nrow; ++i) {
+                    if (!lookup.contains(key_col[i])) {
+                        mask[i] = 1;
+                        lookup.emplace(key_col[i]);
+                    }
+                }
             }
         }
     } else {
-        for (int i = int(local_nrow) - 1; i >= 0; --i) {
-            if (!lookup.contains(key_col[i])) [[unlikely]] {
-                mask[i] = 1;
-                lookup.emplace(key_col[i]);
+        if constexpr (std::is_same_v<T, std::string>) {
+            for (int i = int(local_nrow) - 1; i >= 0; --i) {
+                if (!lookup.contains(key_col[i])) [[unlikely]] {
+                    mask[i] = 1;
+                    lookup.emplace(key_col[i]);
+                }
+            }
+        } else {
+            if (idx_type != 0) {
+                for (int i = int(local_nrow) - 1; i >= 0; --i) {
+                    if (!lookup.contains(std::string_view{reinterpret_cast<const char*>(&key_col[i]), val_size})) [[unlikely]] {
+                        mask[i] = 1;
+                        lookup.emplace(std::string_view{reinterpret_cast<const char*>(&key_col[i]), val_size});
+                    }
+                }
+            } else {
+                if (!lookup.contains(key_col[i])) [[unlikely]] {
+                    mask[i] = 1;
+                    lookup.emplace(key_col[i]);
+                }
             }
         }
     }
