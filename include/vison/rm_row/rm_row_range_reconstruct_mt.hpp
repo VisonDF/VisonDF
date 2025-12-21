@@ -4,9 +4,13 @@ template <unsigned int CORES = 4,
           bool Sorted = true,
           bool MemClean = false,
           bool Soft = true,
-          bool SanityCheck = true>
+          bool SanityCheck = true,
+          bool Enforce = false>
 void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
 {
+
+    // x is modified if Soft && x.size() < 1000 && Enforce && !Sorted && in_view
+    // Soft May auto switch to view mode
 
     const size_t old_nrow = nrow;
     if (x.empty() || old_nrow == 0) return;
@@ -16,41 +20,77 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
 
     if constexpr (Soft) {
 
-        in_view = true;
-
-        if (row_view_idx.empty())
-            std::iota(row_view_idx.begin(), row_view_idx.end(), 0);
-
         bool sort_assumption = Sorted;
 
-        if constexpr (!Sorted) {
-            if (x.size() > 1000) {
-                std::vector<uint8_t> is_active(nrow, 1);
-                for (auto& i : x) {
-                    if (i < old_nrow) [[likely]] {
-                        is_active[i] = 0;
+        if (!in_view) {
+            in_view = true;
+            std::iota(row_view_idx.begin(), row_view_idx.end(), 0);
+            if constexpr (!Sorted) {
+                if (x.size() > 1000) {
+                    std::vector<uint8_t> is_active(nrow, 1);
+                    for (auto& i : x) {
+                        if (i < old_nrow) [[likely]] {
+                            is_active[i] = 0;
+                        }
                     }
-                }
-                size_t i2 = 0;
-                for (size_t i = 0; i < old_nrow; ++i) {
-                    if (is_active[i]) {
-                        row_view_idx[i2] = row_view_idx[i];
-                        i2 += 1;
+                    size_t i2 = 0;
+                    for (size_t i = 0; i < old_nrow; ++i) {
+                        if (is_active[i]) {
+                            row_view_idx[i2] = row_view_idx[i];
+                            i2 += 1;
+                        }
                     }
+                } else {
+                    std::sort(x.begin(), x.end());
+                    if constexpr (SanityCheck) {
+                        x.erase(
+                            std::remove_if(x.begin(), x.end(),
+                                           [&](size_t v){ return v >= old_nrow; }),
+                            x.end()
+                        );
+                        x.erase(std::unique(x.begin(), x.end()), x.end());
+                    }
+                    sort_assumption = true;
                 }
-            } else {
-                std::sort(x.begin(), x.end());
-                if constexpr (SanityCheck) {
-                    x.erase(
-                        std::remove_if(x.begin(), x.end(),
-                                       [&](size_t v){ return v >= old_nrow; }),
-                        x.end()
-                    );
-                    x.erase(std::unique(x.begin(), x.end()), x.end());
+            } 
+            for (size_t i = 0; i < n_old_row; ++i)
+                row_view_idx.emplace(i, i);
+            for (auto& el : n)
+                row_view_map.erase(el);
+        } else {
+            if constexpr (!Sorted) {
+                if (x.size() > 1000 || !Enforce) {
+                    std::vector<uint8_t> is_active(nrow, 1);
+                    for (auto& i : x) {
+                        if (i < old_nrow) [[likely]] {
+                            is_active[row_view_map[i]] = 0;
+                        }
+                    }
+                    size_t i2 = 0;
+                    for (size_t i = 0; i < old_nrow; ++i) {
+                        if (is_active[i]) {
+                            row_view_idx[i2] = row_view_idx[i];
+                            i2 += 1;
+                        }
+                    }
+                } else {
+                    for (auto& el : x)
+                        el = row_view_map[el];
+                    std::sort(x.begin(), x.end());
+                    if constexpr (SanityCheck) {
+                        x.erase(
+                            std::remove_if(x.begin(), x.end(),
+                                           [&](size_t v){ return v >= old_nrow; }),
+                            x.end()
+                        );
+                        x.erase(std::unique(x.begin(), x.end()), x.end());
+                    }
+                    sort_assumption = true;
                 }
-                sort_assumption = true;
-            }
-        } 
+            } 
+            for (auto& el : n)
+                row_view_map.erase(el);
+        }
 
         if (sort_assumption) {
             size_t i = x[0] + 1;

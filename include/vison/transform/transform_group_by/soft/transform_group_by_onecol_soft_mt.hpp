@@ -1,10 +1,10 @@
 #pragma once
 
 template <typename TContainer = void,
-      unsigned int CORES = 4,
+          unsigned int CORES = 4,
           bool SimdHash = true,
-      unsigned int NPerGroup,
-      bool SanityCheck = true>
+          unsigned int NPerGroup,
+          bool SanityCheck = true>
 void transform_group_by_onecol_soft_mt(unsigned int x,
                                        const std::string colname = "n") 
 {
@@ -21,12 +21,6 @@ void transform_group_by_onecol_soft_mt(unsigned int x,
             }
             I += 1;
         }
-    }
-
-    if (in_view) {
-        std::cerr << "Can't use this operation while in `view` mode, " 
-                  << "consider applying `.materialize()`\n";
-        return;
     }
 
     using key_t = std::variant<std::string, 
@@ -101,9 +95,16 @@ void transform_group_by_onecol_soft_mt(unsigned int x,
     auto& key_col = (*key_table)[real_pos];
 
     if constexpr (CORES == 1) {
-        for (unsigned int i = 0; i < local_nrow; ++i) {    
-            auto [it, inserted] = lookup.try_emplace(key_col[i], midx_vec);
-            it->second.push_back(i);
+        if (!in_view) {
+            for (unsigned int i = 0; i < local_nrow; ++i) {    
+                auto [it, inserted] = lookup.try_emplace(key_col[i], midx_vec);
+                it->second.push_back(i);
+            }
+        } else {
+            for (unsigned int i = 0; i < local_nrow; ++i) {    
+                auto [it, inserted] = lookup.try_emplace(key_col[row_view_idx[i]], midx_vec);
+                it->second.push_back(row_view_idx[i]);
+            }
         }
     } else if constexpr (CORES > 1) {
         const unsigned int chunks = local_nrow / CORES + 1;
@@ -115,9 +116,16 @@ void transform_group_by_onecol_soft_mt(unsigned int x,
             const unsigned int end   = std::min(local_nrow, start + chunks);
             map_t& cur_map           = vec_map[tid];
             cur_map.reserve(local_nrow / CORES);
-            for (unsigned int i = start; i < end; ++i) {
-                auto [it, inserted] = cur_map.try_emplace(key_col[i], midx_vec);
-                it->second.push_back(i);
+            if (!in_view) {
+                for (unsigned int i = start; i < end; ++i) {
+                    auto [it, inserted] = cur_map.try_emplace(key_col[i], midx_vec);
+                    it->second.push_back(i);
+                }
+            } else {
+                for (unsigned int i = start; i < end; ++i) {
+                    auto [it, inserted] = cur_map.try_emplace(key_col[row_view_idx[i]], midx_vec);
+                    it->second.push_back(row_view_idx[i]);
+                }
             }
         }
         for (const auto& cur_map : vec_map) {
@@ -132,6 +140,9 @@ void transform_group_by_onecol_soft_mt(unsigned int x,
             }
         }
     }
+
+    if (!in_view)
+        row_view_idx.resize(local_nrow);
 
     if constexpr (CORES > 1) {
         using group_vec_t = std::vector<unsigned int>;
