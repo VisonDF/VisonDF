@@ -326,7 +326,7 @@ void transform_group_by_onecol_mt(const unsigned int x,
             if constexpr (Function == GroupFunction::Occurence) {
                 dispatch_from_void(occ_lookup, start, end, cur_map);
             } else if constexpr (Function == GroupFunction::Sum ||
-                Function == GroupFunction::Mean) {
+                                 Function == GroupFunction::Mean) {
                 dispatch_from_void(add_lookup, start, end, cur_map);
             } else {
                 dispatch_from_void(fill_lookup, start, end, cur_map);
