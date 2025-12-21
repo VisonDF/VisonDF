@@ -17,8 +17,17 @@ void sort_by_mt(unsigned int& n) {
         return;
     }
 
-    std::vector<size_t> idx(nrow);
-    std::iota(idx.begin(), idx.end(), 0);
+    std::vector<unsigned int> idx_storage;
+    
+    std::vector<unsigned int>& idx = [&]() -> std::vector<unsigned int>& {
+        if (!in_view) {
+            idx_storage.resize(nrow);
+            std::iota(idx_storage.begin(), idx_storage.end(), 0);
+            return idx_storage;
+        } else {
+            return row_view_idx;
+        }
+    }();
   
     unsigned int which = 999;
     unsigned int col_id = 0;
