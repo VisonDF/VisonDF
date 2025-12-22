@@ -121,7 +121,7 @@ void transform_group_by_onecol_soft_mt(unsigned int x,
             const unsigned int end   = std::min(local_nrow, start + chunks);
             map_t& cur_map           = vec_map[tid];
             cur_map.reserve(local_nrow / CORES);
-            if constexpr (!in_view) {
+            if constexpr (std::is_same_v<TContainer, std::string>) {
                 for (unsigned int i = start; i < end; ++i) {
                     auto [it, inserted] = cur_map.try_emplace(key_col[i], midx_vec);
                     it->second.push_back(i);
@@ -155,8 +155,13 @@ void transform_group_by_onecol_soft_mt(unsigned int x,
         }
     }
 
-    if (!in_view)
+    if (!in_view) {
+        in_view = true;
         row_view_idx.resize(local_nrow);
+        row_view_map.reserve(local_nrow);
+        for (size_t i = 0; i < local_nrow; ++i)
+            row_view_map.emplace(i, i);
+    }
 
     if constexpr (CORES > 1) {
         using group_vec_t = std::vector<unsigned int>;

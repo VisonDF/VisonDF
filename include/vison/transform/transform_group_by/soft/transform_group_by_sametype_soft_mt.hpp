@@ -155,6 +155,14 @@ t       unsigned int I = 0;
         }
     }
 
+    if (!in_view) {
+        in_view = true;
+        row_view_idx.resize(local_nrow);
+        row_view_map.reserve(local_nrow);
+        for (size_t i = 0; i < local_nrow; ++i)
+            row_view_map.emplace(i, i);
+    }
+
     if constexpr (CORES > 1) {
         using group_vec_t = std::vector<unsigned int>;
         
