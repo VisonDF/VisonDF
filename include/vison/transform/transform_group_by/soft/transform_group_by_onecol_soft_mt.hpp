@@ -23,18 +23,12 @@ void transform_group_by_onecol_soft_mt(unsigned int x,
         }
     }
 
-    using key_t = std::variant<std::string, 
-                               CharT, 
-                               uint8_t, 
-                               IntT, 
-                               UIntT, 
-                               FloatT>;
     using map_t = std::conditional_t<
         SimdHash,
-        ankerl::unordered_dense::set<key_t, 
+        ankerl::unordered_dense::set<std::string_view, 
                                      ReservingVec<unsigned int>, 
                                      simd_hash>,
-        ankerl::unordered_dense::set<key_t, 
+        ankerl::unordered_dense::set<std::string_view, 
                                      ReservingVec<unsigned int>>
     >;
 
@@ -95,15 +89,26 @@ void transform_group_by_onecol_soft_mt(unsigned int x,
     auto& key_col = (*key_table)[real_pos];
 
     if constexpr (CORES == 1) {
-        if (!in_view) {
+        if constexpr (std::is_same_v<TContainer, std::string>) {
             for (unsigned int i = 0; i < local_nrow; ++i) {    
                 auto [it, inserted] = lookup.try_emplace(key_col[i], midx_vec);
                 it->second.push_back(i);
             }
         } else {
-            for (unsigned int i = 0; i < local_nrow; ++i) {    
-                auto [it, inserted] = lookup.try_emplace(key_col[row_view_idx[i]], midx_vec);
-                it->second.push_back(row_view_idx[i]);
+            constexpr auto& size_table = get_types_size();
+            const unsigned int val_size = size_table[idx_type];
+            if (idx_type != 0) {
+                for (unsigned int i = 0; i < local_nrow; ++i) {    
+                    auto [it, inserted] = lookup.try_emplace(std::string_view{reinterpret_cast<const char*>(key_col[i]), 
+                                                             val_size}, 
+                                                             midx_vec);
+                    it->second.push_back(row_view_idx[i]);
+                }
+            } else {
+                for (unsigned int i = 0; i < local_nrow; ++i) {    
+                    auto [it, inserted] = lookup.try_emplace(key_col[i], midx_vec);
+                    it->second.push_back(row_view_idx[i]);
+                }
             }
         }
     } else if constexpr (CORES > 1) {
@@ -116,15 +121,24 @@ void transform_group_by_onecol_soft_mt(unsigned int x,
             const unsigned int end   = std::min(local_nrow, start + chunks);
             map_t& cur_map           = vec_map[tid];
             cur_map.reserve(local_nrow / CORES);
-            if (!in_view) {
+            if constexpr (!in_view) {
                 for (unsigned int i = start; i < end; ++i) {
                     auto [it, inserted] = cur_map.try_emplace(key_col[i], midx_vec);
                     it->second.push_back(i);
                 }
             } else {
-                for (unsigned int i = start; i < end; ++i) {
-                    auto [it, inserted] = cur_map.try_emplace(key_col[row_view_idx[i]], midx_vec);
-                    it->second.push_back(row_view_idx[i]);
+                if (idx_type != 0) {
+                    for (unsigned int i = start; i < end; ++i) {
+                        auto [it, inserted] = cur_map.try_emplace(std::string_view{reinterpret_cast<const char*>(key_col[i]), 
+                                                                  val_size}, 
+                                                                  midx_vec);
+                        it->second.push_back(row_view_idx[i]);
+                    }
+                } else {
+                    for (unsigned int i = start; i < end; ++i) {
+                        auto [it, inserted] = cur_map.try_emplace(key_col[i], midx_vec);
+                        it->second.push_back(i);
+                    }
                 }
             }
         }
@@ -164,6 +178,8 @@ void transform_group_by_onecol_soft_mt(unsigned int x,
             size_t start = pos_boundaries[g];
             size_t len   = pos_boundaries[g + 1] - pos_boundaries[g];
             const group_vec_t& vec = (it0 + g)->second;
+            for (auto& el : vec)
+                el = row_view_map[el];
             memcpy(row_view_idx.data() + start,
                    vec.data(),
                    len * sizeof(unsigned int));
@@ -173,6 +189,8 @@ void transform_group_by_onecol_soft_mt(unsigned int x,
         size_t i2 = 0;
         for (size_t i = 0; i < lookup.size(); ++i) {
             const auto& pos_vec = (it + i)->second;
+            for (auto& el : pos_vec)
+                el = row_view_map[el];
             memcpy(row_view_idx.data() + i2, 
                    pos_vec.data(), 
                    sizeof(unsigned int) * pos_vec.size());

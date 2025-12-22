@@ -23,12 +23,6 @@ void transform_group_by_difftype_soft_mt(const std::vector<unsigned int>& x,
         }
     }
 
-    if (in_view) {
-        std::cerr << "Can't use this operation while in `view` mode, " 
-                  << "consider applying `.materialize()`\n";
-        return;
-    }
-
     using map_t = std::conditional_t<
         SimdHash,
         ankerl::unordered_dense::map<std::string, 
@@ -202,6 +196,8 @@ void transform_group_by_difftype_soft_mt(const std::vector<unsigned int>& x,
             size_t start = pos_boundaries[g];
             size_t len   = pos_boundaries[g + 1] - pos_boundaries[g];
             const group_vec_t& vec = (it0 + g)->second.idx_vec;
+            for (auto& el : vec)
+                el = row_view_map[el];
             memcpy(row_view_idx.data() + start,
                    vec.data(),
                    len * sizeof(unsigned int));
@@ -211,6 +207,8 @@ void transform_group_by_difftype_soft_mt(const std::vector<unsigned int>& x,
         size_t i2 = 0;
         for (size_t i = 0; i < lookup.size(); ++i) {
             const auto& pos_vec = (it + i)->second.idx_vec;
+            for (auto& el : pos_vec)
+                el = row_view_map[el];
             memcpy(row_view_idx.data() + i2, 
                    pos_vec.data(), 
                    sizeof(unsigned int) * pos_vec.size());
