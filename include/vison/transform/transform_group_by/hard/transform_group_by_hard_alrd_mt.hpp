@@ -22,7 +22,7 @@ void transform_group_by_hard_alrd_mt(unsigned int n,
 					PairGroupBy<ReservingVec<element_type_t<TColVal>>>,
 					PairGroupBy<element_type_t<TColVal>>>, 
 				std::variant<
-			        std::monostate,
+			                    std::monostate,
                                 std::vector<PairGroupBy<std::string>>, 
                                 std::vector<PairGroupBy<CharT>>, 
                                 std::vector<PairGroupBy<uint8_t>>, 
@@ -75,10 +75,11 @@ void transform_group_by_hard_alrd_mt(unsigned int n,
         }
     } else {
 	    if constexpr (Function == GroupFunction::Gather) {
-	        vec_grp = std::vector<PairGroupBy<TColVal>>(unique_grps, 
+	        vec_grp = std::vector<PairGroupBy<ReservingVec<element_type_t<TColVal>>>(unique_grps, 
 	    		    			        PairGroupBy<ReservingVec<element_type_t<TColVal>>>(NPerGroup));
 	    } else {
-            vec_grp = std::vector<PairGroupBy<TColVal>>(unique_grps, PairGroupBy<element_type_t<TColVal>>(NPerGroup));
+            vec_grp = std::vector<PairGroupBy<element_type_t<TColVal>>>(unique_grps, 
+                                        PairGroupBy<element_type_t<TColVal>>(NPerGroup));
 	    }
     }
 
