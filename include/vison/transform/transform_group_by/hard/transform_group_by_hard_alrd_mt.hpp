@@ -211,18 +211,21 @@ void transform_group_by_hard_alrd_mt(unsigned int n,
         for (size_t i = 0; i < unique_grps; ++i) {
             size_t start    = pos_boundaries[i];
             size_t len      = pos_boundaries[i + 1] - pos_boundaries[i];
-            const auto& cur_val = vec_grp[i].value;
+            const auto cur_val = vec_grp[i].value;
+            const auto& vec = vec_grp[i].idx_vec;
             if constexpr (Function == GroupFunction::Occurence ||
                           Function == GroupFunction::Sum) {
-                for (size_t i2 = 0; i2 < vec.size(); ++i2)
-                    value_col[start + i2] = cur_val;
+                for (size_t t = 0; t < vec.size(); ++t)
+                    value_col[start + t] = cur_val;
+            } else if constexpr (Function == GroupFunction::Mean) {
+                const auto cur_val2 = cur_val / local_nrow;
+                for (size_t t = 0; t < vec.size(); ++t)
+                    value_col[start + t] = cur_val2;
             } else {
-                for (size_t i2 = 0; i2 < vec.size(); ++i2)
-                    value_col[start + i2] = cur_val;
-            } else {
-
+                const auto cur_val2 = f(cur_val);
+                for (size_t t = 0; t < vec.size(); ++t)
+                    value_col[start + t] = cur_val2;
             }
-            const auto& vec = vec_grp[i].idx_vec;
             memcpy(row_view_idx.data() + start,
                    vec.data(),
                    len * sizeof(unsigned int));
@@ -230,11 +233,25 @@ void transform_group_by_hard_alrd_mt(unsigned int n,
     } else {
         size_t i2 = 0;
         for (size_t i = 0; i < unique_grps; ++i) {
-            const auto& pos_vec = vec_grp[i];
+            const auto cur_val = vec_grp[i].value;
+            const auto& vec = vec_grp[i].idx_vec;
+            if constexpr (Function == GroupFunction::Occurence ||
+                          Function == GroupFunction::Sum) {
+                for (size_t t = 0; t < vec.size(); ++t)
+                    value_col[i2 + t] = cur_val;
+            } else if constexpr (Function == GroupFunction::Mean) {
+                const auto cur_val2 = cur_val / local_nrow;
+                for (size_t t = 0; t < vec.size(); ++t)
+                    value_col[i2 + t] = cur_val2;
+            } else {
+                const auto cur_val2 = f(cur_val);
+                for (size_t t = 0; t < vec.size(); ++t)
+                    value_col[i2 + t] = cur_val2;
+            }
             memcpy(row_view_idx.data() + i2, 
-                   pos_vec.data(), 
-                   sizeof(unsigned int) * pos_vec.size());
-            i2 += pos_vec.size();
+                   vec.data(), 
+                   sizeof(unsigned int) * vec.size());
+            i2 += vec.size();
         }
     }
 

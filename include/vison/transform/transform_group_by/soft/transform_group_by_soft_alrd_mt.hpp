@@ -79,11 +79,11 @@ void transform_group_by_soft_alrd_mt()
     } else {
         size_t i2 = 0;
         for (size_t i = 0; i < unique_grps; ++i) {
-            const auto& pos_vec = vec_grp[i];
+            const auto& vec = vec_grp[i];
             memcpy(row_view_idx.data() + i2, 
-                   pos_vec.data(), 
-                   sizeof(unsigned int) * pos_vec.size());
-            i2 += pos_vec.size();
+                   vec.data(), 
+                   sizeof(unsigned int) * vec.size());
+            i2 += vec.size();
         }
     }
 

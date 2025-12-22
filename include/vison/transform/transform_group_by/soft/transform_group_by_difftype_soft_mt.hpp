@@ -214,13 +214,13 @@ void transform_group_by_difftype_soft_mt(const std::vector<unsigned int>& x,
         auto it = lookup.begin();
         size_t i2 = 0;
         for (size_t i = 0; i < lookup.size(); ++i) {
-            const auto& pos_vec = (it + i)->second.idx_vec;
-            for (auto& el : pos_vec)
+            const auto& vec = (it + i)->second.idx_vec;
+            for (auto& el : vec)
                 el = row_view_map[el];
             memcpy(row_view_idx.data() + i2, 
-                   pos_vec.data(), 
-                   sizeof(unsigned int) * pos_vec.size());
-            i2 += pos_vec.size();
+                   vec.data(), 
+                   sizeof(unsigned int) * vec.size());
+            i2 += vec.size();
         }
     }
 
