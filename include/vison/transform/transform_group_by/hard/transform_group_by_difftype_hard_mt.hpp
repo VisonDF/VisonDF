@@ -463,6 +463,15 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
     value_col.emplace<idx_type>();
     }
     value_col.resize(local_nrow);
+
+    if (!in_view) {
+        in_view = true;
+        row_view_idx.resize(local_nrow);
+        row_view_map.reserve(local_nrow);
+        for (size_t i = 0; i < local_nrow; ++i)
+            row_view_map.emplace(i, i);
+    }
+
     if constexpr (CORES > 1) {
         using group_vec_t = std::vector<unsigned int>;
         
@@ -484,17 +493,19 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
             size_t len   = pos_boundaries[g + 1] - pos_boundaries[g];
             const group_vec_t& vec = (it0 + g)->second.idx_vec;
             const auto& cur_val    = (it0 + g)->second.value;
-        if constexpr (Function == GroupFunction::Occurence ||
-              Function == GroupFunction::Sum) {
-        for (size_t t = 0; t < vec.size(); ++t)
+            if constexpr (Function == GroupFunction::Occurence ||
+                          Function == GroupFunction::Sum) {
+                for (size_t t = 0; t < vec.size(); ++t)
                     value_col[start + t] = cur_val;
-        } else if constexpr (Function == GroupFunction::Mean) {
-        for (size_t t = 0; t < vec.size(); ++t)
+            } else if constexpr (Function == GroupFunction::Mean) {
+                for (size_t t = 0; t < vec.size(); ++t)
                     value_col[start + t] = cur_val / local_nrow;
-        } else {
-        for (size_t t = 0; t < vec.size(); ++t)
+            } else {
+                for (size_t t = 0; t < vec.size(); ++t)
                     value_col[start + t] = f(cur_val);
-        }
+            }
+            for (auto& el : vec)
+                el = row_view_map[el];
             memcpy(row_view_idx.data() + start,
                    vec.data(),
                    len * sizeof(unsigned int));
@@ -505,17 +516,19 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
         for (size_t i = 0; i < lookup.size(); ++i) {
             const auto& pos_vec = (it + i)->second.idx_vec;
             const auto& cur_val = (it + i)->second.value;
-        if constexpr (Function == GroupFunction::Occurence ||
-              Function == GroupFunction::Sum) {
-        for (size_t t = 0; t < vec.size(); ++t)
+            if constexpr (Function == GroupFunction::Occurence ||
+                          Function == GroupFunction::Sum) {
+                for (size_t t = 0; t < vec.size(); ++t)
                     value_col[i2 + t] = cur_val;
-        } else if constexpr (Function == GroupFunction::Mean) {
-        for (size_t t = 0; t < vec.size(); ++t)
+            } else if constexpr (Function == GroupFunction::Mean) {
+                for (size_t t = 0; t < vec.size(); ++t)
                     value_col[i2 + t] = cur_val / local_nrow;
-        } else {
-        for (size_t t = 0; t < vec.size(); ++t)
+            } else {
+                for (size_t t = 0; t < vec.size(); ++t)
                     value_col[i2 + t] = f(cur_val);
-        }
+            }
+            for (auto& el : pos_vec)
+                el = row_view_map[el];
             memcpy(row_view_idx.data() + i2, 
                    pos_vec.data(), 
                    sizeof(unsigned int) * pos_vec.size());

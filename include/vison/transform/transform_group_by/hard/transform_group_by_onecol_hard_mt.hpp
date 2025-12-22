@@ -14,12 +14,6 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
                                        F f = &default_groupfn_impl) 
 {
 
-    if (in_view) {
-        std::cerr << "Can't use this operation while in `view` mode, " 
-                  << "consider applying `.materialize()`\n";
-        return;
-    }
-
     if constexpr (!Occurence) {
         if (n_col > ncol) {
             std::cerr << "Column number out of range\n";
@@ -430,6 +424,15 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
         value_col.emplace<idx_type>();
     }
     value_col.resize(local_nrow);
+
+    if (!in_view) {
+        in_view = true;
+        row_view_idx.resize(local_nrow);
+        row_view_map.reserve(local_nrow);
+        for (size_t i = 0; i < local_nrow; ++i)
+            row_view_map.emplace(i, i);
+    }
+
     if constexpr (CORES > 1) {
         using group_vec_t = std::vector<unsigned int>;
         
@@ -462,6 +465,8 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
                 for (size_t t = 0; t < vec.size(); ++t)
                     value_col[start + t] = f(cur_val);
             }
+            for (auto& el : vec)
+                el = row_view_map[el];
             memcpy(row_view_idx.data() + start,
                    vec.data(),
                    len * sizeof(unsigned int));
@@ -483,6 +488,8 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
                 for (size_t t = 0; t < pos_vec.size(); ++t)
                     value_col[i2 + t] = f(cur_val);
             }
+            for (auto& el : pos_vec)
+                el = row_view_map[el];
             memcpy(row_view_idx.data() + i2, 
                    pos_vec.data(), 
                    sizeof(unsigned int) * pos_vec.size());
