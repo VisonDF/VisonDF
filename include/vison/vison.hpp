@@ -168,7 +168,7 @@ namespace vison {
      
         bool in_view = false;
         std::vector<size_t> row_view_idx;
-        ankerl::unordered_dense::map<unsigned int, unsigned int> row_view_map;
+        ankerl::unordered_dense::map<size_t, size_t> row_view_map;
         std::vector<unsigned int> col_alrd_materialized;
 
         std::vector<std::vector<std::string>> str_v;
@@ -239,8 +239,8 @@ namespace vison {
                                                 type_print_vec[5].size()  
                                               };
 
-	std::vector<std::vector<unsigned int>> grp_by_col;
-	std::vector<unsigned int> unqiue_grp;
+	    std::vector<std::vector<unsigned int>> grp_by_col;
+	    std::vector<unsigned int> unique_grp;
 
         #include "types/stringify_types.inl"
         #include "types/df_supported_types.inl"
