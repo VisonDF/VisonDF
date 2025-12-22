@@ -75,7 +75,7 @@ void transform_group_by_hard_alrd_mt(unsigned int n,
         }
     } else {
 	    if constexpr (Function == GroupFunction::Gather) {
-	        vec_grp = std::vector<PairGroupBy<ReservingVec<element_type_t<TColVal>>>(unique_grps, 
+	        vec_grp = std::vector<PairGroupBy<ReservingVec<element_type_t<TColVal>>>>(unique_grps, 
 	    		    			        PairGroupBy<ReservingVec<element_type_t<TColVal>>>(NPerGroup));
 	    } else {
             vec_grp = std::vector<PairGroupBy<element_type_t<TColVal>>>(unique_grps, 
