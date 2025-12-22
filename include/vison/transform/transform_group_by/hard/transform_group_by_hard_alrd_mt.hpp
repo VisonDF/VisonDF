@@ -211,7 +211,18 @@ void transform_group_by_hard_alrd_mt(unsigned int n,
         for (size_t i = 0; i < unique_grps; ++i) {
             size_t start    = pos_boundaries[i];
             size_t len      = pos_boundaries[i + 1] - pos_boundaries[i];
-            const auto& vec = vec_grp[i];
+            const auto& cur_val = vec_grp[i].value;
+            if constexpr (Function == GroupFunction::Occurence ||
+                          Function == GroupFunction::Sum) {
+                for (size_t i2 = 0; i2 < vec.size(); ++i2)
+                    value_col[start + i2] = cur_val;
+            } else {
+                for (size_t i2 = 0; i2 < vec.size(); ++i2)
+                    value_col[start + i2] = cur_val;
+            } else {
+
+            }
+            const auto& vec = vec_grp[i].idx_vec;
             memcpy(row_view_idx.data() + start,
                    vec.data(),
                    len * sizeof(unsigned int));

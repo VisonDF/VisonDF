@@ -436,17 +436,19 @@ void transform_group_by_sametype_hard_mt(const std::vector<unsigned int>& x,
             size_t start = pos_boundaries[g];
             size_t len   = pos_boundaries[g + 1] - pos_boundaries[g];
             const group_vec_t& vec = (it0 + g)->second.idx_vec;
-            const auto& cur_val    = (it0 + g)->second.value;
+            const auto cur_val    = (it0 + g)->second.value;
             if constexpr (Function == GroupFunction::Occurence ||
                           Function == GroupFunction::Sum) {
                 for (size_t t = 0; t < vec.size(); ++t)
                     value_col[start + t] = cur_val;
             } else if constexpr (Function == GroupFunction::Mean) {
+                const auto cur_val2 = cur_val / local_nrow;
                 for (size_t t = 0; t < vec.size(); ++t)
-                    value_col[start + t] = cur_val / local_nrow;
+                    value_col[start + t] = cur_val2;
             } else {
+                const auto cur_val2 = f(cur_val);
                 for (size_t t = 0; t < vec.size(); ++t)
-                    value_col[start + t] = f(cur_val);
+                    value_col[start + t] = cur_val2;
             }
             for (auto& el : vec)
                 el = row_view_map[el];
@@ -459,17 +461,19 @@ void transform_group_by_sametype_hard_mt(const std::vector<unsigned int>& x,
         size_t i2 = 0;
         for (size_t i = 0; i < lookup.size(); ++i) {
             const auto& pos_vec = (it + i)->second.idx_vec;
-            const auto& cur_val = (it + i)->second.value;
+            const auto cur_val = (it + i)->second.value;
             if constexpr (Function == GroupFunction::Occurence ||
                           Function == GroupFunction::Sum) {
                 for (size_t t = 0; t < vec.size(); ++t)
                     value_col[i2 + t] = cur_val;
             } else if constexpr (Function == GroupFunction::Mean) {
+                const auto cur_val2 = cur_val / local_nrow;
                 for (size_t t = 0; t < vec.size(); ++t)
-                    value_col[i2 + t] = cur_val / local_nrow;
+                    value_col[i2 + t] = cur_val2;
             } else {
+                const auto cur_val2 = f(cur_val);
                 for (size_t t = 0; t < vec.size(); ++t)
-                    value_col[i2 + t] = f(cur_val);
+                    value_col[i2 + t] = cur_val2;
             }
             for (auto& el : pos_vec)
                 el = row_view_map[el];
