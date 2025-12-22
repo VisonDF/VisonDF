@@ -129,8 +129,13 @@ void sort_by_external_mr(const std::vector<T>& nvec) {
                      std::swap(idx[current], idx[next]);
                  }
              }
+             for (size_t i = 0; i < local_norw; ++i)
+                 row_view_map[i] = row_view_idx[i];
          }
     } 
 };
+
+
+
 
 
