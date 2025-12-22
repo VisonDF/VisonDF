@@ -117,12 +117,12 @@ void transform_group_by_hard_alrd_mt(unsigned int n,
         }
     } else {
         switch (type_refv[n]) {
-            case 's': val_table = &str_v ; idx_type = 0; break;
-            case 'c': val_table = &chr_v ; idx_type = 1; break;
+            case 's': val_table = &str_v ;  idx_type = 0; break;
+            case 'c': val_table = &chr_v ;  idx_type = 1; break;
             case 'b': val_table = &bool_v ; idx_type = 2; break;
-            case 'i': val_table = &int_v ; idx_type = 3; break;
+            case 'i': val_table = &int_v ;  idx_type = 3; break;
             case 'u': val_table = &uint_v ; idx_type = 4; break;
-            case 'd': val_table = &dbl_v ; idx_type = 5; break;
+            case 'd': val_table = &dbl_v ;  idx_type = 5; break;
         }
     }
 
@@ -207,6 +207,12 @@ void transform_group_by_hard_alrd_mt(unsigned int n,
                     std::vector<UIntT>,
                     std::vector<FloatT>,
         >>;
+
+    value_col_t value_col;
+    if constexpr (!std::is_same_v<TColVal, void> && Function != GroupFunction::Occurence) {
+        value_col.emplace<idx_type>();
+    }
+    value_col.resize(local_nrow);
 
     if constexpr (CORES > 1) {
        
