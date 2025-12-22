@@ -35,7 +35,7 @@ void transform_group_by_soft_alrd_mt()
              auto& cur_grp_by         = grp_by_cols[tid];
              for (auto& el: cur_grp_by)
                  el.reserve(NPerGroup);
-             for (size_t i = 0; i < local_nrow; ++i)
+             for (size_t i = start; i < end; ++i)
                  cur_grp_by[grp_by_vl[i]].push_back(i);
         }
         #pragma omp parallel for num_threads(CORES)
@@ -78,7 +78,7 @@ void transform_group_by_soft_alrd_mt()
         }
     } else {
         size_t i2 = 0;
-        for (size_t i = 0; i < lookup.size(); ++i) {
+        for (size_t i = 0; i < unique_grps; ++i) {
             const auto& pos_vec = vec_grp[i];
             memcpy(row_view_idx.data() + i2, 
                    pos_vec.data(), 

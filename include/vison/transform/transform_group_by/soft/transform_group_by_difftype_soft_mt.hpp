@@ -224,6 +224,9 @@ void transform_group_by_difftype_soft_mt(const std::vector<unsigned int>& x,
         }
     }
 
+    for (size_t i = 0; i < local_nrow; ++i)
+        row_view_map[i] = row_view_idx[i];
+    
     if (!name_v.empty())
         name_v.push_back(colname);
 

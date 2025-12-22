@@ -497,6 +497,9 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
         }
     }
 
+    for (size_t i = 0; i < local_nrow; ++i)
+        row_view_map[i] = row_view_idx[i];
+
     switch (idx_type) {
         case 0: type_refv.push_back('s'); str_v.push_back(value_col);  break;
         case 1: type_refv.push_back('c'); chr_v.push_back(value_col);  break;

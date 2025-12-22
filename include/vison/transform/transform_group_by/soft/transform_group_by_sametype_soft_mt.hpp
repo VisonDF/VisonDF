@@ -203,6 +203,9 @@ t       unsigned int I = 0;
         }
     }
 
+    for (size_t i = 0; i < local_nrow; ++i)
+        row_view_map[i] = row_view_idx[i];
+
     if (!name_v.empty())
         name_v.push_back(colname);
 
