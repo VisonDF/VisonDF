@@ -3,7 +3,7 @@
 template <typename T,
           unsigned int CORES = 4>
 inline void inplace_permutation(std::vector<std::vector<T>>& v,
-                                std::vector<unsigned int> perm)
+                                const std::vector<unsigned int>& perm)
 {
     const size_t local_nrow = v[0].size();
     const size_t local_ncol = v.size();
