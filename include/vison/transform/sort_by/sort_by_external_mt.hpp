@@ -109,13 +109,28 @@ void sort_by_external_mr(const std::vector<T>& nvec) {
              nrow);
 
     } else {
-        in_view = true;
-        memcpy(row_view_idx.data(),
-               idx.data(),
-               nrow * sizeof(size_t)
-              )
-    }
-      
+         if (!in_view) {
+             row_view_idx.resize(local_nrow);
+             memcpy(row_view_idx.data(), 
+                    idx.data(), 
+                    local_nrow * sizeof(size_t));
+             size_t i = 0;
+             for (auto& el : idx) {
+                 row_view_map.emplace(i, el);
+                 i += 1;
+             }
+             in_view = true;
+         } else {
+             for (size_t i = 0; i < local_nrow; ++i) {
+                 size_t current = i;
+                 while (idx[current] != current) {
+                     size_t next = idx[current];
+                     std::swap(row_view_idx[current], row_view_idx[next]);
+                     std::swap(idx[current], idx[next]);
+                 }
+             }
+         }
+    } 
 };
 
 
