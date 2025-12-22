@@ -439,8 +439,8 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
     }
 
     col_value_t value_col;
-    if constexpr (std::is_same_v<TColVal, void>) {
-    value_col.emplace<idx_type>();
+    if constexpr (std::is_same_v<TColVal, void> && Function != GroupFunction::Occurence) {
+        value_col.emplace<idx_type>();
     }
     value_col.resize(local_nrow);
 
