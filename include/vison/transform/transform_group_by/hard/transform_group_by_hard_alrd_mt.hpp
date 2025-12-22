@@ -194,7 +194,20 @@ void transform_group_by_hard_alrd_mt(unsigned int n,
             }
 	    }
     }
- 
+
+    using value_col_t = std::conditional_t<
+                    !std::is_same_v<TColVal, void>,
+                    element_type_t<TColVal>,
+                    std::variant<
+                    std::monostate,
+                    std::vector<std::string>,
+                    std::vector<CharT>,
+                    std::vector<uint8_t>,
+                    std::vector<IntT>,
+                    std::vector<UIntT>,
+                    std::vector<FloatT>,
+        >>;
+
     if constexpr (CORES > 1) {
        
 	    std::vector<size_t> pos_boundaries;
@@ -254,6 +267,20 @@ void transform_group_by_hard_alrd_mt(unsigned int n,
             i2 += vec.size();
         }
     }
+
+    switch (idx_type) {
+        case 0: type_refv.push_back('s'); str_v.push_back(value_col);  break;
+        case 1: type_refv.push_back('c'); chr_v.push_back(value_col);  break;
+        case 2: type_refv.push_back('b'); bool_v.push_back(value_col); break;
+        case 3: type_refv.push_back('i'); int_v.push_back(value_col);  break;
+        case 4: type_refv.push_back('u'); uint_v.push_back(value_col); break;
+        case 5: type_refv.push_back('d'); dbl_v.push_back(value_col);  break;
+    }
+
+    if (!name_v.empty())
+        name_v.push_back(colname);
+
+     ++ncol;
 
 }
 

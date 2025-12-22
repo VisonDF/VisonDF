@@ -3,7 +3,6 @@
 template <typename TContainer = void,
           typename TColVal = void,
           unsigned int CORES = 4,
-          bool SanityCheck = true,
           GroupFunction Function = GroupFunction::Occurence,
           bool SimdHash = true,
           NPerGroup = 4,
@@ -28,26 +27,7 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
         }
     }
 
-    if constexpr (SanityCheck) {
-        if constexpr (!std::is_same_v<TContainer, void>) {
-            char t_vl;
-            
-            for (auto& el : x) {
-                if (type_ref_v[el] != t_vl) {
-                    std::cerr << "`TContainer` type missmatch\n";
-                    return;
-                }
-            }
-        }
-        if constexpr (!std::is_same_v<TColVal, void>) {
-            if (type_ref_v[n_col] != t_vl) {
-                std::cerr << "`TContainer` type missmatch\n";
-                return;
-            }
-        }
-    }
-
-    using col_value_t = std::conditional_t<Occurence, 
+    using col_value_t = std::conditional_t<Function == GroupFunction::Occurence, 
                                            std::vector<UIntT>,
                                            std::conditional_t<!(std::is_same_v<TColVal, void>),
                                                               std::vector<element_type_t<TColVal>>,

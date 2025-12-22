@@ -26,7 +26,7 @@ void transform_group_by_sametype_hard_mt(const std::vector<unsigned int>& x,
         }
     }
 
-    using col_value_t = std::conditional_t<Occurence, 
+    using col_value_t = std::conditional_t<Function == GroupFunction::Occurence, 
                                            std::vector<UIntT>,
                                            std::conditional_t<!(std::is_same_v<TColVal, void>),
                                                               std::vector<element_type_t<TColVal>>,
