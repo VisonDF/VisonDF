@@ -5,6 +5,7 @@ template <typename TContainer  = void,
           unsigned int CORES = 4,
           GroupFunction Function = GroupFunction::Occurence,
           bool SimdHash = true,
+          bool MapCol = false,
           unsigned int NPerGroup = 4,
           typename F = decltype(&default_groupfn_impl)>
 requires GroupFn<F, first_arg_grp_t<F>>
@@ -93,52 +94,97 @@ void transform_group_by_difftype_mt(const std::vector<unsigned int>& x,
     idx_uint.reserve(x.size() / 2);
     idx_dbl.reserve(x.size()  / 2);
 
-    {
-        const auto& cur_matr_idx = matr_idx[0];
-        for (int v : x) {
-            auto it = std::find(cur_matr_idx.begin(), cur_matr_idx.end(), v);
-            if (it != cur_matr_idx.end())
-                idx_str.push_back(std::distance(cur_matr_idx.begin(), it));
+    if constexpr (!MapCol) {
+        {
+            const auto& cur_matr_idx = matr_idx[0];
+            for (int v : x) {
+                auto it = std::find(cur_matr_idx.begin(), cur_matr_idx.end(), v);
+                if (it != cur_matr_idx.end())
+                    idx_str.push_back(std::distance(cur_matr_idx.begin(), it));
+            }
         }
-    }
-    {
-        const auto& cur_matr_idx = matr_idx[1];
-        for (int v : x) {
-            auto it = std::find(cur_matr_idx.begin(), cur_matr_idx.end(), v);
-            if (it != cur_matr_idx.end())
-                idx_chr.push_back(std::distance(cur_matr_idx.begin(), it));
+        {
+            const auto& cur_matr_idx = matr_idx[1];
+            for (int v : x) {
+                auto it = std::find(cur_matr_idx.begin(), cur_matr_idx.end(), v);
+                if (it != cur_matr_idx.end())
+                    idx_chr.push_back(std::distance(cur_matr_idx.begin(), it));
+            }
         }
-    }
-    {
-        const auto& cur_matr_idx = matr_idx[2];
-        for (int v : x) {
-            auto it = std::find(cur_matr_idx.begin(), cur_matr_idx.end(), v);
-            if (it != cur_matr_idx.end())
-                idx_bool.push_back(std::distance(cur_matr_idx.begin(), it));
+        {
+            const auto& cur_matr_idx = matr_idx[2];
+            for (int v : x) {
+                auto it = std::find(cur_matr_idx.begin(), cur_matr_idx.end(), v);
+                if (it != cur_matr_idx.end())
+                    idx_bool.push_back(std::distance(cur_matr_idx.begin(), it));
+            }
         }
-    }
-    {
-        const auto& cur_matr_idx = matr_idx[3];
-        for (int v : x) {
-            auto it = std::find(cur_matr_idx.begin(), cur_matr_idx.end(), v);
-            if (it != cur_matr_idx.end())
-                idx_int.push_back(std::distance(cur_matr_idx.begin(), it));
+        {
+            const auto& cur_matr_idx = matr_idx[3];
+            for (int v : x) {
+                auto it = std::find(cur_matr_idx.begin(), cur_matr_idx.end(), v);
+                if (it != cur_matr_idx.end())
+                    idx_int.push_back(std::distance(cur_matr_idx.begin(), it));
+            }
         }
-    }
-    {
-        const auto& cur_matr_idx = matr_idx[4];
-        for (int v : x) {
-            auto it = std::find(cur_matr_idx.begin(), cur_matr_idx.end(), v);
-            if (it != cur_matr_idx.end())
-                idx_uint.push_back(std::distance(cur_matr_idx.begin(), it));
+        {
+            const auto& cur_matr_idx = matr_idx[4];
+            for (int v : x) {
+                auto it = std::find(cur_matr_idx.begin(), cur_matr_idx.end(), v);
+                if (it != cur_matr_idx.end())
+                    idx_uint.push_back(std::distance(cur_matr_idx.begin(), it));
+            }
         }
-    }
-    {
-        const auto& cur_matr_idx = matr_idx[5];
-        for (int v : x) {
-            auto it = std::find(cur_matr_idx.begin(), cur_matr_idx.end(), v);
-            if (it != cur_matr_idx.end())
-                idx_dbl.push_back(std::distance(cur_matr_idx.begin(), it));
+        {
+            const auto& cur_matr_idx = matr_idx[5];
+            for (int v : x) {
+                auto it = std::find(cur_matr_idx.begin(), cur_matr_idx.end(), v);
+                if (it != cur_matr_idx.end())
+                    idx_dbl.push_back(std::distance(cur_matr_idx.begin(), it));
+            }
+        }
+    } else {
+        {
+            const auto& cur_col_map = matr_idx_map[0];
+            for (int v : x) {
+                if (cur_col_map.contains(v))
+                    idx_str.push_back(cur_matr_idx_map[v])
+            }
+        }
+        {
+            const auto& cur_col_map = matr_idx_map[1];
+            for (int v : x) {
+                if (cur_col_map.contains(v))
+                    idx_chr.push_back(cur_matr_idx_map[v])
+            }
+        }
+        {
+            const auto& cur_col_map = matr_idx_map[2];
+            for (int v : x) {
+                if (cur_col_map.contains(v))
+                    idx_bool.push_back(cur_matr_idx_map[v])
+            }
+        }
+        {
+            const auto& cur_col_map = matr_idx_map[3];
+            for (int v : x) {
+                if (cur_col_map.contains(v))
+                    idx_int.push_back(cur_matr_idx_map[v])
+            }
+        }
+        {
+            const auto& cur_col_map = matr_idx_map[4];
+            for (int v : x) {
+                if (cur_col_map.contains(v))
+                    idx_uint.push_back(cur_matr_idx_map[v])
+            }
+        }
+        {
+            const auto& cur_col_map = matr_idx_map[5];
+            for (int v : x) {
+                if (cur_col_map.contains(v))
+                    idx_dbl.push_back(cur_matr_idx_map[v])
+            }
         }
     }
 

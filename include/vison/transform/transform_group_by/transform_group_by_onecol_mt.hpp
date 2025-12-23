@@ -5,8 +5,10 @@ template <typename TContainer  = void,
           unsigned int CORES = 4,
           GroupFunction Function = GroupFunction::Occurence,
           bool SimdHash = true,
+          bool MapCol = false,
           unsigned int NPerGroup = 4,
-          typename F = decltype(&default_groupfn_impl)>
+          typename F = decltype(&default_groupfn_impl)
+         >
 requires GroupFn<F, first_arg_grp_t<F>>
 void transform_group_by_onecol_mt(const unsigned int x,
                                   const n_col unsigned int,
@@ -130,11 +132,22 @@ void transform_group_by_onecol_mt(const unsigned int x,
         }
     }
 
-    std::unordered_map<int, int> pos;
-    const auto& cur_matr_idx = matr_idx[idx_type];
-    for (int i = 0; i < matr_idx[idx_type].size(); ++i)
-        pos[cur_matr_idx[i]] = i;
-    const size_t real_pos = pos[x];
+    size_t real_pos;
+    if constexpr (!MapCol) {
+        const auto& cur_matr_idx = matr_idx[idx_type];
+        for (int i = 0; i < matr_idx[idx_type].size(); ++i) {
+            if (x == cur_matr_idx[i]) {
+                real_pos = i;
+                break;
+            }
+        }
+    } else {
+        if (matr_idx_map[idx_type].empty()) {
+            std::cerr << "MapCol mode but no col found in matr_idx_map[idx_type]\n";
+            return;
+        }
+        real_pos = matr_idx_map[idx_type][x];
+    }
 
     std::vector<std::string_view> key_vec(local_nrow);
 

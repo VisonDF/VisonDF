@@ -5,6 +5,7 @@ template <typename TContainer = void,
           unsigned int CORES = 4,
           GroupFunction Function = GroupFunction::Ocurence,
           bool SimdHash = true,
+          bool MapCol = false,
           unsigned int NPerGroup = 4,
           typename F = decltype(&default_groupfn_impl)>
 requires GroupFn<F, first_arg_grp_t<F>>
@@ -132,12 +133,22 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
 
     std::vector<unsigned int> idx;
     idx.reserve(x.size());
-    std::unordered_map<unsigned int, unsigned int> pos;
-    const auto& cur_matr_idx = matr_idx[idx_type];
-    for (int i = 0; i < matr_idx[idx_type].size(); ++i)
-        pos[cur_matr_idx[i]] = i;
-    for (int v : x)
-        idx.push_back(pos[v]);
+    if constexpr (!MapCol) {
+        std::unordered_map<unsigned int, unsigned int> pos;
+        const auto& cur_matr_idx = matr_idx[idx_type];
+        for (int i = 0; i < matr_idx[idx_type].size(); ++i)
+            pos[cur_matr_idx[i]] = i;
+        for (int v : x)
+            idx.push_back(pos[v]);
+    } else {
+        const auto& cur_col_map = matr_idx_map[idx_type];
+        if (cur_col_map.empty()) { 
+            std::cerr << "`MapCol` mode but no col found in `matr_idx_map[idx_type]`\n";
+            return;
+        }
+        for (auto i : x) 
+            idx.push_back(cur_col_map[i]);
+    }
     std::sort(idx.begin(), idx.end());
 
     size_t n_col_real;

@@ -190,6 +190,19 @@ namespace vison {
                                                       {}
                                                      };
 
+        std::array<
+            ankerl::unordered_dense::map<unsigned int,
+                                         unsigned int>, 6> matr_idx_map = {
+                                                                            {}, 
+                                                                            {}, 
+                                                                            {}, 
+                                                                            {}, 
+                                                                            {}, 
+                                                                            {}
+                                                                           };
+
+        #include "transform/transform_group_by/mapcol.hpp"
+
         std::vector<std::string> name_v = {};
         std::vector<std::string> name_v_row = {};
         std::vector<unsigned int> longest_v = {};
