@@ -180,14 +180,16 @@ namespace vison {
         std::vector<std::vector<UIntT>>       uint_v;
         std::vector<std::vector<FloatT>>      dbl_v;
       
-        std::vector<std::vector<unsigned int>> matr_idx = {
-                                                           {}, 
-                                                           {}, 
-                                                           {}, 
-                                                           {}, 
-                                                           {}, 
-                                                           {}
-                                                          };
+        std::array<
+            std::vector<unsigned int>, 6> matr_idx = {
+                                                      {}, 
+                                                      {}, 
+                                                      {}, 
+                                                      {}, 
+                                                      {}, 
+                                                      {}
+                                                     };
+
         std::vector<std::string> name_v = {};
         std::vector<std::string> name_v_row = {};
         std::vector<unsigned int> longest_v = {};
