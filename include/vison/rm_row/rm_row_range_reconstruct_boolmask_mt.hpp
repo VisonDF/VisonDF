@@ -19,9 +19,13 @@ void rm_row_range_reconstruct_boolmask_mt(std::vector<uint8_t>& x,
 
     if constexpr (Soft) {
 
-        in_view = true;
-        if (row_view_idx.empty())
+        if (!in_view) {
+            row_view_idx.resize(old_nrow);
             std::iota(row_view_idx.begin(), row_view_idx.end(), 0);
+            for (size_t i = 0; i < old_nrow; ++i)
+                row_view_map.emplace(i, i);
+            in_view = true;
+        }
             
         size_t i = 0;
         size_t written = 0;
