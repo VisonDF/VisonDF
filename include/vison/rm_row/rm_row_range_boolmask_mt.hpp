@@ -1,10 +1,8 @@
 #pragma once
 
-template <bool Sorted = true,
-          unsigned int CORES = 4, 
+template <unsigned int CORES = 4, 
           bool MemClean = false,
-          bool Soft = true,
-          bool SanityCheck = true>
+          bool Soft = true>
 void rm_row_range_boolmask_mt(std::vector<uint8_t>& x) 
 {
 
