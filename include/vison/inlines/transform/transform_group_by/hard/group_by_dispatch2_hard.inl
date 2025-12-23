@@ -27,6 +27,7 @@ inline group_by_dispatch2_hard(const std::vector<unsigned int>& x,
                                                        n_col,
                                                        colname,
                                                        f);
+                return;
             }
         }
         transform_group_by_difftype_hard_mt<TContainer,
