@@ -95,35 +95,53 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
     idx_uint.reserve(x.size() / 2);
     idx_dbl.reserve(x.size()  / 2);
 
-    for (int v : x) {
-        auto it = std::find(matr_idx[0].begin(), matr_idx[0].end(), v);
-        if (it != matr_idx[0].end())
-            idx_str.push_back(std::distance(matr_idx[0].begin(), it));
+    {
+        const auto& cur_matr_idx = matr_idx[0];
+        for (int v : x) {
+            auto it = std::find(cur_matr_idx.begin(), cur_matr_idx.end(), v);
+            if (it != cur_matr_idx.end())
+                idx_str.push_back(std::distance(cur_matr_idx.begin(), it));
+        }
     }
-    for (int v : x) {
-        auto it = std::find(matr_idx[1].begin(), matr_idx[1].end(), v);
-        if (it != matr_idx[1].end())
-            idx_chr.push_back(std::distance(matr_idx[1].begin(), it));
+    {
+        const auto& cur_matr_idx = matr_idx[1];
+        for (int v : x) {
+            auto it = std::find(cur_matr_idx.begin(), cur_matr_idx.end(), v);
+            if (it != cur_matr_idx.end())
+                idx_chr.push_back(std::distance(cur_matr_idx.begin(), it));
+        }
     }
-    for (int v : x) {
-        auto it = std::find(matr_idx[2].begin(), matr_idx[2].end(), v);
-        if (it != matr_idx[2].end())
-            idx_bool.push_back(std::distance(matr_idx[2].begin(), it));
+    {
+        const auto& cur_matr_idx = matr_idx[2];
+        for (int v : x) {
+            auto it = std::find(cur_matr_idx.begin(), cur_matr_idx.end(), v);
+            if (it != cur_matr_idx.end())
+                idx_bool.push_back(std::distance(cur_matr_idx.begin(), it));
+        }
     }
-    for (int v : x) {
-        auto it = std::find(matr_idx[3].begin(), matr_idx[3].end(), v);
-        if (it != matr_idx[3].end())
-            idx_int.push_back(std::distance(matr_idx[3].begin(), it));
+    {
+        const auto& cur_matr_idx = matr_idx[3];
+        for (int v : x) {
+            auto it = std::find(cur_matr_idx.begin(), cur_matr_idx.end(), v);
+            if (it != cur_matr_idx.end())
+                idx_int.push_back(std::distance(cur_matr_idx.begin(), it));
+        }
     }
-    for (int v : x) {
-        auto it = std::find(matr_idx[4].begin(), matr_idx[4].end(), v);
-        if (it != matr_idx[4].end())
-            idx_uint.push_back(std::distance(matr_idx[4].begin(), it));
+    {
+        const auto& cur_matr_idx = matr_idx[4];
+        for (int v : x) {
+            auto it = std::find(cur_matr_idx.begin(), cur_matr_idx.end(), v);
+            if (it != cur_matr_idx.end())
+                idx_uint.push_back(std::distance(cur_matr_idx.begin(), it));
+        }
     }
-    for (int v : x) {
-        auto it = std::find(matr_idx[5].begin(), matr_idx[5].end(), v);
-        if (it != matr_idx[5].end())
-            idx_dbl.push_back(std::distance(matr_idx[5].begin(), it));
+    {
+        const auto& cur_matr_idx = matr_idx[5];
+        for (int v : x) {
+            auto it = std::find(cur_matr_idx.begin(), cur_matr_idx.end(), v);
+            if (it != cur_matr_idx.end())
+                idx_dbl.push_back(std::distance(cur_matr_idx.begin(), it));
+        }
     }
 
     std::sort(idx_str.begin(),  idx_str.end()); 
