@@ -150,6 +150,8 @@ namespace vison {
 
     #include "inlines/array_length.inl"
 
+    #include "inlines/contains_all.inl"
+
     template <typename Types = DefaultTypes>
     class Dataframe{
       private:
@@ -239,7 +241,7 @@ namespace vison {
                                                 type_print_vec[5].size()  
                                               };
 
-	    std::vector<std::vector<unsigned int>> grp_by_col;
+	    std::vector<ankerl::unordered_dense::set<unsigned int>> grp_by_col;
 	    std::vector<unsigned int> unique_grp;
 
         #include "types/stringify_types.inl"
