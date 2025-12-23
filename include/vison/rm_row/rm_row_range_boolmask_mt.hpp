@@ -5,28 +5,18 @@ template <bool Sorted = true,
           bool MemClean = false,
           bool Soft = true,
           bool SanityCheck = true>
-void rm_row_range_mt(std::vector<unsigned int>& x) 
+void rm_row_range_boolmask_mt(std::vector<uint8_t>& x) 
 {
 
     // Soft May auto switch to view mode
 
     const size_t old_nrow = nrow;
 
-    std::vector<uint8_t> keep(old_nrow, 1);
-    for (unsigned int& rr : x) {
-        if (rr < old_nrow) [[likely]] {
-            keep[rr] = 0;
-        } else {
-            std::cerr << "Row out of bounds in (rm_row_range_reconstruct_mt)\n";
-            return;
-        }
-    }
-
     auto compact_block = [&](auto& vec) {
         size_t idx = 0;
         auto beg = vec.begin();
         auto end = beg + old_nrow;
-        auto it  = std::remove_if(beg, end, [&](auto&) mutable { return !keep[idx++]; });
+        auto it  = std::remove_if(beg, end, [&](auto&) mutable { return x[idx++]; });
         vec.erase(it, end);
     };
 
@@ -54,7 +44,7 @@ void rm_row_range_mt(std::vector<unsigned int>& x)
             std::cerr << "Can't perform this operation while `in_view` mode activated, consider applying `.materialize()`\n";
             return;
         }
-    
+
         for (size_t t = 0; t < 6; ++t) {
             
             const std::vector<unsigned int>& matr_tmp = matr_idx[t];
@@ -109,7 +99,7 @@ void rm_row_range_mt(std::vector<unsigned int>& x)
             auto& aux = name_v_row;
             size_t idx = 0;
             auto it = std::remove_if(aux.begin(), aux.end(),
-                                     [&](auto&) mutable { return !keep[idx++]; });
+                                     [&](auto&) mutable { return x[idx++]; });
             aux.erase(it, aux.end());
             if constexpr (MemClean) {
                aux.shrink_to_fit();
