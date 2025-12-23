@@ -106,7 +106,7 @@ void transform_group_by_difftype_mt(const std::vector<unsigned int>& x,
         for (int v : x) {
             auto it = std::find(cur_matr_idx.begin(), cur_matr_idx.end(), v);
             if (it != cur_matr_idx.end())
-                idx_str.push_back(std::distance(cur_matr_idx.begin(), it));
+                idx_chr.push_back(std::distance(cur_matr_idx.begin(), it));
         }
     }
     {
@@ -114,7 +114,7 @@ void transform_group_by_difftype_mt(const std::vector<unsigned int>& x,
         for (int v : x) {
             auto it = std::find(cur_matr_idx.begin(), cur_matr_idx.end(), v);
             if (it != cur_matr_idx.end())
-                idx_str.push_back(std::distance(cur_matr_idx.begin(), it));
+                idx_bool.push_back(std::distance(cur_matr_idx.begin(), it));
         }
     }
     {
@@ -122,7 +122,7 @@ void transform_group_by_difftype_mt(const std::vector<unsigned int>& x,
         for (int v : x) {
             auto it = std::find(cur_matr_idx.begin(), cur_matr_idx.end(), v);
             if (it != cur_matr_idx.end())
-                idx_str.push_back(std::distance(cur_matr_idx.begin(), it));
+                idx_int.push_back(std::distance(cur_matr_idx.begin(), it));
         }
     }
     {
@@ -130,7 +130,7 @@ void transform_group_by_difftype_mt(const std::vector<unsigned int>& x,
         for (int v : x) {
             auto it = std::find(cur_matr_idx.begin(), cur_matr_idx.end(), v);
             if (it != cur_matr_idx.end())
-                idx_str.push_back(std::distance(cur_matr_idx.begin(), it));
+                idx_uint.push_back(std::distance(cur_matr_idx.begin(), it));
         }
     }
     {
@@ -138,7 +138,7 @@ void transform_group_by_difftype_mt(const std::vector<unsigned int>& x,
         for (int v : x) {
             auto it = std::find(cur_matr_idx.begin(), cur_matr_idx.end(), v);
             if (it != cur_matr_idx.end())
-                idx_str.push_back(std::distance(cur_matr_idx.begin(), it));
+                idx_dbl.push_back(std::distance(cur_matr_idx.begin(), it));
         }
     }
 
