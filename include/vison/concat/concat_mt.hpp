@@ -30,6 +30,14 @@ void concat_mt(Dataframe& obj)
     unsigned int pre_nrow = nrow;
     nrow += nrow2;
 
+    if (in_view) {
+        row_view_idx.resize(nrow);
+        for (size_t i = pre_nrow; i < nrow; ++i) {
+            row_view_idx.push_back(i);
+            row_view_map.emplace(i, i);
+        }
+    }
+
     for (auto& el : str_v ) { el.resize(nrow) };
     for (auto& el : chr_v ) { el.resize(nrow) };
     for (auto& el : bool_v) { el.resize(nrow) };
