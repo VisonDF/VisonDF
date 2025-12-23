@@ -14,12 +14,6 @@ void transform_group_by_mt(const std::vector<unsigned int>& x,
                            const F f = &default_groupfn_impl) 
 {
 
-    if (in_view) {
-        std::cerr << "Can't use this operation while in `view` mode, " 
-                  << "consider applying `.materialize()`\n";
-        return;
-    }
-
     if constexpr (std::is_same_v<TColVal, void>) {
         switch(type_refv[n]) {
             case 's': group_by_dispatch1<TContainer, 
