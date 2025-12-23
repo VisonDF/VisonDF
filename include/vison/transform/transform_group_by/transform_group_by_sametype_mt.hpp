@@ -133,8 +133,9 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
     std::vector<unsigned int> idx;
     idx.reserve(x.size());
     std::unordered_map<unsigned int, unsigned int> pos;
+    const auto& cur_matr_idx = matr_idx[idx_type];
     for (int i = 0; i < matr_idx[idx_type].size(); ++i)
-        pos[matr_idx[idx_type][i]] = i;
+        pos[cur_matr_idx[i]] = i;
     for (int v : x)
         idx.push_back(pos[v]);
     std::sort(idx.begin(), idx.end());

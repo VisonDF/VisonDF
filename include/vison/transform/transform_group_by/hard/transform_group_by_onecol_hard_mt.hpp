@@ -132,8 +132,9 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
     }
 
     std::unordered_map<int, int> pos;
+    const auto& cur_matr_idx = matr_idx[idx_type];
     for (int i = 0; i < matr_idx[idx_type].size(); ++i)
-        pos[matr_idx[idx_type][i]] = i;
+        pos[cur_matr_idx[i]] = i;
     const size_t real_pos = pos[x];
 
     size_t n_col_real;
