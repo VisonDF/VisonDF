@@ -68,33 +68,36 @@ void transform_group_by_hard(const std::vector<unsigned int>& x,
 
     } else {
         if (x.size() > 1) {
-            if constexpr (std::is_same_v<TContainer, TColVal>) {
-                transform_group_by_sametype_hard_mt<TContainer,
-                                                    TColVal,
-                                                    1, // CORES
-                                                    Function,
-                                                    SimdHash,
-                                                    NPerGroup,
-                                                    F>(x,
-                                                       n_col,
-                                                       colname,
-                                                       f);
-            } else {
-                transform_group_by_difftype_hard_mt<TContainer,
-                                                    TColVal,
-                                                    1, //CORES
-                                                    Function,
-                                                    SimdHash,
-                                                    NPerGroup,
-                                                    F>(x,
-                                                       n_col,
-                                                       colname,
-                                                       f);
-            }
+            const char ref_t = type_refv[x[0]];
+            for (auto& ii : x) {
+                if (type_refv[ii] != ref_t) {
+                    transform_group_by_difftype_hard_mt<TContainer,
+                                                        TColVal,
+                                                        1,
+                                                        Function,
+                                                        SimdHash,
+                                                        NPerGroup,
+                                                        F>(x,
+                                                           n_col,
+                                                           colname,
+                                                           f);
+                    return;
+                }
+            } 
+            transform_group_by_sametype_hard_mt<TContainer,
+                                                TColVal,
+                                                1, 
+                                                Function,
+                                                SimdHash,
+                                                NPerGroup,
+                                                F>(x,
+                                                   n_col,
+                                                   colname,
+                                                   f);
         } else {
                 transform_group_by_onecol_hard_mt<TContainer,
                                                   TColVal,
-                                                  1, //CORES
+                                                  1,
                                                   Function,
                                                   SimdHash,
                                                   NPerGroup,
