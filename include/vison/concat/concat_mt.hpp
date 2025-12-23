@@ -37,7 +37,7 @@ void concat_mt(Dataframe& obj)
     for (auto& el : uint_v) { el.resize(nrow) };
     for (auto& el : dbl_v ) { el.resize(nrow) };
 
-    #pragma omp parallel for num_threads(CORES)
+    #pragma omp parallel for (if CORES > 1) num_threads(CORES)
     for (size_t el = 0; el < matr_idx[0].size(); el += 1) {
 
         const size_t val_idx = matr_idx[0][el];
@@ -65,7 +65,7 @@ void concat_mt(Dataframe& obj)
     {
         using T = typename std::remove_reference_t<decltype(vec1)>::value_type;
     
-        #pragma omp parallel for num_threads(CORES)
+        #pragma omp parallel for if(CORES > 1) num_threads(CORES)
         for (size_t el = 0; el < col_idx.size(); ++el) 
         {
             const size_t val_idx = col_idx[el];
@@ -94,5 +94,7 @@ void concat_mt(Dataframe& obj)
     concat_pod_column(dbl_v , dbl_v2 ,  matr_idx[5]);
     
 };
+
+
 
 
