@@ -5,18 +5,16 @@ template <typename TContainer = void,
           bool SimdHash = true,
       unsigned int NPerGroup = 4,
       bool SanityCheck = true>
-void transform_group_by_difftype_soft_mt(const std::vector<unsigned int>& x,
-                                         const std::string colname = "n") 
+void transform_group_by_difftype_soft_mt(const std::vector<unsigned int>& x) 
 {
 
     if constexpr (SanityCheck) {
         unsigned int I = 0;
-        for (auto& el : x) {
-            if (std::sort(el.begin(), el.end()) == x) {
-                transform_group_by_soft_alrd_mt<I, 
-                                                CORES, 
+        for (auto& el : grp_col) {
+            if (contains_all(el, x)) {
+                transform_group_by_soft_alrd_mt<CORES, 
                                                 NPerGroup, 
-                                                SanityCheck>(x, colname);
+                                                SanityCheck>(I);
                 return;
             }
             I += 1;
@@ -227,11 +225,6 @@ void transform_group_by_difftype_soft_mt(const std::vector<unsigned int>& x,
     for (size_t i = 0; i < local_nrow; ++i)
         row_view_map[i] = row_view_idx[i];
     
-    if (!name_v.empty())
-        name_v.push_back(colname);
-
-    type_refv.push_back('u');
-    ++ncol;
 }
 
 

@@ -5,18 +5,16 @@ template <typename TContainer = void,
           bool SimdHash = true,
           unsigned int NPerGroup,
           bool SanityCheck = true>
-void transform_group_by_onecol_soft_mt(unsigned int x,
-                                       const std::string colname = "n") 
+void transform_group_by_onecol_soft_mt(unsigned int x) 
 {
 
     if constexpr (SanityCheck) {
         unsigned int I = 0;
         for (auto& el : grp_by_col) {
-            if (el.size() == 1 && el[0] == x) {
-                transform_group_by_soft_alrd_mt<I, 
-                                                CORES, 
+            if (el.contains(x)) {
+                transform_group_by_soft_alrd_mt<CORES, 
                                                 NPerGroup, 
-                                                SanityCheck>(x, colname);
+                                                SanityCheck>(I);
                 return;
             }
             I += 1;
@@ -206,11 +204,6 @@ void transform_group_by_onecol_soft_mt(unsigned int x,
     for (size_t i = 0; i < local_nrow; ++i)
         row_view_map[i] = row_view_idx[i];
 
-    if (!name_v.empty())
-        name_v.push_back(colname);
-
-    type_refv.push_back('u');
-    ++ncol;
 }
 
 

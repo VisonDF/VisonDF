@@ -1,10 +1,9 @@
 #pragma once
 
-template <unsigned int Id,
-      unsigned int CORES = 4,
-      unsigned int NPerGroup = 4,
-      bool SanityCheck = true>
-void transform_group_by_soft_alrd_mt()
+template <unsigned int CORES = 4,
+          unsigned int NPerGroup = 4,
+          bool SanityCheck = true>
+void transform_group_by_soft_alrd_mt(unsigned int Id)
 {
     if constexpr (SanityCheck) {
         if (Id > grp_by_col.size()) {
