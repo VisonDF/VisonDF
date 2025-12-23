@@ -1,12 +1,12 @@
 #pragma once
 
-template <unsigned int Id,
-	      typename TColVal = void,
+template <typename TColVal = void,
 	      unsigned int CORES = 4,
 	      unsigned int NPerGroup = 4,
 	      GroupFunction Function == GroupFunction::Occurence,
 	      bool SanityCheck = true>
-void transform_group_by_alrd_mt(unsigned int n,
+void transform_group_by_alrd_mt(unsigned int Id,
+                                unsigned int n,
                                 std::string& colname = "n")
 {
     if constexpr (SanityCheck) {

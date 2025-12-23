@@ -3,22 +3,18 @@
 template <typename TContainer = void,
           unsigned int CORES = 4,
           bool SimdHash = true,
-          unsigned int NPerGroup = 4,
-          bool SanityCheck = true>
+          unsigned int NPerGroup = 4>
 void transform_group_by_sametype_soft_mt(const std::vector<unsigned int>& x) 
 {
 
-    if constexpr (SanityCheck) {
-        unsigned int I = 0;
-        for (auto& el : grp_col) {
-            if (contains_all(el, x)) {
-                transform_group_by_soft_alrd_mt<CORES, 
-                                                NPerGroup, 
-                                                SanityCheck>(I);
-                return;
-            }
-            I += 1;
+    unsigned int I = 0;
+    for (auto& el : grp_col) {
+        if (contains_all(el, x)) {
+            transform_group_by_soft_alrd_mt<CORES, 
+                                            NPerGroup>(I);
+            return;
         }
+        I += 1;
     }
 
     using map_t = std::conditional_t<

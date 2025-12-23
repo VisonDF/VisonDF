@@ -3,22 +3,18 @@
 template <typename TContainer = void,
           unsigned int CORES = 4,
           bool SimdHash = true,
-          unsigned int NPerGroup,
-          bool SanityCheck = true>
+          unsigned int NPerGroup>
 void transform_group_by_onecol_soft_mt(unsigned int x) 
 {
 
-    if constexpr (SanityCheck) {
-        unsigned int I = 0;
-        for (auto& el : grp_by_col) {
-            if (el.contains(x)) {
-                transform_group_by_soft_alrd_mt<CORES, 
-                                                NPerGroup, 
-                                                SanityCheck>(I);
-                return;
-            }
-            I += 1;
+    unsigned int I = 0;
+    for (auto& el : grp_by_col) {
+        if (el.contains(x)) {
+            transform_group_by_soft_alrd_mt<CORES, 
+                                            NPerGroup>(I);
+            return;
         }
+        I += 1;
     }
 
     using map_t = std::conditional_t<
