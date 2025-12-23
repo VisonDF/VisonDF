@@ -95,16 +95,16 @@ void transform_group_by_hard(const std::vector<unsigned int>& x,
                                                    colname,
                                                    f);
         } else {
-                transform_group_by_onecol_hard_mt<TContainer,
-                                                  TColVal,
-                                                  1,
-                                                  Function,
-                                                  SimdHash,
-                                                  NPerGroup,
-                                                  F>(x[0],
-                                                     n_col,
-                                                     colname,
-                                                     f);
+            transform_group_by_onecol_hard_mt<TContainer,
+                                              TColVal,
+                                              1,
+                                              Function,
+                                              SimdHash,
+                                              NPerGroup,
+                                              F>(x[0],
+                                                 n_col,
+                                                 colname,
+                                                 f);
         }
     }
 
