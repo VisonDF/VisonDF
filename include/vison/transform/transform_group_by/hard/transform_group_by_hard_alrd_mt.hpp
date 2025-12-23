@@ -195,9 +195,11 @@ void transform_group_by_hard_alrd_mt(unsigned int n,
 	    }
     }
 
-    using value_col_t = std::conditional_t<
+    using value_col_t = std::conditional_t<Function == GroupFunction::Occurence,
+        std::vector<UIntT>,
+        std::conditional_t<
                     !std::is_same_v<TColVal, void>,
-                    element_type_t<TColVal>,
+                    std::vector<element_type_t<TColVal>>,
                     std::variant<
                     std::monostate,
                     std::vector<std::string>,
@@ -206,10 +208,10 @@ void transform_group_by_hard_alrd_mt(unsigned int n,
                     std::vector<IntT>,
                     std::vector<UIntT>,
                     std::vector<FloatT>,
-        >>;
+        >>>;
 
     value_col_t value_col;
-    if constexpr (!std::is_same_v<TColVal, void> && Function != GroupFunction::Occurence) {
+    if constexpr (std::is_same_v<TColVal, void> && Function != GroupFunction::Occurence) {
         value_col.emplace<idx_type>();
     }
     value_col.resize(local_nrow);
