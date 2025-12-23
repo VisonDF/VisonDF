@@ -171,7 +171,7 @@ namespace vison {
         bool in_view = false;
         std::vector<size_t> row_view_idx;
         ankerl::unordered_dense::map<size_t, size_t> row_view_map;
-        std::vector<unsigned int> col_alrd_materialized;
+        ankerl::unordered_dense::set<unsigned int> col_alrd_materialized;
 
         std::vector<std::vector<std::string>> str_v;
         std::vector<std::vector<CharT>>       chr_v;

@@ -12,9 +12,7 @@ inline void inplace_permutation(std::vector<std::vector<T>>& v,
         #pragma omp parallel for num_threads(CORES)
         for (size_t col = 0; col < local_ncol; ++col) {
  
-	        if (std::find(col_alrd_materialized.begin(), 
-	                 col_alrd_materialized.end(), col) != col_alrd_materialized.end())
-		        continue;
+	        if (col_alrd_materialized.contains(col)) continue;
 
             std::vector<size_t> perm2 = perm;
             auto& cur_v = v[col];
@@ -31,6 +29,8 @@ inline void inplace_permutation(std::vector<std::vector<T>>& v,
     } else {
         std::vector<size_t> perm2(local_nrow);
         for (size_t col = 0; col < local_ncol; ++col) {
+	        if (col_alrd_materialized.contains(col)) continue;
+
             memcpy(perm2.data(), 
                    perm.data(), 
                    local_nrow * sizeof(size_t)

@@ -524,7 +524,7 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
         case 5: type_refv.push_back('d'); dbl_v.push_back(value_col);  break;
     }
 
-    col_alrd_materialized.push_back(ncol);
+    col_alrd_materialized.try_emplace(ncol);
 
     if (!name_v.empty())
         name_v.push_back(colname);

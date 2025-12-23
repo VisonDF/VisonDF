@@ -21,7 +21,9 @@ void materialize()
         inplace_permutation<FloatT, 1>     (dbl_v,  row_view_idx);
     }
     in_view = false;
+    //row_view_idx.clear(); // unnecessary, may avoid unnecessary realloc
     row_view_map.clear();
+    col_alrd_materialized.clear();
 }
 
 
