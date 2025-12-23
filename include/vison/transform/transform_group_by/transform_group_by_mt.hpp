@@ -67,9 +67,9 @@ void transform_group_by_mt(const std::vector<unsigned int>& x,
         }
     } else {
         if (x.size() > 1) {
-            const char ref_t = type_refv[x[0]];
+            const char t_ref = type_refv[x[0]];
             for (auto& ii : x) {
-                if (type_refv[ii] != ref_t) {
+                if (type_refv[ii] != t_ref) {
                     transform_group_by_difftype_mt<TContainer,
                                                    TColVal,
                                                    CORES,
