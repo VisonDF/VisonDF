@@ -1,6 +1,7 @@
 #pragma once
 
-template <bool IsDense = true>
+template <bool IsDense = true,
+          bool MemClean = false>
 void materialize() 
 {
 
@@ -24,6 +25,34 @@ void materialize()
     //row_view_idx.clear(); // unnecessary, may avoid unnecessary realloc
     row_view_map.clear();
     col_alrd_materialized.clear();
+
+    if constexpr (MemClean) {
+        for (auto& el : str_v) {
+            el.resize(local_nrow);
+            el.shrink_to_fit();
+        }
+        for (auto& el : chr_v) {
+            el.resize(local_nrow);
+            el.shrink_to_fit();
+        }
+        for (auto& el : bool_v) {
+            el.resize(local_nrow);
+            el.shrink_to_fit();
+        }
+        for (auto& el : int_v) {
+            el.resize(local_nrow);
+            el.shrink_to_fit();
+        }
+        for (auto& el : uint_v) {
+            el.resize(local_nrow);
+            el.shrink_to_fit();
+        }
+        for (auto& el : dbl_v) {
+            el.resize(local_nrow);
+            el.shrink_to_fit();
+        }
+    }
+
 }
 
 
