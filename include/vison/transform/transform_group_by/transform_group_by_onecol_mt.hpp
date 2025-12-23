@@ -14,17 +14,21 @@ void transform_group_by_onecol_mt(const unsigned int x,
                                   const F f = &default_groupfn_impl) 
 {
 
-    if (in_view) {
-        std::cerr << "Can't use this operation while in `view` mode, " 
-                  << "consider applying `.materialize()`\n";
-        return;
-    }
-
     if constexpr (Function != GroupFunction::Occurence) {
         if (n_col > ncol) {
             std::cerr << "Column number out of range\n";
             return;
         }
+    }
+
+    unsigned int I = 0;
+    for (auto& el : grp_by_col) {
+        if (el.contains(x)) {
+            transform_group_by_hard_alrd_mt<CORES, 
+                                            NPerGroup>(I, n, colname);
+            return;
+        }
+        I += 1;
     }
 
     using key_t = std::string_view;
