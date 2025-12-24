@@ -180,18 +180,25 @@ void transform_group_by_alrd_mt(unsigned int Id,
                     !std::is_same_v<TColVal, void>,
                     std::vector<element_type_t<TColVal>>,
                     std::variant<
-                    std::monostate,
-                    std::vector<std::string>,
-                    std::vector<CharT>,
-                    std::vector<uint8_t>,
-                    std::vector<IntT>,
-                    std::vector<UIntT>,
-                    std::vector<FloatT>,
+                        std::monostate,
+                        std::vector<std::string>,
+                        std::vector<CharT>,
+                        std::vector<uint8_t>,
+                        std::vector<IntT>,
+                        std::vector<UIntT>,
+                        std::vector<FloatT>,
         >>>;
 
     value_col_t value_col;
     if constexpr (std::is_same_v<TColVal, void> && Function != GroupFunction::Occurence) {
-        value_col.emplace<idx_type>();
+        switch (idx_type) {
+            case 0: : value_col.emplace<0>() ;break; 
+            case 1: : value_col.emplace<1>() ;break; 
+            case 2: : value_col.emplace<2>() ;break; 
+            case 3: : value_col.emplace<3>() ;break; 
+            case 4: : value_col.emplace<4>() ;break; 
+            case 5: : value_col.emplace<5>() ;break; 
+        }
     }
     value_col.resize(local_nrow);
 
