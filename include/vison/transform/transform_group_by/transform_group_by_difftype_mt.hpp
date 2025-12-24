@@ -32,7 +32,7 @@ void transform_group_by_difftype_mt(const std::vector<unsigned int>& x,
         I += 1;
     }
 
-    using key_t = std::string_view;
+    using key_t = std::string;
     using col_value_t = std::conditional_t<Function == GroupFunction::Occurence, 
                                            std::vector<UIntT>,
                                            std::conditional_t<!(std::is_same_v<TColVal, void>),
