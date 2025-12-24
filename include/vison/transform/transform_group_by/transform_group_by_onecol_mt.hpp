@@ -39,6 +39,7 @@ void transform_group_by_onecol_mt(const unsigned int x,
                                            std::conditional_t<!(std::is_same_v<TColVal, void>),
                                                               std::vector<element_type_t<TColVal>>,
                                            std::variant<
+                                                 std::monostate,
                                                  std::vector<std::string>, 
                                                  std::vector<CharT>, 
                                                  std::vector<uint8_t>, 
@@ -51,6 +52,7 @@ void transform_group_by_onecol_mt(const unsigned int x,
         std::conditional_t<Function == GroupFunction::Occurence,
                            ankerl::unordered_dense::map<key_t, UIntT, simd_hash>,   
                            std::variant<
+                                   std::monostate,
                                    ankerl::unordered_dense::map<key_t, std::string>,             simd_hash>, 
                                    ankerl::unordered_dense::map<key_t, CharT>,                   simd_hash>, 
                                    ankerl::unordered_dense::map<key_t, uint8_t>,                 simd_hash>, 
@@ -198,14 +200,42 @@ void transform_group_by_onecol_mt(const unsigned int x,
     map_t lookup;
     if constexpr (std::is_same_v<TColVal, void>) {
         if constexpr  (Function != GroupFunction::Gather) {
-            lookup.emplace<idx_type>();
+            switch (idx_type) {
+                case 0: lookup.empace<1>(); break;
+                case 1: lookup.empace<2>(); break;
+                case 2: lookup.empace<3>(); break;
+                case 3: lookup.empace<4>(); break;
+                case 4: lookup.empace<5>(); break;
+                case 5: lookup.empace<6>(); break;
+            }
         } else {
-            lookup.emplace<idx_type + 6>();
+            switch (idx_type) {
+                case 0: lookup.empace<7>(); break;
+                case 1: lookup.empace<8>(); break;
+                case 2: lookup.empace<9>(); break;
+                case 3: lookup.empace<10>(); break;
+                case 4: lookup.empace<11>(); break;
+                case 5: lookup.empace<12>(); break;
+            }
         }
     }
     lookup.reserve(local_nrow / NPerGroup);
 
-    const auto& key_col = (*key_table)[real_pos];
+    std::variant<std::monostate,
+                 std::vector<std::string>*,
+                 std::vector<CharT>*,
+                 std::vector<uint8_t>*,
+                 std::vector<IntT>*,
+                 std::vector<UIntT>*,
+                 std::vector<FloatT>*> key_col;
+    switch (idx_type) {
+        case 0: key_col = &str_v[real_pos];  break;
+        case 1: key_col = &chr_v[real_pos];  break;
+        case 2: key_col = &bool_v[real_pos]; break;
+        case 3: key_col = &int_v[real_pos];  break;
+        case 4: key_col = &uint_v[real_pos]; break;
+        case 5: key_col = &dbl_v[real_pos];  break;
+    }
     auto dispatch_from_void = [&](auto&& f, 
                                   size_t start, 
                                   size_t end, 
@@ -238,7 +268,7 @@ void transform_group_by_onecol_mt(const unsigned int x,
                           const auto& zero) {
         if constexpr (std::is_same_v<TConatiner, std::string>) {
             for (unsigned int i = start; i < end; ++i) {
-                auto [it, inserted] = cmap.try_emplace(key_col[i], zero);
+                auto [it, inserted] = cmap.try_emplace((*key_col)[i], zero);
                 ++it->second;
                 key_vec[i] = &it->first;
             }
@@ -246,14 +276,14 @@ void transform_group_by_onecol_mt(const unsigned int x,
             if (idx_type != 0) {
                 for (unsigned int i = start; i < end; ++i) {
                     auto [it, inserted] = cmap.try_emplace(std::string_view{
-                                                            reinterpret_cast<const char*>(&key_col[i]),
+                                                            reinterpret_cast<const char*>(&(*key_col)[i]),
                                                              val_size}, zero);
                     ++it->second;
                     key_vec[i] = &it->first;
                 }
             } else {
                 for (unsigned int i = start; i < end; ++i) {
-                    auto [it, inserted] = cmap.try_emplace(key_col[i], zero);
+                    auto [it, inserted] = cmap.try_emplace((*key_col)[i], zero);
                     ++it->second;
                     key_vec[i] = &it->first;
                 }
@@ -268,7 +298,7 @@ void transform_group_by_onecol_mt(const unsigned int x,
                           const auto& zero) {
         if constexpr (std::is_same_v<TConatiner, std::string>) {
             for (unsigned int i = start; i < end; ++i) {
-                auto [it, inserted] = cmap.try_emplace(key_col[i], zero);
+                auto [it, inserted] = cmap.try_emplace((*key_col)[i], zero);
                 (it->second) += val_col[i];
                 key_vec[i] = &it->first;
             }
@@ -276,14 +306,14 @@ void transform_group_by_onecol_mt(const unsigned int x,
             if (idx_type != 0) {
                 for (unsigned int i = start; i < end; ++i) {
                     auto [it, inserted] = cmap.try_emplace(std::string_view{
-                                                            reinterpret_cast<const char*>(&key_col[i]),
+                                                            reinterpret_cast<const char*>(&(*key_col)[i]),
                                                              val_size}, zero);
                     (it->second) += val_col[i];
                     key_vec[i] = &it->first;
                 }
             } else {
                 for (unsigned int i = start; i < end; ++i) {
-                    auto [it, inserted] = cmap.try_emplace(key_col[i], zero);
+                    auto [it, inserted] = cmap.try_emplace((*key_col)[i], zero);
                     (it->second) += val_col[i];
                     key_vec[i] = &it->first;
                 }
@@ -298,7 +328,7 @@ void transform_group_by_onecol_mt(const unsigned int x,
                            const auto& vec) {
         if constexpr (std::is_same_v<TContainer, std::string>) {
             for (unsigned int i = start; i < end; ++i) {
-                auto [it, inserted] = cmap.try_emplace(key_col[i], vec);
+                auto [it, inserted] = cmap.try_emplace((*key_col)[i], vec);
                 it->second.push_back(val_col[i]);
                 key_vec[i] = &it->first;
             }
@@ -306,14 +336,14 @@ void transform_group_by_onecol_mt(const unsigned int x,
             if (idx_type != 0) {
                 for (unsigned int i = start; i < end; ++i) {
                     auto [it, inserted] = cmap.try_emplace(std::string_view{
-                                                            reinterpret_cast<const char*>(&key_col[i]),
+                                                            reinterpret_cast<const char*>(&(*key_col)[i]),
                                                              val_size}, vec);
                     it->second.push_back(val_col[i]);
                     key_vec[i] = &it->first;
                 }
             } else {
                 for (unsigned int i = start; i < end; ++i) {
-                    auto [it, inserted] = cmap.try_emplace(key_col[i], vec);
+                    auto [it, inserted] = cmap.try_emplace((*key_col)[i], vec);
                     it->second.push_back(val_col[i]);
                     key_vec[i] = &it->first;
                 }
@@ -407,12 +437,19 @@ void transform_group_by_onecol_mt(const unsigned int x,
         }
         #pragma omp parallel for num_threads(CORES)
         for (size_t i = 0; i < local_nrow; ++i)
-            key_vec[i] = &lookup.find(key_col[i])->first;
+            key_vec[i] = &lookup.find((*key_col)[i])->first;
     }
 
     col_value_t value_col;
     if constexpr (std::is_same_v<TColVal, void> && Function != GroupFunction::Occurence) {
-        valu_col.emplace<idx_type>();
+        switch (idx_type) {
+            case 0: value_col.emplace<0>(); break;
+            case 1: value_col.emplace<1>(); break;
+            case 2: value_col.emplace<2>(); break;
+            case 3: value_col.emplace<3>(); break;
+            case 4: value_col.emplace<4>(); break;
+            case 5: value_col.emplace<5>(); break;
+        }
     }
     value_col.resize(local_nrow);
     #pragma omp parallel for if(CORES > 1) num_threads(CORES)
