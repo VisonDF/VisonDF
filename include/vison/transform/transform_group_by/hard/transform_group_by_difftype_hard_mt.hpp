@@ -45,7 +45,7 @@ void transform_group_by_difftype_hard_mt(const std::vector<unsigned int>& x,
                                                  std::vector<FloatT>
                                                  >>>;
 
-
+    using key_t = std::string_view;
     using map_t = std::conditional_t<
         SimdHash,
     std::conditional_t<Function == GroupFunction::Occurence,
