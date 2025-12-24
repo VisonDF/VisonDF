@@ -202,7 +202,8 @@ void transform_group_by_difftype_soft_mt(const std::vector<unsigned int>& x)
             auto [it, inserted] = lookup.try_emplace(key, midx_vec);
             it->second.push_back(i);
         }
-    } else if constexpr (CORES > 1) {    
+    } else if constexpr (CORES > 1) {
+        const unsigned int rsv_val = local_nrow / (CORES * NPerGroup);
         const unsigned int chunks = local_nrow / CORES + 1;
         std::vector<map_t> vec_map(CORES);
         #pragma omp parallel num_threads(CORES)
@@ -213,7 +214,7 @@ void transform_group_by_difftype_soft_mt(const std::vector<unsigned int>& x)
             const unsigned int start = tid * chunks;
             const unsigned int end   = std::min(local_nrow, start + chunks);
             map_t& cur_map           = vec_map[tid];
-            cur_map.reserve(local_nrow / (CORES * NPerGroup));
+            cur_map.reserve(rsv_val);
             for (unsigned int i = start; i < end; ++i) {
                 key.clear();
                 key_build(key, i);

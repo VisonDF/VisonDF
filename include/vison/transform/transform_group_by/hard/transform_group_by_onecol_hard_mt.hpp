@@ -338,6 +338,7 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
             dispatch_from_void(fill_lookup, 0, local_nrow, lookup);
         }
     } else if constexpr (CORES > 1) {
+        const unsigned int rsv_val = local_nrow / (CORES * NPerGroup);
         const bool triv_copy = (idx_type != 0);
         const unsigned int chunks = local_nrow / CORES + 1;
         std::vector<map_t> vec_map(CORES);
@@ -347,7 +348,7 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
             const unsigned int start = tid * chunks;
             const unsigned int end   = std::min(local_nrow, start + chunks);
             map_t& cur_map           = vec_map[tid];
-            cur_map.reserve(local_nrow / (CORES * NPerGroup));
+            cur_map.reserve(rsv_val);
             if constexpr (Function == GroupFunction::Occurence) {
                 dispatch_from_void(occ_lookup, start, end, cur_map);
             } else if constexpr (Function == GroupFunction::Sum ||

@@ -120,11 +120,12 @@ void transform_group_by_onecol_soft_mt(unsigned int x)
         std::vector<map_t> vec_map(CORES);
         #pragma omp parallel num_threads(CORES)
         {
+            const unsigned int rsv_val = local_nrow / (CORES * NPerGroup);
             const unsigned int tid   = omp_get_thread_num();
             const unsigned int start = tid * chunks;
             const unsigned int end   = std::min(local_nrow, start + chunks);
             map_t& cur_map           = vec_map[tid];
-            cur_map.reserve(local_nrow / (CORES * NPerGroup));
+            cur_map.reserve(rsv_val);
             if constexpr (std::is_same_v<TContainer, std::string>) {
                 for (unsigned int i = start; i < end; ++i) {
                     auto [it, inserted] = cur_map.try_emplace(key_col[i], midx_vec);

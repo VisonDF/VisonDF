@@ -319,6 +319,7 @@ void transform_group_by_sametype_hard_mt(const std::vector<unsigned int>& x,
             dispatch_from_void(fill_lookup, key, 0, local_nrow, lookup);
         }
     } else if constexpr (CORES > 1) {
+        const unsigned int rsv_val = local_nrow / (CORES * NPerGroup);
         constexpr auto& size_table = get_types_size();
         const size_t val_size = size_table[idx_type];
         const bool triv_copy = (idx_type != 0); 
@@ -332,7 +333,7 @@ void transform_group_by_sametype_hard_mt(const std::vector<unsigned int>& x,
             const unsigned int start = tid * chunks;
             const unsigned int end   = std::min(local_nrow, start + chunks);
             map_t& cur_map           = vec_map[tid];
-            cur_map.reserve(local_nrow / (CORES * NPerGroup));
+            cur_map.reserve(rsv_val);
             if constexpr (Function == GroupFunction::Occurence) {
                 dispatch_from_void(occ_lookup, key, start, end, cur_map);
             } else if constexpr (Function == GroupFunction::Sum ||
