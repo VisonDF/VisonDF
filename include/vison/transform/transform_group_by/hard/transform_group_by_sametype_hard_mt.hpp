@@ -210,7 +210,7 @@ void transform_group_by_sametype_hard_mt(const std::vector<unsigned int>& x,
             lookup.emplace<idx_type + 6>();
         }
     }
-    lookup.reserve(local_nrow);
+    lookup.reserve(local_nrow / NPerGroup);
 
     auto key_build = [&] (std::string& key, unsigned int i) {
         for (size_t j = 0; j < x.size(); ++j) {
@@ -332,7 +332,7 @@ void transform_group_by_sametype_hard_mt(const std::vector<unsigned int>& x,
             const unsigned int start = tid * chunks;
             const unsigned int end   = std::min(local_nrow, start + chunks);
             map_t& cur_map           = vec_map[tid];
-            cur_map.reserve(local_nrow / CORES);
+            cur_map.reserve(local_nrow / (CORES * NPerGroup));
             if constexpr (Function == GroupFunction::Occurence) {
                 dispatch_from_void(occ_lookup, key, start, end, cur_map);
             } else if constexpr (Function == GroupFunction::Sum ||

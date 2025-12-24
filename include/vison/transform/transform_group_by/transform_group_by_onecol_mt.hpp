@@ -203,7 +203,7 @@ void transform_group_by_onecol_mt(const unsigned int x,
             lookup.emplace<idx_type + 6>();
         }
     }
-    lookup.reserve(local_nrow);
+    lookup.reserve(local_nrow / NPerGroup);
 
     const auto& key_col = (*key_table)[real_pos];
     auto dispatch_from_void = [&](auto&& f, 
@@ -340,7 +340,7 @@ void transform_group_by_onecol_mt(const unsigned int x,
             const unsigned int start = tid * chunks;
             const unsigned int end   = std::min(local_nrow, start + chunks);
             map_t& cur_map           = vec_map[tid];
-            cur_map.reserve(local_nrow / CORES);
+            cur_map.reserve(local_nrow / (CORES * NPerGroup));
             if constexpr (Function == GroupFunction::Occurence) {
                 dispatch_from_void(occ_lookup, start, end, cur_map);
             } else if constexpr (Function == GroupFunction::Sum ||

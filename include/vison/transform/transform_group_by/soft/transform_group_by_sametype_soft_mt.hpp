@@ -94,7 +94,7 @@ void transform_group_by_sametype_soft_mt(const std::vector<unsigned int>& x)
     std::sort(idx.begin(), idx.end());
 
     map_t lookup;
-    lookup.reserve(local_nrow);
+    lookup.reserve(local_nrow / NPerGroup);
     ReservingVec midx_vec<unsigned int>(NPerGroup);
 
     auto build_key = [&] (std::string& key, unsigned int i) {
@@ -140,7 +140,7 @@ void transform_group_by_sametype_soft_mt(const std::vector<unsigned int>& x)
             const unsigned int start = tid * chunks;
             const unsigned int end   = std::min(local_nrow, start + chunks);
             map_t& cur_map           = vec_map[tid];
-            cur_map.reserve(local_nrow / CORES);
+            cur_map.reserve(local_nrow / (CORES * NPerGroup));
             for (unsigned int i = start; i < end; ++i) {
                 key.clear();
                 key_build(key, i);
