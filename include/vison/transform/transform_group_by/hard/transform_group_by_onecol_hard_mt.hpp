@@ -38,6 +38,7 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
                                            std::conditional_t<!(std::is_same_v<TColVal, void>),
                                                               std::vector<element_type_t<TColVal>>,
                                            std::variant<
+                                                 std::monostate,
                                                  std::vector<std::string>, 
                                                  std::vector<CharT>, 
                                                  std::vector<uint8_t>, 
@@ -51,6 +52,7 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
     std::conditional_t<Function == GroupFunction::Occurence,
                            ankerl::unordered_dense::map<key_t, PairGroupBy<UIntT>, simd_hash>,    
                            std::variant<
+                                   std::monostate,
                                    ankerl::unordered_dense::map<key_t, PairGroupBy<std::string>,              simd_hash>, 
                                    ankerl::unordered_dense::map<key_t, PairGroupBy<CharT>,                    simd_hash>, 
                                    ankerl::unordered_dense::map<key_t, PairGroupBy<uint8_t>,                  simd_hash>, 
@@ -69,6 +71,7 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
     std::conditional_t<Function == GroupFunction::Occurence,
                            ankerl::unordered_dense::map<key_t, PairGroupBy<UIntT>>,    
                            std::variant<
+                                   std::monostate,
                                    ankerl::unordered_dense::map<key_t, PairGroupBy<std::string>>, 
                                    ankerl::unordered_dense::map<key_t, PairGroupBy<CharT>>, 
                                    ankerl::unordered_dense::map<key_t, PairGroupBy<uint8_t>>, 
@@ -192,16 +195,44 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
     }
 
     map_t lookup;
-    if constexpr (std::is_same_v<TColVal, void>) {
-        if constexpr (Function != GroupFunction::Gather) {
-                lookup.emplace<idx_type>();
+    if constexpr (Function != GroupFunction::Occurence) {
+        if constexpr  (Function != GroupFunction::Gather) {
+            switch (idx_type) {
+                case 0: lookup.emplace<1>(); break;
+                case 1: lookup.emplace<2>(); break;
+                case 2: lookup.emplace<3>(); break;
+                case 3: lookup.emplace<4>(); break;
+                case 4: lookup.emplace<5>(); break;
+                case 5: lookup.emplace<6>(); break;
+            }
         } else {
-                lookup.emplace<idx_type + 6>();
+            switch (idx_type) {
+                case 0: lookup.emplace<7>(); break;
+                case 1: lookup.emplace<8>(); break;
+                case 2: lookup.emplace<9>(); break;
+                case 3: lookup.emplace<10>(); break;
+                case 4: lookup.emplace<11>(); break;
+                case 5: lookup.emplace<12>(); break;
+            }
         }
     }
     lookup.reserve(local_nrow / NPerGroup);
 
-    const auto& key_col = (*key_table)[real_pos];
+    std::variant<std::monostate,
+                 std::vector<std::string>*,
+                 std::vector<CharT>*,
+                 std::vector<uint8_t>*,
+                 std::vector<IntT>*,
+                 std::vector<UIntT>*,
+                 std::vector<FloatT>*> key_col;
+    switch (idx_type) {
+        case 0: key_col = &str_v[real_pos];  break;
+        case 1: key_col = &chr_v[real_pos];  break;
+        case 2: key_col = &bool_v[real_pos]; break;
+        case 3: key_col = &int_v[real_pos];  break;
+        case 4: key_col = &uint_v[real_pos]; break;
+        case 5: key_col = &dbl_v[real_pos];  break;
+    }
 
     auto dispatch_from_void = [&](auto&& f,
                                   size_t start, 
@@ -236,7 +267,7 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
                           const auto& vec_struct) {
         if constexpr (std::is_same_v<TContainer, std::string>) {
             for (unsigned int i = start; i < end; ++i) {
-                auto [it, inserted] = cmap.try_emplace(key_col[i], vec_struct);
+                auto [it, inserted] = cmap.try_emplace((*key_col)[i], vec_struct);
                 auto& cur_struct = it->second;
                 ++cur_struct.value;
                 cur_struct.idx_vec.push_back(i);
@@ -245,7 +276,7 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
             if (idx_type != 0) {
                 for (unsigned int i = start; i < end; ++i) {
                     auto [it, inserted] = cmap.try_emplace(std::string_view{
-                                                              reinterpret_cast<const char*>(&key_col[i]),
+                                                              reinterpret_cast<const char*>(&(*key_col)[i]),
                                                               val_size}, vec_struct);
                     auto& cur_struct = it->second;
                     ++cur_struct.value;
@@ -253,7 +284,7 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
                 }
             } else {
                 for (unsigned int i = start; i < end; ++i) {
-                    auto [it, inserted] = cmap.try_emplace(key_col[i], vec_struct);
+                    auto [it, inserted] = cmap.try_emplace((*key_col)[i], vec_struct);
                     auto& cur_struct = it->second;
                     ++cur_struct.value;
                     cur_struct.idx_vec.push_back(i);
@@ -269,7 +300,7 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
                           const auto& vec_struct) {
         if constexpr (std::is_same_v<TContainer, std::string>) {
             for (unsigned int i = start; i < end; ++i) {
-                auto [it, inserted] = cmap.try_emplace(key_col[i], vec_struct);
+                auto [it, inserted] = cmap.try_emplace((*key_col)[i], vec_struct);
                 auto& cur_struct = it->second;
                 cur_struct.value += val_col[i];
                 cur_struct.idx_vec.push_back(i);
@@ -278,7 +309,7 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
             if (idx_type != 0) {
                 for (unsigned int i = start; i < end; ++i) {
                     auto [it, inserted] = cmap.try_emplace(std::string_view{
-                                                              reinterpret_cast<const char*>(&key_col[i]),
+                                                              reinterpret_cast<const char*>(&(*key_col)[i]),
                                                               val_size}, vec_struct);
                     auto& cur_struct = it->second;
                     cur_struct.value += val_col[i];
@@ -286,7 +317,7 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
                 }
             } else {
                 for (unsigned int i = start; i < end; ++i) {
-                    auto [it, inserted] = cmap.try_emplace(key_col[i], vec_struct);
+                    auto [it, inserted] = cmap.try_emplace((*key_col)[i], vec_struct);
                     auto& cur_struct = it->second;
                     cur_struct.value += val_col[i];
                     cur_struct.idx_vec.push_back(i);
@@ -302,7 +333,7 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
                            const auto& vec_struct) {
         if constexpr (std::is_same_v<TContainer, std::string>) {
              for (unsigned int i = start; i < end; ++i) {
-                  auto [it, inserted] = cmap.try_emplace(key_col[i], vec_struct);
+                  auto [it, inserted] = cmap.try_emplace((*key_col)[i], vec_struct);
                   auto& cur_struct = it->second;
                   cur_struct.value.push_back(val_col[i]);
                   cur_struct.idx_vec.push_back(i);
@@ -311,7 +342,7 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
              if (idx_type != 0) {
                  for (unsigned int i = start; i < end; ++i) {
                       auto [it, inserted] = cmap.try_emplace(std::string_view{
-                                                              reinterpret_cast<const char*>(&key_col[i]),
+                                                              reinterpret_cast<const char*>(&(*key_col)[i]),
                                                               val_size}, vec_struct);
                       auto& cur_struct = it->second;
                       cur_struct.value.push_back(val_col[i]);
@@ -319,7 +350,7 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
                  }
              } else {
                  for (unsigned int i = start; i < end; ++i) {
-                      auto [it, inserted] = cmap.try_emplace(key_col[i], vec_struct);
+                      auto [it, inserted] = cmap.try_emplace((*key_col)[i], vec_struct);
                       auto& cur_struct = it->second;
                       cur_struct.value.push_back(val_col[i]);
                       cur_struct.idx_vec.push_back(i);
@@ -444,8 +475,15 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
     }
 
     col_value_t value_col;
-    if constexpr (std::is_same_v<TColVal, void> && Function != GroupFunction::Occurence) {
-        value_col.emplace<idx_type>();
+    if constexpr (std::is_same_v<TColVal, void> && Function != GroupFunction::Occurence) { 
+        switch (idx_type) {
+            case 0: value_col.emplace<1>(); break;
+            case 1: value_col.emplace<2>(); break;
+            case 2: value_col.emplace<3>(); break;
+            case 3: value_col.emplace<4>(); break;
+            case 4: value_col.emplace<5>(); break;
+            case 5: value_col.emplace<6>(); break;
+        }
     }
     value_col.resize(local_nrow);
 

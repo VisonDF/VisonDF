@@ -53,12 +53,12 @@ void transform_group_by_onecol_mt(const unsigned int x,
                            ankerl::unordered_dense::map<key_t, UIntT, simd_hash>,   
                            std::variant<
                                    std::monostate,
-                                   ankerl::unordered_dense::map<key_t, std::string>,             simd_hash>, 
-                                   ankerl::unordered_dense::map<key_t, CharT>,                   simd_hash>, 
-                                   ankerl::unordered_dense::map<key_t, uint8_t>,                 simd_hash>, 
-                                   ankerl::unordered_dense::map<key_t, IntT>,                    simd_hash>, 
-                                   ankerl::unordered_dense::map<key_t, UIntT>,                   simd_hash>, 
-                                   ankerl::unordered_dense::map<key_t, FloatT>,                  simd_hash>,
+                                   ankerl::unordered_dense::map<key_t, std::string,               simd_hash>, 
+                                   ankerl::unordered_dense::map<key_t, CharT,                     simd_hash>, 
+                                   ankerl::unordered_dense::map<key_t, uint8_t,                   simd_hash>, 
+                                   ankerl::unordered_dense::map<key_t, IntT,                      simd_hash>, 
+                                   ankerl::unordered_dense::map<key_t, UIntT,                     simd_hash>, 
+                                   ankerl::unordered_dense::map<key_t, FloatT,                    simd_hash>,
                                    ankerl::unordered_dense::map<key_t, ReservingVec<std::string>, simd_hash>, 
                                    ankerl::unordered_dense::map<key_t, ReservingVec<CharT>,       simd_hash>, 
                                    ankerl::unordered_dense::map<key_t, ReservingVec<uint8_t>,     simd_hash>, 
@@ -71,6 +71,7 @@ void transform_group_by_onecol_mt(const unsigned int x,
         std::conditional_t<Function == GroupFunction::Occurence,
                            ankerl::unordered_dense::map<key_t, UIntT>,  
                            std::variant<
+                                   std::monostate,
                                    ankerl::unordered_dense::map<key_t, std::string>, 
                                    ankerl::unordered_dense::map<key_t, CharT>, 
                                    ankerl::unordered_dense::map<key_t, uint8_t>, 
@@ -198,7 +199,7 @@ void transform_group_by_onecol_mt(const unsigned int x,
     }
 
     map_t lookup;
-    if constexpr (std::is_same_v<TColVal, void>) {
+    if constexpr (Function != GroupFunction::Occurence) {
         if constexpr  (Function != GroupFunction::Gather) {
             switch (idx_type) {
                 case 0: lookup.empace<1>(); break;
@@ -371,6 +372,7 @@ void transform_group_by_onecol_mt(const unsigned int x,
             const unsigned int start = tid * chunks;
             const unsigned int end   = std::min(local_nrow, start + chunks);
             map_t& cur_map           = vec_map[tid];
+
             cur_map.reserve(rsv_val);
             if constexpr (Function == GroupFunction::Occurence) {
                 dispatch_from_void(occ_lookup, start, end, cur_map);
@@ -443,12 +445,12 @@ void transform_group_by_onecol_mt(const unsigned int x,
     col_value_t value_col;
     if constexpr (std::is_same_v<TColVal, void> && Function != GroupFunction::Occurence) {
         switch (idx_type) {
-            case 0: value_col.emplace<0>(); break;
-            case 1: value_col.emplace<1>(); break;
-            case 2: value_col.emplace<2>(); break;
-            case 3: value_col.emplace<3>(); break;
-            case 4: value_col.emplace<4>(); break;
-            case 5: value_col.emplace<5>(); break;
+            case 0: value_col.emplace<1>(); break;
+            case 1: value_col.emplace<2>(); break;
+            case 2: value_col.emplace<3>(); break;
+            case 3: value_col.emplace<4>(); break;
+            case 4: value_col.emplace<5>(); break;
+            case 5: value_col.emplace<6>(); break;
         }
     }
     value_col.resize(local_nrow);

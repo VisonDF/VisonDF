@@ -90,12 +90,27 @@ void transform_group_by_onecol_soft_mt(unsigned int x)
     map_t lookup;
     lookup.reserve(local_nrow / NPerGroup);
     ReservingVec midx_vec<unsigned int>(NPerGroup);
-    auto& key_col = (*key_table)[real_pos];
+    
+    std::variant<std::monostate,
+                 std::vector<std::string>*,
+                 std::vector<CharT>*,
+                 std::vector<uint8_t>*,
+                 std::vector<IntT>*,
+                 std::vector<UIntT>*,
+                 std::vector<FloatT>*> key_col;
+    switch (idx_type) {
+        case 0: key_col = &str_v[real_pos];  break;
+        case 1: key_col = &chr_v[real_pos];  break;
+        case 2: key_col = &bool_v[real_pos]; break;
+        case 3: key_col = &int_v[real_pos];  break;
+        case 4: key_col = &uint_v[real_pos]; break;
+        case 5: key_col = &dbl_v[real_pos];  break;
+    }
 
     if constexpr (CORES == 1) {
         if constexpr (std::is_same_v<TContainer, std::string>) {
             for (unsigned int i = 0; i < local_nrow; ++i) {    
-                auto [it, inserted] = lookup.try_emplace(key_col[i], midx_vec);
+                auto [it, inserted] = lookup.try_emplace((*key_col)[i], midx_vec);
                 it->second.push_back(i);
             }
         } else {
@@ -103,14 +118,14 @@ void transform_group_by_onecol_soft_mt(unsigned int x)
             const unsigned int val_size = size_table[idx_type];
             if (idx_type != 0) {
                 for (unsigned int i = 0; i < local_nrow; ++i) {    
-                    auto [it, inserted] = lookup.try_emplace(std::string_view{reinterpret_cast<const char*>(key_col[i]), 
+                    auto [it, inserted] = lookup.try_emplace(std::string_view{reinterpret_cast<const char*>(&(*key_col)[i]), 
                                                              val_size}, 
                                                              midx_vec);
                     it->second.push_back(row_view_idx[i]);
                 }
             } else {
                 for (unsigned int i = 0; i < local_nrow; ++i) {    
-                    auto [it, inserted] = lookup.try_emplace(key_col[i], midx_vec);
+                    auto [it, inserted] = lookup.try_emplace((*key_col)[i], midx_vec);
                     it->second.push_back(row_view_idx[i]);
                 }
             }
@@ -128,20 +143,20 @@ void transform_group_by_onecol_soft_mt(unsigned int x)
             cur_map.reserve(rsv_val);
             if constexpr (std::is_same_v<TContainer, std::string>) {
                 for (unsigned int i = start; i < end; ++i) {
-                    auto [it, inserted] = cur_map.try_emplace(key_col[i], midx_vec);
+                    auto [it, inserted] = cur_map.try_emplace((*key_col)[i], midx_vec);
                     it->second.push_back(i);
                 }
             } else {
                 if (idx_type != 0) {
                     for (unsigned int i = start; i < end; ++i) {
-                        auto [it, inserted] = cur_map.try_emplace(std::string_view{reinterpret_cast<const char*>(key_col[i]), 
+                        auto [it, inserted] = cur_map.try_emplace(std::string_view{reinterpret_cast<const char*>(&(*key_col)[i]), 
                                                                   val_size}, 
                                                                   midx_vec);
                         it->second.push_back(row_view_idx[i]);
                     }
                 } else {
                     for (unsigned int i = start; i < end; ++i) {
-                        auto [it, inserted] = cur_map.try_emplace(key_col[i], midx_vec);
+                        auto [it, inserted] = cur_map.try_emplace((*key_col)[i], midx_vec);
                         it->second.push_back(i);
                     }
                 }
