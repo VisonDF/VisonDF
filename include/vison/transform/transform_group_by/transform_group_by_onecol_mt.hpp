@@ -135,7 +135,7 @@ void transform_group_by_onecol_mt(const unsigned int x,
     size_t real_pos;
     if constexpr (!MapCol) {
         const auto& cur_matr_idx = matr_idx[idx_type];
-        for (int i = 0; i < matr_idx[idx_type].size(); ++i) {
+        for (int i = 0; i < cur_matr_idx.size(); ++i) {
             if (x == cur_matr_idx[i]) {
                 real_pos = i;
                 break;

@@ -3,6 +3,7 @@
 template <typename TContainer = void,
           unsigned int CORES = 4,
           bool SimdHash = true,
+          bool MapCol = false,
           unsigned int NPerGroup>
 void transform_group_by_onecol_soft_mt(unsigned int x) 
 {
@@ -72,11 +73,19 @@ void transform_group_by_onecol_soft_mt(unsigned int x)
         }
     }
 
-    std::unordered_map<int, int> pos;
-    const auto& cur_matr_idx = matr_idx[idx_type];
-    for (int i = 0; i < matr_idx[idx_type].size(); ++i)
-        pos[cur_matr_idx[i]] = i;
-    const size_t real_pos = pos[x];
+    size_t real_pos;
+    if constexpr (!MapCol) {
+        const auto& cur_matr_idx = matr_idx[idx_type];
+        for (int i = 0; i < cur_matr_idx.size(); ++i) {
+            if (cur_matr_idx[i] == x) {
+                real_pos = i;
+                break;
+            }
+        }
+        real_pos = pos[x];
+    } else {
+        real_pos = matr_idx_map[idx_type][x];
+    }
 
     map_t lookup;
     lookup.reserve(local_nrow);

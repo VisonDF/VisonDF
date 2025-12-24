@@ -4,6 +4,7 @@ template <typename TContainer = void,
           typename TColVal = void,
           GroupFunction Function = GroupFunction::Occurence,
           bool SimdHash  = true,
+          bool MapCol = false,
           unsigned int NPerGroup = 4,
           typename F = decltype(&default_groupfn_impl)>
 requires Group<F, first_arg_grp_t<F>>
@@ -18,44 +19,50 @@ void transform_group_by_hard(const std::vector<unsigned int>& x,
         switch(type_refv[n]) {
             case 's': group_by_dispatch1_hard<TContainer, 
                                               std::string, 
-                                              1, 
+                                              1, //CORES
                                               Function, 
-                                              SimdHash, 
+                                              SimdHash,
+                                              MapCol,
                                               NPerGroup, 
                                               F>(x, ncol, colname, f); break;
             case 'c': group_by_dispatch1_hard<TContainer, 
                                               CharT, 
-                                              1, 
+                                              1, //CORES 
                                               Function, 
-                                              SimdHash, 
+                                              SimdHash,
+                                              MapCol,
                                               NPerGroup, 
                                               F>(x, ncol, colname, f); break;
             case 'b': group_by_dispatch1_hard<TContainer, 
                                               uint8_t, 
-                                              1, 
+                                              1, //CORES 
                                               Function, 
-                                              SimdHash, 
+                                              SimdHash,
+                                              MapCol,
                                               NPerGroup, 
                                               F>(x, ncol, colname, f); break;
             case 'i': group_by_dispatch1_hard<TContainer, 
                                               IntT, 
-                                              1, 
+                                              1, //CORES
                                               Function, 
-                                              SimdHash, 
+                                              SimdHash,
+                                              MapCo,
                                               NPerGroup, 
                                               F>(x, ncol, colname, f); break;
             case 'u': group_by_dispatch1_hard<TContainer, 
                                               UIntT, 
-                                              1, 
+                                              1, //CORES
                                               Function, 
-                                              SimdHash, 
+                                              SimdHash,
+                                              MapCol,
                                               NPerGroup, 
                                               F>(x, ncol, colname, f); break;
             case 'd': group_by_dispatch1_hard<TContainer, 
                                               FloatT, 
-                                              1, 
+                                              1, //CORES
                                               Function, 
-                                              SimdHash, 
+                                              SimdHash,
+                                              MapCol,
                                               NPerGroup, 
                                               F>(x, ncol, colname, f); break;
         }
@@ -67,9 +74,10 @@ void transform_group_by_hard(const std::vector<unsigned int>& x,
                 if (type_refv[ii] != t_ref) {
                     transform_group_by_difftype_hard_mt<TContainer,
                                                         TColVal,
-                                                        1,
+                                                        1, //CORES
                                                         Function,
                                                         SimdHash,
+                                                        MapCol,
                                                         NPerGroup,
                                                         F>(x,
                                                            n_col,
@@ -80,9 +88,10 @@ void transform_group_by_hard(const std::vector<unsigned int>& x,
             } 
             transform_group_by_sametype_hard_mt<TContainer,
                                                 TColVal,
-                                                1, 
+                                                1, //CORES
                                                 Function,
                                                 SimdHash,
+                                                MapCol,
                                                 NPerGroup,
                                                 F>(x,
                                                    n_col,
@@ -91,9 +100,10 @@ void transform_group_by_hard(const std::vector<unsigned int>& x,
         } else {
             transform_group_by_onecol_hard_mt<TContainer,
                                               TColVal,
-                                              1,
+                                              1, //CORES
                                               Function,
                                               SimdHash,
+                                              MapCol,
                                               NPerGroup,
                                               F>(x[0],
                                                  n_col,

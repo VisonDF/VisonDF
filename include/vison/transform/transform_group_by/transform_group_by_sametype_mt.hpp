@@ -32,6 +32,14 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
         I += 1;
     }
 
+    const char t_ref = type_refv[x[0]];
+    for (int v : x) {
+        if (type_refv[v] != t_ref) {
+            std::cerr << "GroupBy columns must be sametype (TContainer)\n";
+            return;
+        }
+    }
+
     using col_value_t = std::conditional_t<Function == GroupFunction::Occurence, 
                                            std::vector<UIntT>,
                                            std::conditional_t<!(std::is_same_v<TColVal, void>),
