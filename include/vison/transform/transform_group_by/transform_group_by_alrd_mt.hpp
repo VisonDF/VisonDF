@@ -192,12 +192,12 @@ void transform_group_by_alrd_mt(unsigned int Id,
     value_col_t value_col;
     if constexpr (std::is_same_v<TColVal, void> && Function != GroupFunction::Occurence) {
         switch (idx_type) {
-            case 0: : value_col.emplace<0>() ;break; 
-            case 1: : value_col.emplace<1>() ;break; 
-            case 2: : value_col.emplace<2>() ;break; 
-            case 3: : value_col.emplace<3>() ;break; 
-            case 4: : value_col.emplace<4>() ;break; 
-            case 5: : value_col.emplace<5>() ;break; 
+            case 0: : value_col.emplace<1>() ;break; 
+            case 1: : value_col.emplace<2>() ;break; 
+            case 2: : value_col.emplace<3>() ;break; 
+            case 3: : value_col.emplace<4>() ;break; 
+            case 4: : value_col.emplace<5>() ;break; 
+            case 5: : value_col.emplace<6>() ;break; 
         }
     }
     value_col.resize(local_nrow);
