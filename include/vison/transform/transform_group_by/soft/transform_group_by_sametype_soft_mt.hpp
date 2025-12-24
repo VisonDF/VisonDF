@@ -20,10 +20,10 @@ void transform_group_by_sametype_soft_mt(const std::vector<unsigned int>& x)
 
     using map_t = std::conditional_t<
         SimdHash,
-        ankerl::unordered_dense::map<std::string, 
+        ankerl::unordered_dense::map<std::string_view, 
                                      std::vector<unsigned int>, 
                                      simd_hash>,
-        ankerl::unordered_dense::map<std::string, 
+        ankerl::unordered_dense::map<std::string_view, 
                                      std::vector<unsigned int>>
     >;
 
