@@ -202,21 +202,21 @@ void transform_group_by_onecol_mt(const unsigned int x,
     if constexpr (Function != GroupFunction::Occurence) {
         if constexpr  (Function != GroupFunction::Gather) {
             switch (idx_type) {
-                case 0: lookup.empace<1>(); break;
-                case 1: lookup.empace<2>(); break;
-                case 2: lookup.empace<3>(); break;
-                case 3: lookup.empace<4>(); break;
-                case 4: lookup.empace<5>(); break;
-                case 5: lookup.empace<6>(); break;
+                case 0: lookup.emplace<1>(); break;
+                case 1: lookup.emplace<2>(); break;
+                case 2: lookup.emplace<3>(); break;
+                case 3: lookup.emplace<4>(); break;
+                case 4: lookup.emplace<5>(); break;
+                case 5: lookup.emplace<6>(); break;
             }
         } else {
             switch (idx_type) {
-                case 0: lookup.empace<7>(); break;
-                case 1: lookup.empace<8>(); break;
-                case 2: lookup.empace<9>(); break;
-                case 3: lookup.empace<10>(); break;
-                case 4: lookup.empace<11>(); break;
-                case 5: lookup.empace<12>(); break;
+                case 0: lookup.emplace<7>(); break;
+                case 1: lookup.emplace<8>(); break;
+                case 2: lookup.emplace<9>(); break;
+                case 3: lookup.emplace<10>(); break;
+                case 4: lookup.emplace<11>(); break;
+                case 5: lookup.emplace<12>(); break;
             }
         }
     }
