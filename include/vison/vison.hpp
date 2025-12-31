@@ -156,9 +156,9 @@ namespace vison {
     class Dataframe{
       private:
 
-        using CharT = typename Types::CharT;
-        using IntT = typename Types::IntT;
-        using UIntT = typename Types::UIntT;
+        using CharT  = typename Types::CharT;
+        using IntT   = typename Types::IntT;
+        using UIntT  = typename Types::UIntT;
         using FloatT = typename Types::FloatT;
    
         static constexpr std::size_t df_charbuf_size = array_length<CharT>::value;
@@ -472,27 +472,62 @@ namespace vison {
         #endif
 
         #include "transform/transform_unique/transform_unique_mt.hpp"
-
+               
+        #include "inlines/transform/transform_group_by/group_by_dispatch2.inl"
+        #include "inlines/transform/transform_group_by/group_by_dispatch1.inl"
+        #include "inlines/transform/transform_group_by/idx_build_onecol.inl"
+        #include "inlines/transform/transform_group_by/idx_build_sametype.inl"
+        #include "inlines/transform/transform_group_by/key_build.inl"
+        #include "inlines/transform/transform_group_by/key_table_build.inl"
+        #include "inlines/transform/transform_group_by/val_table_build.inl"
+        #include "inlines/transform/transform_group_by/onecol_functions.inl"
+        #include "inlines/transform/transform_group_by/samedifftype_functions.inl"
+        #include "inlines/transform_transform_group_by/dispatch3.inl"
+        #include "inlines/transform_transform_group_by/dispatch2.inl"
+        #include "inlines/transform_transform_group_by/dispatch1_onecol.inl"
+        #include "inlines/transform_transform_group_by/dispatch1_sametype.inl"
+        #include "inlines/transform/transform_group_by/create_value_col.inl"
+        #include "inlines/transform/transform_group_by/dispatch_append_col.inl"
+        #include "inlines/transform/transform_group_by/dispatch_merge.inl"
+        #include "inlines/transform/transform_group_by/merge_functions.inl"
         #include "transform/transform_group_by/transform_group_by_difftype_mt.hpp"
         #include "transform/transform_group_by/transform_group_by_sametype_mt.hpp"
         #include "transform/transform_group_by/transform_group_by_onecol_mt.hpp"
-        #include "transform/transform_group_by/hard/transform_group_by_onecol_hard_mt.hpp"
-        #include "transform/transform_group_by/hard/transform_group_by_sametype_hard_mt.hpp"
-        #include "transform/transform_group_by/hard/transform_group_by_difftype_hard_mt.hpp"
-
-        #include "transform/transform_group_by/soft/transform_group_by_soft_alrd_mt.hpp"
-
-        #include "transform/transform_group_by/soft/transform_group_by_onecol_soft_mt.hpp"
-        #include "transform/transform_group_by/soft/transform_group_by_sametype_soft_mt.hpp"
-        #include "transform/transform_group_by/soft/transform_group_by_difftype_soft_mt.hpp"
-
         #include "transform/transform_group_by/transform_group_by.hpp"
         #ifdef _OPENMP
         #include "transform/transform_group_by/transform_group_by_mt.hpp"
         #endif
-               
-        #include "inlines/transform/transform_group_by/group_by_dispatch2.inl"
-        #include "inlines/transform/transform_group_by/group_by_dispatch1.inl"
+        #include "transform/transform_group_by/transform_group_by_alrd_mt.hpp"
+
+        #include "inlines/transform/transform_group_by/hard/group_by_dispatch2_hard.inl"
+        #include "inlines/transform/transform_group_by/hard/group_by_dispatch1_hard.inl"
+        #include "inlines/transform/transform_group_by/hard/create_value_col_hard.inl"
+        #include "inlines/transform/transform_group_by/hard/dispatch_merge_hard.inl"
+        #include "inlines/transform/transform_group_by/hard/merge_functions_hard.inl"
+        #include "inlines/transform/transform_group_by/hard/onecol_functions_hard.inl"
+        #include "inlines/transform/transform_group_by/hard/samedifftype_functions_hard.inl"
+        #include "transform/transform_group_by/hard/transform_group_by_onecol_hard_mt.hpp"
+        #include "transform/transform_group_by/hard/transform_group_by_sametype_hard_mt.hpp"
+        #include "transform/transform_group_by/hard/transform_group_by_difftype_hard_mt.hpp"
+        #include "transform/transform_group_by/hard/transform_group_by_hard.hpp"
+        #ifdef _OPENMP
+        #include "transform/transform_group_by/hard/transform_group_by_hard_mt.hpp"
+        #endif
+        #include "transform/transform_group_by/hard/transform_group_by_hard_alrd_mt.hpp"
+
+        #include "inlines/transform/transform_group_by/soft/group_by_dispatch1_soft.inl"
+        #include "inlines/transform/transform_group_by/soft/create_value_col_soft.inl"
+        #include "inlines/transform/transform_group_by/soft/merge_functions_soft.inl"
+        #include "inlines/transform/transform_group_by/soft/onecol_functions_soft.inl"
+        #include "inlines/transform/transform_group_by/soft/samedifftype_functions_soft.inl"
+        #include "transform/transform_group_by/soft/transform_group_by_onecol_soft_mt.hpp"
+        #include "transform/transform_group_by/soft/transform_group_by_sametype_soft_mt.hpp"
+        #include "transform/transform_group_by/soft/transform_group_by_difftype_soft_mt.hpp"
+        #include "transform/transform_group_by/soft/transform_group_by_soft.hpp"
+        #ifdef _OPENMP
+        #include "transform/transform_group_by/soft/transform_group_by_soft_mt.hpp"
+        #endif
+        #include "transform/transform_group_by/soft/transform_group_by_soft_alrd_mt.hpp"
 
         #include "pivots/pivot.hpp"
         #ifdef _OPENMP

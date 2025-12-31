@@ -3,6 +3,7 @@
 template <typename TContainer,
           unsigned int CORES,
           bool SimdHash,
+          bool MapCol,
           unsigned int NPerGroup
         >
 inline group_by_dispatch1_soft(const std::vector<unsigned int>& x)
@@ -14,6 +15,7 @@ inline group_by_dispatch1_soft(const std::vector<unsigned int>& x)
                 transform_group_by_difftype_soft_mt<TContainer,
                                                     CORES,
                                                     SimdHash,
+                                                    MapCol,
                                                     NPerGroup>(x);
                 return;
             }
@@ -21,11 +23,13 @@ inline group_by_dispatch1_soft(const std::vector<unsigned int>& x)
         transform_group_by_sametype_soft_mt<TContainer,
                                             CORES,
                                             SimdHash,
+                                            MapCol,
                                             NPerGroup>(x);
     } else {
         transform_group_by_onecol_soft_mt<TContainer,
                                           CORES,
                                           SimdHash,
+                                          MapCol,
                                           NPerGroup>(x[0]);
     }
 }

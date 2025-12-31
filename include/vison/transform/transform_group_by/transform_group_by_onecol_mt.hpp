@@ -25,19 +25,24 @@ void transform_group_by_onecol_mt(const unsigned int x,
 
     unsigned int I = 0;
     for (auto& el : grp_by_col) {
-        if (el.contains(x)) {
-            transform_group_by_hard_alrd_mt<CORES, 
-                                            NPerGroup>(I, n, colname);
-            return;
+        if (el.size() == 1) {
+            if (el.contains(x)) {
+                transform_group_by_alrd_mt<CORES, 
+                                           NPerGroup>(I, n, colname);
+                return;
+            }
         }
         I += 1;
     }
 
+    constexpr bool RsltTypeKnown = (!(std::is_same_v<TColVal, void>) && 
+                                     Function != GroupFunction::Gather);
+
     using key_t = std::string_view;
     using col_value_t = std::conditional_t<Function == GroupFunction::Occurence, 
                                            std::vector<UIntT>,
-                                           std::conditional_t<!(std::is_same_v<TColVal, void>),
-                                                              std::vector<element_type_t<TColVal>>,
+                                           std::conditional_t<RsltTypeKnown,
+                                                              std::vector<element_type_t<element_type_t<TColVal>>>,
                                            std::variant<
                                                  std::monostate,
                                                  std::vector<std::string>, 
@@ -47,325 +52,202 @@ void transform_group_by_onecol_mt(const unsigned int x,
                                                  std::vector<UIntT>, 
                                                  std::vector<FloatT>
                                                  >>>;
+
     using map_t = std::conditional_t<
         SimdHash,
-        std::conditional_t<Function == GroupFunction::Occurence,
-                           ankerl::unordered_dense::map<key_t, UIntT, simd_hash>,   
-                           std::variant<
-                                   std::monostate,
-                                   ankerl::unordered_dense::map<key_t, std::string,               simd_hash>, 
-                                   ankerl::unordered_dense::map<key_t, CharT,                     simd_hash>, 
-                                   ankerl::unordered_dense::map<key_t, uint8_t,                   simd_hash>, 
-                                   ankerl::unordered_dense::map<key_t, IntT,                      simd_hash>, 
-                                   ankerl::unordered_dense::map<key_t, UIntT,                     simd_hash>, 
-                                   ankerl::unordered_dense::map<key_t, FloatT,                    simd_hash>,
-                                   ankerl::unordered_dense::map<key_t, ReservingVec<std::string>, simd_hash>, 
-                                   ankerl::unordered_dense::map<key_t, ReservingVec<CharT>,       simd_hash>, 
-                                   ankerl::unordered_dense::map<key_t, ReservingVec<uint8_t>,     simd_hash>, 
-                                   ankerl::unordered_dense::map<key_t, ReservingVec<IntT>,        simd_hash>, 
-                                   ankerl::unordered_dense::map<key_t, ReservingVec<UIntT>,       simd_hash>, 
-                                   ankerl::unordered_dense::map<key_t, ReservingVec<FloatT>,      simd_hash>
-                       >
-
-               >,
-        std::conditional_t<Function == GroupFunction::Occurence,
-                           ankerl::unordered_dense::map<key_t, UIntT>,  
-                           std::variant<
-                                   std::monostate,
-                                   ankerl::unordered_dense::map<key_t, std::string>, 
-                                   ankerl::unordered_dense::map<key_t, CharT>, 
-                                   ankerl::unordered_dense::map<key_t, uint8_t>, 
-                                   ankerl::unordered_dense::map<key_t, IntT>, 
-                                   ankerl::unordered_dense::map<key_t, UIntT>, 
-                                   ankerl::unordered_dense::map<key_t, FloatT>,
-                                   ankerl::unordered_dense::map<key_t, ReservingVec<std::string>>, 
-                                   ankerl::unordered_dense::map<key_t, ReservingVec<CharT>>, 
-                                   ankerl::unordered_dense::map<key_t, ReservingVec<uint8_t>>, 
-                                   ankerl::unordered_dense::map<key_t, ReservingVec<IntT>>, 
-                                   ankerl::unordered_dense::map<key_t, ReservingVec<UIntT>>, 
-                                   ankerl::unordered_dense::map<key_t, ReservingVec<FloatT>>
-                       >
-
-               >
+        std::conditional_t<
+            Function == GroupFunction::Occurence,
+            ankerl::unordered_dense::map<key_t, PairGroupBy<UIntT>, simd_hash>,   
+            std::conditional_t<
+                !(std::is_same_v<TColVal, void>),
+                ankerl::unordered_dense::map<key_t, PairGroupBy<element_type_t<TColVal>>, simd_hash>,
+                std::variant<
+                    std::monostate,
+                    ankerl::unordered_dense::map<key_t, std::string,               simd_hash>, 
+                    ankerl::unordered_dense::map<key_t, CharT,                     simd_hash>, 
+                    ankerl::unordered_dense::map<key_t, uint8_t,                   simd_hash>, 
+                    ankerl::unordered_dense::map<key_t, IntT,                      simd_hash>, 
+                    ankerl::unordered_dense::map<key_t, UIntT,                     simd_hash>, 
+                    ankerl::unordered_dense::map<key_t, FloatT,                    simd_hash>,
+                    ankerl::unordered_dense::map<key_t, ReservingVec<std::string>, simd_hash>, 
+                    ankerl::unordered_dense::map<key_t, ReservingVec<CharT>,       simd_hash>, 
+                    ankerl::unordered_dense::map<key_t, ReservingVec<uint8_t>,     simd_hash>, 
+                    ankerl::unordered_dense::map<key_t, ReservingVec<IntT>,        simd_hash>, 
+                    ankerl::unordered_dense::map<key_t, ReservingVec<UIntT>,       simd_hash>, 
+                    ankerl::unordered_dense::map<key_t, ReservingVec<FloatT>,      simd_hash>
+                >
+            >
+        >,
+        std::conditional_t<
+            Function == GroupFunction::Occurence,
+            ankerl::unordered_dense::map<key_t, PairGroupBy<UIntT>>,   
+            std::conditional_t<
+                !(std::is_same_v<TColVal, void>),
+                ankerl::unordered_dense::map<key_t, PairGroupBy<element_type_t<TColVal>>>,
+                std::variant<
+                    std::monostate,
+                    ankerl::unordered_dense::map<key_t, std::string>, 
+                    ankerl::unordered_dense::map<key_t, CharT>, 
+                    ankerl::unordered_dense::map<key_t, uint8_t>, 
+                    ankerl::unordered_dense::map<key_t, IntT>, 
+                    ankerl::unordered_dense::map<key_t, UIntT>, 
+                    ankerl::unordered_dense::map<key_t, FloatT>,
+                    ankerl::unordered_dense::map<key_t, ReservingVec<std::string>>, 
+                    ankerl::unordered_dense::map<key_t, ReservingVec<CharT>>, 
+                    ankerl::unordered_dense::map<key_t, ReservingVec<uint8_t>>, 
+                    ankerl::unordered_dense::map<key_t, ReservingVec<IntT>>, 
+                    ankerl::unordered_dense::map<key_t, ReservingVec<UIntT>>, 
+                    ankerl::unordered_dense::map<key_t, ReservingVec<FloatT>>
+                >
+            >
+        >
     >;
 
     const unsigned int local_nrow = nrow;
-    size_t idx_type;
 
-    using key_variant_t = std::variant<
-        std::nullptr_t,
-        const std::vector<std::vector<std::string>>*,
-        const std::vector<std::vector<CharT>>*,
-        const std::vector<std::vector<uint8_t>>*,
-        const std::vector<std::vector<IntT>>*,
-        const std::vector<std::vector<UIntT>>*,
-        const std::vector<std::vector<FloatT>>*
-    >;
-    key_variant_t key_table = nullptr;  
-    key_variant_t key_table2 = nullptr;
+    using key_variant_t = std::conditional_t<
+                              !std::is_same_v<TContainer, void>,
+                              const std::vector<std::vector<element_type_t<TContainer>>>*,
+                              std::variant<
+                                  std::monostate,
+                                  const std::vector<std::vector<std::string>>*,
+                                  const std::vector<std::vector<CharT>>*,
+                                  const std::vector<std::vector<uint8_t>>*,
+                                  const std::vector<std::vector<IntT>>*,
+                                  const std::vector<std::vector<UIntT>>*,
+                                  const std::vector<std::vector<FloatT>>*
+                              >
+    >; 
 
-    if constexpr (!std::is_same_v<TContainer, void>) {
-        if constexpr (std::is_same_v<TContainer, std::string>) {
-            key_table = &str_v;
-            idx_type = 0;
-        } else if constexpr (std::is_same_v<TContainer, CharT>) {
-            key_table = &chr_v;
-            idx_type = 1;
-        } else if constexpr (std::is_same_v<TContainer, uint8_t>) {
-            key_table = &bool_v;
-            idx_type = 2;
-        } else if constexpr (std::is_same_v<TContainer, IntT>) {
-            key_table = &int_v;
-            idx_type = 3;
-        } else if constexpr (std::is_same_v<TContainer, UIntT>) {
-            key_table = &uint_v;
-            idx_type = 4;
-        } else if constexpr (std::is_same_v<TContainer, FloatT>) {
-            key_table = &dbl_v;
-            idx_type = 5;
-        }
-    } else {
-        switch (type_refv[x]) {
-            case 's': key_table = &str_v;  idx_type = 0; break;
-            case 'c': key_table = &chr_v;  idx_type = 1; break;
-            case 'b': key_table = &bool_v; idx_type = 2; break;
-            case 'i': key_table = &int_v;  idx_type = 3; break;
-            case 'u': key_table = &uint_v; idx_type = 4; break;
-            case 'd': key_table = &dbl_v;  idx_type = 5; break;
-        }
-    }
+    key_variant_t var_key_table;
+    unsigned int idx_type = key_table_build<TContainer>(var_key_table, x);
+    const unsigned int key_idx = idx_build_onecol<MapCol>(x, idx_type);
 
-    size_t real_pos;
-    if constexpr (!MapCol) {
-        const auto& cur_matr_idx = matr_idx[idx_type];
-        for (int i = 0; i < cur_matr_idx.size(); ++i) {
-            if (x == cur_matr_idx[i]) {
-                real_pos = i;
-                break;
-            }
-        }
-    } else {
-        if (matr_idx_map[idx_type].empty()) {
-            std::cerr << "MapCol mode but no col found in matr_idx_map[idx_type]\n";
-            return;
-        }
-        real_pos = matr_idx_map[idx_type][x];
-    }
+    using val_variant_t = std::conditional_t<
+                              !std::is_same_v<TColVal, void>,
+                              const std::vector<std::vector<element_type_t<TColVal>>>*,
+                              std::variant<
+                                  std::monostate,
+                                  const std::vector<std::vector<std::string>>*,
+                                  const std::vector<std::vector<CharT>>*,
+                                  const std::vector<std::vector<uint8_t>>*,
+                                  const std::vector<std::vector<IntT>>*,
+                                  const std::vector<std::vector<UIntT>>*,
+                                  const std::vector<std::vector<FloatT>>*
+                              >
+    >; 
+    val_variant_t var_val_table;
+    size_t val_idx;
+    unsigned int pre_idx_type;
 
-    std::vector<std::string_view> key_vec(local_nrow);
+    // all is taken by ref, appart from n
+    val_table_build<element_type_t<TColVal>, 
+                    Function, 
+                    MapCol, 
+                    F>(idx_type, 
+                       val_idx, 
+                       pre_idx_type, 
+                       var_val_table,
+                       n);
 
-    size_t n_col_real;
-    if constexpr (Function != GroupFunction::Occurence) {
-        switch (type_refv[x]) {
-            case 's': key_table2 = &str_v;  idx_type = 0; break;
-            case 'c': key_table2 = &chr_v;  idx_type = 1; break;
-            case 'b': key_table2 = &bool_v; idx_type = 2; break;
-            case 'i': key_table2 = &int_v;  idx_type = 3; break;
-            case 'u': key_table2 = &uint_v; idx_type = 4; break;
-            case 'd': key_table2 = &dbl_v;  idx_type = 5; break;
-            default:
-                std::abort();
-        }
-        auto it = std::find(matr_idx[idx_type].begin(), matr_idx[idx_type].end(), n_col);
-        if (it != matr_idx[idx_type].end()) {
-            n_col_real = std::distance(matr_idx[idx_type].begin(), it);
-            break;
-        } else {
-            std::cerr << "`TColVal` type missmatch\n";
-            return;
-        }
-        if constexpr (Function == GroupFunction::Gather) {
-            using R = std::remove_cvref_t<
-                std::invoke_result_t<F, std::vector<TContainer>&>
-            >;
-            if constexpr (std::is_same_v<R, std::string>) {
-                idx_type = 0;
-            } else if constexpr (std::is_same_v<R, CharT>) {
-                idx_type = 1;
-            } else if constexpr (std::is_same_v<R, uint8_t>) {
-                idx_type = 2;
-            } else if constexpr (std::is_same_v<R, IntT>) {
-                idx_type = 3;
-            } else if constexpr (std::is_same_v<R, UIntT>) {
-                idx_type = 4;
-            } else if constexpr (std::is_same_v<R, FloatT>) {
-                idx_type = 5;
-            } else {
-                static_assert(always_false<F>, "Unsupported type F");
-            }
-        }
-    } else {
-        idx_type = 4;
-    }
-
-    map_t lookup;
-    if constexpr (Function != GroupFunction::Occurence) {
+    map_t var_lookup;
+    if constexpr (std::is_same_v<TColVal, void>) {
         if constexpr  (Function != GroupFunction::Gather) {
-            switch (idx_type) {
-                case 0: lookup.emplace<1>(); break;
-                case 1: lookup.emplace<2>(); break;
-                case 2: lookup.emplace<3>(); break;
-                case 3: lookup.emplace<4>(); break;
-                case 4: lookup.emplace<5>(); break;
-                case 5: lookup.emplace<6>(); break;
+            switch (pre_idx_type) {
+                case 0: var_lookup.emplace<1>(); break;
+                case 1: var_lookup.emplace<2>(); break;
+                case 2: var_lookup.emplace<3>(); break;
+                case 3: var_lookup.emplace<4>(); break;
+                case 4: var_lookup.emplace<5>(); break;
+                case 5: var_lookup.emplace<6>(); break;
             }
         } else {
-            switch (idx_type) {
-                case 0: lookup.emplace<7>(); break;
-                case 1: lookup.emplace<8>(); break;
-                case 2: lookup.emplace<9>(); break;
-                case 3: lookup.emplace<10>(); break;
-                case 4: lookup.emplace<11>(); break;
-                case 5: lookup.emplace<12>(); break;
+            switch (pre_idx_type) {
+                case 0: var_lookup.emplace<7>(); break;
+                case 1: var_lookup.emplace<8>(); break;
+                case 2: var_lookup.emplace<9>(); break;
+                case 3: var_lookup.emplace<10>(); break;
+                case 4: var_lookup.emplace<11>(); break;
+                case 5: var_lookup.emplace<12>(); break;
             }
         }
     }
-    lookup.reserve(local_nrow / NPerGroup);
-
-    std::variant<std::monostate,
-                 std::vector<std::string>*,
-                 std::vector<CharT>*,
-                 std::vector<uint8_t>*,
-                 std::vector<IntT>*,
-                 std::vector<UIntT>*,
-                 std::vector<FloatT>*> key_col;
-    switch (idx_type) {
-        case 0: key_col = &str_v[real_pos];  break;
-        case 1: key_col = &chr_v[real_pos];  break;
-        case 2: key_col = &bool_v[real_pos]; break;
-        case 3: key_col = &int_v[real_pos];  break;
-        case 4: key_col = &uint_v[real_pos]; break;
-        case 5: key_col = &dbl_v[real_pos];  break;
-    }
-    auto dispatch_from_void = [&](auto&& f, 
-                                  size_t start, 
-                                  size_t end, 
-                                  map_t& cmap) {
-        std::visit([&](auto&& tbl_ptr) {
-            using TP = std::remove_cvref_t<decltype(tbl_ptr)>;    
-            if constexpr (!std::is_same_v<TP, std::nullptr_t>) {
-                auto const& val_col = (*tbl_ptr)[n_col_real]; 
-                using Elem = typename std::decay_t<decltype(val_col)>::value_type;
-                if constexpr (Function == GroupFunction::Occurence) {
-                    Elem zero = 0;
-                    f(start, end, cmap, zero);
-                } else if constexpr (Function != GroupFunction::Gather) {
-                    Elem zero = 0;
-                    f(val_col, start, end, cmap, zero);
-                } else {
-                    ReservingVec<Elem> vec(NPerGroup);
-                    f(val_col, start, end, cmap, vec);
-                }
-            }
-        }, key_table2);
-    };
 
     constexpr auto& size_table = get_types_size();
-    const size_t val_size = size_table[idx_type];
+    const size_t val_size      = size_table[idx_type];
 
-    auto occ_lookup = [&](size_t start, 
-                          size_t end, 
-                          map_t& cmap,
-                          const auto& zero) {
-        if constexpr (std::is_same_v<TConatiner, std::string>) {
-            for (unsigned int i = start; i < end; ++i) {
-                auto [it, inserted] = cmap.try_emplace((*key_col)[i], zero);
-                ++it->second;
-                key_vec[i] = &it->first;
-            }
-        } else {
-            if (idx_type != 0) {
-                for (unsigned int i = start; i < end; ++i) {
-                    auto [it, inserted] = cmap.try_emplace(std::string_view{
-                                                            reinterpret_cast<const char*>(&(*key_col)[i]),
-                                                             val_size}, zero);
-                    ++it->second;
-                    key_vec[i] = &it->first;
-                }
-            } else {
-                for (unsigned int i = start; i < end; ++i) {
-                    auto [it, inserted] = cmap.try_emplace((*key_col)[i], zero);
-                    ++it->second;
-                    key_vec[i] = &it->first;
-                }
-            }
-        }
-    };
-
-    auto add_lookup = [&](const auto& val_col, 
-                          size_t start, 
-                          size_t end, 
-                          map_t& cmap,
-                          const auto& zero) {
-        if constexpr (std::is_same_v<TConatiner, std::string>) {
-            for (unsigned int i = start; i < end; ++i) {
-                auto [it, inserted] = cmap.try_emplace((*key_col)[i], zero);
-                (it->second) += val_col[i];
-                key_vec[i] = &it->first;
-            }
-        } else {
-            if (idx_type != 0) {
-                for (unsigned int i = start; i < end; ++i) {
-                    auto [it, inserted] = cmap.try_emplace(std::string_view{
-                                                            reinterpret_cast<const char*>(&(*key_col)[i]),
-                                                             val_size}, zero);
-                    (it->second) += val_col[i];
-                    key_vec[i] = &it->first;
-                }
-            } else {
-                for (unsigned int i = start; i < end; ++i) {
-                    auto [it, inserted] = cmap.try_emplace((*key_col)[i], zero);
-                    (it->second) += val_col[i];
-                    key_vec[i] = &it->first;
-                }
-            }
-        }
-    };
-
-    auto fill_lookup = [&](const auto& val_col, 
-                           size_t start, 
-                           size_t end, 
-                           map_t& cmap,
-                           const auto& vec) {
-        if constexpr (std::is_same_v<TContainer, std::string>) {
-            for (unsigned int i = start; i < end; ++i) {
-                auto [it, inserted] = cmap.try_emplace((*key_col)[i], vec);
-                it->second.push_back(val_col[i]);
-                key_vec[i] = &it->first;
-            }
-        } else {
-            if (idx_type != 0) {
-                for (unsigned int i = start; i < end; ++i) {
-                    auto [it, inserted] = cmap.try_emplace(std::string_view{
-                                                            reinterpret_cast<const char*>(&(*key_col)[i]),
-                                                             val_size}, vec);
-                    it->second.push_back(val_col[i]);
-                    key_vec[i] = &it->first;
-                }
-            } else {
-                for (unsigned int i = start; i < end; ++i) {
-                    auto [it, inserted] = cmap.try_emplace((*key_col)[i], vec);
-                    it->second.push_back(val_col[i]);
-                    key_vec[i] = &it->first;
-                }
-            }
-        }
-    };
+    std::vector<std::string_key*> key_vec(local_nrow);
 
     if constexpr (CORES == 1) {
         if constexpr (Function == GroupFunction::Occurence) {
-            dispatch_from_void(occ_lookup, 0, local_nrow, lookup);
+
+            // KeyBuildSameType is just for completing a dummy placeholder
+            dispatch1_onecol<Function, 
+                             0, // normal mode
+                             element_type_t<TContainer>, 
+                             element_type_t<TColVal>,
+                             OccLookupOneCol,
+                             KeyBuildSameType>(0, 
+                                               local_nrow, 
+                                               var_lookup,
+                                               val_size,
+                                               key_idx,
+                                               val_idx,
+                                               var_key_table,
+                                               var_val_table,
+                                               NPerGroup,
+                                               key_vec
+                                               );
+
         } else if constexpr (Function == GroupFunction::Sum ||
-                     Function == GroupFunction::Mean) {
-            dispatch_from_void(add_lookup, 0, local_nrow, lookup);
+                             Function == GroupFunction::Mean) {
+
+            // KeyBuildSameType is just for completing a dummy placeholder
+            dispatch1_onecol<Function, 
+                             0, // normal mode
+                             element_type_t<TContainer>,
+                             element_type_t<TColVal>,
+                             AddLookupOneCol,
+                             KeyBuildSameType>(0, 
+                                               local_nrow, 
+                                               var_lookup,
+                                               val_size,
+                                               key_idx,
+                                               val_idx,
+                                               var_key_table,
+                                               var_val_table,
+                                               NPerGroup,
+                                               key_vec
+                                               );
+
         } else {
-            dispatch_from_void(fill_lookup, 0, local_nrow, lookup);
+
+            // KeyBuildSameType is just for completing a dummy placeholder
+            dispatch1_onecol<Function, 
+                             0, // normal mode
+                             element_type_t<TContainer>,
+                             element_type_t<TColVal>,
+                             FillLookupOneCol,
+                             KeyBuildSameType>(0, 
+                                               local_nrow, 
+                                               var_lookup,
+                                               val_size,
+                                               key_idx,
+                                               val_idx,
+                                               var_key_table,
+                                               var_val_table,
+                                               NPerGroup,
+                                               key_vec
+                                               );
+
         }
+
     } else if constexpr (CORES > 1) {
-        const unsigned int rsv_val = local_nrow / (CORES * NPerGroup);
+
         const bool triv_copy = (idx_type != 0);
         const unsigned int chunks = local_nrow / CORES + 1;
         std::vector<map_t> vec_map(CORES);
+
         #pragma omp parallel num_threads(CORES)
         {
             const unsigned int tid   = omp_get_thread_num();
@@ -373,114 +255,125 @@ void transform_group_by_onecol_mt(const unsigned int x,
             const unsigned int end   = std::min(local_nrow, start + chunks);
             map_t& cur_map           = vec_map[tid];
 
-            cur_map.reserve(rsv_val);
             if constexpr (Function == GroupFunction::Occurence) {
-                dispatch_from_void(occ_lookup, start, end, cur_map);
+
+                // KeyBuildSameType is just for completing a dummy placeholder
+                dispatch1_onecol<Function, 
+                                 0, // normal mode
+                                 element_type_t<TContainer>,
+                                 element_type_t<TColVal>,
+                                 OccLookupOneCol,
+                                 KeyBuildSameType>(start, 
+                                                   end, 
+                                                   cur_map,
+                                                   val_size,
+                                                   key_idx,
+                                                   val_idx,
+                                                   var_key_table,
+                                                   var_val_table,
+                                                   NPerGroup,
+                                                   key_vec
+                                                   );
+
             } else if constexpr (Function == GroupFunction::Sum ||
                                  Function == GroupFunction::Mean) {
-                dispatch_from_void(add_lookup, start, end, cur_map);
+
+                // KeyBuildSameType is just for completing a dummy placeholder
+                dispatch1_onecol<Function, 
+                                 0, // normal mode
+                                 element_type_t<TContainer>,
+                                 element_type_t<TColVal>,
+                                 AddLookupOneCol,
+                                 KeyBuildSameType>(start, 
+                                                   end, 
+                                                   cur_map,
+                                                   val_size,
+                                                   key_idx,
+                                                   val_idx,
+                                                   var_key_table,
+                                                   var_val_table,
+                                                   NPerGroup,
+                                                   key_vec
+                                                   );
+
             } else {
-                dispatch_from_void(fill_lookup, start, end, cur_map);
+
+                // KeyBuildSameType is just for completing a dummy placeholder
+                dispatch1_onecol<Function, 
+                                 0, // normal mode
+                                 element_type_t<TContainer>,
+                                 element_type_t<TColVal>,
+                                 FillLookupOneCol,
+                                 KeyBuildSameType>(start, 
+                                                   end, 
+                                                   cur_map,
+                                                   val_size,
+                                                   key_idx,
+                                                   val_idx,
+                                                   var_key_table,
+                                                   var_val_table,
+                                                   NPerGroup,
+                                                   key_vec
+                                                   );
+
             }
         }
-        if (is_triv) {
-            std::visit([&](auto&& tbl_ptr) {
-                using TP = std::remove_cvref_t<decltype(tbl_ptr)>;    
-                if constexpr (!std::is_same_v<TP, std::nullptr_t>) {
-                    auto const& val_col = (*tbl_ptr)[n_col_real]; 
-                    using Elem = typename std::decay_t<decltype(val_col)>::value_type;
-                    Elem zero = 0;
-                    ReservingVec<Elem> vec(NPerGroup);
-                    for (const auto& cur_map : vec_map) {
-                        for (const auto& [k, v] : cur_map) {
-                            if constexpr (Function == GroupFunction::Occurence ||
-                                          Function == GroupFunction::Sum ||
-                                          Function == GroupFunction::Mean) {
-                                auto [it, inserted] = lookup.try_emplace(k, zero);
-                                (it->second) += v;
-                            } else {
-                                auto [it, inserted] = lookup.try_emplace(k, vec);
-                                const unsigned int n_old_size = it->second.size();
-                                it->second.resize(n_old_size + v.size());
-                                memcpy(it->second.data() + n_old_size, 
-                                       v.data(), 
-                                       val_size * v.size());
-                            }
-                        }
-                    }
-                }
-               }
-               , key_table2);
+
+        if (triv_copy) {
+            dispatch_merge<Function, 
+                           MergeCurMapTriv,
+                           element_type_t<TColVal>>(vec_map, 
+                                                    var_lookup,
+                                                    NPerGroup,
+                                                    val_table);
         } else {
-            std::visit([&](auto&& tbl_ptr) {
-                using TP = std::remove_cvref_t<decltype(tbl_ptr)>;    
-                if constexpr (!std::is_same_v<TP, std::nullptr_t>) {
-                    auto const& val_col = (*tbl_ptr)[n_col_real]; 
-                    using Elem = typename std::decay_t<decltype(val_col)>::value_type;
-                    Elem zero = 0;
-                    ReservingVec<Elem> vec(NPerGroup);
-                    for (const auto& cur_map : vec_map) {
-                        for (const auto& [k, v] : cur_map) {
-                            if constexpr (Function == GroupFunction::Occurence ||
-                                          Function == GroupFunction::Sum ||
-                                          Function == GroupFunction::Mean) {
-                                auto [it, inserted] = lookup.try_emplace(k, zero);
-                                (it->second) += v;
-                            } else {
-                                auto [it, inserted] = lookup.try_emplace(k, vec);
-                                it->second.insert(it->second.end(),
-                                                  v.begin(),
-                                                  v.end());
-                            }
-                        }
-                    }
-                }
-            }
+            dispatch_merge<Function, 
+                           MergeCurMap,
+                           element_type_t<TColVal>>(vec_map,
+                                                    var_lookup,
+                                                    NPerGroup,
+                                                    val_table);
         }
-        #pragma omp parallel for num_threads(CORES)
-        for (size_t i = 0; i < local_nrow; ++i)
-            key_vec[i] = &lookup.find((*key_col)[i])->first;
+
     }
 
-    col_value_t value_col;
-    if constexpr (std::is_same_v<TColVal, void> && Function != GroupFunction::Occurence) {
+    col_value_t var_v_col;
+    if constexpr (!RsltTypeKnown) { 
         switch (idx_type) {
-            case 0: value_col.emplace<1>(); break;
-            case 1: value_col.emplace<2>(); break;
-            case 2: value_col.emplace<3>(); break;
-            case 3: value_col.emplace<4>(); break;
-            case 4: value_col.emplace<5>(); break;
-            case 5: value_col.emplace<6>(); break;
+            case 0: var_v_col.emplace<1>(); break;
+            case 1: var_v_col.emplace<2>(); break;
+            case 2: var_v_col.emplace<3>(); break;
+            case 3: var_v_col.emplace<4>(); break;
+            case 4: var_v_col.emplace<5>(); break;
+            case 5: var_v_col.emplace<6>(); break;
         }
-    }
-    value_col.resize(local_nrow);
-    #pragma omp parallel for if(CORES > 1) num_threads(CORES)
-    for (size_t i = 0; i < key_vec.size(); ++i) {
-        unsigned int count;
-        if constexpr (Function == GroupFunction::Occurence || 
-                      Function == GroupFunction::Sum) {
-            count = lookup.at(*key_vec[i]);
-        } else if constexpr (Function == GroupFunction::Mean) {
-            count = lookup.at(*key_vec[i]) / local_nrow;
-        } else if constexpr (Function == GroupFunction::Gather) {
-            count = f(lookup.at(*key_vec[i]));
-        }
-        value_col[i] = count;
     }
 
-    switch (idx_type) {
-        case 0: type_refv.push_back('s'); str_v.push_back(value_col);  break;
-        case 1: type_refv.push_back('c'); chr_v.push_back(value_col);  break;
-        case 2: type_refv.push_back('b'); bool_v.push_back(value_col); break;
-        case 3: type_refv.push_back('i'); int_v.push_back(value_col);  break;
-        case 4: type_refv.push_back('u'); uint_v.push_back(value_col); break;
-        case 5: type_refv.push_back('d'); dbl_v.push_back(value_col);  break;
+    if (!in_view) {
+        in_view = true;
+        row_view_idx.resize(local_nrow);
+        row_view_map.reserve(local_nrow);
+        for (size_t i = 0; i < local_nrow; ++i)
+            row_view_map.emplace(i, i);
     }
+
+    dispatch_create_value_col<CreateValueCol, 
+                              Function, 
+                              CORES, 
+                              RsltTypeKnown>(f, 
+                                             var_v_col, 
+                                             var_lookup,
+                                             local_nrow);
+
+    for (size_t i = 0; i < local_nrow; ++i)
+        row_view_map[i] = row_view_idx[i];
+
+    dispatch_add_col<RsltTypeKnown>(v_col);
 
     if (!name_v.empty())
         name_v.push_back(colname);
 
-     ++ncol;
+    ++ncol;
 }
 
 
