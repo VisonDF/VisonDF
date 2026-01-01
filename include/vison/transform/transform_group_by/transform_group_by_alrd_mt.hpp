@@ -42,62 +42,30 @@ void transform_group_by_alrd_mt(unsigned int Id,
                              std::vector<ReservingVec<FloatT>>
                          >
                      >;
-    value_t vec_grp;
+    value_t var_val_grp;
 
-    const char grb_by_vl = grp_by_col_vl[Id];
-    const unsigned int local_nrow = nrow;
+    const char grp_by              = grp_by_col[Id];
+    const unsigned int local_nrow  = nrow;
     const unsigned int unique_grps = unique_grp[Id];
 
-    if constexpr (std::is_same_v<TColVal, void>) {
-        if constexpr (Function != GroupFunction::Gather) {
-            switch (grp_by_vl) {
-                case 's': vec_grp.emplace<std::vector<std::string>>(unique_grps, std::string{}>); break;
-                case 'c': vec_grp.emplace<std::vector<CharT>>(unique_grps,       CharT{}>);       break;
-                case 'b': vec_grp.emplace<std::vector<uint8_t>>(unique_grps,     uint8_t{}>);     break;
-                case 'i': vec_grp.emplace<std::vector<IntT>>(unique_grps,        IntT{}>);        break;
-                case 'u': vec_grp.emplace<std::vector<UIntT>>(unique_grps, 	     UIntT{}>);       break;
-                case 'd': vec_grp.emplace<std::vector<FloatT>>(unique_grps, 	 FloatT{}>);      break;
-            }
-        } else {
-            switch (grp_by_vl) {
-                case 's': vec_grp.emplace<std::vector<ReservingVec<std::string>>>(unique_grps,
-            			      				          ReservingVec<std::string>>(NPerGroup)); break;
-                case 'c': vec_grp.emplace<std::vector<ReservingVec<CharT>>>(unique_grps,
-            			      				          ReservingVec<CharT>>(NPerGroup));       break;
-                case 'b': vec_grp.emplace<std::vector<ReservingVec<uint8_t>>>(unique_grps,
-            			      				          ReservingVec<uint8_t>>(NPerGroup));     break;
-                case 'i': vec_grp.emplace<std::vector<ReservingVec<IntT>>>(unique_grps,
-            			      				          ReservingVec<IntT>>(NPerGroup));        break;
-                case 'u': vec_grp.emplace<std::vector<ReservingVec<UIntT>>>(unique_grps,
-            			      				          ReservingVec<UIntT>>(NPerGroup));       break;
-                case 'd': vec_grp.emplace<std::vector<ReservingVec<FloatT>>>(unique_grps,
-            			      				          ReservingVec<FloatT>>(NPerGroup));      break;
-            }
-        }
-    } else {
+    val_grp_build_alrd<element_type_t<TColVal>, Function>(var_val_grp,
+                                                          n,
+                                                          unique_grps);
 
-	    if constexpr (Function == GroupFunction::Gather) {
-
-	        vec_grp = std::vector<ReservingVec<element_type_t<TColVal>>>(unique_grps, 
-                                                                         ReservingVec<element_type_t<TColVal>>(NPerGroup));
-
-	    } else {
-
-	        vec_grp = std::vector<element_type_t<TColVal>>(unique_grps, element_type_t<TColVal>{});
-
-	    }
-    }
-
-    using val_variant_t = std::variant<
-        std::monostate,
-        const std::vector<std::vector<std::string>>*,
-        const std::vector<std::vector<CharT>>*,
-        const std::vector<std::vector<uint8_t>>*,
-        const std::vector<std::vector<IntT>>*,
-        const std::vector<std::vector<UIntT>>*,
-        const std::vector<std::vector<FloatT>>*
+    using val_variant_t = std::conditional_t<
+          !std::is_same_v<TColVal, void>,
+          std::vector<element_type_t<TColVal>>*,
+          std::variant<
+              std::monostate,
+              const std::vector<std::vector<std::string>>*,
+              const std::vector<std::vector<CharT>>*,
+              const std::vector<std::vector<uint8_t>>*,
+              const std::vector<std::vector<IntT>>*,
+              const std::vector<std::vector<UIntT>>*,
+              const std::vector<std::vector<FloatT>>*
+          >
     >; 
-    val_variant_t val_table;
+    val_variant_t var_val_table;
 
     unsigned int val_idx;
     unsigned int idx_type;
@@ -111,90 +79,106 @@ void transform_group_by_alrd_mt(unsigned int Id,
                        idx_type, 
                        val_idx, 
                        pre_idx_type, 
-                       var_val_table,
                        n);
 
     if constexpr (CORES == 1) {
 
         if constexpr (Function == GroupFunction::Occurence) {
 
-            for (size_t i = 0; i < local_nrow; ++i) {
-                ++vec_grp[grp_by_vl[i]];
-            }
+            dispatch_alrd<element_type_t<TColVal>>(occ_grp_by_alrd,
+                                                   0,
+                                                   local_nrow,
+                                                   val_idx,
+                                                   grp_by,
+                                                   var_val_grp,
+                                                   var_val_table); 
 
         } else if constexpr (Function == GroupFunctio::Sum ||
                              Function == GroupFunction::Mean) {
 
-            for (size_t i = 0; i < local_nrow; ++i) {
-                vec_grp[grp_by_vl[i]] += val_table[n_col_real];
-            }
+            dispatch_alrd<element_type_t<TColVal>>(add_grp_by_alrd,
+                                                   0,
+                                                   local_nrow,
+                                                   val_idx,
+                                                   grp_by,
+                                                   var_val_grp,
+                                                   var_val_table); 
 
         } else {
 
-            for (size_t i = 0; i < local_nrow; ++i) {
-                vec_grp[grp_by_vl[i]].v.push_back(val_table[n_col_real]);
-            }
+            dispatch_alrd<element_type_t<TColVal>>(fill_grp_by_alrd,
+                                                   0,
+                                                   local_nrow,
+                                                   val_idx,
+                                                   grp_by,
+                                                   var_val_grp,
+                                                   var_val_table); 
 
         }
 
     } else {
 	    const unsigned int chunks = local_nrow / CORES + 1;
-	    std::vector<std::vector<std::vector<unsigned int>>> grp_by_cols(chunks,
-			     						    std::vector<unsigned int>(unique_grps));
+	    std::vector<var_variant_t> var_val_grp_vec(chunks);
+
 	    #pragma omp prallel num_threads(CORES)
 	    {
-            const unsigned int tid   = omp_get_thread_num();
-            const unsigned int start = tid * chunks;
-            const unsigned int end   = std::min(local_nrow, start + chunks);
-		    auto& cur_grp_by         = grp_by_cols[tid];
+            const unsigned int tid        = omp_get_thread_num();
+            const unsigned int start      = tid * chunks;
+            const unsigned int end        = std::min(local_nrow, start + chunks);
+		    auto& cur_var_val_grp         = var_val_grp_vec[tid];
+            val_grp_build_alrd<element_type_t<TColVal>, Function>(cur_var_val_grp,
+                                                                  n,
+                                                                  unique_grps);
+
             if constexpr (Function == GroupFunction::Occurence) {
 
-                for (size_t i = start; i < end; ++i) {
-                    ++cur_grp[grp_by_vl[i]];
-                }
+                dispatch_alrd<element_type_t<TColVal>>(occ_grp_by_alrd,
+                                                       start
+                                                       end,
+                                                       val_idx,
+                                                       grp_by,
+                                                       cur_var_val_grp,
+                                                       var_val_table); 
 
             } else if constexpr (Function == GroupFunction::Sum ||
                                  Function == GroupFunction::Mean) {
 
-                for (size_t i = start; i < end; ++i) {
-                    cur_grp[grp_by_vl[i]] += val_table[n_col_real];
-                }
+                dispatch_alrd<element_type_t<TColVal>>(add_grp_by_alrd,
+                                                       start
+                                                       end,
+                                                       val_idx,
+                                                       grp_by,
+                                                       cur_var_val_grp,
+                                                       var_val_table); 
 
             } else {
 
-                for (size_t i = start; i < end; ++i) {
-                    cur_grp[grp_by_vl[i]].v.push_back(val_table[n_col_real]);
-                }
+                dispatch_alrd<element_type_t<TColVal>>(fill_grp_by_alrd,
+                                                       start
+                                                       end,
+                                                       val_idx,
+                                                       grp_by,
+                                                       cur_var_val_grp,
+                                                       var_val_table); 
 
             }
 	    }
 
-	    #pragma omp parallel for num_threads(CORES)
-        for (size_t i = 0; i < unique_grps; ++i) {
+        dispatch_merge_alrd<TColVal, 
+                            CORES,
+                            Function,
+                            MergeAlrd>(unique_grps,
+                                      chunks,
+                                      grp_by,
+                                      var_val_grp_vec,
+                                      var_val_grp);
 
-            for (size_t i2 = 0; i2 < chunks; ++i2) {
-
-                const auto& cur_val = grp_by_cols[i2][i];
-                if constexpr (Function == GroupFunction::Occurence || 
-                              Function == GroupFunction::Sum       ||
-                              Function == GroupFunction::Mean) {
-
-                    vec_grp[grp_by_vl[i]] += cur_val;
-
-                } else {
-
-                    vec_grp[grp_by_vl[i]].push_back(cur_val);
-
-                }
-            }
-
-	    }
     }
 
     using value_col_t = std::conditional_t<Function == GroupFunction::Occurence,
         std::vector<UIntT>,
         std::conditional_t<
-                    !std::is_same_v<TColVal, void>,
+                    RsltTypeKnown,
                     std::vector<element_type_t<TColVal>>,
                     std::variant<
                         std::monostate,
@@ -209,54 +193,58 @@ void transform_group_by_alrd_mt(unsigned int Id,
 
     if constexpr (!RsltTypeKnown) {
         switch (idx_type) {
-            case 0: : value_col.emplace<1>() ;break; 
-            case 1: : value_col.emplace<2>() ;break; 
-            case 2: : value_col.emplace<3>() ;break; 
-            case 3: : value_col.emplace<4>() ;break; 
-            case 4: : value_col.emplace<5>() ;break; 
-            case 5: : value_col.emplace<6>() ;break; 
+            case 0: : var_value_col.emplace<1>() ;break; 
+            case 1: : var_value_col.emplace<2>() ;break; 
+            case 2: : var_value_col.emplace<3>() ;break; 
+            case 3: : var_value_col.emplace<4>() ;break; 
+            case 4: : var_value_col.emplace<5>() ;break; 
+            case 5: : var_value_col.emplace<6>() ;break; 
         }
     }
 
     std::visit([](auto&& value_col) {
 
-        value_col.resize(local_nrow);
+        using TP = std::decay_t<decltype(value_col)>;
 
-        if constexpr (CORES > 1) {
-           
-	        std::vector<size_t> pos_boundaries;
-            pos_boundaries.reserve(unique_grps);
-            pos_boundaries.push_back(0);
-            
-            for (size_t t = 0; t < unqiue_grps; ++t) {
-                pos_boundaries.push_back(
-                    pos_boundaries.back() + vec_grp[t].size()
-                );
+        if constexpr (!std::is_same_v<TP, std::monostate>) {
+
+            value_col.resize(local_nrow);
+
+            if constexpr (Function == GroupFunction::Occ ||
+                          Function == GroupFunction::Add)
+
+                #pragma omp parallel for if(CORES > 1) schedule(static)
+                for (size_t i = 0; i < grp_by.size(); ++i) {
+                    value_col[i] = val_grp[grp_by[i]];
+
+            } else if constexpr (Function == GroupFunction::Mean) {
+
+                for (auto& el : val_grp)
+                    el / local_nrow;
+
+                #pragma omp parallel for if(CORES > 1) schedule(static)
+                for (size_t i = 0; i < grp_by.size(); ++i) {
+                    value_col[i] = val_grp[grp_by[i]];
+
+            } else {
+
+                using TP2 = std::vector<element_type_t<TP::value_type>>;
+                TP2 val_grp2(val_grp.size());
+
+                for (size_t i = 0; i < val_grp.size(); ++i)
+                    val_grp2[i] = f(val_grp[i].v);
+
+                #pragma omp parallel for if(CORES > 1) schedule(static)
+                for (size_t i = 0; i < grp_by.size(); ++i) {
+                    value_col[i] = val_grp2[grp_by[i]];
+
             }
-            
-            #pragma omp parallel for num_threads(CORES) schedule(static)
-            for (size_t i = 0; i < unique_grps; ++i) {
-                size_t start    = pos_boundaries[i];
-                size_t len      = pos_boundaries[i + 1] - pos_boundaries[i];
-                const auto cur_val = vec_grp[i];
-                memcpy(row_view_idx.data() + start,
-                       vec.data(),
-                       len * sizeof(unsigned int));
-            }
-        } else {
-            size_t i2 = 0;
-            for (size_t i = 0; i < unique_grps; ++i) {
-                const auto cur_val = vec_grp[i];
-                memcpy(row_view_idx.data() + i2, 
-                       pos_vec.data(), 
-                       sizeof(unsigned int) * pos_vec.size());
-                i2 += pos_vec.size();
-            }
+
         }
 
     }, var_value_col);
 
-    switch (pre_idx_type) {
+    switch (idx_type) {
         case 0: type_refv.push_back('s'); str_v.push_back(value_col);  break;
         case 1: type_refv.push_back('c'); chr_v.push_back(value_col);  break;
         case 2: type_refv.push_back('b'); bool_v.push_back(value_col); break;
