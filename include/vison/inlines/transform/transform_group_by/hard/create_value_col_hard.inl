@@ -48,7 +48,7 @@ struct CreateValueColHard {
     
                 } else {
     
-                    const auto cur_val2 = f(cur_val);
+                    const auto cur_val2 = f(cur_val.v);
                     for (size_t t = 0; t < vec.size(); ++t)
                         value_col[start + t] = cur_val2;
     
