@@ -27,7 +27,7 @@ struct CreateValueCol {
 
             } else if constexpr (Function == GroupFunction::Gather) {
 
-                count = f(lookup.at(*key_vec[i]));
+                count = f(lookup.at(*key_vec[i]).v);
 
             }
             v_col[i] = count;
