@@ -153,7 +153,6 @@ void transform_group_by_difftype_mt(const std::vector<unsigned int>& x,
                        idx_type, 
                        val_idx, 
                        pre_idx_type, 
-                       var_val_table,
                        n);
 
     map_t var_lookup;

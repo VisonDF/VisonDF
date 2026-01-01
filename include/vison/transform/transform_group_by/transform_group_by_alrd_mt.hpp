@@ -3,6 +3,7 @@
 template <typename TColVal = void,
 	      unsigned int CORES = 4,
 	      unsigned int NPerGroup = 4,
+          bool MapCol = false,
 	      GroupFunction Function == GroupFunction::Occurence,
 	      bool SanityCheck = true>
 void transform_group_by_alrd_mt(unsigned int Id,
@@ -98,8 +99,20 @@ void transform_group_by_alrd_mt(unsigned int Id,
     >; 
     val_variant_t val_table;
 
+    unsigned int val_idx;
     unsigned int idx_type;
-    val_table_build(key_table, x);
+    unsigned int pre_idx_type;
+
+    // all is taken by ref, appart from n
+    val_table_build<element_type_t<TColVal>, 
+                    Function, 
+                    MapCol, 
+                    F>(var_val_table,
+                       idx_type, 
+                       val_idx, 
+                       pre_idx_type, 
+                       var_val_table,
+                       n);
 
     if constexpr (CORES == 1) {
 
