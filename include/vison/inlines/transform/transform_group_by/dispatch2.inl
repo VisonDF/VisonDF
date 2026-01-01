@@ -26,7 +26,7 @@ inline void dispatch2(const size_t start,
 
     if constexpr (!std::is_same_v<TColVal, void>) {
 
-        const auto& val_col = (*var_val_table2)[val_idx];
+        const auto& val_col = (*var_val_table)[val_idx];
         dispatch3<Function, 
                   Nb,
                   TContainer,

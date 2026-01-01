@@ -5,7 +5,8 @@ template <typename TColVal,
           bool MapCol,
           typename F
           >
-inline void val_table_build(unsigned int& idx_type, 
+inline void val_table_build(auto& var_val_table,
+                            unsigned int& idx_type, 
                             unsigned int& val_idx,
                             unsigned int& pre_idx_type,
                             const size_t n)
