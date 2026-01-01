@@ -4,6 +4,7 @@ template <typename TContainer>
 inline unsigned int key_table_build(auto& key_table, const unsigned int x)
 {
 
+    unsigned int idx_type;
 
     if constexpr (!std::is_same_v<TContainer, void>) {
 
@@ -53,6 +54,8 @@ inline unsigned int key_table_build(auto& key_table, const unsigned int x)
         }
 
     }
+
+    return iex_type;
 
 }
 
