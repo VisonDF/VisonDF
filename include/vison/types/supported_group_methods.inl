@@ -2,7 +2,8 @@ enum class GroupFunction {
     Occurence,
     Sum,
     Mean,
-    Gather
+    Gather,
+    None
 };
 
 template<GroupFunction T>
@@ -19,4 +20,7 @@ struct is_supported_group_function<GroupFunction::Mean> : std::true_type {};
 
 template<>
 struct is_supported_group_function<GroupFunction::Gather> : std::true_type {};
+
+template<>
+struct is_supported_group_function<GroupFunction::None> : std::true_type {};
 
