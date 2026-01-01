@@ -26,27 +26,151 @@ inline void dispatch2(const size_t start,
 
     if constexpr (!std::is_same_v<TColVal, void>) {
 
-        const auto& val_col = (*var_val_table)[val_idx];
-        dispatch3<Function, 
-                  Nb,
-                  TContainer,
-                  FunctionLoop,
-                  FunctionKey>(start, 
-                               end, 
-                               cmap, 
-                               key_col, 
-                               val_size,
-                               val_col,
-                               NPerGroup,
-                               key_idx,
-                               idx_str,
-                               idx_chr,
-                               idx_bool,
-                               idx_int,
-                               idx_uint,
-                               idx_dbl,
-                               key_vec
-                               );
+        if constexpr (std::is_same_v<TColVal, std::string>) {
+
+            const auto& val_col = str_v[val_idx];
+            dispatch3<Function, 
+                      Nb,
+                      TContainer,
+                      FunctionLoop,
+                      FunctionKey>(start, 
+                                   end, 
+                                   cmap, 
+                                   key_col, 
+                                   val_size,
+                                   val_col,
+                                   NPerGroup,
+                                   key_idx,
+                                   idx_str,
+                                   idx_chr,
+                                   idx_bool,
+                                   idx_int,
+                                   idx_uint,
+                                   idx_dbl,
+                                   key_vec
+                                   );
+
+        } else if constexpr (std::is_same_v<TColVal, CharT>) {
+
+            const auto& val_col = chr_v[val_idx];
+            dispatch3<Function, 
+                      Nb,
+                      TContainer,
+                      FunctionLoop,
+                      FunctionKey>(start, 
+                                   end, 
+                                   cmap, 
+                                   key_col, 
+                                   val_size,
+                                   val_col,
+                                   NPerGroup,
+                                   key_idx,
+                                   idx_str,
+                                   idx_chr,
+                                   idx_bool,
+                                   idx_int,
+                                   idx_uint,
+                                   idx_dbl,
+                                   key_vec
+                                   );
+
+        } else if constexpr (std::is_same_v<TColVal, uint8_t>) {
+
+            const auto& val_col = bool_v[val_idx];
+            dispatch3<Function, 
+                      Nb,
+                      TContainer,
+                      FunctionLoop,
+                      FunctionKey>(start, 
+                                   end, 
+                                   cmap, 
+                                   key_col, 
+                                   val_size,
+                                   val_col,
+                                   NPerGroup,
+                                   key_idx,
+                                   idx_str,
+                                   idx_chr,
+                                   idx_bool,
+                                   idx_int,
+                                   idx_uint,
+                                   idx_dbl,
+                                   key_vec
+                                   );
+
+        } else if constexpr (std::is_same_v<TColVal, IntT>) {
+
+            const auto& val_col = int_v[val_idx];
+            dispatch3<Function, 
+                      Nb,
+                      TContainer,
+                      FunctionLoop,
+                      FunctionKey>(start, 
+                                   end, 
+                                   cmap, 
+                                   key_col, 
+                                   val_size,
+                                   val_col,
+                                   NPerGroup,
+                                   key_idx,
+                                   idx_str,
+                                   idx_chr,
+                                   idx_bool,
+                                   idx_int,
+                                   idx_uint,
+                                   idx_dbl,
+                                   key_vec
+                                   );
+
+        } else if constexpr (std::is_samee_v<TColVal, UIntT>) {
+
+            const auto& val_col = uint_v[val_idx];
+            dispatch3<Function, 
+                      Nb,
+                      TContainer,
+                      FunctionLoop,
+                      FunctionKey>(start, 
+                                   end, 
+                                   cmap, 
+                                   key_col, 
+                                   val_size,
+                                   val_col,
+                                   NPerGroup,
+                                   key_idx,
+                                   idx_str,
+                                   idx_chr,
+                                   idx_bool,
+                                   idx_int,
+                                   idx_uint,
+                                   idx_dbl,
+                                   key_vec
+                                   );
+
+        } else {
+
+            const auto& val_col = dbl_v[val_idx];
+            dispatch3<Function, 
+                      Nb,
+                      TContainer,
+                      FunctionLoop,
+                      FunctionKey>(start, 
+                                   end, 
+                                   cmap, 
+                                   key_col, 
+                                   val_size,
+                                   val_col,
+                                   NPerGroup,
+                                   key_idx,
+                                   idx_str,
+                                   idx_chr,
+                                   idx_bool,
+                                   idx_int,
+                                   idx_uint,
+                                   idx_dbl,
+                                   key_vec
+                                   );
+
+        }
 
     } else if constexpr (Function == GroupFunction::Occurence) {
 
