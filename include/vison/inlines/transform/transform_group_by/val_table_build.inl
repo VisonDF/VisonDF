@@ -6,7 +6,7 @@ template <typename TColVal,
           typename F
           >
 inline void val_table_build(unsigned int& idx_type, 
-                            unsigned int& n_col_real,
+                            unsigned int& val_idx,
                             unsigned int& pre_idx_type,
                             const size_t n)
 {
@@ -66,7 +66,7 @@ inline void val_table_build(unsigned int& idx_type,
 
             auto it = std::find(matr_idx[idx_type].begin(), matr_idx[idx_type].end(), n_col);
             if (it != matr_idx[idx_type].end()) {
-                n_col_real = std::distance(matr_idx[idx_type].begin(), it);
+                val_idx = std::distance(matr_idx[idx_type].begin(), it);
                 break;
             } else {
                 std::cerr << "`TColVal` type missmatch\n";
@@ -79,7 +79,7 @@ inline void val_table_build(unsigned int& idx_type,
                 std::cerr << "MapCol mode but no col found in matr_idx_map[idx_type]\n";
                 return;
             }
-            n_col_real = matr_idx_map[idx_type][n];
+            val_idx = matr_idx_map[idx_type][n];
 
         }
 
