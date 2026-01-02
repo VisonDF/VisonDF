@@ -242,7 +242,7 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
 
     } else if constexpr (CORES > 1) {
 
-        const bool triv_copy = (idx_type != 0);
+        const bool triv_copy = (pre_idx_type != 0);
         const unsigned int chunks = local_nrow / CORES + 1;
         std::vector<map_t> vec_map(CORES);
 

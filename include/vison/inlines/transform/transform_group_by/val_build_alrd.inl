@@ -2,7 +2,7 @@
 
 template <typename TColVal,
           GroupFunction Function>
-inline void vec_build_alrd(auto& var_vec_grp,
+inline void val_build_alrd(auto& var_vec_grp,
                            const size_t n,
                            const size_t unique_grps
                           )
