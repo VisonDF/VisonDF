@@ -4,6 +4,7 @@ template <typename TColVal = void,
 	      unsigned int CORES = 4,
 	      unsigned int NPerGroup = 4,
           bool MapCol = false,
+          bool StandardMethod = false,
 	      GroupFunction Function == GroupFunction::Occurence,
 	      bool SanityCheck = true>
 void transform_group_by_alrd_mt(unsigned int Id,
@@ -229,14 +230,25 @@ void transform_group_by_alrd_mt(unsigned int Id,
             } else {
 
                 using TP2 = std::vector<element_type_t<TP::value_type>>;
-                TP2 val_grp2(val_grp.size());
+                TP2 val_grp2;
 
-                for (size_t i = 0; i < val_grp.size(); ++i)
-                    val_grp2[i] = f(val_grp[i].v);
+                if constexpr (!StandardMethod) {
 
-                #pragma omp parallel for if(CORES > 1) schedule(static)
-                for (size_t i = 0; i < grp_by.size(); ++i) {
-                    value_col[i] = val_grp2[grp_by[i]];
+                    val_grp2.resize(unique_grps);
+                    for (size_t i = 0; i < unique_grps; ++i)
+                        val_grp2[i] = f(val_grp[i].v);
+
+                    #pragma omp parallel for if(CORES > 1) schedule(static)
+                    for (size_t i = 0; i < local_nrow; ++i) {
+                        value_col[i] = val_grp2[grp_by[i]];
+
+                } else {
+
+                    #pragma omp parallel for if(CORES > 1) schedule(static)
+                    for (size_t i = 0; i < local_nrow; ++i) {
+                        value_col[i] = f(val_grp[grp_by[i]].v);
+
+                }
 
             }
 
