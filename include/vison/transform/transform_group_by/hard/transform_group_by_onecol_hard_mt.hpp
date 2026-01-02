@@ -359,10 +359,11 @@ void transform_group_by_onecol_hard_mt(unsigned int x,
     dispatch_create_value_col<CreateValueColHard, 
                               Function, 
                               CORES, 
-                              RsltTypeKnown>(f, 
-                                             var_v_col, 
-                                             var_lookup,
-                                             local_nrow);
+                              RsltTypeKnown,
+          /*StandardMethod*/  true>(f, 
+                                    var_v_col, 
+                                    var_lookup,
+                                    local_nrow);
 
     for (size_t i = 0; i < local_nrow; ++i)
         row_view_map[i] = row_view_idx[i];

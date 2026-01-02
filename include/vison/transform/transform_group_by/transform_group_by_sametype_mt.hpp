@@ -6,6 +6,7 @@ template <typename TContainer = void,
           GroupFunction Function = GroupFunction::Ocurence,
           bool SimdHash = true,
           bool MapCol = false,
+          bool StandardMethod = true,
           unsigned int NPerGroup = 4,
           typename F = decltype(&default_groupfn_impl)>
 requires GroupFn<F, first_arg_grp_t<F>>
@@ -354,10 +355,11 @@ void transform_group_by_sametype_mt(const std::vector<unsigned int>& x,
     dispatch_create_value_col<CreateValueCol, 
                               Function, 
                               CORES, 
-                              RsltTypeKnown>(f, 
-                                             var_v_col, 
-                                             var_lookup,
-                                             local_nrow);
+                              RsltTypeKnown,
+                              StandardMethod>(f, 
+                                              var_v_col, 
+                                              var_lookup,
+                                              local_nrow);
 
     for (size_t i = 0; i < local_nrow; ++i)
         row_view_map[i] = row_view_idx[i];

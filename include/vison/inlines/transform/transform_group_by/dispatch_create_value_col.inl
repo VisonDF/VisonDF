@@ -3,7 +3,8 @@
 template <typename CreatePolicy,
           GroupFunction Function,
           unsigned int CORES,
-          bool RsltType>
+          bool RsltType,
+          bool StandardMethod>
 inline void dispatch_create_value_col(auto&& f,
                                       auto& var_v_col,
                                       auto& var_lookup,
@@ -33,11 +34,13 @@ inline void dispatch_create_value_col(auto&& f,
 
                 const auto& lookup = std::get<TP2>(var_lookup);
 
-                CreatePolicy::template apply<Function, CORES>(f, 
-                                                              value_col, 
-                                                              lookup,
-                                                              local_nrow,
-                                                              key_vec);
+                CreatePolicy::template apply<Function, 
+                                             CORES,
+                                             StandardMethod>(f, 
+                                                             value_col, 
+                                                             lookup,
+                                                             local_nrow,
+                                                             key_vec);
 
             }
         }, var_v_col, var_lookup);

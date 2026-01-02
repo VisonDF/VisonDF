@@ -6,6 +6,7 @@ template <typename TContainer  = void,
           GroupFunction Function = GroupFunction::Occurence,
           bool SimdHash = true,
           bool MapCol = false,
+          bool StandardMethod = true,
           unsigned int NPerGroup = 4,
           typename F = decltype(&default_groupfn_impl)
          >
@@ -360,7 +361,8 @@ void transform_group_by_onecol_mt(const unsigned int x,
     dispatch_create_value_col<CreateValueCol, 
                               Function, 
                               CORES, 
-                              RsltTypeKnown>(f, 
+                              RsltTypeKnown,
+                              StandardMethod>(f, 
                                              var_v_col, 
                                              var_lookup,
                                              local_nrow);

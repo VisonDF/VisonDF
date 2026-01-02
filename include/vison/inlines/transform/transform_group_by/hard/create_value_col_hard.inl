@@ -2,7 +2,8 @@
 
 struct CreateValueColHard {
     template <GroupFunction Function,
-              unsigned int CORES = 4>
+              unsigned int CORES = 4,
+              [[unused]] bool StandardMethod>
     static void apply(auto&& f, 
                       auto& value_col,
                       const auto& cur_map,
