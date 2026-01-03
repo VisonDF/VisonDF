@@ -104,6 +104,19 @@ void rm_col(unsigned int& nbcol) {
                 }
     }
 
+    for (size_t i = 0; i < 6; ++i) {
+        for (auto& el : matr_idx[i]) {
+            if (el > nbcol)
+                el -= 1;
+        }
+
+        for (auto& [k, v] : matr_idx_map[i]) {
+            if (k > nbcol)
+                k -= 1;
+        }
+
+    }
+
     if constexpr (MemClean) {
         name_v.shrink_to_fit();
         type_refv.shrink_to_fit();
