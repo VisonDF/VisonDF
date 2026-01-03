@@ -2,6 +2,7 @@
 
 template <bool ASC = 1, 
           unsigned int CORES = 4,
+          typename T = void,
           bool Simd = true,
           bool Soft = true,
           SortType S = SortType::Radix,
@@ -25,17 +26,37 @@ void sort_by_mt(unsigned int& n) {
     unsigned int which = 999;
     unsigned int col_id = 0;
 
-    switch (type_refv[n])
-    {
-        case 's': which = 0; break;
-        case 'c': which = 1; break;
-        case 'b': which = 2; break;
-        case 'i': which = 3; break;
-        case 'u': which = 4; break;
-        case 'd': which = 5; break;
-        default:
-            std::cerr << "Unknown type\n";
-            return;
+    if constexpr (std::is_same_v<T, void>) {
+
+        switch (type_refv[n])
+        {
+            case 's': which = 0; break;
+            case 'c': which = 1; break;
+            case 'b': which = 2; break;
+            case 'i': which = 3; break;
+            case 'u': which = 4; break;
+            case 'd': which = 5; break;
+            default:
+                std::cerr << "Unknown type\n";
+                return;
+        }
+
+    } else {
+
+        if constexpr (std::is_same_v<element_type_t<T>, std::string>) {
+            which = 0;
+        } else if constexpr (std::is_same_v<element_type_t<T>, CharT>) {
+            which = 1;
+        } else if constexpr (std::is_same_v<element_type_t<T>, uint8_t>) {
+            which = 2;
+        } else if constexpr (std::is_same_v<element_type_t<T>, IntT>) {
+            which = 3;
+        } else if constexpr (std::is_same_v<element_type_t<T>, UIntT>) {
+            which = 4;
+        } else if constexpr (std::is_same_v<element_type_t<T>, FloatT>) {
+            which = 5;
+        }
+
     }
 
     auto& m = matr_idx[which];
