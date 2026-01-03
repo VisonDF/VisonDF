@@ -47,22 +47,22 @@ void one_hot_encoding_mt(unsigned int x)
     container_t key_table;
     size_t idx_type;
     if constexpr (!std::is_same_v<T, void>) {
-        if constexpr (std::is_same_v<T, std::string>) {
+        if constexpr (std::is_same_v<element_type_t<T>, std::string>) {
             key_table = &str_v;
             idx_type = 0;
-        } else if constexpr (std::is_same_v<T, CharT>) {
+        } else if constexpr (std::is_same_v<element_type_t<T>, CharT>) {
             key_table = &chr_v;
             idx_type = 1;
-        } else if constexpr (std::is_same_v<T, uint8_t>) {
+        } else if constexpr (std::is_same_v<element_type_t<T>, uint8_t>) {
             key_table = &bool_v;
             idx_type = 2;
-        } else if constexpr (std::is_same_v<T, IntT>) {
+        } else if constexpr (std::is_same_v<element_type_t<T>, IntT>) {
             key_table = &int_v;
             idx_type = 3;
-        } else if constexpr (std::is_same_v<T, UIntT>) {
+        } else if constexpr (std::is_same_v<element_type_t<T>, UIntT>) {
             key_table = &uint_v;
             idx_type = 4;
-        } else if constexpr (std::is_same_v<T, FloatT>) {
+        } else if constexpr (std::is_same_v<element_type_t<T>, FloatT>) {
             key_table = &dbl_v;
             idx_type = 5;
         }

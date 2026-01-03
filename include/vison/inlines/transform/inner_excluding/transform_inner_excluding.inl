@@ -56,27 +56,27 @@ inline void transform_inner_excluding(Dataframe &cur_obj,
 
     unsigned int idx_type;
     if constexpr (!std::is_same_v<T, void>) {
-        if constexpr (std::is_same_v<T, std::string>) {
+        if constexpr (std::is_same_v<element_type_t<T>, std::string>) {
             key_table = &str_v;
             key_table2 = &cur_obj.get_str_v();
             idx_type = 0;
-        } else if constexpr (std::is_same_v<T, CharT>) {
+        } else if constexpr (std::is_same_v<element_type_t<T>, CharT>) {
             key_table = &chr_v;
             key_table2 = &cur_obj.get_chr_v();
             idx_type = 1;
-        } else if constexpr (std::is_same_v<T, uint8_t>) {
+        } else if constexpr (std::is_same_v<element_type_t<T>, uint8_t>) {
             key_table = &bool_v;
             key_table2 = &cur_obj.get_bool_v();
             idx_type = 2;
-        } else if constexpr (std::is_same_v<T, IntT>) {
+        } else if constexpr (std::is_same_v<element_type_t<T>, IntT>) {
             key_table = &int_v;
             key_table2 = &cur_obj.get_int_v();
             idx_type = 3;
-        } else if constexpr (std::is_same_v<T, UIntT>) {
+        } else if constexpr (std::is_same_v<element_type_t<T>, UIntT>) {
             key_table = &uint_v;
             key_table2 = &cur_obj.get_uint_v();
             idx_type = 4;
-        } else if constexpr (std::is_same_v<T, FloatT>) {
+        } else if constexpr (std::is_same_v<element_type_t<T>, FloatT>) {
             key_table = &dbl_v;
             key_table2 = &cur_obj.get_dbl_v();
             idx_type = 5;
