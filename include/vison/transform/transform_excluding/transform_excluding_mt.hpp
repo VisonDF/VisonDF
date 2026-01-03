@@ -4,7 +4,9 @@ template <typename T = void,
           unsigned int CORES = 4, 
           bool MemClean = false, 
           bool SimdHash = true,
-          bool Soft = true>
+          bool Soft = true,
+          bool MapCol = false
+    >
 void transform_excluding_mt(Dataframe &cur_obj, 
                 unsigned int in_col, 
                 unsigned int ext_col) 
@@ -20,7 +22,8 @@ void transform_excluding_mt(Dataframe &cur_obj,
                               MemClean, 
                               SimdHash,
                               Soft,
-                              false //Inner
+                              false, //Inner
+                              MapCol
                               >(cur_obj, in_col, ext_col);
     
 };
