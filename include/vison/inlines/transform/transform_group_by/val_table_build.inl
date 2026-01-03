@@ -80,6 +80,10 @@ inline void val_table_build(auto& var_val_table,
                 std::cerr << "MapCol mode but no col found in matr_idx_map[idx_type]\n";
                 return;
             }
+            if (!sync_map_col[idx_type]) {
+                std::cerr << "MapCol is not synced, consider applying `mapcol()`\n";
+                return;
+            }
             val_idx = matr_idx_map[idx_type][n];
 
         }

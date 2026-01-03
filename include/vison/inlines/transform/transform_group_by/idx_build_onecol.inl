@@ -29,6 +29,10 @@ inline unsigned int idx_build_onecol(const unsigned int x,
             std::cerr << "MapCol mode but no col found in matr_idx_map[idx_type]\n";
             return;
         }
+        if (!sync_map_col[idx_type]) {
+            std::cerr << "MapCol is not synced, consider applying `mapcol()`\n";
+            return;
+        }
 
         real_pos = matr_idx_map[idx_type][x];
 

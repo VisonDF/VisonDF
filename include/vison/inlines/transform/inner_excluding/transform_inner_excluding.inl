@@ -117,8 +117,18 @@ inline void transform_inner_excluding(Dataframe &cur_obj,
             return;
         }
 
+        if (!sync_map_col[idx_type]) {
+            std::cerr << "MapCol is not synced\n";
+            return;
+        }
+
         if (!matr_idx_map2[idx_type].contains(ext_col)) {
             std::cerr << "MapCol has been chosen, not found in the mapcol (cur_obj)\n";
+            return;
+        }
+
+        if (!sync_map_col2[idx_type]) {
+            std::cerr << "MapCol is not synced (cur_obj)\n";
             return;
         }
 
