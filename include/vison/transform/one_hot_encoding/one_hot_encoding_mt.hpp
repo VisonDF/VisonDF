@@ -12,7 +12,8 @@ void one_hot_encoding_mt(unsigned int x)
     }
 
     const unsigned int local_nrow = nrow;
-    using variant_t = std::variant<std::vector<std::string>&,
+    using variant_t = std::variant<std::monostate,
+                                   std::vector<std::string>&,
                                    std::vector<CharT>&,
                                    std::vector<uint8_t>&,
                                    std::vector<IntT>&,
@@ -29,17 +30,21 @@ void one_hot_encoding_mt(unsigned int x)
                 ankerl::unordered_dense::set<std::string_view>
                 >;
 
-    using container_t = std::variant<
+    using container_t = std::conditional_t<
+                            !std::is_same_v<T, void>,
+                            std::vector<std::vector<element_type_t<T>>>*,
+                            std::variant<
+                                    std::monostate,
                                     const std::vector<std::vector<std::string>>*,
                                     const std::vector<std::vector<CharT>>*,
                                     const std::vector<std::vector<uint8_t>>*,
                                     const std::vector<std::vector<IntT>>*,
                                     const std::vector<std::vector<UIntT>>*,
                                     const std::vector<std::vector<FloatT>>*,
-                                    std::nullptr_t
-                                    >;
+                            >
+                        >;
 
-    container_t key_table = nullptr;
+    container_t key_table;
     size_t idx_type;
     if constexpr (!std::is_same_v<T, void>) {
         if constexpr (std::is_same_v<T, std::string>) {
@@ -78,14 +83,20 @@ void one_hot_encoding_mt(unsigned int x)
 
     const unsigned int real_pos = pos[x];
 
-    value_t key_col = [&]() -> value_t {
+    value_t var_key_col = [&]() -> value_t {
         if constexpr (std::is_same_v<T, void>) {
             return std::visit(
-                [&](auto* ptr) -> value_t {
-                    return (*ptr)[real_pos];
-                },
-                key_table
-            );
+                [&](auto&& ptr) -> value_t {
+                
+                    using TP = std::decay_t<decltype(ptr)>;
+
+                    if constexpr (!std::is_same_v<TP, std::monostate>) {
+                        return (*ptr)[real_pos];
+                    } else {
+                        return __builtin_unreachable();
+                    }
+
+                }, key_table );
         } else {
             return (*key_table)[real_pos];
         }
@@ -93,61 +104,64 @@ void one_hot_encoding_mt(unsigned int x)
 
     set_t final_set;
     final_set.reserve(local_nrow / 5);
-    if constexpr (CORES == 1) {
-        if constexpr (std::is_same_v<T, std::string>) {
-            for (auto& el : key_col)
-                final_set.try_emplace(el);
-        } else {
-            constexpr auto& size_table = get_types_size();
-            const size_t val_size = size_table[idx_type];
-            if (idx_type != 0) {
-                for (auto& el : key_col) {
-                    final_set.try_emplace(std::string_view{reinterpret_cast<const char*>(el), 
-                                        val_size});
-                }
-            } else {
-                for (auto& el : key_col)
-                    final_set.try_emplace(el);
-            }
-        }
-    } else {
 
-        const unsigned int chunks = local_nrow / CORES + 1;
-        std::vector<set_t> set_vec(CORES);
+    std::visit([](auto&& key_col) {
 
-        #pragma omp parallel num_threads(CORES)
-        {
+        using TP = std::decay_t<decltype(key_table)>;
 
-            const unsigned int tid   = omp_get_thread_num();
-            set_t& cur_set = set_vec[tid];
-            cur_set.reserve(local_nrow / CORES / 5);
-            const unsigned int start = tid * chunks;
-            const unsigned int end   = std::min(local_nrow, (start + chunks));
+        if constexpr (!std::is_same_v<TP, std::monostate>) {
 
-            if constexpr (std::is_same_v<T, std::string>) {
-                for (size_t i = start; i < end; ++i)
-                    cur_set.try_emplace(key_col[i]);
-            } else {
-                if (idx_type != 0) {
+            using Elem = TP::value_type;
+
+            if constexpr (CORES == 1) {
+                if constexpr (std::is_same_v<Elem, std::string>) {
+                    for (auto& el : key_col)
+                        final_set.try_emplace(el);
+                } else {
                     constexpr auto& size_table = get_types_size();
-                    const size_t val_size = size_table[idx_type];
-                    for (size_t i = start; i < end; ++i) {
-                        cur_set.try_emplace(std::string_view{reinterpret_cast<const char*>(key_col[i]), 
+                    const size_t val_size      = size_table[idx_type];
+                    for (auto& el : key_col) {
+                        final_set.try_emplace(std::string_view{reinterpret_cast<const char*>(el), 
                                             val_size});
                     }
-                } else {
-                    for (size_t i = start; i < end; ++i)
-                        cur_set.try_emplace(key_col[i]);
                 }
+            } else {
+
+                const unsigned int chunks = local_nrow / CORES + 1;
+                std::vector<set_t> set_vec(CORES);
+
+                #pragma omp parallel num_threads(CORES)
+                {
+
+                    const unsigned int tid   = omp_get_thread_num();
+                    set_t& cur_set = set_vec[tid];
+                    cur_set.reserve(local_nrow / CORES / 5);
+                    const unsigned int start = tid * chunks;
+                    const unsigned int end   = std::min(local_nrow, (start + chunks));
+
+                    if constexpr (std::is_same_v<T, std::string>) {
+                        for (size_t i = start; i < end; ++i)
+                            cur_set.try_emplace(key_col[i]);
+                    } else {
+                        constexpr auto& size_table = get_types_size();
+                        const size_t val_size = size_table[idx_type];
+                        for (size_t i = start; i < end; ++i) {
+                            cur_set.try_emplace(std::string_view{reinterpret_cast<const char*>(key_col[i]), 
+                                                val_size});
+                        }
+                    }
+
+                }
+
+                for (auto& cur_set : set_vec)
+                    for (auto& el : cur_set)
+                        final_set.try_emplace(el);
+
             }
 
         }
 
-        for (auto& cur_set : set_vec)
-            for (auto& el : cur_set)
-                final_set.try_emplace(el);
-
-    }
+    }, var_key_col);
     
     const unsigned int n_unique = final_set.size();
 
@@ -159,7 +173,7 @@ void one_hot_encoding_mt(unsigned int x)
         i += 1;
     }
 
-    std::vector<std::vector<uint8_t>> cols_to_add(n_unique), std::vector<uint8_t>(local_nrow, 0);
+    std::vector<std::vector<uint8_t>> cols_to_add(n_unique, std::vector<uint8_t>(local_nrow, 0));
     #pragma omp parallel for if(CORES > 1) num_threads(CORES)
     for (size_t i = 0; i < local_nrow; ++i) {
         const unsigned int idx_col = hash_col[key_col[i]];
