@@ -210,44 +210,7 @@ namespace vison {
         std::vector<unsigned int> longest_v = {};
     
         std::vector<char> type_refv = {};
-        std::vector<std::vector<std::string>> tmp_val_refv = {};
-    
-        [[nodiscard]] inline const std::vector<std::vector<std::string>>& get_str_vec() const {
-          return str_v;
-        };
-    
-        [[nodiscard]] inline const std::vector<std::vector<CharT>>& get_chr_vec() const {
-          return chr_v;
-        };
-    
-        [[nodiscard]] inline const std::vector<std::vector<uint8_t>>& get_bool_vec() const {
-          return bool_v;
-        };
-    
-        [[nodiscard]] inline const std::vector<std::vector<IntT>>& get_int_vec() const {
-          return int_v;
-        };
-    
-        [[nodiscard]] inline const std::vector<std::vector<UIntT>>& get_uint_vec() const {
-          return uint_v;
-        };
-    
-        [[nodiscard]] inline const std::vector<std::vector<FloatT>>& get_dbl_vec() const {
-          return dbl_v;
-        };
-    
-        [[nodiscard]] inline const std::array<std::vector<unsigned int>, 6>& get_matr_idx() const {
-          return matr_idx;
-        };
-
-        [[nodiscard]] inline const std::array<ankerl::unordered_dense::map<unsigned int, 
-                                                                    unsigned int>, 6>& get_matr_idx_map() const {
-          return matr_idx_map;
-        };
-
-        [[nodiscard]] inline const std::array<bool, 6>& get_sync_map_col() const {
-          return sync_map_col;
-        };
+        std::vector<std::vector<std::string>> tmp_val_refv = {};    
 
         std::array<std::string, 6> type_print_vec = {
                                         "<str> ",
@@ -321,7 +284,44 @@ namespace vison {
 
 
       public:
-      
+     
+        [[nodiscard]] inline const std::vector<std::vector<std::string>>& get_str_vec() const {
+          return str_v;
+        };
+    
+        [[nodiscard]] inline const std::vector<std::vector<CharT>>& get_chr_vec() const {
+          return chr_v;
+        };
+    
+        [[nodiscard]] inline const std::vector<std::vector<uint8_t>>& get_bool_vec() const {
+          return bool_v;
+        };
+    
+        [[nodiscard]] inline const std::vector<std::vector<IntT>>& get_int_vec() const {
+          return int_v;
+        };
+    
+        [[nodiscard]] inline const std::vector<std::vector<UIntT>>& get_uint_vec() const {
+          return uint_v;
+        };
+    
+        [[nodiscard]] inline const std::vector<std::vector<FloatT>>& get_dbl_vec() const {
+          return dbl_v;
+        };
+    
+        [[nodiscard]] inline const std::array<std::vector<unsigned int>, 6>& get_matr_idx() const {
+          return matr_idx;
+        };
+
+        [[nodiscard]] inline const std::array<ankerl::unordered_dense::map<unsigned int, 
+                                                                    unsigned int>, 6>& get_matr_idx_map() const {
+          return matr_idx_map;
+        };
+
+        [[nodiscard]] inline const std::array<bool, 6>& get_sync_map_col() const {
+          return sync_map_col;
+        };
+
         #include "inlines/operator_overloading/equality.inl"
 
         #include "inlines/read_csv/parsers_core/parse_rows_chunk_warmed.inl"
