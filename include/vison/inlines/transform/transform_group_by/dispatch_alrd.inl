@@ -6,8 +6,7 @@ void dispatch_alrd(auto&& f,
                    const size_t end,
                    const size_t val_idx,
                    const std::vector<unsigned int>& grp_by,
-                   auto& var_vec_grp,
-                   auto& var_val_table
+                   auto& var_vec_grp
                   )
 {
 

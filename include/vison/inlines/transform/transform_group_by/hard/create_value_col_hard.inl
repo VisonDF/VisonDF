@@ -38,20 +38,24 @@ struct CreateValueColHard {
                 if constexpr (Function == GroupFunction::Occurence ||
                               Function == GroupFunction::Sum) {
     
-                    for (size_t t = 0; t < vec.size(); ++t)
-                        value_col[start + t] = cur_val;
+                    auto* __restrict__ out = value_col.data() + start;
+                    const auto* __restrict__ in = &cur_val;
+                    std::fill_n(out, len, *in);
     
                 } else if constexpr (Function == GroupFunction::Mean) {
     
                     const auto cur_val2 = cur_val / local_nrow;
-                    for (size_t t = 0; t < vec.size(); ++t)
-                        value_col[start + t] = cur_val2;
-    
+                    auto* __restrict__ out = value_col.data() + start;
+                    const auto* __restrict__ in = &cur_val2;
+                    std::fill_n(out, len, *in);
+
+
                 } else {
     
                     const auto cur_val2 = f(cur_val.v);
-                    for (size_t t = 0; t < vec.size(); ++t)
-                        value_col[start + t] = cur_val2;
+                    auto* __restrict__ out = value_col.data() + start;
+                    const auto* __restrict__ in = &cur_val2;
+                    std::fill_n(out, len, *in);
     
                 }
     
@@ -76,20 +80,23 @@ struct CreateValueColHard {
                 if constexpr (Function == GroupFunction::Occurence ||
                               Function == GroupFunction::Sum) {
     
-                     for (size_t t = 0; t < vec.size(); ++t)
-                        value_col[i2 + t] = cur_val;
+                    auto* __restrict__ out = value_col.data() + start;
+                    const auto* __restrict__ in = &cur_val;
+                    std::fill_n(out, len, *in);
     
                 } else if constexpr (Function == GroupFunction::Mean) {
     
                     const auto cur_val2 = cur_val / local_nrow;
-                    for (size_t t = 0; t < vec.size(); ++t)
-                        value_col[i2 + t] = cur_val2;
+                    auto* __restrict__ out = value_col.data() + start;
+                    const auto* __restrict__ in = &cur_val2;
+                    std::fill_n(out, len, *in);
     
                 } else {
     
                     const auto cur_val2 = f(cur_val);
-                    for (size_t t = 0; t < vec.size(); ++t)
-                        value_col[i2 + t] = cur_val2;
+                    auto* __restrict__ out = value_col.data() + start;
+                    const auto* __restrict__ in = &cur_val2;
+                    std::fill_n(out, len, *in);
     
                 }
     

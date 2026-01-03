@@ -83,6 +83,9 @@ struct MergeCurMapTrivHard {
     
         } else {
 
+            using TP = typename std::decay_t<decltype(vec_struct.value.v)>::value_type;
+            const unsigned int val_size = sizeof(TP);
+
             for (const auto& [k, v] : cur_map) {
     
                 auto [it, inserted] = lookup.try_emplace(k, vec_struct);

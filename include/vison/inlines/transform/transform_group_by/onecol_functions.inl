@@ -20,6 +20,7 @@ struct OccLookupOneCol {
                  auto& key_vec
                  ) 
     {
+
     if constexpr (std::is_same_v<TConatiner, std::string>) {
 
         for (unsigned int i = start; i < end; ++i) {
