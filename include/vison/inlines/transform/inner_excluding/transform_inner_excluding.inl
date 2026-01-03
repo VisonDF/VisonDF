@@ -111,6 +111,17 @@ inline void transform_inner_excluding(Dataframe &cur_obj,
     } else {
 
         auto& matr_idx_map2 = cur_obj.get_matr_idx_map;
+
+        if (!matr_idx_map[idx_type].contains(in_col)) {
+            std::cerr << "MapCol has been chosen, not found in the mapcol\n";
+            return;
+        }
+
+        if (!matr_idx_map2[idx_type].contains(ext_col)) {
+            std::cerr << "MapCol has been chosen, not found in the mapcol (cur_obj)\n";
+            return;
+        }
+
         in_idx  = matr_idx_map[idx_type][in_col];
         ext_idx = matr_idx_map2[idx_type][ext_col];
 
