@@ -83,7 +83,7 @@ void one_hot_encoding_mt(unsigned int x)
 
     const unsigned int real_pos = pos[x];
 
-    value_t var_key_col = [&]() -> value_t {
+    value_t var_key_col = [real_pos, &key_table]() -> value_t {
         if constexpr (std::is_same_v<T, void>) {
             return std::visit(
                 [&](auto&& ptr) -> value_t {
@@ -105,7 +105,7 @@ void one_hot_encoding_mt(unsigned int x)
     set_t final_set;
     final_set.reserve(local_nrow / 5);
 
-    std::visit([](auto&& key_col) {
+    std::visit([&final_set](auto&& key_col) {
 
         using TP = std::decay_t<decltype(key_table)>;
 
