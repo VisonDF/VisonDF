@@ -201,6 +201,8 @@ namespace vison {
                                                                             {}
                                                                            };
 
+        std::array<bool, 6> sync_map_col {true, true, true, true, true, true};
+
         #include "mapcol/mapcol.hpp"
 
         std::vector<std::string> name_v = {};
@@ -234,12 +236,17 @@ namespace vison {
           return dbl_v;
         };
     
-        [[nodiscard]] inline const std::vector<std::vector<unsigned int>>& get_matr_idx() const {
+        [[nodiscard]] inline const std::array<std::vector<unsigned int>, 6>& get_matr_idx() const {
           return matr_idx;
         };
 
-        [[nodiscard]] inline const std::vector<std::vector<unsigned int>>& get_matr_idx_map() const {
+        [[nodiscard]] inline const std::array<ankerl::unordered_dense::map<unsigned int, 
+                                                                    unsigned int>, 6>& get_matr_idx_map() const {
           return matr_idx_map;
+        };
+
+        [[nodiscard]] inline const std::array<bool, 6>& get_sync_map_col() const {
+          return sync_map_col;
         };
 
         std::array<std::string, 6> type_print_vec = {
