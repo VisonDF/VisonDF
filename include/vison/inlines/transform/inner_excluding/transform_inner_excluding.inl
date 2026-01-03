@@ -137,6 +137,8 @@ inline void transform_inner_excluding(Dataframe &cur_obj,
 
     }
 
+    std::vector<uint8_t> mask(nrow2);
+
     std::visit([](auto&& tbl_ptr, auto&& tbl_ptr2) {
 
         using TP  = std::decay_t<decltype(tbl_ptr)>;
@@ -160,8 +162,6 @@ inline void transform_inner_excluding(Dataframe &cur_obj,
                                   val_size});
                 }
             }
-
-            std::vector<uint8_t> mask(nrow2);
 
             if constexpr (std::is_same_v<T, std::string>) {
                 if constexpr (!Inner) {
