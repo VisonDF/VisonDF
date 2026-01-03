@@ -36,7 +36,6 @@ void reorder_col_mt(const std::vector<std::pair<unsigned int, unsigned int>>& sw
         assert(new_pos < ncol && "new_pos out of bounds");
 
         std::swap(type_refv[old_pos], type_refv[new_pos]);
-        std::swap(tmp_val_refv[old_pos], tmp_val_refv[new_pos]);
 
         if (!name_v.empty())
             std::swap(name_v[old_pos], name_v[new_pos]);
@@ -46,6 +45,10 @@ void reorder_col_mt(const std::vector<std::pair<unsigned int, unsigned int>>& sw
 
         std::swap(matr_idx[loc1.first][loc1.second],
                   matr_idx[loc2.first][loc2.second]);
+
+        sync_map_col[loc1.first] = false;
+        sync_map_col[loc2.first] = false;
+
     }
 
 }
