@@ -238,6 +238,10 @@ namespace vison {
           return matr_idx;
         };
 
+        [[nodiscard]] inline const std::vector<std::vector<unsigned int>>& get_matr_idx_map() const {
+          return matr_idx_map;
+        };
+
         std::array<std::string, 6> type_print_vec = {
                                         "<str> ",
                                         type_name<CharT> + " ",
