@@ -62,7 +62,8 @@ void rm_col(unsigned int& nbcol) {
 
     if (!name_v.empty()) { name_v.erase(name_v.begin() + nbcol); }
     type_refv.erase(type_refv.begin() + nbcol);
-    matr_idx[type_i].erase(matr_idx[type_i].begin() + idx_in_type);
+    matr_idx[idx_type].erase(matr_idx[type_i].begin() + idx_in_type);
+    matr_idx_map[idx_type].erase(nbcol);
 
     switch (type_i) {
         case 0: {
