@@ -4,6 +4,7 @@ template <typename T = void,
           unsigned int CORES = 4,
           bool MemClean = false, 
           bool Last = false,
+          bool MapCol = false,
           bool Soft = true,
           bool SimdHash = true>
 void transform_unique_mt(unsigned int n) 
@@ -16,53 +17,6 @@ void transform_unique_mt(unsigned int n)
 
     const size_t local_nrow = nrow;
     std::vector<uint8_t> mask(local_nrow, 0);
-    size_t idx_type;
-    using key_variant_t = std::variant<
-        std::nullptr_t,
-        const std::vector<std::vector<std::string>>*,
-        const std::vector<std::vector<CharT>>*,
-        const std::vector<std::vector<uint8_t>>*,
-        const std::vector<std::vector<IntT>>*,
-        const std::vector<std::vector<UIntT>>*,
-        const std::vector<std::vector<FloatT>>*
-    >; 
-    key_variant_t key_table  = nullptr;
-
-    unsigned int idx_type;
-    if constexpr (!std::is_same_v<T, void>) {
-        if constexpr (std::is_same_v<T, std::string>) {
-            key_table = &str_v;
-            idx_type = 0;
-        } else if constexpr (std::is_same_v<T, CharT>) {
-            key_table = &chr_v;
-            idx_type = 1;
-        } else if constexpr (std::is_same_v<T, uint8_t>) {
-            key_table = &bool_v;
-            idx_type = 2;
-        } else if constexpr (std::is_same_v<T, IntT>) {
-            key_table = &int_v;
-            idx_type = 3;
-        } else if constexpr (std::is_same_v<T, UIntT>) {
-            key_table = &uint_v;
-            idx_type = 4;
-        } else if constexpr (std::is_same_v<T, FloatT>) {
-            key_table = &dbl_v;
-            idx_type = 5;
-        }
-    } else { 
-        switch (type_refv[type_refv[in_col]]) {
-            case 's': key_table = &str_v;  idx_type = 0; break;
-            case 'c': key_table = &chr_v;  idx_type = 1; break;
-            case 'b': key_table = &bool_v; idx_type = 2; break;
-            case 'i': key_table = &int_v;  idx_type = 3; break;
-            case 'u': key_table = &uint_v; idx_type = 4; break;
-            case 'd': key_table = &dbl_v;  idx_type = 5; break;
-        }
-    }
-    std::unordered_map<unsigned int, unsigned int> pos;
-    for (size_t t = 0; t < matr_idx[idx_type].size(); ++t)
-        pos[matr_idx[idx_type]] = t;
-    auto& key_col = key_table[pos[in_col]];
 
     using fast_set_t = std::conditional_t<
         SimdHash,
@@ -70,61 +24,128 @@ void transform_unique_mt(unsigned int n)
         ankerl::unordered_dense::set<std::string_view>
     >;
 
-    constexpr auto& size_table = get_types_size();
-    const size_t val_size = size_table[idx_type];
-
-    fast_str_set_t lookup;
+    fast_set_t lookup;
     lookup.reserve(local_nrow);
 
-    if constexpr (!Last) {
-        if constexpr (std::is_same_v<T, std::string>) {
-             for (size_t i = 0; i < local_nrow; ++i) {
-                 if (!lookup.contains(key_col[i])) {
-                     mask[i] = 1;
-                     lookup.emplace(key_col[i]);
-                 }
-             }
-        } else {
-            if (idx_type != 0) {
-                for (size_t i = 0; i < local_nrow; ++i) {
-                    if (!lookup.contains(std::string_view{reinterpret_cast<const char*>(&key_col[i]), val_size})) {
-                        mask[i] = 1;
-                        lookup.emplace(std::string_view{reinterpret_cast<const char*>(&key_col[i]), val_size});
-                    }
-                }
-            } else {
-                for (size_t i = 0; i < local_nrow; ++i) {
-                    if (!lookup.contains(key_col[i])) {
-                        mask[i] = 1;
-                        lookup.emplace(key_col[i]);
-                    }
-                }
-            }
+    size_t idx_type;
+    using key_variant_t = std::variant<
+        std::monostate,
+        const std::vector<std::vector<std::string>>*,
+        const std::vector<std::vector<CharT>>*,
+        const std::vector<std::vector<uint8_t>>*,
+        const std::vector<std::vector<IntT>>*,
+        const std::vector<std::vector<UIntT>>*,
+        const std::vector<std::vector<FloatT>>*
+    >; 
+    key_variant_t var_key_table;
+
+    unsigned int idx_type;
+    if constexpr (!std::is_same_v<T, void>) {
+        if constexpr (std::is_same_v<element_type_t<T>, std::string>) {
+            var_key_table = &str_v;
+            idx_type = 0;
+        } else if constexpr (std::is_same_v<element_type_t<T>, CharT>) {
+            var_key_table = &chr_v;
+            idx_type = 1;
+        } else if constexpr (std::is_same_v<element_type_t<T>, uint8_t>) {
+            var_key_table = &bool_v;
+            idx_type = 2;
+        } else if constexpr (std::is_same_v<element_type_t<T>, IntT>) {
+            var_key_table = &int_v;
+            idx_type = 3;
+        } else if constexpr (std::is_same_v<element_type_t<T>, UIntT>) {
+            var_key_table = &uint_v;
+            idx_type = 4;
+        } else if constexpr (std::is_same_v<element_type_t<T>, FloatT>) {
+            var_key_table = &dbl_v;
+            idx_type = 5;
         }
-    } else {
-        if constexpr (std::is_same_v<T, std::string>) {
-            for (int i = int(local_nrow) - 1; i >= 0; --i) {
-                if (!lookup.contains(key_col[i])) [[unlikely]] {
-                    mask[i] = 1;
-                    lookup.emplace(key_col[i]);
-                }
-            }
-        } else {
-            if (idx_type != 0) {
-                for (int i = int(local_nrow) - 1; i >= 0; --i) {
-                    if (!lookup.contains(std::string_view{reinterpret_cast<const char*>(&key_col[i]), val_size})) [[unlikely]] {
-                        mask[i] = 1;
-                        lookup.emplace(std::string_view{reinterpret_cast<const char*>(&key_col[i]), val_size});
-                    }
-                }
-            } else {
-                if (!lookup.contains(key_col[i])) [[unlikely]] {
-                    mask[i] = 1;
-                    lookup.emplace(key_col[i]);
-                }
-            }
+    } else { 
+        switch (type_refv[type_refv[n]]) {
+            case 's': var_key_table = &str_v;  idx_type = 0; break;
+            case 'c': var_key_table = &chr_v;  idx_type = 1; break;
+            case 'b': var_key_table = &bool_v; idx_type = 2; break;
+            case 'i': var_key_table = &int_v;  idx_type = 3; break;
+            case 'u': var_key_table = &uint_v; idx_type = 4; break;
+            case 'd': var_key_table = &dbl_v;  idx_type = 5; break;
         }
     }
+
+    constexpr auto& size_table = get_types_size();
+    const size_t val_size      = size_table[idx_type];
+
+    unsigned int real_pos;
+
+    if constexpr (!MapCol) {
+
+        std::unordered_map<unsigned int, unsigned int> pos;
+        for (size_t t = 0; t < matr_idx[idx_type].size(); ++t)
+            pos[matr_idx[idx_type]] = t;
+ 
+        real_pos = pos[n];
+
+    } else {
+
+        if (!matr_idx_map[idx_type].contains(n)) {
+            std::cerr << "MapCol has been chosen, not found in the mapcol\n";
+            return;
+        }
+
+        if (!sync_map_col[idx_type]) {
+            std::cerr << "MapCol is not synced\n";
+            return;
+        }
+
+        real_pos = matr_idx_map[idx_type][n]; 
+    }
+
+    std::visit([real_pos, val_size, &lookup, &mask](auto&& key_table) {
+
+        using TP = std::decay_t<decltype(key_table)>;
+
+        if constexpr (!std::is_same_v<TP, std::monostate>) {
+
+            using Elem = TP::value_type::value_type;
+
+            auto& key_col = (*key_table)[real_pos];
+
+            if constexpr (!Last) {
+                if constexpr (std::is_same_v<Elem, std::string>) {
+                     for (size_t i = 0; i < local_nrow; ++i) {
+                         if (!lookup.contains(key_col[i])) {
+                             mask[i] = 1;
+                             lookup.emplace(key_col[i]);
+                         }
+                     }
+                } else {
+                    for (size_t i = 0; i < local_nrow; ++i) {
+                        if (!lookup.contains(std::string_view{reinterpret_cast<const char*>(&key_col[i]), val_size})) {
+                            mask[i] = 1;
+                            lookup.emplace(std::string_view{reinterpret_cast<const char*>(&key_col[i]), val_size});
+                        }
+                    }
+                }
+            } else {
+                if constexpr (std::is_same_v<Elem, std::string>) {
+                    for (int i = int(local_nrow) - 1; i >= 0; --i) {
+                        if (!lookup.contains(key_col[i])) [[unlikely]] {
+                            mask[i] = 1;
+                            lookup.emplace(key_col[i]);
+                        }
+                    }
+                } else {
+                    for (int i = int(local_nrow) - 1; i >= 0; --i) {
+                        if (!lookup.contains(std::string_view{reinterpret_cast<const char*>(&key_col[i]), val_size})) [[unlikely]] {
+                            mask[i] = 1;
+                            lookup.emplace(std::string_view{reinterpret_cast<const char*>(&key_col[i]), val_size});
+                        }
+                    }
+                }
+            }
+
+        }
+
+    }, var_key_table);
 
     this->transform_filter_mt<CORES,
                               MemClean, 
