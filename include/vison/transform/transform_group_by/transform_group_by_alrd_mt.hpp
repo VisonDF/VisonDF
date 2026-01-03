@@ -91,8 +91,7 @@ void transform_group_by_alrd_mt(unsigned int Id,
                                                    local_nrow,
                                                    val_idx,
                                                    grp_by,
-                                                   var_val_grp,
-                                                   var_val_table); 
+                                                   var_val_grp); 
 
         } else if constexpr (Function == GroupFunctio::Sum ||
                              Function == GroupFunction::Mean) {
@@ -102,8 +101,7 @@ void transform_group_by_alrd_mt(unsigned int Id,
                                                    local_nrow,
                                                    val_idx,
                                                    grp_by,
-                                                   var_val_grp,
-                                                   var_val_table); 
+                                                   var_val_grp); 
 
         } else {
 
@@ -112,14 +110,14 @@ void transform_group_by_alrd_mt(unsigned int Id,
                                                    local_nrow,
                                                    val_idx,
                                                    grp_by,
-                                                   var_val_grp,
-                                                   var_val_table); 
+                                                   var_val_grp); 
 
         }
 
     } else {
+        const bool triv_copy = (pre_idx_type != 0);
 	    const unsigned int chunks = local_nrow / CORES + 1;
-	    std::vector<var_variant_t> var_val_grp_vec(chunks);
+	    std::vector<value_t> var_val_grp_vec(chunks);
 
 	    #pragma omp prallel num_threads(CORES)
 	    {
@@ -138,8 +136,7 @@ void transform_group_by_alrd_mt(unsigned int Id,
                                                        end,
                                                        val_idx,
                                                        grp_by,
-                                                       cur_var_val_grp,
-                                                       var_val_table); 
+                                                       cur_var_val_grp); 
 
             } else if constexpr (Function == GroupFunction::Sum ||
                                  Function == GroupFunction::Mean) {
@@ -149,8 +146,7 @@ void transform_group_by_alrd_mt(unsigned int Id,
                                                        end,
                                                        val_idx,
                                                        grp_by,
-                                                       cur_var_val_grp,
-                                                       var_val_table); 
+                                                       cur_var_val_grp); 
 
             } else {
 
@@ -159,20 +155,34 @@ void transform_group_by_alrd_mt(unsigned int Id,
                                                        end,
                                                        val_idx,
                                                        grp_by,
-                                                       cur_var_val_grp,
-                                                       var_val_table); 
+                                                       cur_var_val_grp); 
 
             }
 	    }
 
-        dispatch_merge_alrd<TColVal, 
-                            CORES,
-                            Function,
-                            MergeAlrd>(unique_grps,
-                                      chunks,
-                                      grp_by,
-                                      var_val_grp_vec,
-                                      var_val_grp);
+        if (triv_copy) {
+
+            dispatch_merge_alrd<TColVal, 
+                                CORES,
+                                Function,
+                                MergeAlrdTriv>(unique_grps,
+                                               chunks,
+                                               grp_by,
+                                               var_val_grp_vec,
+                                               var_val_grp);
+
+        } else {
+
+            dispatch_merge_alrd<TColVal, 
+                                CORES,
+                                Function,
+                                MergeAlrd>(unique_grps,
+                                           chunks,
+                                           grp_by,
+                                           var_val_grp_vec,
+                                           var_val_grp);
+
+        }
 
     }
 
@@ -212,10 +222,10 @@ void transform_group_by_alrd_mt(unsigned int Id,
             value_col.resize(local_nrow);
 
             if constexpr (Function == GroupFunction::Occ ||
-                          Function == GroupFunction::Add)
+                          Function == GroupFunction::Add) {
 
                 #pragma omp parallel for if(CORES > 1) schedule(static)
-                for (size_t i = 0; i < grp_by.size(); ++i) {
+                for (size_t i = 0; i < grp_by.size(); ++i)
                     value_col[i] = val_grp[grp_by[i]];
 
             } else if constexpr (Function == GroupFunction::Mean) {
@@ -224,7 +234,7 @@ void transform_group_by_alrd_mt(unsigned int Id,
                     el / local_nrow;
 
                 #pragma omp parallel for if(CORES > 1) schedule(static)
-                for (size_t i = 0; i < grp_by.size(); ++i) {
+                for (size_t i = 0; i < grp_by.size(); ++i)
                     value_col[i] = val_grp[grp_by[i]];
 
             } else {
@@ -239,13 +249,13 @@ void transform_group_by_alrd_mt(unsigned int Id,
                         val_grp2[i] = f(val_grp[i].v);
 
                     #pragma omp parallel for if(CORES > 1) schedule(static)
-                    for (size_t i = 0; i < local_nrow; ++i) {
+                    for (size_t i = 0; i < local_nrow; ++i)
                         value_col[i] = val_grp2[grp_by[i]];
 
                 } else {
 
                     #pragma omp parallel for if(CORES > 1) schedule(static)
-                    for (size_t i = 0; i < local_nrow; ++i) {
+                    for (size_t i = 0; i < local_nrow; ++i)
                         value_col[i] = f(val_grp[grp_by[i]].v);
 
                 }

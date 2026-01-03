@@ -175,7 +175,7 @@ void transform_group_by_onecol_mt(const unsigned int x,
     }
 
     constexpr auto& size_table = get_types_size();
-    const size_t val_size      = size_table[idx_type];
+    const size_t val_size      = size_table[pre_idx_type];
 
     std::vector<std::string_key*> key_vec(local_nrow);
 

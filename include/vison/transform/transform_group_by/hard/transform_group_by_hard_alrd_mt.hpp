@@ -4,7 +4,6 @@ template <typename TColVal = void,
 	      unsigned int CORES = 4,
 	      unsigned int NPerGroup = 4,
           bool MapCol = false,
-          bool StandardMethod = false,
 	      GroupFunction Function == GroupFunction::Occurence,
 	      bool SanityCheck = true>
 void transform_group_by_hard_alrd_mt(unsigned int Id,
@@ -66,7 +65,7 @@ void transform_group_by_hard_alrd_mt(unsigned int Id,
               const std::vector<std::vector<FloatT>>*
           >
     >; 
-    val_variant_t var_val_table;
+    val_variant_t var_val_table; // this serves just to call val_table_build
 
     unsigned int val_idx;
     unsigned int idx_type;
@@ -91,8 +90,7 @@ void transform_group_by_hard_alrd_mt(unsigned int Id,
                                                    local_nrow,
                                                    val_idx,
                                                    grp_by,
-                                                   var_val_grp,
-                                                   var_val_table); 
+                                                   var_val_grp); 
 
         } else if constexpr (Function == GroupFunctio::Sum ||
                              Function == GroupFunction::Mean) {
@@ -102,8 +100,7 @@ void transform_group_by_hard_alrd_mt(unsigned int Id,
                                                    local_nrow,
                                                    val_idx,
                                                    grp_by,
-                                                   var_val_grp,
-                                                   var_val_table); 
+                                                   var_val_grp); 
 
         } else {
 
@@ -112,15 +109,14 @@ void transform_group_by_hard_alrd_mt(unsigned int Id,
                                                    local_nrow,
                                                    val_idx,
                                                    grp_by,
-                                                   var_val_grp,
-                                                   var_val_table); 
+                                                   var_val_grp); 
 
         }
 
     } else {
-        const bool is_triv = (idx_type != 0);
+        const bool is_triv = (pre_idx_type != 0);
 	    const unsigned int chunks = local_nrow / CORES + 1;
-	    std::vector<var_variant_t> var_val_grp_vec(chunks);
+	    std::vector<value_t> var_val_grp_vec(chunks);
 
 	    #pragma omp prallel num_threads(CORES)
 	    {
@@ -139,8 +135,7 @@ void transform_group_by_hard_alrd_mt(unsigned int Id,
                                                        end,
                                                        val_idx,
                                                        grp_by,
-                                                       cur_var_val_grp,
-                                                       var_val_table); 
+                                                       cur_var_val_grp); 
 
             } else if constexpr (Function == GroupFunction::Sum ||
                                  Function == GroupFunction::Mean) {
@@ -150,8 +145,7 @@ void transform_group_by_hard_alrd_mt(unsigned int Id,
                                                        end,
                                                        val_idx,
                                                        grp_by,
-                                                       cur_var_val_grp,
-                                                       var_val_table); 
+                                                       cur_var_val_grp); 
 
             } else {
 
@@ -160,21 +154,34 @@ void transform_group_by_hard_alrd_mt(unsigned int Id,
                                                        end,
                                                        val_idx,
                                                        grp_by,
-                                                       cur_var_val_grp,
-                                                       var_val_table); 
+                                                       cur_var_val_grp); 
 
             }
 	    }
 
-        dispatch_merge_alrd<TColVal, 
-                            CORES,
-                            Function,
-                            MergeAlrdHard>(unique_grps,
-                                           chunks,
-                                           grp_by,
-                                           var_val_grp_vec,
-                                           var_val_grp,
-                                           val_size);
+        if (triv_copy) {
+
+            dispatch_merge_alrd<TColVal, 
+                                CORES,
+                                Function,
+                                MergeAlrdTrivHard>(unique_grps,
+                                                   chunks,
+                                                   grp_by,
+                                                   var_val_grp_vec,
+                                                   var_val_grp);
+
+        } else {
+
+            dispatch_merge_alrd<TColVal, 
+                                CORES,
+                                Function,
+                                MergeAlrdHard>(unique_grps,
+                                                   chunks,
+                                                   grp_by,
+                                                   var_val_grp_vec,
+                                                   var_val_grp);
+
+        }
 
     }
 
@@ -213,42 +220,94 @@ void transform_group_by_hard_alrd_mt(unsigned int Id,
 
             value_col.resize(local_nrow);
 
-            if constexpr (Function == GroupFunction::Occ ||
-                          Function == GroupFunction::Add)
+            using Elem = TP::value_type;
+            const unsigned int val_size = sizeof(Elem);
 
-                #pragma omp parallel for if(CORES > 1) schedule(static)
-                for (size_t i = 0; i < grp_by.size(); ++i) {
-                    value_col[i] = val_grp[grp_by[i]];
+            if constexpr (CORES > 1) {
 
-            } else if constexpr (Function == GroupFunction::Mean) {
+                std::vector<size_t> pos_boundaries;
+                pos_boundaries.reserve(unique_grps);
+                pos_boundaries.push_back(0);
+                
+                for (size_t t = 0; t < unqiue_grps; ++t) {
+                    pos_boundaries.push_back(
+                        pos_boundaries.back() + vec_grp[t].size()
+                    );
+                }
+                
+                #pragma omp parallel for num_threads(CORES) schedule(static)
+                for (size_t i = 0; i < unique_grps; ++i) {
+                    size_t start           = pos_boundaries[i];
+                    size_t len             = pos_boundaries[i + 1] - pos_boundaries[i];
+                    const auto& cur_struct = val_grp[grp_by[i]];
+                    const auto& val        = cur_struct.value;
+                    const auto& vec        = cur_struct.idx_vec.v;
 
-                for (auto& el : val_grp)
-                    el / local_nrow;
+                    if constexpr (Function == GroupFunction::Occ ||
+                                  Function == GroupFunction::Add) {
 
-                #pragma omp parallel for if(CORES > 1) schedule(static)
-                for (size_t i = 0; i < grp_by.size(); ++i) {
-                    value_col[i] = val_grp[grp_by[i]];
+                        auto* __restrict__ out = value_col.data() + start;
+                        auto const* __restrict__ in = &val; 
+                        std::fill_n(out, len, *in);
+
+                    } else if constexpr (Function == GroupFunction::Mean) {
+
+                        const auto val2 = val / local_nrow;
+                        auto* __restrict__ out = value_col.data() + start;
+                        auto const* __restrict__ in = &val2; 
+                        std::fill_n(out, len, *in);
+
+                    } else {
+
+                        const auto val2 = f(val.v);
+                        auto* __restrict__ out = value_col.data() + start;
+                        auto const* __restrict__ in = &val2; 
+                        std::fill_n(out, len, *in);
+
+                    }
+
+                    memcpy(row_view_idx.data() + start,
+                           vec.data(),
+                           len * sizeof(unsigned int));
+                }
 
             } else {
 
-                using TP2 = std::vector<element_type_t<TP::value_type>>;
-                TP2 val_grp2;
+                size_t start = 0;
+                for (size_t i = 0; i < unique_grps; ++i) {
+                    const auto& cur_struct = val_grp[grp_by[i]];
+                    const auto& val        = cur_struct.value;
+                    const auto& vec        = cur_struct.idx_vec.v;
+                    const size_t len       = vec.size();
 
-                if constexpr (!StandardMethod) {
+                    if constexpr (Function == GroupFunction::Occ ||
+                                  Function == GroupFunction::Add) {
 
-                    val_grp2.resize(unique_grps);
-                    for (size_t i = 0; i < unique_grps; ++i)
-                        val_grp2[i] = f(val_grp[i].v);
+                        auto* __restrict__ out = value_col.data() + start;
+                        auto const* __restrict__ in = &val; 
+                        std::fill_n(out, len, *in);
 
-                    #pragma omp parallel for if(CORES > 1) schedule(static)
-                    for (size_t i = 0; i < local_nrow; ++i) {
-                        value_col[i] = val_grp2[grp_by[i]];
+                    } else if constexpr (Function == GroupFunction::Mean) {
 
-                } else {
+                        const auto val2 = val / local_nrow;
+                        auto* __restrict__ out = value_col.data() + start;
+                        auto const* __restrict__ in = &val2; 
+                        std::fill_n(out, len, *in);
 
-                    #pragma omp parallel for if(CORES > 1) schedule(static)
-                    for (size_t i = 0; i < local_nrow; ++i) {
-                        value_col[i] = f(val_grp[grp_by[i]].v);
+                    } else {
+
+                        const auto val2 = f(val.v);
+                        auto* __restrict__ out = value_col.data() + start;
+                        auto const* __restrict__ in = &val2; 
+                        std::fill_n(out, len, *in);
+
+                    }
+
+                    memcpy(row_view_idx.data() + start,
+                           vec.data(),
+                           len * sizeof(unsigned int));
+
+                    start += len;
 
                 }
 
@@ -269,6 +328,8 @@ void transform_group_by_hard_alrd_mt(unsigned int Id,
 
     if (!name_v.empty())
         name_v.push_back(colname);
+
+    col_alrd_materialized.try_emplace(ncol);
 
      ++ncol;
 
