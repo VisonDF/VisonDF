@@ -1,11 +1,19 @@
 #pragma once
 
-template <bool IsBool = false,
+struct RunMt {
+    size_t mask_pos;
+    size_t src_start;
+    size_t len;
+};
+
+template <unsigned int CORES = 4,
+          bool IsBool = false,
           bool MapCol = false,
+          bool IsDense = false,
           typename T>
-void get_col_filter_idx(unsigned int x,
-                        std::vector<T> &rtn_v,
-                        const std::vector<unsigned int> &mask)
+void get_col_filter_idx_mt(unsigned int x,
+                           std::vector<T> &rtn_v,
+                           const std::vector<unsigned int> &mask)
 {
     rtn_v.resize(mask.size());
 
@@ -33,9 +41,65 @@ void get_col_filter_idx(unsigned int x,
     };
 
     auto extract_idx_masked = [&rtn_v, &mask](const auto*__restrict src) {
-        for (auto i : mask)
-            rtn_v[i] = src[i];
+        #pragma omp parallel for if(CORES > 1) num_threads(CORES)
+        for (size_t i = 0; i < mask.size(); ++i)
+            rtn_v[i] = src[mask[i]];
     };
+
+    auto extract_idx_masked_dense = [&mask]<typename T>(
+                                      T* __restrict dst,
+                                      const T* __restrict src,
+                                      ) {
+ 
+        if constexpr (CORES > 1) {
+
+            std::vector<RunMt> runs;
+            
+            for (size_t i = 0; i < mask.size();) {
+                size_t start = i;
+                size_t src_start = mask[i];
+            
+                while (i + 1 < mask.size() &&
+                       mask[i + 1] == mask[i] + 1) {
+                    ++i;
+                }
+            
+                runs.push_back({start, src_start, i - start + 1});
+                ++i;
+            }
+
+            #pragma omp parallel for schedule(static)
+            for (size_t r = 0; r < runs.size(); ++r) {
+                const auto& run = runs[r];
+            
+                std::memcpy(dst.data() + run.mask_pos,
+                            src.data() + run.src_start,
+                            run.len * sizeof(T));
+            }
+
+        } else {
+            size_t pos = 0;
+            size_t dst_offset = 0;
+            while (pos < mask.size()) {
+                size_t run_start = pos;
+                size_t src_start = mask[pos];
+    
+                while (pos + 1 < mask.size() &&
+                       mask[pos + 1] == mask[pos] + 1) {
+                    ++pos;
+                }
+    
+                size_t run_len = pos - run_start + 1;
+    
+                std::memcpy(dst.data() + dst_offset,
+                            src.data() + src_start,
+                            run_len * sizeof(T));
+                
+                dst_offset += run_len;
+                ++pos;
+            }
+        }
+    }
 
     if constexpr (std::is_same_v<T, std::string>) {
 
@@ -45,27 +109,47 @@ void get_col_filter_idx(unsigned int x,
     } else if constexpr (std::is_same_v<T, CharT>) {
 
         const size_t pos_base = find_col_base(matr_idx[1], 1);
-        extract_idx_masked(chr_v[pos_base].data());
+        if constexpr (!IsDense) {
+            extract_idx_masked(chr_v[pos_base].data());
+        } else {
+            extract_idx_masked_dense(chr_v[pos_base].data(), rtn_v.data());
+        }
 
     } else if constexpr (IsBool) {
 
         const size_t pos_base = find_col_base(matr_idx[2], 2);
-        extract_idx_masked(bool_v[pos_base].data());
+        if constexpr (!IsDense) {
+            extract_idx_masked(bool_v[pos_base].data());
+        } else {
+            extract_idx_masked_dense(bool_v[pos_base].data(), rtn_v.data());
+        }
 
     } else if constexpr (std::is_same_v<T, IntT>) {
 
         const size_t pos_base = find_col_base(matr_idx[3], 3);
-        extract_idx_masked(int_v[pos_base].data());
+        if constexpr (!IsDense) {
+            extract_idx_masked(int_v[pos_base].data());
+        } else {
+            extract_idx_masked_dense(int_v[pos_base].data(), rtn_v.data());
+        }
 
     } else if constexpr (std::is_same_v<T, UIntT>) {
 
         const size_t pos_base = find_col_base(matr_idx[4], 4);
-        extract_idx_masked(uint_v[pos_base].data());
+        if constexpr (!IsDense) {
+            extract_idx_masked(uint_v[pos_base].data());
+        } else {
+            extract_idx_masked_dense(uint_v[pos_base].data());
+        }
 
     } else if constexpr (std::is_same_v<T, FloatT>) {
 
         const size_t pos_base = find_col_base(matr_idx[5], 5);
-        extract_idx_masked(dbl_v[pos_base].data());
+        if constexpr (!IsDense) {
+            extract_idx_masked(dbl_v[pos_base].data());
+        } else {
+            extract_idx_masked_dense(dbl_v[pos_base].data(), rtn_v.data());
+        }
 
     } else {
         std::cerr << "Error in (get_col), unsupported type\n";
