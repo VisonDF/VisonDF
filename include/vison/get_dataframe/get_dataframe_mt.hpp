@@ -4,28 +4,102 @@ template <unsigned int CORES = 4>
 void get_dataframe_mt(const std::vector<size_t>& cols, 
                       Dataframe& cur_obj)
 {
-    nrow = cur_obj.get_nrow();
+
+    nrow                   = cur_obj.get_nrow();
+    in_view                = cur_obj.get_in_view();
+    row_view_idx           = cur_obj.get_row_view_idx();
+    row_view_map           = cur_obj.get_row_view_map();
+    col_alrd_materialized  = cur_obj.get_col_alrd_materialized();
     const unsigned int local_nrow = nrow;
 
-    if (cols.empty()) {
-        matr_idx     = cur_obj.get_matr_idx();
-        ncol         = cur_obj.get_ncol();
-        tmp_val_refv = cur_obj.get_tmp_val_refv();
+    auto str_copy_col = [](std::string* dst, const std::string* src) {
+        #pragma omp parallel for if(CORES > 1) num_threads(CORES)
+        for (size_t i = 0; i < local_nrow; ++i)
+            dst[i] = src[i];
+    }
 
-        str_v  = cur_obj.get_str_vec();
-        chr_v  = cur_obj.get_chr_vec();
-        bool_v = cur_obj.get_bool_vec();
-        int_v  = cur_obj.get_int_vec();
-        uint_v = cur_obj.get_uint_vec();
-        dbl_v  = cur_obj.get_dbl_vec();
+    auto copy_col = []<typename T>(T* dst, const T* src) {
+        #pragma omp parallel for if(CORES > 1) num_threads(CORES)
+        for (int t = 0; t < CORES; ++t)
+        {
+            size_t chunk = local_nrow / CORES;
+            size_t start = t * chunk;
+        
+            size_t end = (t == CORES - 1) ? local_nrow : start + chunk;
+        
+            size_t bytes = (end - start) * sizeof(T);
+        
+            memcpy(dst + start, src + start, bytes);
+        }
+    }
+
+    if (cols.empty()) {
+
+        matr_idx     = cur_obj.get_matr_idx();
+        matr_idx_map = cur_obj.get_matr_idx_map();
+        sync_map_col = cur_obj.get_sync_map_col();
+        ncol         = cur_obj.get_ncol();
+
+        const auto& str_v2  = cur_obj.get_str_vec();
+        for (auto& el : str_v2) {
+            str_v.emplace_back();
+            str_v.back().resize(local_nrow);
+            auto* dst       = str_v.back().data();
+            const auto* src = el.data();
+            str_copy_col(dst, src);
+        }
+
+        const auto& chr_v2  = cur_obj.get_chr_vec();
+        for (auto& el : chr_v2) {
+            chr_v.emplace_back();
+            chr_v.back().resize(local_nrow);
+            auto* dst       = chr_v.back().data();
+            const auto* src = el.data();
+            copy_col(dst, src);
+        }
+
+        const auto& bool_v2  = cur_obj.get_bool_vec();
+        for (auto& el : bool_v2) {
+            bool_v.emplace_back();
+            bool_v.back().resize(local_nrow);
+            auto* dst       = bool_v.back().data();
+            const auto* src = el.data();
+            copy_col(dst, src);
+        }
+
+        const auto& int_v2  = cur_obj.get_int_vec();
+        for (auto& el : int_v2) {
+            int_v.emplace_back();
+            int_v.back().resize(local_nrow);
+            auto* dst       = int_v.back().data();
+            const auto* src = el.data();
+            copy_col(dst, src);
+        }
+
+        const auto& uint_v2  = cur_obj.get_uint_vec();
+        for (auto& el : uint_v2) {
+            uint_v.emplace_back();
+            uint_v.back().resize(local_nrow);
+            auto* dst       = uint_v.back().data();
+            const auto* src = el.data();
+            copy_col(dst, src);
+        }
+
+        const auto& dbl_v2  = cur_obj.get_dbl_vec();
+        for (auto& el : dbl_v2) {
+            dbl_v.emplace_back();
+            dbl_v.back().resize(local_nrow);
+            auto* dst       = dbl_v.back().data();
+            const auto* src = el.data();
+            copy_col(dst, src);
+        }
 
         name_v    = cur_obj.get_colname();
         type_refv = cur_obj.get_typecol();
+
     }
     else {
         ncol = cols.size();
-
-        const auto& cur_tmp   = cur_obj.get_tmp_val_refv();
 
         const auto& str_vec2  = cur_obj.get_str_vec();
         const auto& chr_vec2  = cur_obj.get_chr_vec();
@@ -39,126 +113,89 @@ void get_dataframe_mt(const std::vector<size_t>& cols,
 
         type_refv.resize(ncol);
         name_v.resize(ncol);
-        tmp_val_refv.resize(ncol);
-        for (auto& el : tmp_val_refv) {
-          el.reserve(local_nrow);
-        };
+
+        sync_map_col = {true, true, true, true, true, true};
 
         size_t i2 = 0;
         for (int i : cols) {
 
-            tmp_val_refv[i2].assign(cur_tmp[i].begin(), cur_tmp[i].end());
-
             switch (type_refv1[i]) {
                 case 's': {
                                matr_idx[0].push_back(i2);
+                               matr_idx_map[0] = i2;
                                str_v.emplace_back();
                                str_v.back().resize(local_nrow);
-                               auto* __restrict dst = str_v.back().data();
+
+                               auto* __restrict dst       = str_v.back().data();
                                const auto* __restrict src = str_v2[i].data();
-                               #pragma omp parallel for num_threads(CORES)
-                               for (size_t i = 0; i < local_nrow; ++i)
-                                   dst[i] = src[i];
+
+                               str_copy_col(dst, src);
+
                                break;
                           }
                 case 'c': {
                                matr_idx[1].push_back(i2);
+                               matr_idx_map[1] = i2;
                                chr_v.emplace_back();
                                chr_v.back().resize(local_nrow);                               
-                               CharT* __restrict dst = chr_v.back().data();
+
+                               CharT* __restrict dst       = chr_v.back().data();
                                const CharT* __restrict src = chr_v2[i].data();
-                               #pragma omp parallel for num_threads(CORES)
-                               for (int t = 0; t < CORES; ++t)
-                               {
-                                   size_t chunk = local_nrow / CORES;
-                                   size_t start = t * chunk;
-                               
-                                   size_t end = (t == CORES - 1) ? local_nrow : start + chunk;
-                               
-                                   size_t bytes = (end - start) * sizeof(CharT);
-                               
-                                   memcpy(dst + start, src + start, bytes);
-                               }
+
+                               copy_col(dst, src);
+
                                break;
                           }
                 case 'b': {
                                matr_idx[2].push_back(i2);
+                               matr_idx_map[2] = i2;
                                bool_v.emplace_back();
                                bool_v.back().resize(local_nrow);                               
-                               uint8_t* __restrict dst = bool_v.back().data();
+
+                               uint8_t* __restrict dst       = bool_v.back().data();
                                const uint8_t* __restrict src = bool_v2[i].data();
-                               #pragma omp parallel for num_threads(CORES)
-                               for (int t = 0; t < CORES; ++t)
-                               {
-                                   size_t chunk = local_nrow / CORES;
-                                   size_t start = t * chunk;
-                               
-                                   size_t end = (t == CORES - 1) ? local_nrow : start + chunk;
-                               
-                                   size_t bytes = (end - start) * sizeof(uint8_t);
-                               
-                                   memcpy(dst + start, src + start, bytes);
-                               }
+
+                               copy_col(dst, src);
+
                                break;
                           }
                 case 'i': {
                                matr_idx[3].push_back(i2);
+                               matr_idx_map[3] = i2;
                                int_v.emplace_back();
-                               int_v.back().resize(local_nrow);                               
-                               IntT* __restrict dst = int_v.back().data();
+                               int_v.back().resize(local_nrow); 
+
+                               IntT* __restrict dst       = int_v.back().data();
                                const IntT* __restrict src = int_v2[i].data();
-                               #pragma omp parallel for num_threads(CORES)
-                               for (int t = 0; t < CORES; ++t)
-                               {
-                                   size_t chunk = local_nrow / CORES;
-                                   size_t start = t * chunk;
-                               
-                                   size_t end = (t == CORES - 1) ? local_nrow : start + chunk;
-                               
-                                   size_t bytes = (end - start) * sizeof(IntT);
-                               
-                                   memcpy(dst + start, src + start, bytes);
-                               }
+
+                               copy_col(dst, src);
+
                                break;
                           }
                 case 'u': {
                                matr_idx[4].push_back(i2);
+                               matr_idx_map[4] = i2;
                                uint_v.emplace_back();
                                uint_v.back().resize(local_nrow);                               
-                               UIntT* __restrict dst = uint_v.back().data();
+
+                               UIntT* __restrict dst       = uint_v.back().data();
                                const UIntT* __restrict src = uint_v2[i].data();
-                               #pragma omp parallel for num_threads(CORES)
-                               for (int t = 0; t < CORES; ++t)
-                               {
-                                   size_t chunk = local_nrow / CORES;
-                                   size_t start = t * chunk;
-                               
-                                   size_t end = (t == CORES - 1) ? local_nrow : start + chunk;
-                               
-                                   size_t bytes = (end - start) * sizeof(UIntT);
-                               
-                                   memcpy(dst + start, src + start, bytes);
-                               }
+
+                               copy_col(dst, src);
+
                                break;
                           }
                 case 'd': {
                                matr_idx[5].push_back(i2);
+                               matr_idx_map[5] = i2;
                                dbl_v.emplace_back();
                                dbl_v.back().resize(local_nrow);                               
-                               FloatT* __restrict dst = dbl_v.back().data();
+
+                               FloatT* __restrict dst       = dbl_v.back().data();
                                const FloatT* __restrict src = dbl_v2[i].data();
-                               #pragma omp parallel for num_threads(CORES)
-                               for (int t = 0; t < CORES; ++t)
-                               {
-                                   size_t chunk = local_nrow / CORES;
-                                   size_t start = t * chunk;
-                               
-                                   size_t end = (t == CORES - 1) ? local_nrow : start + chunk;
-                               
-                                   size_t bytes = (end - start) * sizeof(FloatT);
-                               
-                                   memcpy(dst + start, src + start, bytes);
-                               }
+
+                               copy_col(dst, src);
+
                                break;
                           }
             }
