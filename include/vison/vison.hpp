@@ -281,41 +281,57 @@ namespace vison {
       public:
      
         [[nodiscard]] inline const std::vector<std::vector<std::string>>& get_str_vec() const {
-          return str_v;
+            return str_v;
         };
     
         [[nodiscard]] inline const std::vector<std::vector<CharT>>& get_chr_vec() const {
-          return chr_v;
+            return chr_v;
         };
     
         [[nodiscard]] inline const std::vector<std::vector<uint8_t>>& get_bool_vec() const {
-          return bool_v;
+            return bool_v;
         };
     
         [[nodiscard]] inline const std::vector<std::vector<IntT>>& get_int_vec() const {
-          return int_v;
+            return int_v;
         };
     
         [[nodiscard]] inline const std::vector<std::vector<UIntT>>& get_uint_vec() const {
-          return uint_v;
+            return uint_v;
         };
     
         [[nodiscard]] inline const std::vector<std::vector<FloatT>>& get_dbl_vec() const {
-          return dbl_v;
+            return dbl_v;
         };
     
         [[nodiscard]] inline const std::array<std::vector<unsigned int>, 6>& get_matr_idx() const {
-          return matr_idx;
+            return matr_idx;
         };
 
         [[nodiscard]] inline const std::array<ankerl::unordered_dense::map<unsigned int, 
                                                                     unsigned int>, 6>& get_matr_idx_map() const {
-          return matr_idx_map;
+            return matr_idx_map;
         };
 
         [[nodiscard]] inline const std::array<bool, 6>& get_sync_map_col() const {
-          return sync_map_col;
+            return sync_map_col;
         };
+
+        [[nodiscard]] inline const bool get_in_view() const {
+            return in_view;
+        }
+
+        [[nodiscard]] inline const std::vector<size_t>& get_row_view_idx() const {
+            return row_view_idx;
+        }
+
+        [[nodiscard]] inline const ankerl::unordered_dense::map<size_t, size_t>& get_row_view_map() const {
+            return row_view_map;
+        }
+
+        [[nodiscard]] inline const ankerl::unoredered_dense::set<size_t>& get_col_alrd_materialized() const {
+            return col_alrd_materialized;
+        }
 
         #include "inlines/operator_overloading/equality.inl"
 
