@@ -1,15 +1,18 @@
 #pragma once
 
-template <typename T, bool IsBool = false>
-void get_col_filter_simd(unsigned int &x, 
-                std::vector<T> &rtn_v,
-                const std::vector<uint8_t> &mask) 
+template <bool IsBool = false,
+          bool MapCol = false,
+          typename T
+         >
+void get_col_filter_simd(const unsigned int x, 
+                         std::vector<T> &rtn_v,
+                         const std::vector<uint8_t> &mask) 
 {
 
-    get_col_filter_boolmask_simd<T, IsBool>(x,
-                                            rtn_v,
-                                            mask,
-                                            0);
+    get_col_filter_range_simd<IsBool, MapCol>(x,
+                                              rtn_v,
+                                              mask,
+                                              0);
 
 };
 

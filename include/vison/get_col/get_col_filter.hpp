@@ -1,16 +1,21 @@
 #pragma once
 
-template <typename T, bool MemClean = false, bool IsBool = false>
-void get_col_filter(unsigned int &x,
+template <bool MemClean = false, 
+          bool IsBool = false,
+          bool MapCol = false,
+          typename T
+         >
+void get_col_filter(unsigned int x,
                     std::vector<T> &rtn_v,
                     const std::vector<uint8_t> &mask)
 {
 
-    get_col_filter_boolmask<T, MemClean, IsBool>(x,
-                                                 rtn_v,
-                                                 mask,
-                                                 0,
-                                                 nrow);
+    get_col_filter_range<MemClean, 
+                         IsBool,
+                         MapCol>(x,
+                                 rtn_v,
+                                 mask,
+                                 0);
 }
 
 
