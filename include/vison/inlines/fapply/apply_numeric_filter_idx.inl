@@ -1,25 +1,39 @@
 #pragma once
 
-template <typename T, typename F>
-inline void apply_numeric_filter_idx(std::vector<T>& values, 
-                                     unsigned int n, 
-                                     size_t idx_type, 
+template <bool MapCol = false,
+          typename T, 
+          typename F>
+inline void apply_numeric_filter_idx(const std::vector<T>& values, 
+                                     const unsigned int n, 
+                                     const size_t idx_type, 
                                      F&& f,
                                      const std::vector<unsigned int>& mask) 
 {
-    constexpr auto buf_size = max_chars_needed<T>();
-    for (auto& s : tmp_val_refv[n])
-        s.reserve(buf_size);
 
     unsigned int i2 = 0;
-    while (i2 < matr_idx[idx_type].size()) {
-        if (n == matr_idx[idx_type][i2])
-            break;
-        ++i2;
+    if constexpr (!MapCol) {
+        i2 = 0;
+        while (i2 < matr_idx[idx_type].size()) {
+            if (n == matr_idx[idx_type][i2])
+                break;
+            ++i2;
+        }
+    } else {
+        if (!matr_idx_map[idx_type].contains(n)) {
+            std::cerr << "MapCol used but col not found in the map\n";
+            return;
+        }
+        if (!sync_map_col[idx_type]) {
+            std::cerr << "Col not synced\n";
+            return;
+        }
+
+        i2 = matr_idx_map[idx_type][n];
+
     }
 
+
     std::vector<T>& dst = values[i2];
-    std::vector<std::string>& val_tmp = tmp_val_refv[n];
     
     #if defined(__clang__)
         #pragma clang loop vectorize(enable)
@@ -29,18 +43,7 @@ inline void apply_numeric_filter_idx(std::vector<T>& values,
         #pragma loop(ivdep)
     #endif
     for (unsigned int& pos_idx : mask) {
-
-        char buf[buf_size];
-
         f(dst[pos_idx]);
-
-        auto [ptr, ec] = fast_to_chars(buf, buf + buf_size, dst[pos_idx]);
-
-        if (ec == std::errc{}) [[likely]] {
-            val_tmp[pos_idx].assign(buf, ptr);
-        } else [[unlikely]] {
-            std::terminate();
-        }
     }
 
 }

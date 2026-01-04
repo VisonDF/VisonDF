@@ -251,11 +251,6 @@ namespace vison {
         #include "inlines/fapply/apply_numeric.inl"
         #include "inlines/fapply/apply_numeric_filter_boolmask.inl"
         #include "inlines/fapply/apply_numeric_filter_idx.inl"
-        #include "inlines/fapply/fapply_filter_boolmask.inl"
-        #include "inlines/fapply/vectorized_hint/apply_numeric_simd.inl"
-        #include "inlines/fapply/vectorized_hint/apply_numeric_simd_filter_boolmask.inl"
-        #include "inlines/fapply/vectorized_hint/apply_numeric_simd_filter_range.inl"
-        #include "inlines/fapply/vectorized_hint/fapply_simd_filter_boolmask.inl"
 
         #include "inlines/write_csv/estimate_row_size.inl"
 
@@ -349,10 +344,6 @@ namespace vison {
         #include "fapply/fapply_filter.hpp"
         #include "fapply/fapply_filter_range.hpp"
         #include "fapply/fapply_filter_idx.hpp"
-        #include "fapply/vectorized_hint/fapply_simd_hint.hpp"
-        #include "fapply/vectorized_hint/fapply_simd_hint_filter.hpp"
-        #include "fapply/vectorized_hint/fapply_simd_hint_filter_idx.hpp"
-        #include "fapply/vectorized_hint/fapply_simd_hint_filter_range.hpp"
 
         #include "view_col/view_col.hpp" 
         #include "view_col/view_colstr.hpp"

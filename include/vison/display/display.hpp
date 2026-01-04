@@ -23,7 +23,7 @@ void display(std::vector<unsigned int>& cols) {
 
     std::cout << std::string(max_nblngth + 2, ' ');
 
-    for (size_t& i : cols) {
+    for (size_t i : cols) {
 
         switch(type_refv[i]) {
 
