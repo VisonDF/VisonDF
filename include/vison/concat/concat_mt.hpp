@@ -29,45 +29,38 @@ void concat_mt(Dataframe& obj)
     const unsigned int& nrow2 = obj.get_nrow();
     unsigned int pre_nrow = nrow;
     nrow += nrow2;
+    const unsigned int local_nrow = nrow;
 
     if (in_view) {
-        row_view_idx.resize(nrow);
-        for (size_t i = pre_nrow; i < nrow; ++i) {
+        row_view_idx.resize(local_nrow);
+        for (size_t i = pre_nrow; i < local_nrow; ++i) {
             row_view_idx.push_back(i);
             row_view_map.emplace(i, i);
         }
     }
 
-    for (auto& el : str_v ) { el.resize(nrow) };
-    for (auto& el : chr_v ) { el.resize(nrow) };
-    for (auto& el : bool_v) { el.resize(nrow) };
-    for (auto& el : int_v ) { el.resize(nrow) };
-    for (auto& el : uint_v) { el.resize(nrow) };
-    for (auto& el : dbl_v ) { el.resize(nrow) };
+    for (auto& el : str_v ) { el.resize(local_nrow) };
+    for (auto& el : chr_v ) { el.resize(local_nrow) };
+    for (auto& el : bool_v) { el.resize(local_nrow) };
+    for (auto& el : int_v ) { el.resize(local_nrow) };
+    for (auto& el : uint_v) { el.resize(local_nrow) };
+    for (auto& el : dbl_v ) { el.resize(local_nrow) };
 
     #pragma omp parallel for (if CORES > 1) num_threads(CORES)
     for (size_t el = 0; el < matr_idx[0].size(); el += 1) {
 
         const size_t val_idx = matr_idx[0][el];
 
-        std::vector<std::string>& val_tmp = tmp_val_refv[val_idx];
-        std::vector<std::string>& val_tmp2 = tmp_val_refv2[val_idx];
-
-        val_tmp.reserve(nrow);
-        val_tmp.insert(val_tmp.end(), 
-                       val_tmp2.begin(),
-                       val_tmp2.end());
-
         auto& dst = str_v [el];
         auto& src = str_v2[el];
 
         size_t i2 = 0;
-        for (size_t i = pre_nrow; i < nrow; ++i, ++i2)
+        for (size_t i = pre_nrow; i < local_nrow; ++i, ++i2)
             dst[i] = src[i2];
 
     };
 
-    auto concat_pod_column = [&](const auto& vec1,
+    auto concat_pod_column = [pre_nrow, nrow2](const auto& vec1,
                                  const auto& vec2,
                                  const std::vector<size_t>& col_idx) 
     {
@@ -78,14 +71,6 @@ void concat_mt(Dataframe& obj)
         {
             const size_t val_idx = col_idx[el];
     
-            auto& val_tmp  = tmp_val_refv[val_idx];
-            auto& val_tmp2 = tmp_val_refv2[val_idx];
-    
-            val_tmp.reserve(nrow);
-            val_tmp.insert(val_tmp.end(),
-                           val_tmp2.begin(),
-                           val_tmp2.end());
-   
             T* dst = vec1[el].data() + pre_nrow;
             T* src = vec2[el].data();
             std::memcpy(dst,
