@@ -1,6 +1,7 @@
 #pragma once
 
-template <unsigned int CORES = 4,
+template <bool NUMA = false,
+          unsigned int CORES = 4,
           bool MemClean = false, 
           bool IsBool = false,
           bool MapCol = false,
@@ -12,6 +13,7 @@ void get_col_filter_mt(unsigned int x,
 {
 
     get_col_filter_range_mt<CORES,
+                            NUMA,
                             MemClean, 
                             IsBool,
                             MapCol>(x,

@@ -1,6 +1,7 @@
 #pragma once
 
-template <bool MemClean = false, 
+template <bool NUMA = false,
+          bool MemClean = false,
           bool IsBool = false,
           bool MapCol = false,
           typename T
@@ -12,9 +13,10 @@ void get_col_filter_range(unsigned int x,
 {
 
     get_col_filter_range_mt<1, // CORES
-                             MemClean,
-                             IsBool,
-                             MapCol>(x, rtn_v, mask, strt_vl);
+                            NUMA,
+                            MemClean,
+                            IsBool,
+                            MapCol>(x, rtn_v, mask, strt_vl);
 
 }
 

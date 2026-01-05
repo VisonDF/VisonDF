@@ -1,6 +1,7 @@
 #pragma once
 
-template <bool IsBool = false,
+template <bool NUMA = false,
+          bool IsBool = false,
           bool MapCol = false,
           bool IsDense = false,
           typename T>
@@ -10,6 +11,7 @@ void get_col_filter_idx(unsigned int x,
 {
 
     get_col_filter_idx_mt<1, // CORES
+                          NUMA,
                           IsBool,
                           MapCol,
                           IsDense>(x, rtn_v, mask);

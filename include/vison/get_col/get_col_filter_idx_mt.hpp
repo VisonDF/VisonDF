@@ -7,6 +7,7 @@ struct RunMt {
 };
 
 template <unsigned int CORES = 4,
+          bool NUMA = false,
           bool IsBool = false,
           bool MapCol = false,
           bool IsDense = false,
@@ -41,9 +42,46 @@ void get_col_filter_idx_mt(unsigned int x,
     };
 
     auto extract_idx_masked = [&rtn_v, &mask](const auto*__restrict src) {
-        #pragma omp parallel for if(CORES > 1) num_threads(CORES)
-        for (size_t i = 0; i < mask.size(); ++i)
-            rtn_v[i] = src[mask[i]];
+        if constexpr (CORES > 1) {
+
+            int numa_nodes = 1;
+            if (numa_available() >= 0) 
+                numa_nodes = numa_max_node() + 1;
+
+            #pragma omp parallel num_threads(CORES)
+            { 
+                const int tid        = omp_get_thread_num();
+                const int nthreads   = omp_get_num_threads();
+           
+                size_t start;
+                size_t end;
+                MtStruct cur_struct;
+
+                if constexpr (NUMA) {
+                    numa_mt(cur_struct,
+                            n_el, 
+                            tid, 
+                            nthreads, 
+                            numa_nodes);
+                } else {
+                    simple_mt(cur_struct,
+                              n_el, 
+                              tid, 
+                              nthreads);
+                }
+                    
+                start = cur_struct.start;
+                end   = cur_struct.end;
+
+                for (size_t i = start; i < end; ++i)
+                    rtn_v[i] = src[mask[i]];
+
+            }
+
+        } else {
+            for (size_t i = 0; i < mask.size(); ++i)
+                rtn_v[i] = src[mask[i]];
+        }
     };
 
     auto extract_idx_masked_dense = [&mask]<typename T>(
@@ -68,13 +106,41 @@ void get_col_filter_idx_mt(unsigned int x,
                 ++i;
             }
 
-            #pragma omp parallel for schedule(static)
-            for (size_t r = 0; r < runs.size(); ++r) {
-                const auto& run = runs[r];
-            
-                std::memcpy(dst.data() + run.mask_pos,
-                            src.data() + run.src_start,
-                            run.len * sizeof(T));
+            int numa_nodes = 1;
+            if (numa_available() >= 0) 
+                numa_nodes = numa_max_node() + 1;
+
+            #pragma omp parallel num_threads(CORES)
+            {
+                const int tid        = omp_get_thread_num();
+                const int nthreads   = omp_get_num_threads();
+           
+                size_t start;
+                size_t end;
+                MtStruct cur_struct;
+
+                if constexpr (NUMA) {
+                    numa_mt(cur_struct,
+                            runs.size(), 
+                            tid, 
+                            nthreads, 
+                            numa_nodes);
+                } else {
+                    simple_mt(cur_struct,
+                              runs.size(), 
+                              tid, 
+                              nthreads);
+                }
+                    
+                start = cur_struct.start;
+                end   = cur_struct.end;
+
+                for (size_t r = start; r < end; ++r) {
+                    const auto& run = runs[r]; 
+                    std::memcpy(dst.data() + run.mask_pos,
+                                src.data() + run.src_start,
+                                run.len * sizeof(T));
+                }
             }
 
         } else {
