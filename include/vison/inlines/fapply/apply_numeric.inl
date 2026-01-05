@@ -7,7 +7,8 @@ inline void apply_numeric(const std::vector<std::vector<T>>& values,
                           const unsigned int n, 
                           const size_t idx_type, 
                           F&& f,
-                          const unsigned int end_val) {
+                          const unsigned int strt
+                          const unsigned int end) {
     
     unsigned int i2;
     if constexpr (!MapCol) {
@@ -33,9 +34,8 @@ inline void apply_numeric(const std::vector<std::vector<T>>& values,
 
     std::vector<T>& dst = values[i2];
 
-    for (size_t i = 0; i < end_val; ++i) {
+    for (size_t i = strt; i < end; ++i)
         f(dst[i]);
-    }
 }
 
 

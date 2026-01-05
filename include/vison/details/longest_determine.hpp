@@ -12,7 +12,7 @@ void longest_determine() {
         std::fill(longest_v.begin(), longest_v.end(), 0);
     }
    
-    #pragma omp parallel for num_threads(CORES)
+    #pragma omp parallel for if(CORES > 1) num_threads(CORES)
     for (unsigned i = 0; i < ncol; ++i) {
         auto* __restrict col = tmp_val_refv[i].data();
         unsigned max_len = longest_v[i];
