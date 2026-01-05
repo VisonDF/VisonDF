@@ -352,10 +352,12 @@ namespace vison {
         #include "display/display_filter_range_mt.hpp" 
         #include "display/display_filter_mt.hpp" 
         #include "display/display_filter_idx_mt.hpp"
+        #include "display/display_range_mt.hpp"
         #include "display/display_mt.hpp"
         #include "display/display_filter.hpp" 
         #include "display/display_filter_range.hpp" 
         #include "display/display_filter_idx.hpp"
+        #include "display/display_range.hpp"
         #include "display/display.hpp"
 
         #include "reinitiate.hpp"
