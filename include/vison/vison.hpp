@@ -357,6 +357,7 @@ namespace vison {
         #include "reinitiate.hpp"
          
         #include "fapply/fapply.hpp" 
+        #include "fapply/fapply_range.hpp"
         #include "fapply/fapply_filter.hpp"
         #include "fapply/fapply_filter_range.hpp"
         #include "fapply/fapply_filter_idx.hpp"
