@@ -9,10 +9,10 @@ void fapply_filter(F f,
                    const std::vector<uint8_t>& mask) 
 {
 
-    fapply_filter_range<IsBool, MapCol>(f,
-                                        n,
-                                        mask,
-                                        0);
+    fapply_filter_range_mt<IsBool, MapCol, 1>(f,
+                                              n,
+                                              mask,
+                                              0);
 }
 
 

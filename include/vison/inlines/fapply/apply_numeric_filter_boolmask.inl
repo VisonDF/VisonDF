@@ -1,6 +1,7 @@
 #pragma once
 
 template <bool MapCol = false,
+          unsigned int CORES = 4,
           typename T, 
           typename F>
 inline void apply_numeric_filter_boolmask(const std::vector<T>& values, 
@@ -35,10 +36,13 @@ inline void apply_numeric_filter_boolmask(const std::vector<T>& values,
     std::vector<T>& dst = values[i2];
     const unsigned int end_val = mask.size();
 
+    #pragma omp prallel for if(CORES > 1) num_threads(CORES)
     for (size_t i = 0; i < end_val; ++i) {
         if (!mask[i]) [[likely]] { continue; }
         f(dst[strt_vl + i]);
     }
 }
+
+
 
 

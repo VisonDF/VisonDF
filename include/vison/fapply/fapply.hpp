@@ -8,10 +8,10 @@ void fapply(F f,
             const unsigned int& n) {
 
    const unsigned int local_nrow = nrow;
-   fapply_range<IsBool, MapCol>(f, 
-                                n, 
-                                0, // strt
-                                local_nrow);
+   fapply_range_mt<IsBool, MapCol, 1>(f, 
+                                       n, 
+                                       0, // strt
+                                       local_nrow);
 
 }
 

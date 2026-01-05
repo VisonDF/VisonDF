@@ -1,6 +1,7 @@
 #pragma once
 
 template <bool MapCol = false,
+          unsigned int CORES = 4,
           typename T, 
           typename F>
 inline void apply_numeric(const std::vector<std::vector<T>>& values, 
@@ -34,8 +35,12 @@ inline void apply_numeric(const std::vector<std::vector<T>>& values,
 
     std::vector<T>& dst = values[i2];
 
+    #pragma omp parallel for if(CORES > 1) num_threads(CORES)
     for (size_t i = strt; i < end; ++i)
         f(dst[i]);
 }
+
+
+
 
 

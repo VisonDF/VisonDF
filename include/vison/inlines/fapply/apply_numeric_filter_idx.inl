@@ -1,6 +1,7 @@
 #pragma once
 
 template <bool MapCol = false,
+          unsigned int CORES = 4,
           typename T, 
           typename F>
 inline void apply_numeric_filter_idx(const std::vector<T>& values, 
@@ -35,17 +36,21 @@ inline void apply_numeric_filter_idx(const std::vector<T>& values,
 
     std::vector<T>& dst = values[i2];
     
-    #if defined(__clang__)
-        #pragma clang loop vectorize(enable)
-    #elif defined(__GNUC__)
-        #pragma GCC ivdep
-    #elif defined(_MSC_VER)
-        #pragma loop(ivdep)
-    #endif
-    for (unsigned int& pos_idx : mask) {
-        f(dst[pos_idx]);
+    //#if defined(__clang__)
+    //    #pragma clang loop vectorize(enable)
+    //#elif defined(__GNUC__)
+    //    #pragma GCC ivdep
+    //#elif defined(_MSC_VER)
+    //    #pragma loop(ivdep)
+    //#endif
+
+    #pragma omp parallel for if(CORES > 1) num_threads(CORES)
+    for (size_t i = 0; i < mask.size(); ++i) {
+        f(dst[mask[i]]);
     }
 
 }
+
+
 
 

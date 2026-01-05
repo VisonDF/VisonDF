@@ -348,9 +348,9 @@ namespace vison {
         #include "read_csv/read_csv_apply_noinfer.hpp"
         
         #include "inlines/read_csv/type_inference/type_classification.inl"
-    
-        #include "display/display_filter_mt.hpp" 
+
         #include "display/display_filter_range_mt.hpp" 
+        #include "display/display_filter_mt.hpp" 
         #include "display/display_filter_idx_mt.hpp"
         #include "display/display_mt.hpp"
         #include "display/display_filter.hpp" 
@@ -359,7 +359,12 @@ namespace vison {
         #include "display/display.hpp"
 
         #include "reinitiate.hpp"
-         
+
+        #include "fapply/fapply_range_mt.hpp"
+        #include "fapply/fapply_mt.hpp" 
+        #include "fapply/fapply_filter_range_mt.hpp"
+        #include "fapply/fapply_filter_mt.hpp"
+        #include "fapply/fapply_filter_idx_mt.hpp"
         #include "fapply/fapply.hpp" 
         #include "fapply/fapply_range.hpp"
         #include "fapply/fapply_filter.hpp"
