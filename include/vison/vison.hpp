@@ -391,13 +391,19 @@ namespace vison {
         #include "inlines/get_col/vectorized/get_filtered_col_idx_16.inl"
         #include "inlines/get_col/vectorized/get_filtered_col_idx_32.inl"
         #include "inlines/get_col/vectorized/get_filtered_col_idx_64.inl"
+        #include "get_col/get_col_range_mt.hpp" 
+        #include "get_col/get_col_mt.hpp" 
+        #include "get_col/get_col_filter_range_mt.hpp"
+        #include "get_col/get_col_filter_mt.hpp"
+        #include "get_col/get_col_filter_idx_mt.hpp"
+        #include "get_col/get_col_range.hpp" 
+        #include "get_col/get_col.hpp" 
+        #include "get_col/get_col_filter_range.hpp"
         #include "get_col/get_col_filter.hpp"
         #include "get_col/get_col_filter_idx.hpp"
-        #include "get_col/get_col_filter_range.hpp"
         #include "get_col/vectorized/get_col_filter_simd.hpp"
         #include "get_col/vectorized/get_col_filter_idx_simd.hpp"
         #include "get_col/vectorized/get_col_filter_range_simd.hpp"
-        #include "get_col/vectorized/get_col.hpp" 
         
         [[nodiscard]] const std::vector<std::vector<std::string>>& get_tmp_val_refv() const {
           return tmp_val_refv;

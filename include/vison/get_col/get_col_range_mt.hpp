@@ -1,12 +1,15 @@
 #pragma once
 
-template <bool IsBool = false,
+template <unsigned int CORES = 4,
+          bool IsBool = false,
           bool MapCol = false,
           typename T>
-void get_col(unsigned int &x, 
-             std::vector<T> &rtn_v) {
+void get_col_mt(const unsigned int x, 
+                std::vector<T> &rtn_v,
+                const unsigned int strt,
+                const unsigned int end) {
  
-    const unsigned int local_nrow = nrow;
+    const unsigned int local_nrow = end - strt;
     rtn_v.resize(local_nrow);
 
     auto find_col_base = [x](const auto &idx_vec, [[maybe_unused]] const size_t idx_type) -> size_t {
@@ -33,9 +36,41 @@ void get_col(unsigned int &x,
 
     auto load_column = [&rtn_v](const auto*__restrict src)
     {
-        memcpy(rtn_v.data(), 
-               src, 
-               local_nrow * sizeof(T));
+
+        if constexpr (CORES > 1) {
+
+            if (CORES > local_nrow)
+                throw std::runtime_error("Too much cores for so little nrows\n");
+
+            #pragma omp parallel num_threads(CORES)
+            {
+
+                const int real_cores = omp_get_num_threads();
+
+                #pragma omp single
+                {
+                   assert(real_cores <= local_nrow);
+                }
+
+                const size_t chunks = local_nrow / real_cores;
+                const auto tid = omp_get_thread_num();
+                const size_t start = tid * chunks;
+                const size_t end = (start + chunks < local_nrow) ? start + chunks : local_nrow;
+                const size_t len = end - start;
+
+                memcpy(rtn_v.data() + start, 
+                       src + start, 
+                       len * sizeof(T));
+
+            }
+
+        } else {
+
+            memcpy(rtn_v.data(), 
+                   src, 
+                   local_nrow * sizeof(T));
+
+        }
     };
 
     if constexpr (std::is_same_v<T, std::string>) {
