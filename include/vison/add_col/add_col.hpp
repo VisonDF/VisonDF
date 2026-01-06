@@ -1,9 +1,12 @@
 #pragma once
 
-template <typename T, 
-          bool Large = false, 
-          bool BoolAsU8 = false> 
-void add_col(const std::vector<T> &x, const std::string name = "NA") {
+template <unsigned int CORES = 4, 
+          bool NUMA = false,
+          bool BoolAsU8 = false,
+          typename T> 
+void add_col_mt(const std::vector<T> &x, 
+                const std::string name = "NA") 
+{
   
     if (x.size() != nrow) {
       std::cerr << "Error: vector length (" << x.size()
@@ -18,18 +21,95 @@ void add_col(const std::vector<T> &x, const std::string name = "NA") {
     auto copy_column = [](const size_t local_nrow,
                            auto* __restrict dst,
                            const auto* __restrict src) {
-        if constexpr (Large) {
-            #pragma GCC ivdep
-            for (size_t i = 0; i < local_nrow; ++i) {
-                dst[i] = src[i];
+        if constexpr (CORES > 1) {
+ 
+            int numa_nodes = 1;
+            if (numa_available() >= 0) 
+                numa_nodes = numa_max_node() + 1; 
+
+            #pragma omp parallel num_threads(CORES)
+            {
+
+                const int tid        = omp_get_thread_num();
+                const int nthreads   = omp_get_num_threads();
+           
+                MtStruct cur_struct;
+
+                if constexpr (NUMA) {
+                    numa_mt(cur_struct,
+                            n_el, 
+                            tid, 
+                            nthreads, 
+                            numa_nodes);
+                } else {
+                    simple_mt(cur_struct,
+                              n_el, 
+                              tid, 
+                              nthreads);
+                }
+                    
+                const unsigned int start = cur_struct.start;
+                const unsigned int end   = cur_struct.end;
+                const unsigned int len   = cur_struct.len;
+
+                memcpy(dst.data() + start, 
+                       src.data() + start, 
+                       len * sizeof(T));
+
             }
-            stringify_loop(nrow, val_tmp_data, src);
+
         } else {
-            for (size_t i = 0; i < local_nrow; ++i) {
-                dst[i] = src[i];
-            }
+            memcpy(dst.data(), 
+                   src.data(), 
+                   local_nrow * sizeof(T));
         }
     };
+
+    auto str_copy_column = [](const size_t local_nrow,
+                              auto* __restrict dst,
+                              const auto* __restrict src) {
+        if constexpr (CORES > 1) {
+ 
+            int numa_nodes = 1;
+            if (numa_available() >= 0) 
+                numa_nodes = numa_max_node() + 1; 
+
+            #pragma omp parallel num_threads(CORES)
+            {
+
+                const int tid        = omp_get_thread_num();
+                const int nthreads   = omp_get_num_threads();
+           
+                MtStruct cur_struct;
+
+                if constexpr (NUMA) {
+                    numa_mt(cur_struct,
+                            n_el, 
+                            tid, 
+                            nthreads, 
+                            numa_nodes);
+                } else {
+                    simple_mt(cur_struct,
+                              n_el, 
+                              tid, 
+                              nthreads);
+                }
+                    
+                const unsigned int start = cur_struct.start;
+                const unsigned int end   = cur_struct.end;
+                const unsigned int len   = cur_struct.len;
+
+                for (size_t i = start; i < end; ++i)
+                    dst[i] = src[i];
+                
+            }
+
+        } else {
+            for (size_t i = 0; i < local_nrow; ++i)
+                dst[i] = src[i];
+        }
+    };
+
 
     if constexpr (BoolAsU8) {
 
@@ -99,9 +179,8 @@ void add_col(const std::vector<T> &x, const std::string name = "NA") {
         auto* __restrict dst = std::assume_aligned<64>(chr_v[base_idx].data());
         auto* __restrict src = std::assume_aligned<64>(x.data());
 
-        for (auto& s : val_tmp) {
+        for (auto& s : val_tmp)
             s.reserve(df_charbuf_size);
-        }
         copy_column(local_nrow, dst, src);
 
     } else if constexpr (std::is_same_v<T, std::string>) {
@@ -116,10 +195,10 @@ void add_col(const std::vector<T> &x, const std::string name = "NA") {
         auto* __restrict dst = std::assume_aligned<64>(str_v[base_idx].data());
         auto* __restrict src = std::assume_aligned<64>(x.data());
 
-        copy_column(local_nrow, dst, src);
+        str_copy_column(local_nrow, dst, src);
 
     } else {
-      std::cerr << "Error in (add_col) type not suported \n";
+        std::cerr << "Error in (add_col) type not suported \n";
     };
 
     ncol += 1;
