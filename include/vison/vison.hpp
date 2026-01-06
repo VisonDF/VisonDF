@@ -54,6 +54,25 @@ namespace vison {
     #include "inlines/fast_to_chars_no_dragonbox.inl"
     #endif
 
+    void init_openmp(int cores)
+    {
+        // Number of threads
+        omp_set_num_threads(cores);
+    
+        // Disable dynamic resizing
+        omp_set_dynamic(0);
+    
+        // Keep threads hot between regions
+        omp_set_wait_policy(omp_wait_policy_active);
+    
+        // Spread threads across places
+        omp_set_proc_bind(omp_proc_bind_spread);
+    
+        // IMPORTANT: no standard API for this, must use env var
+        // One place per core → NUMA-friendly
+        setenv("OMP_PLACES", "cores", 1);
+    }
+
     #include "types/supported_types.inl"
     #include "types/supported_sorting_methods.inl"
     #include "types/supported_leftjoin_methods.inl"
