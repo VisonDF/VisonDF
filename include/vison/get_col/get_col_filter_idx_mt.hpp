@@ -53,8 +53,6 @@ void get_col_filter_idx_mt(unsigned int x,
                 const int tid        = omp_get_thread_num();
                 const int nthreads   = omp_get_num_threads();
            
-                size_t start;
-                size_t end;
                 MtStruct cur_struct;
 
                 if constexpr (NUMA) {
@@ -70,8 +68,8 @@ void get_col_filter_idx_mt(unsigned int x,
                               nthreads);
                 }
                     
-                start = cur_struct.start;
-                end   = cur_struct.end;
+                const unsigned int start = cur_struct.start;
+                const unsigned int end   = cur_struct.end;
 
                 for (size_t i = start; i < end; ++i)
                     rtn_v[i] = src[mask[i]];

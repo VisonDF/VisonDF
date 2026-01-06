@@ -43,7 +43,7 @@ void get_col_filter_range(unsigned int x,
         const auto *src = col_ptr;
 
         if constexpr (CORES > 1) {
-      
+
             size_t active_count = 0;
             pre_active_rows.resize(n_el, 0);
             for (size_t i = 0; i < n_el; ++i) {
@@ -62,8 +62,6 @@ void get_col_filter_range(unsigned int x,
                 const int tid        = omp_get_thread_num();
                 const int nthreads   = omp_get_num_threads();
            
-                size_t start;
-                size_t end;
                 MtStruct cur_struct;
 
                 if constexpr (NUMA) {
@@ -79,14 +77,14 @@ void get_col_filter_range(unsigned int x,
                               nthreads);
                 }
                     
-                start = cur_struct.start;
-                end   = cur_struct.end;
+                const unsigned int start = cur_struct.start;
+                const unsigned int end   = cur_struct.end;
             
                 size_t out_idx = pre_active_rows[start];
 
                 for (size_t i = start; i < end; ++i) {
                     if (mask[i])
-                        rtn_v[i] = src[strt_vl + i];
+                        rtn_v[out_idx++] = src[strt_vl + i];
                 }
 
             }
