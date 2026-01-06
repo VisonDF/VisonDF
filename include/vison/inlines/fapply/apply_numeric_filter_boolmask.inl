@@ -36,10 +36,53 @@ inline void apply_numeric_filter_boolmask(const std::vector<T>& values,
     std::vector<T>& dst = values[i2];
     const unsigned int end_val = mask.size();
 
-    #pragma omp prallel for if(CORES > 1) num_threads(CORES)
-    for (size_t i = 0; i < end_val; ++i) {
-        if (!mask[i]) [[likely]] { continue; }
-        f(dst[strt_vl + i]);
+    if constexpr (CORES > 1) {
+
+        if (CORES > mask.size())
+            throw std::runtime_error("Too much cores for so little nrows\n");
+
+        int numa_nodes = 1;
+        if (numa_available() >= 0) 
+            numa_nodes = numa_max_node() + 1;
+
+        #pragma omp prallel num_threads(CORES)
+        {
+
+            const int tid        = omp_get_thread_num();
+            const int nthreads   = omp_get_num_threads();
+           
+            MtStruct cur_struct;
+
+            if constexpr (NUMA) {
+                numa_mt(cur_struct,
+                        mask.size(), 
+                        tid, 
+                        nthreads, 
+                        numa_nodes);
+            } else {
+                simple_mt(cur_struct,
+                          mask.size(), 
+                          tid, 
+                          nthreads);
+            }
+                
+            const unsigned int cur_start = cur_struct.start;
+            const unsigned int cur_end   = cur_struct.end;
+
+            for (size_t i = cur_strt; i < cur_end; ++i) {
+                if (!mask[i]) { continue; }
+                f(dst[strt_vl + i]);
+            }
+
+        }
+
+    } else {
+
+        for (size_t i = 0; i < end_val; ++i) {
+            if (!mask[i]) { continue; }
+            f(dst[strt_vl + i]);
+        }
+
     }
 }
 

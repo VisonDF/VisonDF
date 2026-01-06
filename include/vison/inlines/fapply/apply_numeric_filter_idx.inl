@@ -2,6 +2,7 @@
 
 template <bool MapCol = false,
           unsigned int CORES = 4,
+          bool NUMA = false,
           typename T, 
           typename F>
 inline void apply_numeric_filter_idx(const std::vector<T>& values, 
@@ -33,20 +34,49 @@ inline void apply_numeric_filter_idx(const std::vector<T>& values,
 
     }
 
-
     std::vector<T>& dst = values[i2];
     
-    //#if defined(__clang__)
-    //    #pragma clang loop vectorize(enable)
-    //#elif defined(__GNUC__)
-    //    #pragma GCC ivdep
-    //#elif defined(_MSC_VER)
-    //    #pragma loop(ivdep)
-    //#endif
+    if constexpr (CORES > 1) {
 
-    #pragma omp parallel for if(CORES > 1) num_threads(CORES)
-    for (size_t i = 0; i < mask.size(); ++i) {
-        f(dst[mask[i]]);
+        if (CORES > mask.size())
+            throw std::runtime_error("Too much cores for so little nrows\n");
+
+        int numa_nodes = 1;
+        if (numa_available() >= 0) 
+            numa_nodes = numa_max_node() + 1;
+
+        #pragma omp prallel num_threads(CORES)
+        {
+
+            const int tid        = omp_get_thread_num();
+            const int nthreads   = omp_get_num_threads();
+           
+            MtStruct cur_struct;
+
+            if constexpr (NUMA) {
+                numa_mt(cur_struct,
+                        mask.size(), 
+                        tid, 
+                        nthreads, 
+                        numa_nodes);
+            } else {
+                simple_mt(cur_struct,
+                          mask.size(), 
+                          tid, 
+                          nthreads);
+            }
+                
+            const unsigned int cur_start = cur_struct.start;
+            const unsigned int cur_end   = cur_struct.end;
+
+            for (size_t i = cur_strt; i < cur_end; ++i)
+                f(dst[mask[i]]);
+
+        }
+
+    } else {
+        for (auto i : mask)
+            f(dst[i]);
     }
 
 }

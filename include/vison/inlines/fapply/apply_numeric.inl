@@ -2,6 +2,7 @@
 
 template <bool MapCol = false,
           unsigned int CORES = 4,
+          bool NUMA = false,
           typename T, 
           typename F>
 inline void apply_numeric(const std::vector<std::vector<T>>& values, 
@@ -35,9 +36,51 @@ inline void apply_numeric(const std::vector<std::vector<T>>& values,
 
     std::vector<T>& dst = values[i2];
 
-    #pragma omp parallel for if(CORES > 1) num_threads(CORES)
-    for (size_t i = strt; i < end; ++i)
-        f(dst[i]);
+    if constexpr (CORES > 1) {
+
+        const unsigned int n_el = end - strt;
+
+        if (CORES > n_el)
+            throw std::runtime_error("Too much cores for so little nrows\n");
+
+        int numa_nodes = 1;
+        if (numa_available() >= 0) 
+            numa_nodes = numa_max_node() + 1;
+
+        #pragma omp prallel num_threads(CORES)
+        {
+
+            const int tid        = omp_get_thread_num();
+            const int nthreads   = omp_get_num_threads();
+           
+            MtStruct cur_struct;
+
+            if constexpr (NUMA) {
+                numa_mt(cur_struct,
+                        n_el, 
+                        tid, 
+                        nthreads, 
+                        numa_nodes);
+            } else {
+                simple_mt(cur_struct,
+                          n_el, 
+                          tid, 
+                          nthreads);
+            }
+                
+            const unsigned int cur_start = cur_struct.start;
+            const unsigned int cur_end   = cur_struct.end;
+
+            for (size_t i = cur_strt; i < cur_end; ++i)
+                f(dst[i]);
+
+        }
+
+    } else {
+        for (size_t i = strt; i < end; ++i)
+            f(dst[i]);
+    }
+
 }
 
 
