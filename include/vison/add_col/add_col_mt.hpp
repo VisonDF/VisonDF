@@ -37,13 +37,13 @@ void add_col_mt(const std::vector<T> &x,
 
                 if constexpr (NUMA) {
                     numa_mt(cur_struct,
-                            n_el, 
+                            local_nrow, 
                             tid, 
                             nthreads, 
                             numa_nodes);
                 } else {
                     simple_mt(cur_struct,
-                              n_el, 
+                              local_nrow, 
                               tid, 
                               nthreads);
                 }
