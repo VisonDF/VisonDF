@@ -1,18 +1,23 @@
 #pragma once
 
-template <typename T, bool NeedsNormalization = false>
+template <typename T, 
+          bool NeedsNormalization = false>
 inline void get_filtered_col_16(
-    const std::vector<T>& col_vec,
-    std::vector<T>& rtn_v,
-    const std::vector<uint8_t>& mask,
-    const unsigned int strt_vl,
-    const size_t n_el)
+                                const std::vector<T>& col_vec,
+                                std::vector<T>& rtn_v,
+                                const std::vector<uint8_t>& mask,
+                                const unsigned int strt_vl,
+                                const size_t strt,
+                                const size_t end,
+                                const size_t out_idx_vl
+                                )
 {
-    size_t out_idx = 0;
-    size_t i = 0;
+
+    size_t out_idx = out_idx_vl;
+    size_t i = strt;
 
     #if defined(__AVX512F__)
-    for (; i + 32 <= n_el; i += 32)
+    for (; i + 32 <= end; i += 32)
     {
         __m256i mbytes = _mm256_loadu_si256((const __m256i*)&mask[i]);
     
@@ -35,7 +40,7 @@ inline void get_filtered_col_16(
         out_idx += _mm_popcnt_u32(k);
     }
     #elif defined(__AVX2__)
-    for (; i + 32 <= n_el; i += 32)
+    for (; i + 32 <= end; i += 32)
     {
         __m256i mbytes = _mm256_loadu_si256((const __m256i*)&mask[i]);
     
@@ -60,7 +65,7 @@ inline void get_filtered_col_16(
     }
     #endif
 
-    for (; i < n_el; ++i)
+    for (; i < end; ++i)
         if (mask[i])
             rtn_v[out_idx++] = col_vec[i];
 }

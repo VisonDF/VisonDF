@@ -44,6 +44,9 @@ void get_col_filter_range(unsigned int x,
 
         if constexpr (CORES > 1) {
 
+            if (CORES > n_el)
+                throw std::runtime_error("Too much cores for so little nrows\n");
+
             size_t active_count = 0;
             pre_active_rows.resize(n_el, 0);
             for (size_t i = 0; i < n_el; ++i) {

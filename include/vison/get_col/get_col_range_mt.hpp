@@ -42,21 +42,33 @@ void get_col_mt(const unsigned int x,
             if (CORES > local_nrow)
                 throw std::runtime_error("Too much cores for so little nrows\n");
 
+            int numa_nodes = 1;
+            if (numa_available() >= 0) 
+                numa_nodes = numa_max_node() + 1;
+
             #pragma omp parallel num_threads(CORES)
             {
 
-                const int real_cores = omp_get_num_threads();
+                const int tid        = omp_get_thread_num();
+                const int nthreads   = omp_get_num_threads();
+           
+                MtStruct cur_struct;
 
-                #pragma omp single
-                {
-                   assert(real_cores <= local_nrow);
+                if constexpr (NUMA) {
+                    numa_mt(cur_struct,
+                            local_nrow, 
+                            tid, 
+                            nthreads, 
+                            numa_nodes);
+                } else {
+                    simple_mt(cur_struct,
+                              local_nrow, 
+                              tid, 
+                              nthreads);
                 }
-
-                const size_t chunks = local_nrow / real_cores;
-                const auto tid = omp_get_thread_num();
-                const size_t start = tid * chunks;
-                const size_t end = (start + chunks < local_nrow) ? start + chunks : local_nrow;
-                const size_t len = end - start;
+                    
+                const unsigned int start = cur_struct.start;
+                const unsigned int len   = cur_struct.len;
 
                 memcpy(rtn_v.data() + start, 
                        src + start, 

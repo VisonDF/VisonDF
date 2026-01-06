@@ -1,6 +1,8 @@
 #pragma once
 
-template <bool IsBool = false,
+template <unsigned int CORES = 4,
+          bool NUMA = false,
+          bool IsBool = false,
           bool MapCol = false,
           typename T>
 void get_col_filter_range_simd(const unsigned int x, 
@@ -32,120 +34,342 @@ void get_col_filter_range_simd(const unsigned int x,
         return pos;
     };
 
-    size_t active_count = 0;
     const unsigned int local_nrow = nrow;
-    for (size_t i = 0; i < local_nrow; ++i)
-        active_count += mask[i] != 0;
-  
+
+    size_t active_count = 0;
+    std::vector<size_t> pre_active_rows;
+
+    if constexpr (CORES == 1) {
+        for (size_t i = 0; i < local_nrow; ++i)
+            active_count += mask[i] != 0;
+    } else {
+        pre_active_rows.resize(n_el, 0);
+        for (size_t i = 0; i < local_nrow; ++i) {
+            active_count += mask[i] != 0;
+            pre_active_rows[i] = active_count;
+        }
+    }
     rtn_v.resize(active_count);
+
+    int numa_nodes = 1;
+    if (numa_available() >= 0)
+        numa_nodes = numa_max_node() + 1;
+
+    assert(CORES >= numa_nodes);
+    assert(CORES % numa_nodes == 0);
+
+    const int threads_per_node = CORES / numa_nodes;
 
     if constexpr (std::is_same_v<T, std::string>)
 
         const size_t pos_base = find_col_base(matr_idx[0], 0);
         const std::vector<std::string>& src = str_v[pos_idx];
-        size_t out_idx = 0;
 
-        for (size_t i = 0; i < n_el; ++i) {
-            if (!mask[i]) { continue; }
-            rtn_v[out_idx++] = src[strt_vl + i];
+        if constexpr (CORES > 1) {
+    
+            #pragma omp parallel num_threads(CORES)
+            {
+                const int tid        = omp_get_thread_num();
+                const int nthreads   = omp_get_num_threads();
+           
+                MtStruct cur_struct;
+
+                if constexpr (Numa) {
+                    numa_mt(cur_struct,
+                            n_el, 
+                            tid, 
+                            nthreads, 
+                            numa_nodes);
+                } else {
+                    simple_mt(cur_struct,
+                              n_el, 
+                              tid, 
+                              nthreads);
+                }
+                    
+                const unsigned int start = cur_struct.start;
+                const unsigned int end   = cur_struct.end;
+            
+                size_t out_idx = pre_active_rows[start];
+            
+                for (size_t i = start; i < end; ++i) {
+                    if (mask[i]) {
+                        rtn_v[out_idx++] = src[strt_vl + i];
+                    }
+                }
+            }
+
+        } else {
+
+            size_t out_idx = 0;
+            for (size_t i = 0; i < n_el; ++i) {
+                if (!mask[i]) { continue; }
+                rtn_v[out_idx++] = src[strt_vl + i];
+            }
+
         }
 
     } else if constexpr (std::is_same_v<T, CharT>) {
 
         const size_t pos_base = find_col_base(matr_idx[1], 1);
         const std::vector<CharT>& src = chr_v[pos_base];
-        size_t out_idx = 0;
 
-        for (size_t i = 0; i < n_el; ++i) {
-            if (!mask[i]) { continue; }
-            memcpy(rtn_v[out_idx++].data(), 
-                   src[strt_vl + i].data(), 
-                   sizeof(CharT));
+        if constexpr (CORES > 1) {
+
+            #pragma omp parallel num_threads(CORES)
+            {
+                const int tid        = omp_get_thread_num();
+                const int nthreads   = omp_get_num_threads();
+           
+                MtStruct cur_struct;
+
+                if constexpr (Numa) {
+                    numa_mt(cur_struct,
+                            n_el, 
+                            tid, 
+                            nthreads, 
+                            numa_nodes);
+                } else {
+                    simple_mt(cur_struct,
+                              n_el, 
+                              tid, 
+                              nthreads);
+                }
+                    
+                const unsigned int start = cur_struct.start;
+                const unsigned int end   = cur_struct.end;
+            
+                size_t out_idx = pre_active_rows[start];
+            
+                for (size_t i = start; i < end; ++i) {
+                    if (!mask[i]) { continue; }
+                    memcpy(rtn_v[out_idx++].data(), 
+                           src[strt_vl + i].data(), 
+                           sizeof(CharT));
+                }
+            }
+
+        } else {
+
+            size_t out_idx = 0;
+
+            for (size_t i = 0; i < n_el; ++i) {
+                if (!mask[i]) { continue; }
+                memcpy(rtn_v[out_idx++].data(), 
+                       src[strt_vl + i].data(), 
+                       sizeof(CharT));
+            }
+
         }
 
     } else if constexpr (IsBool) {
 
         const size_t pos_base = find_col_base(matr_idx[2], 2);
-        get_filtered_col_8<T>(bool_v[pos_base], 
-                              rtn_v,
-                              mask,
-                              strt_vl,
-                              n_el);
+
+        if constexpr (CORES > 1) {
+
+            #pragma omp parallel num_threads(CORES)
+            {
+                const int tid        = omp_get_thread_num();
+                const int nthreads   = omp_get_num_threads();
+           
+                MtStruct cur_struct;
+
+                if constexpr (Numa) {
+                    numa_mt(cur_struct,
+                            n_el, 
+                            tid, 
+                            nthreads, 
+                            numa_nodes);
+                } else {
+                    simple_mt(cur_struct,
+                              n_el, 
+                              tid, 
+                              nthreads);
+                }
+                    
+                const unsigned int start = cur_struct.start;
+                const unsigned int end   = cur_struct.end;
+            
+                size_t out_idx = pre_active_rows[start];
+            
+                get_filtered_col_8<T>(bool_v[pos_base], 
+                                      rtn_v,
+                                      mask,
+                                      strt_vl,
+                                      start,
+                                      end,
+                                      out_idx);
+            }
+
+        } else {
+
+            get_filtered_col_8<T>(bool_v[pos_base], 
+                                  rtn_v,
+                                  mask,
+                                  strt_vl,
+                                  0,    // start
+                                  n_el, // end
+                                  0     // out_idx
+                                  );
+
+        }
        
     } else if constexpr (std::is_same_v<T, IntT>) {
 
         const size_t pos_base = find_col_base(matr_idx[3], 3);
-        if constexpr (sizeof(T) == 1) {
-            get_filtered_col_8<T>(int_v[pos_base], 
-                                  rtn_v,
-                                  mask,
-                                  strt_vl,
-                                  n_el);
-        } else if constexpr (sizeof(T) == 2) {
-            get_filtered_col_16<T>(int_v[pos_base], 
-                                   rtn_v,
-                                   mask,
-                                   strt_vl,
-                                   n_el);
-        } else if constexpr (sizeof(T) == 4) {
-            get_filtered_col_32<T>(int_v[pos_base], 
-                                   rtn_v,
-                                   mask,
-                                   strt_vl,
-                                   n_el);
-        } else if constexpr (sizeof(T) == 8) {
-            get_filtered_col_64<T>(int_v[pos_base], 
-                                   rtn_v,
-                                   mask,
-                                   strt_vl,
-                                   n_el);
-        }
+        if constexpr (CORES > 1) {
+
+            #pragma omp parallel num_threads(CORES)
+            {
+                const int tid        = omp_get_thread_num();
+                const int nthreads   = omp_get_num_threads();
+           
+                MtStruct cur_struct;
+
+                if constexpr (Numa) {
+                    numa_mt(cur_struct,
+                            n_el, 
+                            tid, 
+                            nthreads, 
+                            numa_nodes);
+                } else {
+                    simple_mt(cur_struct,
+                              n_el, 
+                              tid, 
+                              nthreads);
+                }
+                    
+                const unsigned int start = cur_struct.start;
+                const unsigned int end   = cur_struct.end;
+            
+                size_t out_idx = pre_active_rows[start];
+
+                dispatch_get_filtered_col<sizeof(T)>(int_v[pos_base], 
+                                                     rtn_v,
+                                                     mask,
+                                                     strt_vl,
+                                                     start,
+                                                     end,
+                                                     out_idx 
+                                                     );
+
+            }
+
+        } else {
+            dispatch_get_filtered_col<sizeof(T)>(int_v[pos_base], 
+                                                 rtn_v,
+                                                 mask,
+                                                 strt_vl,
+                                                 0, // start
+                                                 n_el,
+                                                 0 // out_idx_val
+                                                 );
+        } 
   
     } else if constexpr (std::is_same_v<T, UIntT>) {
 
         const size_t pos_base = find_col_base(matr_idx[4], 4);
-        if constexpr (sizeof(T) == 1) {
-            get_filtered_col_8<T>(uint_v[pos_base], 
-                                  rtn_v,
-                                  mask,
-                                  strt_vl,
-                                  n_el);
-        } else if constexpr (sizeof(T) == 2) {
-            get_filtered_col_16<T>(uint_v[pos_base], 
-                                   rtn_v,
-                                   mask,
-                                   strt_vl,
-                                   n_el);
-        } else if constexpr (sizeof(T) == 4) {
-            get_filtered_col_32<T>(uint_v[pos_base], 
-                                   rtn_v,
-                                   mask,
-                                   strt_vl,
-                                   n_el);
-        } else if constexpr (sizeof(T) == 8) {
-            get_filtered_col_64<T>(uint_v[pos_base], 
-                                   rtn_v,
-                                   mask,
-                                   strt_vl,
-                                   n_el);
-        }
+        if constexpr (CORES > 1) {
+
+            #pragma omp parallel num_threads(CORES)
+            {
+                const int tid        = omp_get_thread_num();
+                const int nthreads   = omp_get_num_threads();
+           
+                MtStruct cur_struct;
+
+                if constexpr (Numa) {
+                    numa_mt(cur_struct,
+                            n_el, 
+                            tid, 
+                            nthreads, 
+                            numa_nodes);
+                } else {
+                    simple_mt(cur_struct,
+                              n_el, 
+                              tid, 
+                              nthreads);
+                }
+                    
+                const unsigned int start = cur_struct.start;
+                const unsigned int end   = cur_struct.end;
+            
+                size_t out_idx = pre_active_rows[start];
+
+                dispatch_get_filtered_col<sizeof(T)>(uint_v[pos_base], 
+                                                     rtn_v,
+                                                     mask,
+                                                     strt_vl,
+                                                     start,
+                                                     end,
+                                                     out_idx 
+                                                     );
+
+            }
+
+        } else {
+            dispatch_get_filtered_col<sizeof(T)>(uint_v[pos_base], 
+                                                 rtn_v,
+                                                 mask,
+                                                 strt_vl,
+                                                 0, // start
+                                                 n_el,
+                                                 0 // out_idx_val
+                                                 );
+        } 
 
     } else if constexpr (std::is_same_v<T, FloatT>) {
 
         const size_t pos_base = find_col_base(matr_idx[5], 5);
-        if constexpr (sizeof(T) == 4) {
-            get_filtered_col_32<T>(dbl_v[pos_base], 
-                                   rtn_v,
-                                   mask,
-                                   strt_vl,
-                                   n_el);
-        } else if constexpr (sizeof(T) == 8) {
-            get_filtered_col_64<T>(dbl_v[pos_base], 
-                                   rtn_v,
-                                   mask,
-                                   strt_vl,
-                                   n_el);
-        }
+        if constexpr (CORES > 1) {
+
+            #pragma omp parallel num_threads(CORES)
+            {
+                const int tid        = omp_get_thread_num();
+                const int nthreads   = omp_get_num_threads();
+           
+                MtStruct cur_struct;
+
+                if constexpr (Numa) {
+                    numa_mt(cur_struct,
+                            n_el, 
+                            tid, 
+                            nthreads, 
+                            numa_nodes);
+                } else {
+                    simple_mt(cur_struct,
+                              n_el, 
+                              tid, 
+                              nthreads);
+                }
+                    
+                const unsigned int start = cur_struct.start;
+                const unsigned int end   = cur_struct.end;
+            
+                size_t out_idx = pre_active_rows[start];
+
+                dispatch_get_filtered_col<sizeof(T)>(dbl_v[pos_base], 
+                                                     rtn_v,
+                                                     mask,
+                                                     strt_vl,
+                                                     start,
+                                                     end,
+                                                     out_idx 
+                                                     );
+
+            }
+
+        } else {
+            dispatch_get_filtered_col<sizeof(T)>(dbl_v[pos_base], 
+                                                 rtn_v,
+                                                 mask,
+                                                 strt_vl,
+                                                 0, // start
+                                                 n_el,
+                                                 0 // out_idx_val
+                                                 );
+        } 
   
     } else {
       std::cerr << "Error in (get_col), unsupported type\n";

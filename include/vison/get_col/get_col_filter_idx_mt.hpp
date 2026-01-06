@@ -44,6 +44,9 @@ void get_col_filter_idx_mt(unsigned int x,
     auto extract_idx_masked = [&rtn_v, &mask](const auto*__restrict src) {
         if constexpr (CORES > 1) {
 
+            if (CORES > n_el)
+                throw std::runtime_error("Too much cores for so little nrows\n");
+
             int numa_nodes = 1;
             if (numa_available() >= 0) 
                 numa_nodes = numa_max_node() + 1;
