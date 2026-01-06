@@ -43,6 +43,9 @@ inline void get_filtered_col_8(
 
     }
     #elif defined(__AVX2__)
+
+    //constexpr auto LUT16 = make_LUT16(); // already defined inside avx_lut16.inl
+    
     for (; i + 32 <= end; i += 32)
     {
         __m256i mbytes = _mm256_loadu_si256(

@@ -52,11 +52,11 @@ inline void get_filtered_col_16(
             maskbits = _mm256_movemask_epi8(mbytes);
         }
     
-        uint8_t m0 = static_cast<uint8_t>( maskbits        & 0xFFu);
-        uint8_t m1 = static_cast<uint8_t>((maskbits >> 8)  & 0xFFu);
-        uint8_t m2 = static_cast<uint8_t>((maskbits >> 16) & 0xFFu);
-        uint8_t m3 = static_cast<uint8_t>((maskbits >> 24) & 0xFFu);
-    
+        uint8_t m0 =  maskbits        & 0xFF;
+        uint8_t m1 = (maskbits >>  8) & 0xFF;
+        uint8_t m2 = (maskbits >> 16) & 0xFF;
+        uint8_t m3 = (maskbits >> 24) & 0xFF;
+        
         out_idx += compress8_lut(&col_vec[strt_vl + i +  0], m0, &rtn_v[out_idx]);
         out_idx += compress8_lut(&col_vec[strt_vl + i +  8], m1, &rtn_v[out_idx]);
         out_idx += compress8_lut(&col_vec[strt_vl + i + 16], m2, &rtn_v[out_idx]);
