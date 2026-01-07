@@ -9,10 +9,13 @@ void get_col_range(const unsigned int x,
                    const unsigned int end)
 {
 
-    get_col_range_mt<1, IsBool, MapCol>(x,
-                                        rtn_v,
-                                        strt,
-                                        end);
+    get_col_range_mt<1, // CORES
+                     false, // NUMA locality
+                     IsBool, 
+                     MapCol>(x,
+                             rtn_v,
+                             strt,
+                             end);
 
 }
 

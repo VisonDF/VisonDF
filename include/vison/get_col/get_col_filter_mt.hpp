@@ -1,10 +1,11 @@
 #pragma once
 
-template <bool NUMA = false,
-          unsigned int CORES = 4,
+template <unsigned int CORES = 4,
+          bool NUMA = false,
           bool MemClean = false, 
           bool IsBool = false,
           bool MapCol = false,
+          bool IsDense = false,
           typename T
          >
 void get_col_filter_mt(unsigned int x,
@@ -16,7 +17,8 @@ void get_col_filter_mt(unsigned int x,
                             NUMA,
                             MemClean, 
                             IsBool,
-                            MapCol>(x,
+                            MapCol,
+                            IsDense>(x,
                                     rtn_v,
                                     mask,
                                     0);

@@ -10,7 +10,7 @@ template <unsigned int CORES = 4,
           bool NUMA = false,
           bool IsBool = false,
           bool MapCol = false,
-          bool IsDense = false,
+          bool IsDense = false, // assumed sorted increasingly
           typename T>
 void get_col_filter_idx_mt(unsigned int x,
                            std::vector<T> &rtn_v,
