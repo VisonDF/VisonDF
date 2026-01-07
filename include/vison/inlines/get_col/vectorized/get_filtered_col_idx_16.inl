@@ -1,15 +1,18 @@
 #pragma once
 
 template <typename T>
-inline void get_filtered_col_idx_16(const T* __restrict col_vec,
+inline void get_filtered_col_idx_16(const std::vector<T>& col_vec,
                                     std::vector<T>& rtn_v,
-                                    const std::vector<unsigned int>& mask)
+                                    const std::vector<unsigned int>& mask,
+                                    const size_t start,
+                                    const size_t end
+                                    )
 {
 
-    size_t i = 0;
+    size_t i = start;
 
     #if defined (__AVX512F__)
-    for (; i + 16 <= n_el; i += 16)
+    for (; i + 16 <= end; i += 16)
     {
         // Load 16×32-bit indices
         __m512i idxv = _mm512_loadu_si512((const __m512i*)&mask[i]);
@@ -31,7 +34,7 @@ inline void get_filtered_col_idx_16(const T* __restrict col_vec,
     }
 
     #elif defined(__AVX2__)
-    for (; i + 8 <= n_el; i += 8)
+    for (; i + 8 <= end; i += 8)
     {
         // Load 8×32-bit indices
         __m256i idxv = _mm256_loadu_si256((const __m256i*)&mask[i]);
@@ -54,7 +57,7 @@ inline void get_filtered_col_idx_16(const T* __restrict col_vec,
     #endif
 
     // scalar remainder
-    for (; i < n_el; ++i)
+    for (; i < end; ++i)
         rtn_v[i] = col_vec[mask[i]];
 }
 

@@ -1,15 +1,17 @@
 #pragma once
 
 template <typename T>
-inline void get_filtered_col_idx_32(std::vector<T>& src,
-                                 std::vector<T>& rtn_v,
-                                 const std::vector<unsigned int>& mask)
+inline void get_filtered_col_idx_32(const std::vector<T>& src,
+                                    std::vector<T>& rtn_v,
+                                    const std::vector<unsigned int>& mask,
+                                    const size_t start,
+                                    const size_t end)
 {
 
-    size_t i = 0;
+    size_t i = start;
 
     #if defined (__AVX512F__)
-    for (; i + 16 <= n_el; i += 16) {
+    for (; i + 16 <= end; i += 16) {
     
         __m512i idx = _mm512_loadu_si512((const void*)&mask[i]);
     
@@ -23,7 +25,7 @@ inline void get_filtered_col_idx_32(std::vector<T>& src,
         }
     }
     #elif defined(__AVX2__)
-    for (; i + 8 <= n_el; i += 8) {
+    for (; i + 8 <= end; i += 8) {
     
         __m256i idx = _mm256_loadu_si256((const void*)&mask[i]);
     
@@ -38,7 +40,7 @@ inline void get_filtered_col_idx_32(std::vector<T>& src,
     }
     #endif
 
-    for (; i < n_el; i += 1)
+    for (; i < end; i += 1)
         rtn_v[i] = src[mask[i]];
 
 }

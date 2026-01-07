@@ -13,7 +13,7 @@ inline void dispatch_get_filtered_col(
                                      )
 {
 
-    if constexpr (size == 1) {
+    if constexpr (Size == 1) {
        
         get_filtered_col_8(
                            col_vec, 
@@ -25,7 +25,7 @@ inline void dispatch_get_filtered_col(
                            out_idx_vl
                            );
 
-    } else if constexpr (size == 2) {
+    } else if constexpr (Size == 2) {
 
         get_filtered_col_16(
                             col_vec, 
@@ -37,7 +37,7 @@ inline void dispatch_get_filtered_col(
                             out_idx_vl
                             );
 
-    } else if constexpr (size == 4) {
+    } else if constexpr (Size == 4) {
 
         get_filtered_col_32(
                             col_vec, 
@@ -49,7 +49,7 @@ inline void dispatch_get_filtered_col(
                             out_idx_vl
                             );
 
-    } else if constexpr (size == 8) {
+    } else if constexpr (Size == 8) {
 
         get_filtered_col_64(
                             col_vec, 

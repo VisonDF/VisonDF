@@ -1,7 +1,7 @@
 #pragma once
 
 template <typename T>
-inline void get_filtered_col_idx_8(auto& col_vec,
+inline void get_filtered_col_idx_8(const std::vector<T>& col_vec,
                                    std::vector<T>& rtn_v,
                                    const std::vector<unsigned int>& mask,
                                    const size_t strt,
