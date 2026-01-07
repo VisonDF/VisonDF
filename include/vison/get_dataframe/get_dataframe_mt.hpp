@@ -12,24 +12,101 @@ void get_dataframe_mt(const std::vector<size_t>& cols,
     col_alrd_materialized  = cur_obj.get_col_alrd_materialized();
     const unsigned int local_nrow = nrow;
 
-    auto str_copy_col = [](std::string* dst, const std::string* src) {
-        #pragma omp parallel for if(CORES > 1) num_threads(CORES)
-        for (size_t i = 0; i < local_nrow; ++i)
-            dst[i] = src[i];
+    auto str_copy_col = [local_nrow](std::string* dst, const std::string* src) {
+
+        if constexpr (CORES > 1) {
+
+            if (CORES > local_nrow)
+                throw std::runtime_error("Too much cores for so little nrows\n");
+
+            int numa_nodes = 1;
+            if (numa_available() >= 0) 
+                numa_nodes = numa_max_node() + 1;
+
+            #pragma omp parallel num_threads(CORES)
+            {
+
+                const int tid        = omp_get_thread_num();
+                const int nthreads   = omp_get_num_threads();
+           
+                MtStruct cur_struct;
+
+                if constexpr (NUMA) {
+                    numa_mt(cur_struct,
+                            local_nrow, 
+                            tid, 
+                            nthreads, 
+                            numa_nodes);
+                } else {
+                    simple_mt(cur_struct,
+                              local_nrow, 
+                              tid, 
+                              nthreads);
+                }
+                    
+                const unsigned int start = cur_struct.start;
+                const unsigned int len   = cur_struct.len;
+
+                for (size_t i = start; i < end; ++i)
+                    dst[i] = src[i];
+
+            }
+
+        } else {
+
+            for (size_t i = 0; i < local_nrow; ++i)
+                dst[i] = src[i];
+
+        }
     }
 
     auto copy_col = []<typename T>(T* dst, const T* src) {
-        #pragma omp parallel for if(CORES > 1) num_threads(CORES)
-        for (int t = 0; t < CORES; ++t)
-        {
-            size_t chunk = local_nrow / CORES;
-            size_t start = t * chunk;
-        
-            size_t end = (t == CORES - 1) ? local_nrow : start + chunk;
-        
-            size_t bytes = (end - start) * sizeof(T);
-        
-            memcpy(dst + start, src + start, bytes);
+
+        if constexpr (CORES > 1) {
+
+            if (CORES > local_nrow)
+                throw std::runtime_error("Too much cores for so little nrows\n");
+
+            int numa_nodes = 1;
+            if (numa_available() >= 0) 
+                numa_nodes = numa_max_node() + 1;
+
+            #pragma omp parallel num_threads(CORES)
+            {
+
+                const int tid        = omp_get_thread_num();
+                const int nthreads   = omp_get_num_threads();
+           
+                MtStruct cur_struct;
+
+                if constexpr (NUMA) {
+                    numa_mt(cur_struct,
+                            local_nrow, 
+                            tid, 
+                            nthreads, 
+                            numa_nodes);
+                } else {
+                    simple_mt(cur_struct,
+                              local_nrow, 
+                              tid, 
+                              nthreads);
+                }
+                    
+                const unsigned int start = cur_struct.start;
+                const unsigned int len   = cur_struct.len;
+
+                memcpy(dst + start, 
+                       src + start, 
+                       len * sizeof(T));
+
+            }
+
+        } else {
+
+            memcpy(dst, 
+                   src, 
+                   local_nrow * sizeof(T));
+
         }
     }
 
