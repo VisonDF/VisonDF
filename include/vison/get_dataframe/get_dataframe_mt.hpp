@@ -118,10 +118,6 @@ void get_dataframe_mt(const std::vector<size_t>& cols,
         sync_map_col = cur_obj.get_sync_map_col();
         ncol         = cur_obj.get_ncol();
 
-        if (in_view)
-            col_ard_materialized.reserve(ncol);
-
-
         const auto& str_v2  = cur_obj.get_str_vec();
         for (auto& el : str_v2) {
             str_v.emplace_back();
