@@ -253,8 +253,9 @@ void get_dataframe_mt(const std::vector<size_t>& cols,
     const auto& uint_vec2 = cur_obj.get_uint_vec();
     const auto& dbl_vec2  = cur_obj.get_dbl_vec();
 
-    auto process_container = [local_nrow]<typename T>(const std::vector<T>& matr){
-        for (const auto& el : matr) {
+    auto process_container = [local_nrow]<typename T>(const std::vector<std::vector<T>>& matr2,
+                                                      std::vector<std::vector<T>>& matr){
+        for (const auto& el : matr2) {
             matr.emplace_back();
             matr.back().resize(local_nrow);
             auto* dst       = matr_v.back().data();
@@ -267,8 +268,9 @@ void get_dataframe_mt(const std::vector<size_t>& cols,
         }
     };
 
-    auto process_container_view = [local_nrow]<typename T>(const std::vector<T>& matr){
-        for (const auto& el : matr) {
+    auto process_container_view = [local_nrow]<typename T>(const std::vector<std::vector<T>>& matr2,
+                                                           std::vector<std::vector<T>>& matr) {
+        for (const auto& el : matr2) {
             matr.emplace_back();
             matr.back().resize(local_nrow);
             auto* dst       = matr_v.back().data();
@@ -357,21 +359,21 @@ void get_dataframe_mt(const std::vector<size_t>& cols,
 
         if (!in_view) {
 
-            process_container(str_v2);
-            process_container(chr_v2);
-            process_container(bool_v2);
-            process_container(int_v2);
-            process_container(uint_v2);
-            process_container(dbl_v2);
+            process_container(str_v2,  str_v);
+            process_container(chr_v2,  chr_v);
+            process_container(bool_v2, bool_v);
+            process_container(int_v2,  int_v);
+            process_container(uint_v2, uint_v);
+            process_container(dbl_v2,  dbl_v);
 
         } else {
 
-            process_container_view(str_v2);
-            process_container_view(chr_v2);
-            process_container_view(bool_v2);
-            process_container_view(int_v2);
-            process_container_view(uint_v2);
-            process_container_view(dbl_v2);
+            process_container_view(str_v2,  str_v);
+            process_container_view(chr_v2,  chr_v);
+            process_container_view(bool_v2, bool_v);
+            process_container_view(int_v2,  int_v);
+            process_container_view(uint_v2, uint_v);
+            process_container_view(dbl_v2,  dbl_v);
 
         }
 

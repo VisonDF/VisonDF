@@ -11,7 +11,9 @@ template <unsigned int CORES = 4,
 void get_col_filter_range(unsigned int x,
                           std::vector<T> &rtn_v,
                           const std::vector<uint8_t> &mask,
-                          const unsigned int strt_vl)
+                          const unsigned int strt_vl,
+                          std::vector<RunsIdxMt>& runs = {},
+                          OffsetBoolMask& offset_start = {})
 {
 
     const unsigned int n_el = mask.size();
@@ -40,7 +42,10 @@ void get_col_filter_range(unsigned int x,
         return pos;
     };
 
-    auto extract_masked = [&rtn_v, &mask](const auto*__restrict src) {
+    auto extract_masked = [&rtn_v, 
+                           &mask, 
+                           &offset_start,
+                           n_el](const auto*__restrict src) {
 
         if constexpr (CORES > 1) {
 
@@ -48,12 +53,17 @@ void get_col_filter_range(unsigned int x,
                 throw std::runtime_error("Too much cores for so little nrows\n");
 
             size_t active_count = 0;
-            pre_active_rows.resize(n_el, 0);
-            for (size_t i = 0; i < n_el; ++i) {
-                active_count += mask[i] != 0;
-                pre_active_rows[i] = active_count;
+            if (offset_start.empty()) {
+                offset_start.vec.reserve(n_el / 3);
+                for (size_t i = 0; i < n_el; ++i) {
+                    active_count += mask[i] != 0;
+                    offset_start.vec.push_back(active_count);
+                }
+                rtn_v.resize(active_count);
+                offset_start.x = active_count;
+            } else {
+                rtn_v.resize(offset_start.x);
             }
-            rtn_v.resize(active_count);
 
             int numa_nodes = 1;
             if (numa_available() >= 0) 
@@ -83,7 +93,7 @@ void get_col_filter_range(unsigned int x,
                 const unsigned int start = cur_struct.start;
                 const unsigned int end   = cur_struct.end;
             
-                size_t out_idx = pre_active_rows[start];
+                size_t out_idx = offset_start[start];
 
                 for (size_t i = start; i < end; ++i) {
                     if (mask[i])
@@ -103,20 +113,47 @@ void get_col_filter_range(unsigned int x,
 
     };
 
-    auto extract_masked_dense = [&rtn_v, &mask]<typename TB>(const TB* __restrict src) {
+    auto extract_masked_dense = [&rtn_v, 
+                                 &mask, 
+                                 &offset_start,
+                                 &runs,
+                                 n_el]<typename TB>(const TB* __restrict src) {
+
+        if (runs.empty()) {
+            runs.reserve(mask.size() / 3); 
+            size_t out_idx = 0;
+            for (size_t i = 0; i < mask.size();) {
+                size_t start = out_idx;
+                size_t src_start = i;
+            
+                while (i + 1 < mask.size() && mask[i]) {
+                    ++i;
+                    ++out_idx;
+                }
+            
+                runs.push_back({start, strt_vl + src_start, i - start + 1});
+                ++i;
+            }
+            rtn_v.resize(out_idx);
+        }
+
+        if (!runs.empty()) {
+            if  (offset_start.empty()) {
+                size_t active_count = 0;
+                for (size_t i = 0; i < n_el; ++i) {
+                    active_count += mask[i] != 0;
+                }
+                rtn_v.resize(active_count);
+                offset_start.x = active_count;
+            } else {
+                rtn_v.resize(offset_start.x);
+            }
+        }
 
         if constexpr (CORES > 1) {
 
             if (CORES > n_el)
                 throw std::runtime_error("Too much cores for so little nrows\n");
-
-            size_t active_count = 0;
-            pre_active_rows.resize(n_el, 0);
-            for (size_t i = 0; i < n_el; ++i) {
-                active_count += mask[i] != 0;
-                pre_active_rows[i] = active_count;
-            }
-            rtn_v.resize(active_count);
 
             int numa_nodes = 1;
             if (numa_available() >= 0) 
@@ -132,13 +169,13 @@ void get_col_filter_range(unsigned int x,
 
                 if constexpr (NUMA) {
                     numa_mt(cur_struct,
-                            n_el, 
+                            runs.size(), 
                             tid, 
                             nthreads, 
                             numa_nodes);
                 } else {
                     simple_mt(cur_struct,
-                              n_el, 
+                              runs.size(), 
                               tid, 
                               nthreads);
                 }
@@ -146,49 +183,22 @@ void get_col_filter_range(unsigned int x,
                 const unsigned int start = cur_struct.start;
                 const unsigned int end   = cur_struct.end;
             
-                size_t i       = start;
-                size_t out_idx = pre_active_rows[start];
-
-                while (i < end) {
-                    while (i < end && mask[i] == 0) ++i;
-                
-                    const size_t cur_start = i;
-                
-                    while (i < end && mask[i] != 0) ++i;
-                
-                    const size_t len = i - cur_start;
-                
-                    memcpy(rtn_v.data() + out_idx,
-                           src + cur_start,
-                           len * sizeof(TB));
-                    out_idx += len;
+                for (size_t r = start; r < end; ++r) {
+                    const auto& run = runs[r]; 
+                    std::memcpy(dst.data() + run.mask_pos,
+                                src.data() + run.src_start,
+                                run.len * sizeof(T));
                 }
 
             }
 
         } else {
 
-            size_t active_count = 0;
-            for (size_t i = 0; i < n_el; ++i) 
-                active_count += mask[i] != 0;
-            rtn_v.resize(active_count);
-
-            size_t i       = 0;
-            size_t out_idx = 0;
-            
-            while (i < n_el) {
-                while (i < n_el && mask[i] == 0) ++i;
-            
-                const size_t cur_start = i;
-            
-                while (i < n_el && mask[i] != 0) ++i;
-            
-                const size_t len = i - cur_start;
-            
-                memcpy(rtn_v.data() + out_idx,
-                       src + cur_start,
-                       len * sizeof(TB));
-                out_idx += len;
+            for (size_t r = 0; r < runs.size(); ++r) {
+                const auto& run = runs[r]; 
+                std::memcpy(dst.data() + run.mask_pos,
+                            src.data() + run.src_start,
+                            run.len * sizeof(T));
             }
 
         }

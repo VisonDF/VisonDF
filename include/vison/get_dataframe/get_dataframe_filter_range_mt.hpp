@@ -2,16 +2,18 @@
 
 template <unsigned int CORES = 4,
           bool NUMA = false,
-          bool IsDense = false // assumed sorted
-        >
-void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols, 
-                                 Dataframe& cur_obj,
-                                 const std::vector<unsigned int>& mask,
-                                 std::vector<RunsIdxMt>& runs = {}
-                                 )
+          bool IsDense = false
+    >
+void get_dataframe_filter_range_mt(const std::vector<size_t>& cols, 
+                                   Dataframe& cur_obj,
+                                   const std::vector<uint8_t>& mask,
+                                   const size_t strt_vl,
+                                   std::vector<RunsIdxMt>& runs = {},
+                                   OffsetBoolMask& offset_start = {})
 {
 
-    const unsigned int local_nrow = mask.size();
+    const unsigned int n_el       = mask.size();
+    const unsigned int local_nrow = active_rows;
     nrow = local_nrow;
 
     in_view = cur_obj.get_in_view();
@@ -25,33 +27,50 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
     }
 
     auto copy_col_dense = [&mask, 
-                           local_nrow]<typename T>(
-                                                   const std::vector<T>& src_vec2,
-                                                   std::vector<T>& dst_vec
-                                                  )
+                           &runs,
+                           &offset_start]<typename T>(
+                                                       const std::vector<T>& src_vec2,
+                                                       std::vector<T>& dst_vec
+                                                      )
     {
-        const std::string* __restrict src = src_vec2.data();
-        std::string*       __restrict dst = dst_vec.data();
 
         if (runs.empty()) {
             runs.reserve(mask.size() / 3); 
+            size_t out_idx = 0;
             for (size_t i = 0; i < mask.size();) {
-                size_t start = i;
-                size_t src_start = mask[i];
+                size_t start = out_idx;
+                size_t src_start = i;
             
-                while (i + 1 < mask.size() &&
-                       mask[i + 1] == mask[i] + 1) {
+                while (i + 1 < mask.size() && mask[i]) {
                     ++i;
+                    ++out_idx;
                 }
             
-                runs.push_back({start, src_start, i - start + 1});
+                runs.push_back({start, strt_vl + src_start, i - start + 1});
                 ++i;
+            }
+            dst_vec.resize(out_idx);
+        }
+
+        if (!runs.empty()) {
+            if (offset_start.empty()) {
+                size_t active_count = 0;
+                for (size_t i = 0; i < n_el; ++i) {
+                    active_count += mask[i] != 0;
+                }
+                dst_vec.resize(active_count);
+                offset_start.x = active_count;
+            } else if (!runs.empty()) {
+                dst_vec.resize(offset_start.x);
             }
         }
 
+        const std::string* __restrict src = src_vec2.data();
+        std::string*       __restrict dst = dst_vec.data();
+
         if constexpr (CORES > 1) {
 
-            if (CORES > local_nrow)
+            if (CORES > runs.size())
                 throw std::runtime_error("Too much cores for so little nrows\n");
 
             int numa_nodes = 1;
@@ -93,7 +112,7 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
 
         } else {
 
-            for (size_t r = 0; r < local_nrow; ++r) {
+            for (size_t r = 0; r < runs.size(); ++r) {
                 const auto& run = runs[r]; 
                 std::memcpy(dst.data() + run.mask_pos,
                             src.data() + run.src_start,
@@ -106,33 +125,56 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
     auto copy_col_view_dense = [&mask, 
                                 &row_view_idx2, 
                                 &row_view_map2,
-                                local_nrow]<typename T>(
-                                                         const auto& src_vec2,
-                                                         auto& dst_vec
-                                                       )
+                                &runs,
+                                &offset_start]<typename T>(
+                                                             const auto& src_vec2,
+                                                             auto& dst_vec
+                                                           )
     {
-        const std::string* __restrict src = src_vec2.data();
-        std::string*       __restrict dst = dst_vec.data();
 
         if (runs.empty()) {
             runs.reserve(mask.size() / 3); 
-            for (size_t i = 0; i < local_nrow;) {
-                size_t start = i;
-                size_t src_start = mask[i];
+            size_t out_idx = 0;
+            for (size_t i = 0; i < mask.size();) {
+                size_t start = out_idx;
+                size_t src_start = i;
             
-                while (i + 1 < mask.size() &&
-                       mask[i + 1] == mask[i] + 1) {
+                while (i + 1 < mask.size() && mask[i]) {
                     ++i;
+                    ++out_idx;
                 }
             
-                runs.push_back({start, src_start, i - start + 1});
+                runs.push_back({start, strt_vl + src_start, i - start + 1});
                 ++i;
+            }
+            dst_vec.resize(out_idx);
+            row_view_idx.resize(out_idx);
+            row_view_map.reserve(out_idx);
+        }
+
+        if (!runs.empty()) {
+            if (offset_start.empty()) {
+                size_t active_count = 0;
+                for (size_t i = 0; i < n_el; ++i) {
+                    active_count += mask[i] != 0;
+                }
+                dst_vec.resize(active_count);
+                row_view_idx.resize(active_count);
+                row_view_map.reserve(active_count);
+                offset_start.x = active_count;
+            } else if (!runs.empty()) {
+                row_view_idx.resize(offset_start.x);
+                row_view_map.reserve(offset_start.x);
+                dst_vec.resize(offset_start.x);
             }
         }
 
+        const std::string* __restrict src = src_vec2.data();
+        std::string*       __restrict dst = dst_vec.data();
+
         if constexpr (CORES > 1) {
 
-            if (CORES > local_nrow)
+            if (CORES > runs.size())
                 throw std::runtime_error("Too much cores for so little nrows\n");
 
             int numa_nodes = 1;
@@ -149,13 +191,13 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
 
                 if constexpr (NUMA) {
                     numa_mt(cur_struct,
-                            local_nrow, 
+                            runs.size(), 
                             tid, 
                             nthreads, 
                             numa_nodes);
                 } else {
                     simple_mt(cur_struct,
-                              local_nrow, 
+                              runs.size(), 
                               tid, 
                               nthreads);
                 }
@@ -181,7 +223,7 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
 
         } else {
 
-            for (size_t r = 0; r < local_nrow; ++r) {
+            for (size_t r = 0; r < runs.size(); ++r) {
                 const auto& run = runs[r]; 
                 std::memcpy(dst.data() + run.mask_pos,
                             src.data() + run.src_start,
@@ -200,18 +242,31 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
     };
 
     auto copy_col = [&mask, 
-                    local_nrow](
-                                const auto& src_vec2,
-                                auto& dst_vec
-                               )
+                     &offset_start](
+                                     const auto& src_vec2,
+                                     auto& dst_vec
+                                    )
     {
         const std::string* __restrict src = src_vec2.data();
         std::string*       __restrict dst = dst_vec.data();
    
         if constexpr (CORES > 1) {
 
-            if (CORES > local_nrow)
+            if (CORES > mask.size())
                 throw std::runtime_error("Too much cores for so little nrows\n");
+
+            size_t active_count = 0;
+            if (offset_start.empty()) {
+                offset_start.vec.reserve(n_el / 3);
+                for (size_t i = 0; i < n_el; ++i) {
+                    active_count += mask[i] != 0;
+                    offset_start.vec.push_back(active_count);
+                }
+                dst_vec.resize(active_count);
+                offset_start.x = active_count;
+            } else {
+                dst_vec.resize(offset_start.x);
+            }
 
             int numa_nodes = 1;
             if (numa_available() >= 0) 
@@ -241,9 +296,11 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
                 const unsigned int start = cur_struct.start;
                 const unsigned int end   = cur_struct.end;
 
+                size_t out_idx = offset_start[start];
+
                 for (size_t j = start; j < end; ++j) {
-                    const size_t act = mask[j];
-                    dst[j]     = src[act];
+                    if (!mask[j]) continue;
+                    dst[out_idx++]     = src[j];
                 }
 
             }
@@ -251,8 +308,8 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
         } else {
 
             for (size_t j = 0; j < local_nrow; ++j) {
-                const size_t act = mask[j];
-                dst[j]     = src[act];
+                if (!mask[j]) continue;
+                dst.push_back(src[act]);
             }
 
         }
@@ -261,6 +318,7 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
     auto copy_col_view = [&mask, 
                           &row_view_idx2, 
                           &row_view_map2,
+                          &offset_start,
                           local_nrow](
                                        const auto& src_vec2,
                                        auto& dst_vec
@@ -274,6 +332,23 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
             if (CORES > local_nrow)
                 throw std::runtime_error("Too much cores for so little nrows\n");
 
+            size_t active_count = 0;
+            if (offset_start.empty()) {
+                offset_start.vec.reserve(n_el / 3);
+                for (size_t i = 0; i < n_el; ++i) {
+                    active_count += mask[i] != 0;
+                    offset_start.vec.push_back(active_count);
+                }
+                dst_vec.resize(active_count);
+                row_view_idx.resize(offset_start.x);
+                row_view_map.reserve(offset_start.x);
+                offset_start.x = active_count;
+            } else {
+                dst_vec.resize(offset_start.x);
+                row_view_idx.resize(offset_start.x);
+                row_view_map.reserve(offset_start.x);
+            }
+
             int numa_nodes = 1;
             if (numa_available() >= 0) 
                 numa_nodes = numa_max_node() + 1;
@@ -302,11 +377,13 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
                 const unsigned int start = cur_struct.start;
                 const unsigned int end   = cur_struct.end;
 
+                size_t out_idx = offset_start[start];
+
                 for (size_t j = start; j < end; ++j) {
-                    const size_t act = mask[j];
-                    dst[j]     = src[act];
-                    row_view_idx[j] = row_view_idx2[act];
-                    row_view_map[row_view_idx[j]] = j;
+                    if (!mask[j]) continue;
+                    dst[out_idx]          = src[j];
+                    row_view_idx[out_idx] = row_view_idx2[j];
+                    row_view_map[row_view_idx[out_idx++]] = j;
                 }
 
             }
@@ -314,10 +391,10 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
         } else {
 
             for (size_t j = 0; j < local_nrow; ++j) {
-                const size_t act = mask[j];
-                dst[j]     = src[act];
-                row_view_idx[j] = row_view_idx2[act];
-                row_view_map[row_view_idx[j]] = j;
+                if (!mask[j]) continue;
+                dst.push_back(src[j]);
+                row_view_idx.push_back(row_view_idx2[j]);
+                row_view_map[row_view_idx.back()] = j;
             }
 
         }
@@ -334,7 +411,6 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
                                                       std::vector<std::vector<T>>& matr){
         for (const auto& el : matr2) {
             matr.emplace_back();
-            matr.back().resize(local_nrow);
             auto* dst       = matr_v.back().data();
             const auto* src = el.data();
             if constexpr (!IsDense || std::is_same_v<T, std::string>) {
@@ -346,10 +422,9 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
     };
 
     auto process_container_view = [local_nrow]<typename T>(const std::vector<std::vector<T>>& matr2,
-                                                           std::vector<std::vector<T>>& matr) {
+                                                           std::vector<std::vector<T>>& matr){
         for (const auto& el : matr2) {
             matr.emplace_back();
-            matr.back().resize(local_nrow);
             auto* dst       = matr_v.back().data();
             const auto* src = el.data();
             if constexpr (!IsDense || std::is_same_v<T, std::string>) {
@@ -372,42 +447,36 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
 
                               matr_idx_map[0] = i2;
                               str_v.emplace_back();
-                              str_v.back().resize(local_nrow);
                               f2(str_vec2[i],  
                                  str_v.back()); 
                               break;
                             }
                   case 'c': {
                               chr_v.emplace_back();
-                              chr_v.back().resize(local_nrow);
                               f1(chr_vec2[i],  
                                  chr_v.back()); 
                               break;
                             }
                   case 'b': {
                               bool_v.emplace_back();
-                              bool_v.back().resize(local_nrow);
                               f1(bool_vec2[i],  
                                  bool_v.back()); 
                               break;
                             }
                   case 'i': {
                               int_v.emplace_back();
-                              int_v.back().resize(local_nrow);
                               f1(int_vec2[i],  
                                  int_v.back()); 
                               break;
                             }
                  case 'u': {
                               uint_v.emplace_back();
-                              uint_v.back().resize(local_nrow);
                               f1(uint_vec2[i],  
                                  uint_v.back()); 
                               break;
                             }
                   case 'd': {
                               dbl_v.emplace_back();
-                              dbl_v.back().resize(local_nrow);
                               f1(dbl_vec2[i],  
                                  dbl_v.back()); 
                               break;

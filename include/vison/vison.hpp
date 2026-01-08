@@ -87,7 +87,9 @@ namespace vison {
     #include "types/element_type.inl"
     #include "types/ReservingVec.inl"
     #include "types/is_reserving_vec.inl"
-    #include "types/mt_struct.mt"
+    #include "types/mt_struct.inl"
+    #include "types/OffsetBoolMask.inl"
+    #include "types/RunsIdxMt.inl"
 
     #include "inlines/simple_mt.inl"
     #include "inlines/numa_mt.inl"
