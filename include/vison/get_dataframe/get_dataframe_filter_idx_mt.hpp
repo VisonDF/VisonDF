@@ -15,9 +15,9 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
     nrow = local_nrow;
 
     in_view = cur_obj.get_in_view();
-    ankerl::unordered_dense::set<unsigned int>& pre_col_alrd_materialized  = cur_obj.get_col_alrd_materialized();
-    row_view_idx2           = cur_obj.get_row_view_idx();
-    row_view_map2           = cur_obj.get_row_view_map();
+    ankerl::unordered_dense::set<unsigned int>& col_alrd_materialized2  = cur_obj.get_col_alrd_materialized();
+    const auto row_view_idx2           = cur_obj.get_row_view_idx();
+    const auto row_view_map2           = cur_obj.get_row_view_map();
 
     if (in_view) {
         row_view_idx.resize(local_nrow);
@@ -103,13 +103,13 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
         }
     };
 
-    auto copy_col_view_mt = [&mask, 
-                             &row_view_idx2, 
-                             &row_view_map2,
-                             local_nrow]<typename T>(
-                                                      const auto& src_vec2,
-                                                      auto& dst_vec
-                                                    )
+    auto copy_col_view_dense = [&mask, 
+                                &row_view_idx2, 
+                                &row_view_map2,
+                                local_nrow]<typename T>(
+                                                         const auto& src_vec2,
+                                                         auto& dst_vec
+                                                       )
     {
         const std::string* __restrict src = src_vec2.data();
         std::string*       __restrict dst = dst_vec.data();
@@ -336,7 +336,11 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
             matr.back().resize(local_nrow);
             auto* dst       = matr_v.back().data();
             const auto* src = el.data();
-            copy_col(dst, src);
+            if constexpr (!IsDense) {
+                copy_col(dst, src);
+            } else {
+                copy_col_dense(dst, src);
+            }
         }
     };
 
@@ -346,12 +350,17 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
             matr.back().resize(local_nrow);
             auto* dst       = matr_v.back().data();
             const auto* src = el.data();
-            copy_col_view(dst, src);
+            if constexpr (!IsDense) {
+                copy_col_view(dst, src);
+            } else {
+                copy_col_view_dense(dst, src);
+            }
         }
     };
 
     auto cols_proceed = [local_nrow, 
-                         &pre_col_alrd_materialized](auto&& f) 
+                         &col_alrd_materialized2,
+                         &cols](auto&& f) 
     {
         size_t i2 = 0;
         for (int i : cols) {
@@ -403,7 +412,7 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
                             }
             }
 
-            if (pre_col_alrd_materialized.contains(i))
+            if (col_alrd_materialized2.contains(i))
                 col_alrd_materialized.insert(i);
                 
             name_v[i2]    = name_v1[i];
@@ -417,52 +426,28 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
 
     if (cols.empty()) {
 
-        col_ard_materialized = pre_col_alrd_materialized;
+        col_ard_materialized = col_alrd_materialized2;
         matr_idx     = cur_obj.get_matr_idx();
         matr_idx_map = cur_obj.get_matr_idx_map();
         sync_map_col = cur_obj.get_sync_map_col();
         ncol         = cur_obj.get_ncol();
 
-        const auto& str_v2  = cur_obj.get_str_vec();
-
         if (!in_view) {
 
-            const auto& str_v2  = cur_obj.get_str_vec();
             process_container_view(str_v2);
-
-            const auto& chr_v2  = cur_obj.get_chr_vec();
             process_container(chr_v2);
-
-            const auto& bool_v2  = cur_obj.get_bool_vec();
             process_container(bool_v2);
-
-            const auto& int_v2  = cur_obj.get_int_vec();
             process_container(int_v2);
-
-            const auto& uint_v2  = cur_obj.get_uint_vec();
             process_container(uint_v2);
-
-            const auto& dbl_v2  = cur_obj.get_dbl_vec();
             process_container(dbl_v2);
 
         } else {
 
-            const auto& str_v2  = cur_obj.get_str_vec();
             process_container_view(str_v2);
-
-            const auto& chr_v2  = cur_obj.get_chr_vec();
             process_container_view(chr_v2);
-
-            const auto& bool_v2  = cur_obj.get_bool_vec();
             process_container_view(bool_v2);
-
-            const auto& int_v2  = cur_obj.get_int_vec();
             process_container_view(int_v2);
-
-            const auto& uint_v2  = cur_obj.get_uint_vec();
             process_container_view(uint_v2);
-
-            const auto& dbl_v2  = cur_obj.get_dbl_vec();
             process_container_view(dbl_v2);
 
         }
@@ -487,11 +472,27 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
 
         if (!in_view) {
 
-            cols_proceed(copy_col);
+            if constexpr (!IsDense) {
+
+                cols_proceed(copy_col);
+
+            } else {
+
+                cols_proceed(copy_col_dense);
+
+            }
 
         } else {
 
-            cols_proceed(copy_col_view);
+            if constexpr (!IsDense) {
+
+                cols_proceed(copy_col_view);
+
+            } else {
+
+                cols_proceed(copy_col_view_dense);
+
+            }
 
         }
 
