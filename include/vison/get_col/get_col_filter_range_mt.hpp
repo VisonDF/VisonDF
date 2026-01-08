@@ -2,7 +2,6 @@
 
 template <unsigned int CORES = 4,
           bool NUMA = false,
-          bool MemClean = false,
           bool IsBool = false,
           bool MapCol = false,
           bool IsDense = false,
@@ -17,7 +16,6 @@ void get_col_filter_range(unsigned int x,
 {
 
     const unsigned int n_el = mask.size();
-    rtn_v.reserve(n_el);
 
     auto find_col_base = [x](const auto &idx_vec, [[maybe_unused]] const size_t idx_type) -> size_t {
         size_t pos;
@@ -187,7 +185,7 @@ void get_col_filter_range(unsigned int x,
                     const auto& run = runs[r]; 
                     std::memcpy(dst.data() + run.mask_pos,
                                 src.data() + run.src_start,
-                                run.len * sizeof(T));
+                                run.len * sizeof(TB));
                 }
 
             }
@@ -198,7 +196,7 @@ void get_col_filter_range(unsigned int x,
                 const auto& run = runs[r]; 
                 std::memcpy(dst.data() + run.mask_pos,
                             src.data() + run.src_start,
-                            run.len * sizeof(T));
+                            run.len * sizeof(TB));
             }
 
         }
@@ -274,8 +272,6 @@ void get_col_filter_range(unsigned int x,
         throw std::runtime_error("Error in (get_col), unsupported type\n");
     }
 
-    if constexpr (MemClean && CORES > 1)
-        rtn_v.shrink_to_fit();
 }
 
 
