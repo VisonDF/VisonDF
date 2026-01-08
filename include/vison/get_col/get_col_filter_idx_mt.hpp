@@ -1,11 +1,5 @@
 #pragma once
 
-struct RunMt {
-    size_t mask_pos;
-    size_t src_start;
-    size_t len;
-};
-
 template <unsigned int CORES = 4,
           bool NUMA = false,
           bool IsBool = false,
@@ -14,7 +8,8 @@ template <unsigned int CORES = 4,
           typename T>
 void get_col_filter_idx_mt(unsigned int x,
                            std::vector<T> &rtn_v,
-                           const std::vector<unsigned int> &mask)
+                           const std::vector<unsigned int> &mask,
+                           std::vector<RunsIdxMt>& runs)
 {
     rtn_v.resize(mask.size());
 
@@ -92,19 +87,23 @@ void get_col_filter_idx_mt(unsigned int x,
  
         if constexpr (CORES > 1) {
 
-            std::vector<RunMt> runs;
-            
-            for (size_t i = 0; i < mask.size();) {
-                size_t start = i;
-                size_t src_start = mask[i];
-            
-                while (i + 1 < mask.size() &&
-                       mask[i + 1] == mask[i] + 1) {
+            runs.reserve(mask.size() / 3);
+           
+            if (runs.empty()) {
+
+                for (size_t i = 0; i < mask.size();) {
+                    size_t start = i;
+                    size_t src_start = mask[i];
+                
+                    while (i + 1 < mask.size() &&
+                           mask[i + 1] == mask[i] + 1) {
+                        ++i;
+                    }
+                
+                    runs.push_back({start, src_start, i - start + 1});
                     ++i;
                 }
-            
-                runs.push_back({start, src_start, i - start + 1});
-                ++i;
+
             }
 
             int numa_nodes = 1;
@@ -116,8 +115,6 @@ void get_col_filter_idx_mt(unsigned int x,
                 const int tid        = omp_get_thread_num();
                 const int nthreads   = omp_get_num_threads();
            
-                size_t start;
-                size_t end;
                 MtStruct cur_struct;
 
                 if constexpr (NUMA) {
@@ -133,8 +130,8 @@ void get_col_filter_idx_mt(unsigned int x,
                               nthreads);
                 }
                     
-                start = cur_struct.start;
-                end   = cur_struct.end;
+                const size_t start = cur_struct.start;
+                const size_t end   = cur_struct.end;
 
                 for (size_t r = start; r < end; ++r) {
                     const auto& run = runs[r]; 
