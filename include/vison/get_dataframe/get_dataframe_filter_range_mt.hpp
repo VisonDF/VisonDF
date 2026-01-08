@@ -53,7 +53,7 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
         }
 
         if (!runs.empty()) {
-            if (offset_start.empty()) {
+            if (offset_start.vec.empty()) {
                 size_t active_count = 0;
                 for (size_t i = 0; i < n_el; ++i) {
                     active_count += mask[i] != 0;
@@ -153,7 +153,7 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
         }
 
         if (!runs.empty()) {
-            if (offset_start.empty()) {
+            if (offset_start.vec.empty()) {
                 size_t active_count = 0;
                 for (size_t i = 0; i < n_el; ++i) {
                     active_count += mask[i] != 0;
@@ -256,7 +256,7 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
                 throw std::runtime_error("Too much cores for so little nrows\n");
 
             size_t active_count = 0;
-            if (offset_start.empty()) {
+            if (offset_start.vec.empty()) {
                 offset_start.vec.reserve(n_el / 3);
                 for (size_t i = 0; i < n_el; ++i) {
                     active_count += mask[i] != 0;
@@ -333,7 +333,7 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
                 throw std::runtime_error("Too much cores for so little nrows\n");
 
             size_t active_count = 0;
-            if (offset_start.empty()) {
+            if (offset_start.vec.empty()) {
                 offset_start.vec.reserve(n_el / 3);
                 for (size_t i = 0; i < n_el; ++i) {
                     active_count += mask[i] != 0;

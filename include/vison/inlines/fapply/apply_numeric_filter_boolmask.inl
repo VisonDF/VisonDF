@@ -43,7 +43,7 @@ inline void apply_numeric_filter_boolmask(const std::vector<T>& values,
             throw std::runtime_error("Too much cores for so little nrows\n");
 
         size_t active_count = 0;
-        if (offset_start.empty()) {
+        if (offset_start.vec.empty()) {
             offset_start.vec.reserve(mask.size() / 3);
             for (size_t i = 0; i < mask.size(); ++i) {
                 active_count += mask[i] != 0;

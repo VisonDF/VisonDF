@@ -51,7 +51,7 @@ void get_col_filter_range(unsigned int x,
                 throw std::runtime_error("Too much cores for so little nrows\n");
 
             size_t active_count = 0;
-            if (offset_start.empty()) {
+            if (offset_start.vec.empty()) {
                 offset_start.vec.reserve(n_el / 3);
                 for (size_t i = 0; i < n_el; ++i) {
                     active_count += mask[i] != 0;
@@ -136,7 +136,7 @@ void get_col_filter_range(unsigned int x,
         }
 
         if (!runs.empty()) {
-            if  (offset_start.empty()) {
+            if  (offset_start.vec.empty()) {
                 size_t active_count = 0;
                 for (size_t i = 0; i < n_el; ++i) {
                     active_count += mask[i] != 0;
