@@ -330,13 +330,13 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
     const auto& uint_vec2 = cur_obj.get_uint_vec();
     const auto& dbl_vec2  = cur_obj.get_dbl_vec();
 
-    auto process_container = [local_nrow](const auto& matr){
+    auto process_container = [local_nrow]<typename T>(const std::vector<T>& matr){
         for (const auto& el : matr) {
             matr.emplace_back();
             matr.back().resize(local_nrow);
             auto* dst       = matr_v.back().data();
             const auto* src = el.data();
-            if constexpr (!IsDense) {
+            if constexpr (!IsDense || std::is_same_v<T, std::string>) {
                 copy_col(dst, src);
             } else {
                 copy_col_dense(dst, src);
@@ -344,13 +344,13 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
         }
     };
 
-    auto process_container_view = [local_nrow](const auto& matr){
+    auto process_container_view = [local_nrow]<typename T>(const std::vector<T>& matr){
         for (const auto& el : matr) {
             matr.emplace_back();
             matr.back().resize(local_nrow);
             auto* dst       = matr_v.back().data();
             const auto* src = el.data();
-            if constexpr (!IsDense) {
+            if constexpr (!IsDense || std::is_same_v<T, std::string>) {
                 copy_col_view(dst, src);
             } else {
                 copy_col_view_dense(dst, src);
@@ -434,7 +434,7 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
 
         if (!in_view) {
 
-            process_container_view(str_v2);
+            process_container(str_v2);
             process_container(chr_v2);
             process_container(bool_v2);
             process_container(int_v2);
