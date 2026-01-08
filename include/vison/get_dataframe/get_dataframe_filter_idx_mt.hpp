@@ -360,7 +360,7 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
 
     auto cols_proceed = [local_nrow, 
                          &col_alrd_materialized2,
-                         &cols](auto&& f) 
+                         &cols](auto&& f1, auto&& f2) 
     {
         size_t i2 = 0;
         for (int i : cols) {
@@ -371,43 +371,43 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
                               matr_idx_map[0] = i2;
                               str_v.emplace_back();
                               str_v.back().resize(local_nrow);
-                              f(str_vec2[i],  
-                                str_v.back()); 
+                              f2(str_vec2[i],  
+                                 str_v.back()); 
                               break;
                             }
                   case 'c': {
                               chr_v.emplace_back();
                               chr_v.back().resize(local_nrow);
-                              f(chr_vec2[i],  
-                                chr_v.back()); 
+                              f1(chr_vec2[i],  
+                                 chr_v.back()); 
                               break;
                             }
                   case 'b': {
                               bool_v.emplace_back();
                               bool_v.back().resize(local_nrow);
-                              f(bool_vec2[i],  
-                                bool_v.back()); 
+                              f1(bool_vec2[i],  
+                                 bool_v.back()); 
                               break;
                             }
                   case 'i': {
                               int_v.emplace_back();
                               int_v.back().resize(local_nrow);
-                              f(int_vec2[i],  
-                                int_v.back()); 
+                              f1(int_vec2[i],  
+                                 int_v.back()); 
                               break;
                             }
                  case 'u': {
                               uint_v.emplace_back();
                               uint_v.back().resize(local_nrow);
-                              f(uint_vec2[i],  
-                                uint_v.back()); 
+                              f1(uint_vec2[i],  
+                                 uint_v.back()); 
                               break;
                             }
                   case 'd': {
                               dbl_v.emplace_back();
                               dbl_v.back().resize(local_nrow);
-                              f(dbl_vec2[i],  
-                                dbl_v.back()); 
+                              f1(dbl_vec2[i],  
+                                 dbl_v.back()); 
                               break;
                             }
             }
@@ -474,11 +474,11 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
 
             if constexpr (!IsDense) {
 
-                cols_proceed(copy_col);
+                cols_proceed(copy_col, copy_col);
 
             } else {
 
-                cols_proceed(copy_col_dense);
+                cols_proceed(copy_col_dense, copy_col);
 
             }
 
@@ -486,11 +486,11 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
 
             if constexpr (!IsDense) {
 
-                cols_proceed(copy_col_view);
+                cols_proceed(copy_col_view, copy_col_view);
 
             } else {
 
-                cols_proceed(copy_col_view_dense);
+                cols_proceed(copy_col_view_dense, copy_col_view);
 
             }
 
