@@ -7,13 +7,18 @@ requires FapplyFn<F, first_arg_t<F>>
 void fapply_filter_range(F f, 
                          const unsigned int n, 
                          const std::vector<uint8_t>& mask,
-                         const unsigned int strt_vl) 
+                         const unsigned int strt_vl,
+                         OffsetBoolMask& start_offset) 
 {
 
-    fapply_filter_range_mt<IsBool, MapCol, 1>(f,
-                                              n,
-                                              mask,
-                                              strt);
+    fapply_filter_range_mt<1,     // CORES
+                           false, // NUMA locality
+                           IsBool, 
+                           MapCol>(f,
+                                   n,
+                                   mask,
+                                   strt_vl,
+                                   start_offset);
 
 }
 

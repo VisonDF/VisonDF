@@ -1,19 +1,25 @@
 #pragma once
 
-template <bool IsBool = false,
+template <unsigned int CORES = 4,
+          bool NUMA = false,
+          bool IsBool = false,
           bool MapCol = false,
-          unsigned int CORES = 4,
           typename F>
 requires FapplyFn<F, first_arg_t<F>>
 void fapply_filter_mt(F f, 
                       unsigned int n, 
-                      const std::vector<uint8_t>& mask) 
+                      const std::vector<uint8_t>& mask,
+                      OffsetBoolMask& start_offset) 
 {
 
-    fapply_filter_range_mt<IsBool, MapCol, CORES>(f,
-                                                  n,
-                                                  mask,
-                                                  0);
+    fapply_filter_range_mt<CORES,
+                           NUMA,
+                           IsBool, 
+                           MapCol>(f,
+                                   n,
+                                   mask,
+                                   0,   // strt_vl
+                                   start_offset); 
 }
 
 

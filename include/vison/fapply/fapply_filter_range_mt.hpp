@@ -1,15 +1,16 @@
 #pragma once
 
-template <bool IsBool = false,
-          bool MapCol = false,
-          unsigned int CORES = 4,
+template <unsigned int CORES = 4,
           bool NUMA = false,
+          bool IsBool = false,
+          bool MapCol = false,
           typename F>
 requires FapplyFn<F, first_arg_t<F>>
 void fapply_filter_range_mt(F f, 
                             const unsigned int n, 
                             const std::vector<uint8_t>& mask,
-                            const unsigned int strt_vl) 
+                            const unsigned int strt_vl,
+                            OffsetBoolMask& start_offset) 
 {
 
     using T = first_arg_t<F>;
@@ -25,10 +26,11 @@ void fapply_filter_range_mt(F f,
 
         apply_numeric_filter_boolmask<MapCol, CORES, NUMA>(bool_v, 
                                                            n, 
-                                                           0, 
+                                                           2, 
                                                            f, 
                                                            mask,
-                                                           strt_vl);
+                                                           strt_vl,
+                                                           start_offset);
 
     } else if constexpr (std::is_same_v<T, IntT>) {
 
@@ -37,7 +39,8 @@ void fapply_filter_range_mt(F f,
                                                            3, 
                                                            f, 
                                                            mask,
-                                                           strt_vl);
+                                                           strt_vl,
+                                                           start_offset);
 
     } else if constexpr (std::is_same_v<T, UIntT>) {
 
@@ -46,7 +49,8 @@ void fapply_filter_range_mt(F f,
                                                           4, 
                                                           f, 
                                                           mask,
-                                                          strt_vl);
+                                                          strt_vl,
+                                                          start_offset);
 
     } else if constexpr (std::is_same_v<T, FloatT>) {
 
@@ -55,7 +59,8 @@ void fapply_filter_range_mt(F f,
                                                            5, 
                                                            f, 
                                                            mask,
-                                                           strt_vl);
+                                                           strt_vl,
+                                                           start_offset);
 
     } else if constexpr (std::is_same_v<T, CharT>) {
 
@@ -64,7 +69,8 @@ void fapply_filter_range_mt(F f,
                                                            1, 
                                                            f, 
                                                            mask,
-                                                           strt_vl);
+                                                           strt_vl,
+                                                           start_offset);
 
     } else if constexpr (std::is_same_v<T, std::string>) {
 
@@ -73,7 +79,8 @@ void fapply_filter_range_mt(F f,
                                                            0, 
                                                            f, 
                                                            mask,
-                                                           strt_vl);
+                                                           strt_vl,
+                                                           start_offset);
 
     }
 

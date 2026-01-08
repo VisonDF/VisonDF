@@ -9,7 +9,8 @@ inline void apply_numeric_filter_boolmask(const std::vector<T>& values,
                                           const size_t idx_type, 
                                           F&& f,
                                           const std::vector<uint8_t>& mask,
-                                          const unsigned int strt_vl) 
+                                          const unsigned int strt_vl,
+                                          OffsetBoolMask& offset_start) 
 {
     unsigned int i2 = 0;
     if constexpr (!MapCol) {
@@ -41,6 +42,16 @@ inline void apply_numeric_filter_boolmask(const std::vector<T>& values,
         if (CORES > mask.size())
             throw std::runtime_error("Too much cores for so little nrows\n");
 
+        size_t active_count = 0;
+        if (offset_start.empty()) {
+            offset_start.vec.reserve(mask.size() / 3);
+            for (size_t i = 0; i < mask.size(); ++i) {
+                active_count += mask[i] != 0;
+                offset_start.vec.push_back(active_count);
+            }
+            offset_start.x = active_count;
+        }
+
         int numa_nodes = 1;
         if (numa_available() >= 0) 
             numa_nodes = numa_max_node() + 1;
@@ -69,18 +80,23 @@ inline void apply_numeric_filter_boolmask(const std::vector<T>& values,
             const unsigned int cur_start = cur_struct.start;
             const unsigned int cur_end   = cur_struct.end;
 
+            size_t out_idx = offset_start[cur_start];
+
             for (size_t i = cur_strt; i < cur_end; ++i) {
                 if (!mask[i]) { continue; }
-                f(dst[strt_vl + i]);
+                f(dst[strt_vl + out_idx]);
+                out_idx += 1;
             }
 
         }
 
     } else {
 
+        size_t out_idx = 0;
         for (size_t i = 0; i < end_val; ++i) {
             if (!mask[i]) { continue; }
-            f(dst[strt_vl + i]);
+            f(dst[strt_vl + out_idx]);
+            out_idx += 1;
         }
 
     }
