@@ -9,7 +9,7 @@ template <unsigned int CORES = 4,
 void get_col_filter_idx_mt(unsigned int x,
                            std::vector<T> &rtn_v,
                            const std::vector<unsigned int> &mask,
-                           std::vector<RunsIdxMt>& runs)
+                           std::vector<RunsIdxMt>& runs = {})
 {
     rtn_v.resize(mask.size());
 
