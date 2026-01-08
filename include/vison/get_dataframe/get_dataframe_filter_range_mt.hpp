@@ -296,7 +296,7 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
                 const unsigned int start = cur_struct.start;
                 const unsigned int end   = cur_struct.end;
 
-                size_t out_idx = offset_start[start];
+                size_t out_idx = offset_start.vec[start];
 
                 for (size_t j = start; j < end; ++j) {
                     if (!mask[j]) continue;
@@ -377,7 +377,7 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
                 const unsigned int start = cur_struct.start;
                 const unsigned int end   = cur_struct.end;
 
-                size_t out_idx = offset_start[start];
+                size_t out_idx = offset_start.vec[start];
 
                 for (size_t j = start; j < end; ++j) {
                     if (!mask[j]) continue;

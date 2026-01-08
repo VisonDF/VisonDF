@@ -91,7 +91,7 @@ void get_col_filter_range(unsigned int x,
                 const unsigned int start = cur_struct.start;
                 const unsigned int end   = cur_struct.end;
             
-                size_t out_idx = offset_start[start];
+                size_t out_idx = offset_start.vec[start];
 
                 for (size_t i = start; i < end; ++i) {
                     if (mask[i])
