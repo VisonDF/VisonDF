@@ -86,11 +86,10 @@ void get_col_filter_idx_mt(unsigned int x,
                                       ) {
  
         if constexpr (CORES > 1) {
-
-            runs.reserve(mask.size() / 3);
            
             if (runs.empty()) {
 
+                runs.reserve(mask.size() / 3);
                 for (size_t i = 0; i < mask.size();) {
                     size_t start = i;
                     size_t src_start = mask[i];
