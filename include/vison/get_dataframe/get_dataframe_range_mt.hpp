@@ -1,134 +1,31 @@
 #pragma once
 
 template <unsigned int CORES = 4,
-          bool NUMA = false,
-          bool IsDense = false // assumed sorted
-        >
-void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols, 
-                                 Dataframe& cur_obj,
-                                 const std::vector<unsigned int>& mask,
-                                 std::vector<RunsIdxMt>& runs = {}
-                                 )
+          bool NUMA = false>
+void get_dataframe_mt(const std::vector<size_t>& cols, 
+                      Dataframe& cur_obj,
+                      const size_t start,
+                      const size_t end)
 {
 
-    const unsigned int local_nrow = mask.size();
-    nrow = local_nrow;
-
-    in_view = cur_obj.get_in_view();
+    nrow                   = end - start;
+    const unsigned int local_nrow = nrow;
+    
+    in_view                = cur_obj.get_in_view();
     ankerl::unordered_dense::set<unsigned int>& col_alrd_materialized2  = cur_obj.get_col_alrd_materialized();
     const auto row_view_idx2           = cur_obj.get_row_view_idx();
     const auto row_view_map2           = cur_obj.get_row_view_map();
 
+
     if (in_view) {
-        row_view_idx.resize(local_nrow);
-        row_view_map.reserve(local_nrow);
+        row_view_idx2.resize(local_nrow);
+        row_view_map2.resize(local_nrow);
     }
 
-    auto copy_col_dense = [&mask, 
-                           local_nrow]<typename T>(
-                                                   const std::vector<T>& src_vec2,
-                                                   std::vector<T>& dst_vec
-                                                  )
-    {
-        const std::string* __restrict src = src_vec2.data();
-        std::string*       __restrict dst = dst_vec.data();
-
-        if (runs.empty()) {
-            runs.reserve(mask.size() / 3); 
-            for (size_t i = 0; i < mask.size();) {
-                size_t start = i;
-                size_t src_start = mask[i];
-            
-                while (i + 1 < mask.size() &&
-                       mask[i + 1] == mask[i] + 1) {
-                    ++i;
-                }
-            
-                runs.push_back({start, src_start, i - start + 1});
-                ++i;
-            }
-        }
-
-        if constexpr (CORES > 1) {
-
-            if (CORES > local_nrow)
-                throw std::runtime_error("Too much cores for so little nrows\n");
-
-            int numa_nodes = 1;
-            if (numa_available() >= 0) 
-                numa_nodes = numa_max_node() + 1;
-
-            #pragma omp parallel num_threads(CORES)
-            {
-
-                const int tid        = omp_get_thread_num();
-                const int nthreads   = omp_get_num_threads();
-           
-                MtStruct cur_struct;
-
-                if constexpr (NUMA) {
-                    numa_mt(cur_struct,
-                            runs.size(), 
-                            tid, 
-                            nthreads, 
-                            numa_nodes);
-                } else {
-                    simple_mt(cur_struct,
-                              runs.size(), 
-                              tid, 
-                              nthreads);
-                }
-                    
-                const unsigned int start = cur_struct.start;
-                const unsigned int end   = cur_struct.end;
-
-                for (size_t r = start; r < end; ++r) {
-                    const auto& run = runs[r]; 
-                    std::memcpy(dst.data() + run.mask_pos,
-                                src.data() + run.src_start,
-                                run.len * sizeof(T));
-                }
-
-            }
-
-        } else {
-
-            for (size_t r = 0; r < local_nrow; ++r) {
-                const auto& run = runs[r]; 
-                std::memcpy(dst.data() + run.mask_pos,
-                            src.data() + run.src_start,
-                            run.len * sizeof(T));
-            }
-
-        }
-    };
-
-    auto copy_col_view_dense = [&mask, 
-                                &row_view_idx2, 
-                                &row_view_map2,
-                                local_nrow]<typename T>(
-                                                         const auto& src_vec2,
-                                                         auto& dst_vec
-                                                       )
-    {
-        const std::string* __restrict src = src_vec2.data();
-        std::string*       __restrict dst = dst_vec.data();
-
-        if (runs.empty()) {
-            runs.reserve(mask.size() / 3); 
-            for (size_t i = 0; i < local_nrow;) {
-                size_t start = i;
-                size_t src_start = mask[i];
-            
-                while (i + 1 < mask.size() &&
-                       mask[i + 1] == mask[i] + 1) {
-                    ++i;
-                }
-            
-                runs.push_back({start, src_start, i - start + 1});
-                ++i;
-            }
-        }
+    auto str_copy_col_view = [local_nrow,
+                              &row_view_idx2,
+                              &row_view_map2](std::string* dst, 
+                                              const std::string* src) {
 
         if constexpr (CORES > 1) {
 
@@ -160,54 +57,34 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
                               nthreads);
                 }
                     
-                const unsigned int start = cur_struct.start;
-                const unsigned int len   = cur_struct.len;
+                const unsigned int cur_start = cur_struct.start;
+                const unsigned int cur_end   = cur_struct.end;
 
-                for (size_t r = start; r < end; ++r) {
-                    const auto& run = runs[r]; 
-                    std::memcpy(dst.data() + run.mask_pos,
-                                src.data() + run.src_start,
-                                run.len * sizeof(T));
-                    std::memcpy(row_view_idx.data()  + run.mask_pos,
-                                row_view_idx2.data() + run.src_start,
-                                run.len * sizeof(T));
-
-                    for (size_t i = run.mask_pos; i < run.mask_pos + len; ++i)
-                        row_view_map[row_view_idx[i]] = i;
-
+                for (size_t i = cur_start; i < cur_end; ++i) {
+                    dst[i] = src[start + i];
+                    row_view_idx[i] = row_view_idx2[start + i];
+                    row_view_map[row_view_idx[i]] = i;
                 }
+
 
             }
 
         } else {
 
-            for (size_t r = 0; r < local_nrow; ++r) {
-                const auto& run = runs[r]; 
-                std::memcpy(dst.data() + run.mask_pos,
-                            src.data() + run.src_start,
-                            run.len * sizeof(T));
-                std::memcpy(row_view_idx.data()  + run.mask_pos,
-                            row_view_idx2.data() + run.src_start,
-                            run.len * sizeof(T));
-
-            }
-
-            for (size_t i = 0; i < row_view_idx.size(); ++i)
+            for (size_t i = 0; i < local_nrow; ++i) {
+                dst[i] = src[start + i];
+                row_view_idx[i] = row_view_idx2[start + i];
                 row_view_map[row_view_idx[i]] = i;
+            }
 
         }
+    }
 
-    };
+    auto copy_col_view = [local_nrow,
+                          &row_view_idx2,
+                          &row_view_map2]<typename T>(T* dst, 
+                                                     const T* src) {
 
-    auto copy_col = [&mask, 
-                    local_nrow](
-                                const auto& src_vec2,
-                                auto& dst_vec
-                               )
-    {
-        const std::string* __restrict src = src_vec2.data();
-        std::string*       __restrict dst = dst_vec.data();
-   
         if constexpr (CORES > 1) {
 
             if (CORES > local_nrow)
@@ -238,37 +115,40 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
                               nthreads);
                 }
                     
-                const unsigned int start = cur_struct.start;
-                const unsigned int end   = cur_struct.end;
+                const unsigned int cur_start = cur_struct.start;
+                const unsigned int cur_end   = cur_struct.end;
+                const unsigned int cur_len   = cur_struct.len;
 
-                for (size_t j = start; j < end; ++j) {
-                    const size_t act = mask[j];
-                    dst[j]     = src[act];
-                }
+                memcpy(dst + cur_start, 
+                       src + start + cur_start, 
+                       len * sizeof(T));
+                memcpy(row_view_idx.data()  + cur_start, 
+                       row_view_idx2.data() + start + cur_start, 
+                       len * sizeof(T));
+
+               for (size_t i = cur_start; i < cur_end; ++i)
+                   row_view_map[row_view_idx[i]] = i;
 
             }
 
         } else {
 
-            for (size_t j = 0; j < local_nrow; ++j) {
-                const size_t act = mask[j];
-                dst[j]     = src[act];
-            }
+           memcpy(dst, 
+                  src + start, 
+                  local_nrow * sizeof(T));
+           memcpy(row_view_idx.data()  + cur_start, 
+                  row_view_idx2.data() + start + cur_start, 
+                  len * sizeof(T));
+
+           for (size_t i = 0; i < local_nrow; ++i)
+               row_view_map[row_view_idx[i]] = i;
 
         }
-    };
+    }
 
-    auto copy_col_view = [&mask, 
-                          &row_view_idx2, 
-                          &row_view_map2,
-                          local_nrow](
-                                       const auto& src_vec2,
-                                       auto& dst_vec
-                                     )
-    {
-        const std::string* __restrict src = src_vec2.data();
-        std::string*       __restrict dst = dst_vec.data();
-   
+    auto str_copy_col = [local_nrow](std::string* dst, 
+                                     const std::string* src) {
+
         if constexpr (CORES > 1) {
 
             if (CORES > local_nrow)
@@ -299,29 +179,72 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
                               nthreads);
                 }
                     
-                const unsigned int start = cur_struct.start;
-                const unsigned int end   = cur_struct.end;
+                const unsigned int cur_start = cur_struct.start;
+                const unsigned int cur_end   = cur_struct.end;
 
-                for (size_t j = start; j < end; ++j) {
-                    const size_t act = mask[j];
-                    dst[j]     = src[act];
-                    row_view_idx[j] = row_view_idx2[act];
-                    row_view_map[row_view_idx[j]] = j;
-                }
+                for (size_t i = cur_start; i < cur_end; ++i)
+                    dst[i] = src[start + i];
 
             }
 
         } else {
 
-            for (size_t j = 0; j < local_nrow; ++j) {
-                const size_t act = mask[j];
-                dst[j]     = src[act];
-                row_view_idx[j] = row_view_idx2[act];
-                row_view_map[row_view_idx[j]] = j;
-            }
+            for (size_t i = 0; i < local_nrow; ++i)
+                dst[i] = src[start + i];
 
         }
-    };
+    }
+
+    auto copy_col = [local_nrow]<typename T>(T* dst, 
+                                             const T* src) {
+
+        if constexpr (CORES > 1) {
+
+            if (CORES > local_nrow)
+                throw std::runtime_error("Too much cores for so little nrows\n");
+
+            int numa_nodes = 1;
+            if (numa_available() >= 0) 
+                numa_nodes = numa_max_node() + 1;
+
+            #pragma omp parallel num_threads(CORES)
+            {
+
+                const int tid        = omp_get_thread_num();
+                const int nthreads   = omp_get_num_threads();
+           
+                MtStruct cur_struct;
+
+                if constexpr (NUMA) {
+                    numa_mt(cur_struct,
+                            local_nrow, 
+                            tid, 
+                            nthreads, 
+                            numa_nodes);
+                } else {
+                    simple_mt(cur_struct,
+                              local_nrow, 
+                              tid, 
+                              nthreads);
+                }
+                    
+                const unsigned int cur_start = cur_struct.start;
+                const unsigned int cur_len   = cur_struct.len;
+
+                memcpy(dst + cur_start, 
+                       src + start + cur_start, 
+                       len * sizeof(T));
+
+            }
+
+        } else {
+
+            memcpy(dst, 
+                   src + start, 
+                   local_nrow * sizeof(T));
+
+        }
+    }
 
     const auto& str_vec2  = cur_obj.get_str_vec();
     const auto& chr_vec2  = cur_obj.get_chr_vec();
@@ -336,10 +259,10 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
             matr.back().resize(local_nrow);
             auto* dst       = matr_v.back().data();
             const auto* src = el.data();
-            if constexpr (!IsDense || std::is_same_v<T, std::string>) {
-                copy_col(dst, src);
+            if constexpr (!IsDense) {
+                str_copy_col(dst, src);
             } else {
-                copy_col_dense(dst, src);
+                copy_col(dst, src);
             }
         }
     };
@@ -350,17 +273,17 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
             matr.back().resize(local_nrow);
             auto* dst       = matr_v.back().data();
             const auto* src = el.data();
-            if constexpr (!IsDense || std::is_same_v<T, std::string>) {
-                copy_col_view(dst, src);
+            if constexpr (std::is_same_v<T, std::string>) {
+                str_copy_col_view(dst, src);
             } else {
-                copy_col_view_dense(dst, src);
+                copy_col_view(dst, src);
             }
         }
     };
 
     auto cols_proceed = [local_nrow, 
                          &col_alrd_materialized2,
-                         &cols](auto&& f1, auto&& f2) 
+                         &cols](auto&& f, auto&& f2) 
     {
         size_t i2 = 0;
         for (int i : cols) {
@@ -426,7 +349,7 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
 
     if (cols.empty()) {
 
-        col_ard_materialized = col_alrd_materialized2;
+        col_alrd_materialized  = col_alrd_materialized2();
         matr_idx     = cur_obj.get_matr_idx();
         matr_idx_map = cur_obj.get_matr_idx_map();
         sync_map_col = cur_obj.get_sync_map_col();
@@ -453,14 +376,21 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
         }
 
         name_v    = cur_obj.get_colname();
-        type_refv = cur_obj.get_typecol(); 
+        type_refv = cur_obj.get_typecol();
 
-    } else {
-
+    }
+    else {
         ncol = cols.size();
 
         if (in_view)
             col_ard_materialized.reserve(ncol);
+
+        const auto& str_vec2  = cur_obj.get_str_vec();
+        const auto& chr_vec2  = cur_obj.get_chr_vec();
+        const auto& bool_vec2 = cur_obj.get_bool_vec();
+        const auto& int_vec2  = cur_obj.get_int_vec();
+        const auto& uint_vec2 = cur_obj.get_uint_vec();
+        const auto& dbl_vec2  = cur_obj.get_dbl_vec();
 
         const auto& name_v1    = cur_obj.get_colname();
         const auto& type_refv1 = cur_obj.get_typecol();
@@ -472,32 +402,17 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
 
         if (!in_view) {
 
-            if constexpr (!IsDense) {
-
-                cols_proceed(copy_col, copy_col);
-
-            } else {
-
-                cols_proceed(copy_col_dense, copy_col);
-
-            }
+            cols_proceed(copy_col, str_copy_col);
 
         } else {
 
-            if constexpr (!IsDense) {
-
-                cols_proceed(copy_col_view, copy_col_view);
-
-            } else {
-
-                cols_proceed(copy_col_view_dense, copy_col_view);
-
-            }
+            cols_proceed(copy_col_view, str_copy_col_view);
 
         }
 
     }
 
+    name_v_row = cur_obj.get_rowname();
 }
 
 
