@@ -3,7 +3,8 @@
 template <unsigned int CORES = 4, 
           bool MemClean = false,
           bool Soft = true>
-void rm_row_range_boolmask_mt(std::vector<uint8_t>& x) 
+void rm_row_range_boolmask_mt(std::vector<uint8_t>& x,
+                              const size_t strt_vl) 
 {
 
     // Soft May auto switch to view mode
@@ -14,7 +15,7 @@ void rm_row_range_boolmask_mt(std::vector<uint8_t>& x)
         size_t idx = 0;
         auto beg = vec.begin();
         auto end = beg + old_nrow;
-        auto it  = std::remove_if(beg, end, [&](auto&) mutable { return x[idx++]; });
+        auto it  = std::remove_if(beg, end, [&](auto&) mutable { return x[strt_vl + idx++]; });
         vec.erase(it, end);
     };
 

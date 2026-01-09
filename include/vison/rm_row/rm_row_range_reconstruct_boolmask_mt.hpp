@@ -27,8 +27,8 @@ void rm_row_range_reconstruct_boolmask_mt(std::vector<uint8_t>& x,
             in_view = true;
         }
             
-        size_t i = 0;
-        size_t written = 0;
+        size_t i       = 0;
+        size_t written = strt_vl;
         while (!x[i]) {
             i += 1;
             written += 1;
@@ -42,7 +42,7 @@ void rm_row_range_reconstruct_boolmask_mt(std::vector<uint8_t>& x,
             size_t len = i - start; 
             {
                 T* __restrict d = row_view_idx.data() + written;
-                T* __restrict s = row_view_idx.data() + start;
+                T* __restrict s = row_view_idx.data() + strt_vl + start;
                 
                 std::memmove(d, s, len * sizeof(size_t));
             } 
@@ -53,24 +53,24 @@ void rm_row_range_reconstruct_boolmask_mt(std::vector<uint8_t>& x,
     } else {
 
         if (in_view) {
-            std::cerr << "Can't perform this operation while `in_view` mode activated, consider applying `.materialize()`\n";
-            return;
+            throw std::runtime_error("Can't perform this operation while `in_view` mode activated, consider applying `.materialize()`\n");
         }
 
-        auto compact_block_pod = [&]<typename T>(std::vector<T>& dst, 
-                                                 std::vector<T>& src) {
+        auto compact_block_pod = [&x]<typename T>(std::vector<T>& dst, 
+                                                  std::vector<T>& src) {
 
-            size_t i = 0;
-            size_t written = 0;
+            size_t i       = 0;
+            size_t written = strt_vl;
             while (!x[i]) {
                 i += 1;
                 written += 1;
             }
-            while (i < new_nrow && x[i]) {
-                i += 1;
-            }
             while (i < x.size()) {
-            
+           
+                while (i < x.size() && x[i]) {
+                    i += 1;
+                }
+
                 size_t start = i;
                 while (i < x.size() && !x[i]) ++i;
             
@@ -88,20 +88,20 @@ void rm_row_range_reconstruct_boolmask_mt(std::vector<uint8_t>& x,
             }
         };
 
-        auto compact_block_scalar = [&](auto& dst, 
-                                        auto& src) {
-            size_t i = 0;
-            size_t written = 0;
+        auto compact_block_scalar = [&x](auto& dst, 
+                                         auto& src) {
+            size_t i       = 0;
+            size_t written = strt_vl;
             while (!x[i]) {
                 i += 1;
                 written += 1;
             }
-            while (i < new_nrow && x[i]) {
-                i += 1;
-            }
             while (i < x.size()) {
+                while (i < x.size() && x[i]) {
+                    i += 1;
+                }
                 while (i < x.size() && !x[i]) {
-                    dst[written] = std::move(src[i]);
+                    dst[written] = std::move(src[strt_vl + i]);
                     i += 1;
                     written += 1;
                 };

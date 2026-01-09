@@ -42,53 +42,56 @@ inline void transform_inner_excluding(Dataframe &cur_obj,
     fast_set_t lookup;
     lookup.reserve(ext_nrow);
 
-    using key_variant_t = std::variant<
-        std::monostate,
-        const std::vector<std::vector<std::string>>*,
-        const std::vector<std::vector<CharT>>*,
-        const std::vector<std::vector<uint8_t>>*,
-        const std::vector<std::vector<IntT>>*,
-        const std::vector<std::vector<UIntT>>*,
-        const std::vector<std::vector<FloatT>>*
-    >; 
-    key_variant_t key_table;
-    key_variant_t key_table2;
+    using key_variant_t = std::conditional_t<!std::is_same_v<T, void>,
+                                             const std::vector<std::vector<element_type_t<T>>>,
+                                             std::variant<
+                                                 std::monostate,
+                                                 const std::vector<std::vector<std::string>>*,
+                                                 const std::vector<std::vector<CharT>>*,
+                                                 const std::vector<std::vector<uint8_t>>*,
+                                                 const std::vector<std::vector<IntT>>*,
+                                                 const std::vector<std::vector<UIntT>>*,
+                                                 const std::vector<std::vector<FloatT>>*
+                                             >
+                                            >; 
+    key_variant_t var_key_table1;
+    key_variant_t var_key_table2;
 
     unsigned int idx_type;
     if constexpr (!std::is_same_v<T, void>) {
         if constexpr (std::is_same_v<element_type_t<T>, std::string>) {
-            key_table = &str_v;
-            key_table2 = &cur_obj.get_str_v();
+            var_key_table1 = &str_v;
+            var_key_table2 = &cur_obj.get_str_v();
             idx_type = 0;
         } else if constexpr (std::is_same_v<element_type_t<T>, CharT>) {
-            key_table = &chr_v;
-            key_table2 = &cur_obj.get_chr_v();
+            var_key_table1 = &chr_v;
+            var_key_table2 = &cur_obj.get_chr_v();
             idx_type = 1;
         } else if constexpr (std::is_same_v<element_type_t<T>, uint8_t>) {
-            key_table = &bool_v;
-            key_table2 = &cur_obj.get_bool_v();
+            var_key_table1 = &bool_v;
+            var_key_table2 = &cur_obj.get_bool_v();
             idx_type = 2;
         } else if constexpr (std::is_same_v<element_type_t<T>, IntT>) {
-            key_table = &int_v;
-            key_table2 = &cur_obj.get_int_v();
+            var_key_table1 = &int_v;
+            var_key_table2 = &cur_obj.get_int_v();
             idx_type = 3;
         } else if constexpr (std::is_same_v<element_type_t<T>, UIntT>) {
-            key_table = &uint_v;
-            key_table2 = &cur_obj.get_uint_v();
+            var_key_table1 = &uint_v;
+            var_key_table2 = &cur_obj.get_uint_v();
             idx_type = 4;
         } else if constexpr (std::is_same_v<element_type_t<T>, FloatT>) {
-            key_table = &dbl_v;
-            key_table2 = &cur_obj.get_dbl_v();
+            var_key_table1 = &dbl_v;
+            var_key_table2 = &cur_obj.get_dbl_v();
             idx_type = 5;
         }
     } else { 
         switch (type_refv[type_refv[in_col]]) {
-            case 's': key_table = &str_v;  key_table2 = &cur_obj.get_str_v() ; idx_type = 0; break;
-            case 'c': key_table = &chr_v;  key_table2 = &cur_obj.get_chr_v() ; idx_type = 1; break;
-            case 'b': key_table = &bool_v; key_table2 = &cur_obj.get_bool_v(); idx_type = 2; break;
-            case 'i': key_table = &int_v;  key_table2 = &cur_obj.get_int_v() ; idx_type = 3; break;
-            case 'u': key_table = &uint_v; key_table2 = &cur_obj.get_uint_v(); idx_type = 4; break;
-            case 'd': key_table = &dbl_v;  key_table2 = &cur_obj.get_dbl_v() ; idx_type = 5; break;
+            case 's': var_key_table1 = &str_v;  var_key_table2 = &cur_obj.get_str_v() ; idx_type = 0; break;
+            case 'c': var_key_table1 = &chr_v;  var_key_table2 = &cur_obj.get_chr_v() ; idx_type = 1; break;
+            case 'b': var_key_table1 = &bool_v; var_key_table2 = &cur_obj.get_bool_v(); idx_type = 2; break;
+            case 'i': var_key_table1 = &int_v;  var_key_table2 = &cur_obj.get_int_v() ; idx_type = 3; break;
+            case 'u': var_key_table1 = &uint_v; var_key_table2 = &cur_obj.get_uint_v(); idx_type = 4; break;
+            case 'd': var_key_table1 = &dbl_v;  var_key_table2 = &cur_obj.get_dbl_v() ; idx_type = 5; break;
         }
     }
 
@@ -137,62 +140,86 @@ inline void transform_inner_excluding(Dataframe &cur_obj,
 
     }
 
-    std::vector<uint8_t> mask(nrow2);
+    std::vector<uint8_t> mask(nrow2, 1);
 
-    std::visit([&mask, in_idx, ext_idx](auto&& tbl_ptr, auto&& tbl_ptr2) {
-
-        using TP  = std::decay_t<decltype(tbl_ptr)>;
-        using TP2 = std::decay_t<decltype(tbl_ptr2)>;
-
-        if constexpr (std::is_same_v<TP, TP2>) {
-
-            using Elem = TP::value_type::value_type;
-
-            auto& in_colv  = tbl_ptr[in_idx];
-            auto& ext_colv = tbl_ptr2[ext_idx];
-
-            if constexpr (std::is_same_v<Elem, std::string>) {
-                for (const auto& el : ext_colv)
-                    lookup.insert(el);
-            } else {
-                constexpr auto& size_table = get_types_size();
-                const size_t val_size = size_table[idx_type];
-                for (const auto& el : ext_colv) {
-                    lookup.insert(std::string_view{reinterpret_cast<const char*>(&el), 
-                                  val_size});
-                }
-            }
-
-            if constexpr (std::is_same_v<Elem, std::string>) {
-                if constexpr (!Inner) {
-                    #pragma omp parallel for if (CORES > 1) num_threads(CORES) schedule(static)
-                    for (unsigned int i = 0; i < nrow2; ++i) {
-                        mask[i] = !lookup.contains(in_colv[i]);
-                    }
-                } else {
-                    #pragma omp parallel for if (CORES > 1) num_threads(CORES) schedule(static)
-                    for (unsigned int i = 0; i < nrow2; ++i) {
-                        mask[i] = lookup.contains(in_colv[i]);
-                    }
-                }
-            } else {
-                if constexpr (!Inner) {
-                    #pragma omp parallel for if (CORES > 1) num_threads(CORES) schedule(static)
-                    for (unsigned int i = 0; i < nrow2; ++i) {
-                        mask[i] = !lookup.contains(std::string_view{reinterpret_cast<const char*>(&in_colv[i]), 
-                                                                    val_size});
-                    }
-                } else {
-                    #pragma omp parallel for if (CORES > 1) num_threads(CORES) schedule(static)
-                    for (unsigned int i = 0; i < nrow2; ++i) {
-                        mask[i] = lookup.contains(std::string_view{reinterpret_cast<const char*>(&in_colv[i]), 
-                                                                    val_size});
-                    }
-                }
+    auto apply_filter = [&lookup,
+                         &mask,
+                         nrow2,
+                         val_size]<typename Elem>(const auto& in_colv, 
+                                                  const auto& ext_colv) 
+    {
+            
+        if constexpr (std::is_same_v<Elem, std::string>) {
+            for (const auto& el : ext_colv)
+                lookup.insert(el);
+        } else {
+            constexpr auto& size_table = get_types_size();
+            const size_t val_size = size_table[idx_type];
+            for (const auto& el : ext_colv) {
+                lookup.insert(std::string_view{reinterpret_cast<const char*>(&el), 
+                              val_size});
             }
         }
 
-    }, key_table, key_table2);
+        if constexpr (std::is_same_v<Elem, std::string>) {
+            if constexpr (!Inner) {
+                #pragma omp parallel for if (CORES > 1) num_threads(CORES) schedule(static)
+                for (unsigned int i = 0; i < nrow2; ++i) {
+                    mask[i] = lookup.contains(in_colv[i]);
+                }
+            } else {
+                #pragma omp parallel for if (CORES > 1) num_threads(CORES) schedule(static)
+                for (unsigned int i = 0; i < nrow2; ++i) {
+                    mask[i] = !lookup.contains(in_colv[i]);
+                }
+            }
+        } else {
+            if constexpr (!Inner) {
+                #pragma omp parallel for if (CORES > 1) num_threads(CORES) schedule(static)
+                for (unsigned int i = 0; i < nrow2; ++i) {
+                    mask[i] = lookup.contains(std::string_view{reinterpret_cast<const char*>(&in_colv[i]), 
+                                                                val_size});
+                }
+            } else {
+                #pragma omp parallel for if (CORES > 1) num_threads(CORES) schedule(static)
+                for (unsigned int i = 0; i < nrow2; ++i) {
+                    mask[i] = !lookup.contains(std::string_view{reinterpret_cast<const char*>(&in_colv[i]), 
+                                                                val_size});
+                }
+            }
+        }
+    }
+
+    if constexpr (std::is_same_v<T, void>) {
+
+        std::visit([in_idx, 
+                    ext_idx](auto&& tbl_ptr1, auto&& tbl_ptr2) 
+        {
+
+            using TP  = std::decay_t<decltype(tbl_ptr)>;
+            using TP2 = std::decay_t<decltype(tbl_ptr2)>;
+
+            if constexpr (std::is_same_v<TP, TP2>) {
+
+                using Elem = TP::value_type::value_type;
+
+                const auto& in_colv  = tbl_ptr1[in_idx];
+                const auto& ext_colv = tbl_ptr2[ext_idx];
+
+                apply_filter<Elem>(in_colv, ext_colv);
+
+            }
+
+        }, var_key_table1, var_key_table2);
+
+    } else {
+                
+        const auto& in_colv  = var_key_table1[in_idx];
+        const auto& ext_colv = var_key_table2[ext_idx];
+
+        apply_filter<element_type_t<T>>(in_colv, ext_colv);
+
+    }
 
     this->transform_filter_mt<CORES, 
                               MemClean,

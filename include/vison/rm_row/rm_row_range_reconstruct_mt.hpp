@@ -1,16 +1,13 @@
 #pragma once
 
 template <unsigned int CORES = 4,
-          bool Sorted = true,
           bool MemClean = false,
           bool Soft = true,
+          bool Sorted = false,  // if not, it will modify x
           bool SanityCheck = true,
-          bool Enforce = false>
+         >
 void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
 {
-
-    // x is modified if Soft && x.size() < 1000 && Enforce && !Sorted && in_view
-    // Soft May auto switch to view mode
 
     const size_t old_nrow = nrow;
     if (x.empty() || old_nrow == 0) return;
@@ -20,104 +17,54 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
 
     if constexpr (Soft) {
 
-        bool sort_assumption = Sorted;
-
         if (!in_view) {
             in_view = true;
-            row_view_idx.resize(old_nrow);
+            row_view_idx.resize(new_nrow);
             std::iota(row_view_idx.begin(), row_view_idx.end(), 0);
-            if constexpr (!Sorted) {
-                if (x.size() > 1000) {
-                    std::vector<uint8_t> is_active(nrow, 1);
-                    for (auto& i : x) {
-                        if (i < old_nrow) [[likely]] {
-                            is_active[i] = 0;
-                        }
-                    }
-                    size_t i2 = 0;
-                    for (size_t i = 0; i < old_nrow; ++i) {
-                        if (is_active[i]) {
-                            row_view_idx[i2] = row_view_idx[i];
-                            i2 += 1;
-                        }
-                    }
-                } else {
-                    std::sort(x.begin(), x.end());
-                    if constexpr (SanityCheck) {
-                        x.erase(
-                            std::remove_if(x.begin(), x.end(),
-                                           [&](size_t v){ return v >= old_nrow; }),
-                            x.end()
-                        );
-                        x.erase(std::unique(x.begin(), x.end()), x.end());
-                    }
-                    sort_assumption = true;
-                }
-            }
             row_view_map.reserve(old_nrow);
             for (size_t i = 0; i < old_nrow; ++i)
                 row_view_map.emplace(i, i);
             for (auto& el : x)
                 row_view_map.erase(el);
         } else {
-            if constexpr (!Sorted) {
-                if (x.size() > 1000 || !Enforce) {
-                    std::vector<uint8_t> is_active(nrow, 1);
-                    for (auto& i : x) {
-                        if (i < old_nrow) [[likely]] {
-                            is_active[row_view_map[i]] = 0;
-                        }
-                    }
-                    size_t i2 = 0;
-                    for (size_t i = 0; i < old_nrow; ++i) {
-                        if (is_active[i]) {
-                            row_view_idx[i2] = row_view_idx[i];
-                            i2 += 1;
-                        }
-                    }
-                } else {
-                    for (auto& el : x)
-                        el = row_view_map[el];
-                    std::sort(x.begin(), x.end());
-                    if constexpr (SanityCheck) {
-                        x.erase(
-                            std::remove_if(x.begin(), x.end(),
-                                           [&](size_t v){ return v >= old_nrow; }),
-                            x.end()
-                        );
-                        x.erase(std::unique(x.begin(), x.end()), x.end());
-                    }
-                    sort_assumption = true;
-                }
-            } 
-            for (auto& el : x)
+            for (const auto el : x)
                 row_view_map.erase(el);
         }
 
-        if (sort_assumption) {
-            size_t i = x[0] + 1;
-            size_t i2 = 1;
-            size_t written = x[0];
-            while (i2 < x.size()) {
-                unsigned ref_val = x[i2++];
-                const size_t start = i;
-                while (i < ref_val) ++i;
-                size_t len = i - start;
-                {
-                    T* __restrict d = row_view_idx.data() + written;
-                    T* __restrict s = row_view_idx.data() + start;
-                    
-                    std::memmove(d, s, len * sizeof(size_t));
-                } 
-                written += len;
-                i += 1;
-            }
-            while (i < old_nrow) {
-                row_view_idx[written] = row_view_idx[i];
-                i += 1;
-                written += 1;
-            };
+        if constexpr (!Sorted) {
+            std::sort(x.begin(), x.end());
         }
+        if constexpr (SanityCheck) {
+            x.erase(
+                std::remove_if(x.begin(), x.end(),
+                               [&](size_t v){ return v >= old_nrow; }),
+                x.end()
+            );
+            x.erase(std::unique(x.begin(), x.end()), x.end());
+        }
+
+        size_t i  = 0;
+        size_t i2 = 0;
+        size_t written = x[0];
+        while (i2 < x.size()) {
+            unsigned ref_val = x[i2++];
+            const size_t start = i;
+            while (i < ref_val) ++i;
+            size_t len = i - start;
+            {
+                T* __restrict d = row_view_idx.data() + written;
+                T* __restrict s = row_view_idx.data() + start;
+                
+                std::memmove(d, s, len * sizeof(size_t));
+            } 
+            written += len;
+            i += 1;
+        }
+        while (i < old_nrow) {
+            row_view_idx[written] = row_view_idx[i];
+            i += 1;
+            written += 1;
+        };
 
     } else {
 
@@ -126,11 +73,12 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
             return;
         }
 
-        auto compact_block_pod = [&]<typename T>(std::vector<T>& dst, 
-                                                 std::vector<T>& src) {
+        auto compact_block_pod = [old_nrow, &x]<typename T>(std::vector<T>& dst, 
+                                                            std::vector<T>& src) 
+        {
 
-            size_t i = x[0] + 1;
-            size_t i2 = 1;
+            size_t i  = 0;
+            size_t i2 = 0;
             size_t written = x[0];
             while (i2 < x.size()) {
             
@@ -156,9 +104,10 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
             };
         };
 
-        auto compact_block_scalar = [&](auto& dst, 
-                                        auto& src) {
-            size_t i = x[0] + 1;
+        auto compact_block_scalar = [old_nrow, &x](auto& dst, 
+                                                   auto& src) 
+        {
+            size_t i  = 0;
             size_t i2 = 0;
             size_t written = x[0];
             while (i2 < x.size()) {

@@ -100,14 +100,14 @@ void transform_left_join_mt(Dataframe &obj,
     using key_variant_t = std::conditional_t<!std::is_same_v<T, void>,
                                              std::vector<std::vector<element_type_t<T>>>*,
                                              std::variant<
-                                             std::monostate,
-                                             std::vector<std::vector<std::string>>*,
-                                             std::vector<std::vector<CharT>>*,
-                                             std::vector<std::vector<uint8_t>>*,
-                                             std::vector<std::vector<IntT>>*,
-                                             std::vector<std::vector<UIntT>>*,
-                                             std::vector<std::vector<FloatT>>*
-                                         >
+                                                 std::monostate,
+                                                 std::vector<std::vector<std::string>>*,
+                                                 std::vector<std::vector<CharT>>*,
+                                                 std::vector<std::vector<uint8_t>>*,
+                                                 std::vector<std::vector<IntT>>*,
+                                                 std::vector<std::vector<UIntT>>*,
+                                                 std::vector<std::vector<FloatT>>*
+                                             >
                           >; 
     key_variant_t var_key_table1;
     key_variant_t var_key_table2;
@@ -264,7 +264,7 @@ void transform_left_join_mt(Dataframe &obj,
 
     } else {
 
-        const auto& col1 = (*var_key_table)[table_idx1];
+        const auto& col1 = (*var_key_table1)[table_idx1];
         const auto& col2 = (*var_key_table2)[table_idx2];
 
         matcher<element_type_t<T>>(col1, col2);
