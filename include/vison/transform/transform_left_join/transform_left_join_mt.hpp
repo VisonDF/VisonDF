@@ -97,15 +97,18 @@ void transform_left_join_mt(Dataframe &obj,
     map_t lookup;
 
 
-    using key_variant_t = std::variant<
-        std::monostate,
-        std::vector<std::vector<std::string>>*,
-        std::vector<std::vector<CharT>>*,
-        std::vector<std::vector<uint8_t>>*,
-        std::vector<std::vector<IntT>>*,
-        std::vector<std::vector<UIntT>>*,
-        std::vector<std::vector<FloatT>>*
-    >; 
+    using key_variant_t = std::conditional_t<!std::is_same_v<T, void>,
+                                             std::vector<std::vector<element_type_t<T>>>*,
+                                             std::variant<
+                                             std::monostate,
+                                             std::vector<std::vector<std::string>>*,
+                                             std::vector<std::vector<CharT>>*,
+                                             std::vector<std::vector<uint8_t>>*,
+                                             std::vector<std::vector<IntT>>*,
+                                             std::vector<std::vector<UIntT>>*,
+                                             std::vector<std::vector<FloatT>>*
+                                         >
+                          >; 
     key_variant_t var_key_table1;
     key_variant_t var_key_table2;
     size_t idx_type;
@@ -157,100 +160,116 @@ void transform_left_join_mt(Dataframe &obj,
 
     std::vector<size_t> match_idx(local_nrow, SIZE_MAX);
 
-    std::visit([&lookup, 
-                &match_idx, 
-                &ob,
-                &var_key_table2,
-                val_size, 
-                table_idx1,
-                table_idx2](auto&& key_table) {
+    auto matcher = [&lookup, 
+                    &match_idx, 
+                    &obj,
+                    val_size]<typename Elem>(const auto& col1, const auto& col2) {
 
-        using TP = std::decay_t<decltype(key_table1)>;
+        lookup.reserve(col2.size());
 
-        if constexpr (!std::is_same_v<TP, std::monostate>) {
+        if constexpr (Method == LeftJoinMethods::First || 
+                      Method == LeftJoinMethods::Last) {
 
-            using Elem = TP::value_type::value_type;
-
-            const auto& col1 = (*key_table)[table_idx1];
-            const auto& col2 = (*std::get<TP>(var_key_table2))[table_idx2];
-
-            lookup.reserve(col2.size());
-
-            if constexpr (Method == LeftJoinMethods::First || 
-                          Method == LeftJoinMethods::Last) {
-
-                if constexpr (std::is_same_v<Elem, std::string>) {
-                    if constexpr (Method == LeftJoinMethod::First) {
-                        for (size_t i = 0; i < col2.size(); i += 1) {
-                            lookup.try_emplace(col2[i], i);
-                        };
-                    } else {
-                        for (size_t i = 0; i < col2.size(); i += 1) {
-                            lookup[col2[i]] = i;
-                        };
-                    }
-                } else {
-                   constexpr auto& size_table = get_types_size();
-                   const size_t val_size = size_table[idx_type];
-                   if constexpr (Method == LeftJoinMethod::First) {
-                       for (size_t i = 0; i < col2.size(); i += 1) {
-                           lookup.try_emplace(std::string_view{reinterpret_cast<const char*>(&col2[i]), 
-                                                                   val_size}, i);
-                       };
-                   } else {
-                       for (size_t i = 0; i < col2.size(); i += 1) {
-                           lookup[std::string_view{reinterpret_cast<const char*>(&col2[i]), 
-                                                                   val_size}] = i;
-                       };
-                   }
-                }
-
-                const unsigned int nrow2 = obj.get_nrow();
-
-                for (size_t i = 0; i < local_nrow; ++i) {
-                    auto it = lookup.find(col1[i]);
-                    if (it != lookup.end())
-                        match_idx[i] = it->second;
-                }
-
-            } else if constexpr (Method == LeftJoinMethods::Aligned) {
-
-                if constexpr (std::is_same_v<Elem, std::string>) {
+            if constexpr (std::is_same_v<Elem, std::string>) {
+                if constexpr (Method == LeftJoinMethod::First) {
                     for (size_t i = 0; i < col2.size(); i += 1) {
-                        auto [it, inserted] = lookup.try_emplace(col2[i], MatchGroup{});
-                        if (inserted) {
-                            it->second.idxs.reserve(3);
-                        }
-                        it->second.idxs.push_back(i);
+                        lookup.try_emplace(col2[i], i);
                     };
                 } else {
-                    constexpr auto& size_table = get_types_size();
-                    const size_t val_size = size_table[idx_type];
                     for (size_t i = 0; i < col2.size(); i += 1) {
-                        auto [it, inserted] = lookup.try_emplace(std::string_view{reinterpret_cast<const char*>(&col2[i]), 
-                                                                     val_size}, MatchGroup{});
-                        if (inserted) {
-                            it->second.idxs.reserve(3);
-                        }
-                        it->second.idxs.push_back(i);
+                        lookup[col2[i]] = i;
                     };
                 }
+            } else {
+               constexpr auto& size_table = get_types_size();
+               const size_t val_size = size_table[idx_type];
+               if constexpr (Method == LeftJoinMethod::First) {
+                   for (size_t i = 0; i < col2.size(); i += 1) {
+                       lookup.try_emplace(std::string_view{reinterpret_cast<const char*>(&col2[i]), 
+                                                               val_size}, i);
+                   };
+               } else {
+                   for (size_t i = 0; i < col2.size(); i += 1) {
+                       lookup[std::string_view{reinterpret_cast<const char*>(&col2[i]), 
+                                                               val_size}] = i;
+                   };
+               }
+            }
 
-                const unsigned int nrow2 = obj.get_nrow();
+            const unsigned int nrow2 = obj.get_nrow();
 
-                for (size_t i = 0; i < local_nrow; ++i) {
-                    auto it = lookup.find(col1[i]);
-                    if (it != lookup.end() && it->second.next < it->second.idxs.size()) {
-                        match_idx[i] = it->second.idxs[it->second.next];
-                        ++it->second.next;
+            for (size_t i = 0; i < local_nrow; ++i) {
+                auto it = lookup.find(col1[i]);
+                if (it != lookup.end())
+                    match_idx[i] = it->second;
+            }
+
+        } else if constexpr (Method == LeftJoinMethods::Aligned) {
+
+            if constexpr (std::is_same_v<Elem, std::string>) {
+                for (size_t i = 0; i < col2.size(); i += 1) {
+                    auto [it, inserted] = lookup.try_emplace(col2[i], MatchGroup{});
+                    if (inserted) {
+                        it->second.idxs.reserve(3);
                     }
-                }
+                    it->second.idxs.push_back(i);
+                };
+            } else {
+                constexpr auto& size_table = get_types_size();
+                const size_t val_size = size_table[idx_type];
+                for (size_t i = 0; i < col2.size(); i += 1) {
+                    auto [it, inserted] = lookup.try_emplace(std::string_view{reinterpret_cast<const char*>(&col2[i]), 
+                                                                 val_size}, MatchGroup{});
+                    if (inserted) {
+                        it->second.idxs.reserve(3);
+                    }
+                    it->second.idxs.push_back(i);
+                };
+            }
 
+            const unsigned int nrow2 = obj.get_nrow();
+
+            for (size_t i = 0; i < local_nrow; ++i) {
+                auto it = lookup.find(col1[i]);
+                if (it != lookup.end() && it->second.next < it->second.idxs.size()) {
+                    match_idx[i] = it->second.idxs[it->second.next];
+                    ++it->second.next;
+                }
             }
 
         }
 
-    }, var_key_table1);
+    }
+
+    if constexpr (std::is_same_v<T, void>) {
+
+        std::visit([&var_key_table2,
+                    table_idx1,
+                    table_idx2](auto&& key_table) {
+
+            using TP = std::decay_t<decltype(key_table1)>;
+
+            if constexpr (!std::is_same_v<TP, std::monostate>) {
+
+                using Elem = TP::value_type::value_type;
+
+                const auto& col1 = (*key_table)[table_idx1];
+                const auto& col2 = (*std::get<TP>(var_key_table2))[table_idx2];
+
+                matcher<Elem>(col1, col2);
+
+            }
+
+        }, var_key_table1);
+
+    } else {
+
+        const auto& col1 = (*var_key_table)[table_idx1];
+        const auto& col2 = (*var_key_table2)[table_idx2];
+
+        matcher<element_type_t<T>>(col1, col2);
+
+    }
 
     auto copy_block = [&matr_idx, &matr_idx2](auto& dst_v, auto& src_v, size_t size_offset, size_t idx_type) {
         for (size_t t = 0; t < matr_idx2[idx_type].size(); ++t) {
