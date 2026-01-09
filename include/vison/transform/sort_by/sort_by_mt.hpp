@@ -165,7 +165,6 @@ void sort_by_mt(unsigned int& n) {
                     local_nrow * sizeof(size_t));
              size_t i = 0;
              for (auto& el : idx) {
-                 row_view_map.emplace(i, el);
                  i += 1;
              }
              in_view = true;
@@ -178,8 +177,6 @@ void sort_by_mt(unsigned int& n) {
                      std::swap(idx[current], idx[next]);
                  }
              }
-             for (size_t i = 0; i < local_norw; ++i)
-                 row_view_map[i] = row_view_idx[i];
          }
     }
 

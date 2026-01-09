@@ -17,20 +17,6 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
 
     if constexpr (Soft) {
 
-        if (!in_view) {
-            in_view = true;
-            row_view_idx.resize(new_nrow);
-            std::iota(row_view_idx.begin(), row_view_idx.end(), 0);
-            row_view_map.reserve(old_nrow);
-            for (size_t i = 0; i < old_nrow; ++i)
-                row_view_map.emplace(i, i);
-            for (auto& el : x)
-                row_view_map.erase(el);
-        } else {
-            for (const auto el : x)
-                row_view_map.erase(el);
-        }
-
         if constexpr (!Sorted) {
             std::sort(x.begin(), x.end());
         }
@@ -41,6 +27,12 @@ void rm_row_range_reconstruct_mt(std::vector<unsigned int>& x)
                 x.end()
             );
             x.erase(std::unique(x.begin(), x.end()), x.end());
+        }
+
+        if (!in_view) {
+            in_view = true;
+            row_view_idx.resize(new_nrow);
+            std::iota(row_view_idx.begin(), row_view_idx.end(), 0);
         }
 
         size_t i  = 0;

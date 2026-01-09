@@ -59,9 +59,6 @@ struct CreateValueColHard {
     
                 }
     
-                for (auto& el : vec)
-                    el = row_view_map[el];
-    
                 memcpy(row_view_idx.data() + start,
                        vec.data(),
                        len * sizeof(unsigned int));
@@ -99,9 +96,6 @@ struct CreateValueColHard {
                     std::fill_n(out, len, *in);
     
                 }
-    
-                for (auto& el : vec)
-                    el = row_view_map[el];
     
                 memcpy(row_view_idx.data() + i2, 
                        vec.data(), 

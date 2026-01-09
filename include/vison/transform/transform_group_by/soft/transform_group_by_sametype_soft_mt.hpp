@@ -114,15 +114,9 @@ void transform_group_by_sametype_soft_mt(const std::vector<unsigned int>& x)
     if (!in_view) {
         in_view = true;
         row_view_idx.resize(local_nrow);
-        row_view_map.reserve(local_nrow);
-        for (size_t i = 0; i < local_nrow; ++i)
-            row_view_map.emplace(i, i);
     }
 
     create_value_col_soft<CORES>(lookup, local_nrow);
-
-    for (size_t i = 0; i < local_nrow; ++i)
-        row_view_map[i] = row_view_idx[i];
 
 }
 

@@ -196,7 +196,6 @@ namespace vison {
      
         bool in_view = false;
         std::vector<size_t> row_view_idx;
-        ankerl::unordered_dense::map<size_t, size_t> row_view_map;
         ankerl::unordered_dense::set<unsigned int> col_alrd_materialized;
 
         std::vector<std::vector<std::string>> str_v;
@@ -349,10 +348,6 @@ namespace vison {
 
         [[nodiscard]] inline const std::vector<size_t>& get_row_view_idx() const {
             return row_view_idx;
-        }
-
-        [[nodiscard]] inline const ankerl::unordered_dense::map<size_t, size_t>& get_row_view_map() const {
-            return row_view_map;
         }
 
         [[nodiscard]] inline const ankerl::unoredered_dense::set<size_t>& get_col_alrd_materialized() const {

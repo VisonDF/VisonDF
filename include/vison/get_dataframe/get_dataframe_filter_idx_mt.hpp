@@ -17,11 +17,9 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
     in_view = cur_obj.get_in_view();
     ankerl::unordered_dense::set<unsigned int>& col_alrd_materialized2  = cur_obj.get_col_alrd_materialized();
     const auto row_view_idx2           = cur_obj.get_row_view_idx();
-    const auto row_view_map2           = cur_obj.get_row_view_map();
 
     if (in_view) {
         row_view_idx.resize(local_nrow);
-        row_view_map.reserve(local_nrow);
     }
 
     auto copy_col_dense = [&mask, 
@@ -105,7 +103,6 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
 
     auto copy_col_view_dense = [&mask, 
                                 &row_view_idx2, 
-                                &row_view_map2,
                                 local_nrow]<typename T>(
                                                          const auto& src_vec2,
                                                          auto& dst_vec
@@ -172,9 +169,6 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
                                 row_view_idx2.data() + run.src_start,
                                 run.len * sizeof(T));
 
-                    for (size_t i = run.mask_pos; i < run.mask_pos + len; ++i)
-                        row_view_map[row_view_idx[i]] = i;
-
                 }
 
             }
@@ -191,9 +185,6 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
                             run.len * sizeof(T));
 
             }
-
-            for (size_t i = 0; i < row_view_idx.size(); ++i)
-                row_view_map[row_view_idx[i]] = i;
 
         }
 
@@ -260,7 +251,6 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
 
     auto copy_col_view = [&mask, 
                           &row_view_idx2, 
-                          &row_view_map2,
                           local_nrow](
                                        const auto& src_vec2,
                                        auto& dst_vec
@@ -306,7 +296,6 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
                     const size_t act = mask[j];
                     dst[j]     = src[act];
                     row_view_idx[j] = row_view_idx2[act];
-                    row_view_map[row_view_idx[j]] = j;
                 }
 
             }
@@ -317,7 +306,6 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
                 const size_t act = mask[j];
                 dst[j]     = src[act];
                 row_view_idx[j] = row_view_idx2[act];
-                row_view_map[row_view_idx[j]] = j;
             }
 
         }

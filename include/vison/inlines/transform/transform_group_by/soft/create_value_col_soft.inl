@@ -23,11 +23,8 @@ inline void create_value_col_soft(auto& lookup,
         for (size_t g = 0; g < lookup.size(); ++g) {
 
             size_t start = pos_boundaries[g];
-            size_t len   = pos_boundaries[g + 1] - pos_boundaries[g];
+            size_t len   = pos_boundaries[g + 1] - start;
             const std::vector<unsigned int>& vec = (it0 + g)->second.v;
-
-            for (auto& el : vec)
-                el = row_view_map[el];
 
             memcpy(row_view_idx.data() + start,
                    vec.data(),
@@ -43,8 +40,6 @@ inline void create_value_col_soft(auto& lookup,
         for (size_t i = 0; i < lookup.size(); ++i) {
 
             const std::vector<unsigned int>& vec = (it + i)->second.v;
-            for (auto& el : vec)
-                el = row_view_map[el];
 
             memcpy(row_view_idx.data() + i2, 
                    vec.data(), 

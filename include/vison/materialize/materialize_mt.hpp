@@ -23,7 +23,6 @@ void materialize_mt()
     }
     in_view = false;
     //row_view_idx.clear(); // unnecessary, may avoid unnecessary realloc
-    row_view_map.clear();
     col_alrd_materialized.clear();
 
     if constexpr (MemClean) {

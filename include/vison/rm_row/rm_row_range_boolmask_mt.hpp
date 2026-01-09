@@ -26,15 +26,8 @@ void rm_row_range_boolmask_mt(std::vector<uint8_t>& x,
             row_view_idx.resize(old_nrow);
             std::iota(row_view_idx.begin(), row_view_idx.end(), 0);
             compact_block(row_view_idx);
-            row_view_map.reserve(old_nrow);
-            for (size_t i = 0; i < old_nrow; ++i)
-                row_view_map.emplace(i, i);
-            for (auto& el : x)
-                row_view_map.erase(el);
         } else {
             compact_block(row_view_idx);
-            for (auto& el : x)
-                row_view_map.erase(el);
         }
 
     } else {

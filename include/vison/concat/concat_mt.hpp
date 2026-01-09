@@ -36,7 +36,6 @@ void concat_mt(Dataframe& obj)
         row_view_idx.resize(local_nrow);
         for (size_t i = pre_nrow; i < local_nrow; ++i) {
             row_view_idx.push_back(i);
-            row_view_map.emplace(i, i);
         }
     }
 

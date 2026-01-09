@@ -14,17 +14,14 @@ void get_dataframe_mt(const std::vector<size_t>& cols,
     in_view                = cur_obj.get_in_view();
     ankerl::unordered_dense::set<unsigned int>& col_alrd_materialized2  = cur_obj.get_col_alrd_materialized();
     const auto row_view_idx2           = cur_obj.get_row_view_idx();
-    const auto row_view_map2           = cur_obj.get_row_view_map();
 
 
     if (in_view) {
         row_view_idx2.resize(local_nrow);
-        row_view_map2.resize(local_nrow);
     }
 
     auto str_copy_col_view = [local_nrow,
-                              &row_view_idx2,
-                              &row_view_map2](std::string* dst, 
+                              &row_view_idx2](std::string* dst, 
                                               const std::string* src) {
 
         if constexpr (CORES > 1) {
@@ -63,9 +60,7 @@ void get_dataframe_mt(const std::vector<size_t>& cols,
                 for (size_t i = cur_start; i < cur_end; ++i) {
                     dst[i] = src[start + i];
                     row_view_idx[i] = row_view_idx2[start + i];
-                    row_view_map[row_view_idx[i]] = i;
                 }
-
 
             }
 
@@ -74,16 +69,14 @@ void get_dataframe_mt(const std::vector<size_t>& cols,
             for (size_t i = 0; i < local_nrow; ++i) {
                 dst[i] = src[start + i];
                 row_view_idx[i] = row_view_idx2[start + i];
-                row_view_map[row_view_idx[i]] = i;
             }
 
         }
     }
 
     auto copy_col_view = [local_nrow,
-                          &row_view_idx2,
-                          &row_view_map2]<typename T>(T* dst, 
-                                                     const T* src) {
+                          &row_view_idx2]<typename T>(T* dst, 
+                                                      const T* src) {
 
         if constexpr (CORES > 1) {
 
@@ -126,8 +119,6 @@ void get_dataframe_mt(const std::vector<size_t>& cols,
                        row_view_idx2.data() + start + cur_start, 
                        len * sizeof(T));
 
-               for (size_t i = cur_start; i < cur_end; ++i)
-                   row_view_map[row_view_idx[i]] = i;
 
             }
 
@@ -139,9 +130,6 @@ void get_dataframe_mt(const std::vector<size_t>& cols,
            memcpy(row_view_idx.data()  + cur_start, 
                   row_view_idx2.data() + start + cur_start, 
                   len * sizeof(T));
-
-           for (size_t i = 0; i < local_nrow; ++i)
-               row_view_map[row_view_idx[i]] = i;
 
         }
     }

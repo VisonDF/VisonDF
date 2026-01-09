@@ -2,7 +2,10 @@
 
 template <unsigned int CORES = 4, 
           bool MemClean = false,
-          bool Soft = true>
+          bool Soft = true,
+          bool Sorted = false,  // if not will affect x
+          bool SanityCheck = false
+         >
 void rm_row_range_mt(std::vector<unsigned int>& x) 
 {
 
@@ -10,22 +13,22 @@ void rm_row_range_mt(std::vector<unsigned int>& x)
 
     const size_t old_nrow = nrow;
 
-    std::vector<uint8_t> keep(old_nrow, 1);
-    for (unsigned int& rr : x) {
-        if (rr < old_nrow) [[likely]] {
-            keep[rr] = 0;
-        } else {
-            std::cerr << "Row out of bounds in (rm_row_range_reconstruct_mt)\n";
-            return;
-        }
+    if constexpr (!Sorted) {
+        std::sort(x.begin(), x.end());
+    }
+    if constexpr (SanityCheck) {
+        x.erase(
+            std::remove_if(x.begin(), x.end(),
+                           [&](size_t v){ return v >= old_nrow; }),
+            x.end()
+        );
+        x.erase(std::unique(x.begin(), x.end()), x.end());
     }
 
-    auto compact_block = [&](auto& vec) {
-        size_t idx = 0;
-        auto beg = vec.begin();
-        auto end = beg + old_nrow;
-        auto it  = std::remove_if(beg, end, [&](auto&) mutable { return !keep[idx++]; });
-        vec.erase(it, end);
+    auto compact_block = [&x](auto& vec) {
+        for (int i = x.size() - 1; i > -1; --1) {
+            vec.erase(vec.begin() + x[i]);
+        }
     };
 
     if constexpr (Soft) {
@@ -35,15 +38,8 @@ void rm_row_range_mt(std::vector<unsigned int>& x)
             row_view_idx.resize(old_nrow);
             std::iota(row_view_idx.begin(), row_view_idx.end(), 0);
             compact_block(row_view_idx);
-            row_view_map.reserve(old_nrow);
-            for (size_t i = 0; i < old_nrow; ++i)
-                row_view_map.emplace(i, i);
-            for (auto& el : x)
-                row_view_map.erase(el);
         } else {
             compact_block(row_view_idx);
-            for (auto& el : x)
-                row_view_map.erase(el);
         }
 
     } else {
@@ -66,37 +62,37 @@ void rm_row_range_mt(std::vector<unsigned int>& x)
                 case 0: {
                             #pragma omp parallel for if(CORES > 1) num_threads(CORES)
                             for (size_t cpos = 0; cpos < ncols_t; ++cpos)
-                                compact_block(str_v[cpos], keep); 
+                                compact_block(str_v[cpos]); 
                             break;
                         }
                 case 1: {
                             #pragma omp parallel for if(CORES > 1) num_threads(CORES)
                              for (size_t cpos = 0; cpos < ncols_t; ++cpos)                      
-                                compact_block(chr_v[cpos], keep); 
+                                compact_block(chr_v[cpos]); 
                             break;
                         }
                 case 2: {
                             #pragma omp parallel for if(CORES > 1) num_threads(CORES)
                              for (size_t cpos = 0; cpos < ncols_t; ++cpos)
-                                compact_block(bool_v[cpos], keep); 
+                                compact_block(bool_v[cpos]); 
                             break;
                         }
                 case 3: {
                             #pragma omp parallel for if(CORES > 1) num_threads(CORES)
                             for (size_t cpos = 0; cpos < ncols_t; ++cpos)
-                                compact_block(int_v[cpos], keep); 
+                                compact_block(int_v[cpos]); 
                             break;
                         }
                 case 4: {
                             #pragma omp parallel for if(CORES > 1) num_threads(CORES)
                             for (size_t cpos = 0; cpos < ncols_t; ++cpos)
-                                compact_block(uint_v[cpos], keep); 
+                                compact_block(uint_v[cpos]); 
                             break;
                         }
                 case 5: {
                             #pragma omp parallel for if(CORES > 1) num_threads(CORES)
                             for (size_t cpos = 0; cpos < ncols_t; ++cpos)
-                                compact_block(dbl_v[cpos], keep); 
+                                compact_block(dbl_v[cpos]); 
                             break;
                         }
             }
@@ -105,10 +101,8 @@ void rm_row_range_mt(std::vector<unsigned int>& x)
 
         if (!name_v_row.empty()) {
             auto& aux = name_v_row;
-            size_t idx = 0;
-            auto it = std::remove_if(aux.begin(), aux.end(),
-                                     [&](auto&) mutable { return !keep[idx++]; });
-            aux.erase(it, aux.end());
+            for (int i = x.size() - 1; i > -1; --1)
+                aux.erase(aux.begin() + i);
             if constexpr (MemClean) {
                aux.shrink_to_fit();
             }

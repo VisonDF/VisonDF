@@ -19,11 +19,9 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
     in_view = cur_obj.get_in_view();
     ankerl::unordered_dense::set<unsigned int>& col_alrd_materialized2  = cur_obj.get_col_alrd_materialized();
     const auto row_view_idx2           = cur_obj.get_row_view_idx();
-    const auto row_view_map2           = cur_obj.get_row_view_map();
 
     if (in_view) {
         row_view_idx.resize(local_nrow);
-        row_view_map.reserve(local_nrow);
     }
 
     auto copy_col_dense = [&mask, 
@@ -124,7 +122,6 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
 
     auto copy_col_view_dense = [&mask, 
                                 &row_view_idx2, 
-                                &row_view_map2,
                                 &runs,
                                 &offset_start]<typename T>(
                                                              const auto& src_vec2,
@@ -149,7 +146,6 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
             }
             dst_vec.resize(out_idx);
             row_view_idx.resize(out_idx);
-            row_view_map.reserve(out_idx);
         }
 
         if (!runs.empty()) {
@@ -160,11 +156,9 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
                 }
                 dst_vec.resize(active_count);
                 row_view_idx.resize(active_count);
-                row_view_map.reserve(active_count);
                 offset_start.x = active_count;
             } else if (!runs.empty()) {
                 row_view_idx.resize(offset_start.x);
-                row_view_map.reserve(offset_start.x);
                 dst_vec.resize(offset_start.x);
             }
         }
@@ -214,9 +208,6 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
                                 row_view_idx2.data() + run.src_start,
                                 run.len * sizeof(T));
 
-                    for (size_t i = run.mask_pos; i < run.mask_pos + len; ++i)
-                        row_view_map[row_view_idx[i]] = i;
-
                 }
 
             }
@@ -233,9 +224,6 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
                             run.len * sizeof(T));
 
             }
-
-            for (size_t i = 0; i < row_view_idx.size(); ++i)
-                row_view_map[row_view_idx[i]] = i;
 
         }
 
@@ -317,7 +305,6 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
 
     auto copy_col_view = [&mask, 
                           &row_view_idx2, 
-                          &row_view_map2,
                           &offset_start,
                           local_nrow](
                                        const auto& src_vec2,
@@ -341,12 +328,10 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
                 }
                 dst_vec.resize(active_count);
                 row_view_idx.resize(offset_start.x);
-                row_view_map.reserve(offset_start.x);
                 offset_start.x = active_count;
             } else {
                 dst_vec.resize(offset_start.x);
                 row_view_idx.resize(offset_start.x);
-                row_view_map.reserve(offset_start.x);
             }
 
             int numa_nodes = 1;
@@ -383,7 +368,6 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
                     if (!mask[j]) continue;
                     dst[out_idx]          = src[j];
                     row_view_idx[out_idx] = row_view_idx2[j];
-                    row_view_map[row_view_idx[out_idx++]] = j;
                 }
 
             }
@@ -394,7 +378,6 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
                 if (!mask[j]) continue;
                 dst.push_back(src[j]);
                 row_view_idx.push_back(row_view_idx2[j]);
-                row_view_map[row_view_idx.back()] = j;
             }
 
         }
