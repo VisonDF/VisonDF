@@ -16,7 +16,7 @@ void transform_unique_mt(unsigned int n)
     }
 
     const size_t local_nrow = nrow;
-    std::vector<uint8_t> mask(local_nrow, 0);
+    std::vector<uint8_t> mask(local_nrow, 1);
 
     using fast_set_t = std::conditional_t<
         SimdHash,
@@ -28,15 +28,18 @@ void transform_unique_mt(unsigned int n)
     lookup.reserve(local_nrow);
 
     size_t idx_type;
-    using key_variant_t = std::variant<
-        std::monostate,
-        const std::vector<std::vector<std::string>>*,
-        const std::vector<std::vector<CharT>>*,
-        const std::vector<std::vector<uint8_t>>*,
-        const std::vector<std::vector<IntT>>*,
-        const std::vector<std::vector<UIntT>>*,
-        const std::vector<std::vector<FloatT>>*
-    >; 
+    using key_variant_t = std::conditional_t<!std::is_same_v<T, void>,
+                                             std::vector<std::vector<element_type_t<T>>>*,
+                                             std::variant<
+                                                 std::monostate,
+                                                 const std::vector<std::vector<std::string>>*,
+                                                 const std::vector<std::vector<CharT>>*,
+                                                 const std::vector<std::vector<uint8_t>>*,
+                                                 const std::vector<std::vector<IntT>>*,
+                                                 const std::vector<std::vector<UIntT>>*,
+                                                 const std::vector<std::vector<FloatT>>*
+                                             >
+                          >; 
     key_variant_t var_key_table;
 
     unsigned int idx_type;
@@ -99,53 +102,73 @@ void transform_unique_mt(unsigned int n)
         real_pos = matr_idx_map[idx_type][n]; 
     }
 
-    std::visit([real_pos, val_size, &lookup, &mask](auto&& key_table) {
+    auto aply_filter = [val_size,
+                        &mask,
+                        &lookup]<typename Elem>(const auto& key_col) {
 
-        using TP = std::decay_t<decltype(key_table)>;
-
-        if constexpr (!std::is_same_v<TP, std::monostate>) {
-
-            using Elem = TP::value_type::value_type;
-
-            auto& key_col = (*key_table)[real_pos];
-
-            if constexpr (!Last) {
-                if constexpr (std::is_same_v<Elem, std::string>) {
-                     for (size_t i = 0; i < local_nrow; ++i) {
-                         if (!lookup.contains(key_col[i])) {
-                             mask[i] = 1;
-                             lookup.emplace(key_col[i]);
-                         }
+        if constexpr (!Last) {
+            if constexpr (std::is_same_v<Elem, std::string>) {
+                 for (size_t i = 0; i < local_nrow; ++i) {
+                     if (!lookup.contains(key_col[i])) {
+                         mask[i] = 0;
+                         lookup.emplace(key_col[i]);
                      }
-                } else {
-                    for (size_t i = 0; i < local_nrow; ++i) {
-                        if (!lookup.contains(std::string_view{reinterpret_cast<const char*>(&key_col[i]), val_size})) {
-                            mask[i] = 1;
-                            lookup.emplace(std::string_view{reinterpret_cast<const char*>(&key_col[i]), val_size});
-                        }
-                    }
-                }
+                 }
             } else {
-                if constexpr (std::is_same_v<Elem, std::string>) {
-                    for (int i = int(local_nrow) - 1; i >= 0; --i) {
-                        if (!lookup.contains(key_col[i])) [[unlikely]] {
-                            mask[i] = 1;
-                            lookup.emplace(key_col[i]);
-                        }
-                    }
-                } else {
-                    for (int i = int(local_nrow) - 1; i >= 0; --i) {
-                        if (!lookup.contains(std::string_view{reinterpret_cast<const char*>(&key_col[i]), val_size})) [[unlikely]] {
-                            mask[i] = 1;
-                            lookup.emplace(std::string_view{reinterpret_cast<const char*>(&key_col[i]), val_size});
-                        }
+                for (size_t i = 0; i < local_nrow; ++i) {
+                    if (!lookup.contains(std::string_view{reinterpret_cast<const char*>(&key_col[i]), val_size})) {
+                        mask[i] = 0;
+                        lookup.emplace(std::string_view{reinterpret_cast<const char*>(&key_col[i]), val_size});
                     }
                 }
             }
-
+        } else {
+            if constexpr (std::is_same_v<Elem, std::string>) {
+                for (int i = int(local_nrow) - 1; i >= 0; --i) {
+                    if (!lookup.contains(key_col[i])) [[unlikely]] {
+                        mask[i] = 0;
+                        lookup.emplace(key_col[i]);
+                    }
+                }
+            } else {
+                for (int i = int(local_nrow) - 1; i >= 0; --i) {
+                    if (!lookup.contains(std::string_view{reinterpret_cast<const char*>(&key_col[i]), val_size})) [[unlikely]] {
+                        mask[i] = 0;
+                        lookup.emplace(std::string_view{reinterpret_cast<const char*>(&key_col[i]), val_size});
+                    }
+                }
+            }
         }
+    };
 
-    }, var_key_table);
+    if constexpr (std::is_same_v<T, void>) {
+
+        std::visit([real_pos, 
+                    val_size, 
+                    &lookup, 
+                    &mask](auto&& key_table) {
+
+            using TP = std::decay_t<decltype(key_table)>;
+
+            if constexpr (!std::is_same_v<TP, std::monostate>) {
+
+                using Elem = TP::value_type::value_type;
+
+                const auto& key_col = (*key_table)[real_pos];
+
+                apply_filter<Elem>(key_col);
+
+            }
+
+        }, var_key_table);
+
+    } else {
+
+        const auto& key_col = (*var_key_table)[real_pos];
+
+        apply_filter<element_type_t<T>>(key_col);
+
+    }
 
     this->transform_filter_mt<CORES,
                               MemClean, 
@@ -153,6 +176,11 @@ void transform_unique_mt(unsigned int n)
                               Soft>(mask);
 
 };
+
+
+
+
+
 
 
 
