@@ -115,9 +115,6 @@ void sort_by_external_mr(const std::vector<T>& nvec) {
                     idx.data(), 
                     local_nrow * sizeof(size_t));
              size_t i = 0;
-             for (auto& el : idx) {
-                 i += 1;
-             }
              in_view = true;
          } else {
              for (size_t i = 0; i < local_nrow; ++i) {
