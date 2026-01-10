@@ -1,6 +1,7 @@
 #pragma once
 
-template <unsigned int CORES = 4, 
+template <unsigned int CORES = 4,
+          bool NUMA = false,
           bool MemClean = false,
           bool Soft = true,
           bool Sorted = false,  // if not will affect x
@@ -8,8 +9,6 @@ template <unsigned int CORES = 4,
          >
 void rm_row_range_mt(std::vector<unsigned int>& x) 
 {
-
-    // Soft May auto switch to view mode
 
     const size_t old_nrow = nrow;
 
@@ -25,7 +24,8 @@ void rm_row_range_mt(std::vector<unsigned int>& x)
         x.erase(std::unique(x.begin(), x.end()), x.end());
     }
 
-    auto compact_block = [&x](auto& vec) {
+    auto compact_block = [&x](auto& vec) 
+    {
         for (int i = x.size() - 1; i > -1; --1) {
             vec.erase(vec.begin() + x[i]);
         }
@@ -48,56 +48,62 @@ void rm_row_range_mt(std::vector<unsigned int>& x)
             std::cerr << "Can't perform this operation while `in_view` mode activated, consider applying `.materialize()`\n";
             return;
         }
-    
-        for (size_t t = 0; t < 6; ++t) {
-            
-            const std::vector<unsigned int>& matr_tmp = matr_idx[t];
+   
+        auto process_container = [&compact_block,
+                                  &x](auto& matr, const size_t idx_type) {
 
-            if (matr_tmp.empty())
-                continue;
+            const size_t ncols_cur = matr_idx[idx_type];
 
-            const size_t ncols_t = matr_tmp.size();
-            
-            switch (t) {
-                case 0: {
-                            #pragma omp parallel for if(CORES > 1) num_threads(CORES)
-                            for (size_t cpos = 0; cpos < ncols_t; ++cpos)
-                                compact_block(str_v[cpos]); 
-                            break;
-                        }
-                case 1: {
-                            #pragma omp parallel for if(CORES > 1) num_threads(CORES)
-                             for (size_t cpos = 0; cpos < ncols_t; ++cpos)                      
-                                compact_block(chr_v[cpos]); 
-                            break;
-                        }
-                case 2: {
-                            #pragma omp parallel for if(CORES > 1) num_threads(CORES)
-                             for (size_t cpos = 0; cpos < ncols_t; ++cpos)
-                                compact_block(bool_v[cpos]); 
-                            break;
-                        }
-                case 3: {
-                            #pragma omp parallel for if(CORES > 1) num_threads(CORES)
-                            for (size_t cpos = 0; cpos < ncols_t; ++cpos)
-                                compact_block(int_v[cpos]); 
-                            break;
-                        }
-                case 4: {
-                            #pragma omp parallel for if(CORES > 1) num_threads(CORES)
-                            for (size_t cpos = 0; cpos < ncols_t; ++cpos)
-                                compact_block(uint_v[cpos]); 
-                            break;
-                        }
-                case 5: {
-                            #pragma omp parallel for if(CORES > 1) num_threads(CORES)
-                            for (size_t cpos = 0; cpos < ncols_t; ++cpos)
-                                compact_block(dbl_v[cpos]); 
-                            break;
-                        }
-            }
+            if constexpr (CORES > 1) {
+
+                int numa_nodes = 1;
+                if (numa_available() >= 0) 
+                    numa_nodes = numa_max_node() + 1;
+
+                #pragma omp parallel if(CORES > 1) num_threads(CORES)
+                {
+
+                    const int tid        = omp_get_thread_num();
+                    const int nthreads   = omp_get_num_threads();
+           
+                    MtStruct cur_struct;
+
+                    if constexpr (NUMA) {
+                        numa_mt(cur_struct,
+                                ncols_cur, 
+                                tid, 
+                                nthreads, 
+                                numa_nodes);
+                    } else {
+                        simple_mt(cur_struct,
+                                  ncols_cur, 
+                                  tid, 
+                                  nthreads);
+                    }
                         
-        }
+                    const unsigned int start = cur_struct.start;
+                    const unsigned int end   = cur_struct.end;
+
+                    for (size_t cpos = start; cpos < end; ++cpos)
+                        compact_block(matr[cpos]); 
+
+                }
+
+            } else {
+
+                for (size_t cpos = 0; cpos < ncols_cur; ++cpos)
+                    compact_block(matr[cpos]); 
+
+            }
+
+        };
+
+        process_container(str_v,  0);
+        process_container(chr_v,  1);
+        process_container(bool_v, 2);
+        process_container(int_v,  3);
+        process_container(uint_v, 4);
+        process_container(dbl_v,  5);
 
         if (!name_v_row.empty()) {
             auto& aux = name_v_row;

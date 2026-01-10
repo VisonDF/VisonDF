@@ -1,6 +1,7 @@
 #pragma once
 
 template <unsigned int CORES = 4, 
+          bool NUMA = false,
           bool MemClean = false,
           bool Soft = false>
 void rm_row_mt(unsigned int x) 
@@ -12,67 +13,67 @@ void rm_row_mt(unsigned int x)
 
         if (!in_view) {
             in_view = true;
-            row_view_idx.erase(row_view_idx.begin() + x);
+            row_view_idx.resize(nrow);
+            std::iota(row_view_idx.begin(), row_view_idx.end(), 0);
         }
+        row_view_idx.erase(row_view_idx.begin() + x);
 
     } else {
 
-        for (size_t t = 0; t < 6; ++t) {
-            
-            const std::vector<unsigned int>& matr_tmp = matr_idx[t];
+        auto eraser = [x](auto& matr, const size_t idx_type) {
 
-            if (matr_tmp.empty()) {
-                continue;
-            }
+            const size_t ncols_cur = matr_idx[idx_type].size();
 
-            const size_t ncols_t = matr_tmp.size();
-            
-            switch (t) {
-                case 0: {
-                            #pragma omp parallel for num_threads(CORES)
-                            for (size_t cpos = 0; cpos < ncols_t; ++cpos) 
-                                str_v[cpos].erase(str_v[cpos].begin() + x);
+            if constexpr (CORES > 1) {
 
-                            break; 
-                        }
-                case 1: {   
-                            #pragma omp parallel for num_threads(CORES)
-                            for (size_t cpos = 0; cpos < ncols_t; ++cpos) 
-                                chr_v[cpos].erase(chr_v[cpos].begin() + x);
+                int numa_nodes = 1;
+                if (numa_available() >= 0) 
+                    numa_nodes = numa_max_node() + 1;
 
-                            break;
-                        }
-                case 2: {
-                            #pragma omp parallel for num_threads(CORES)
-                            for (size_t cpos = 0; cpos < ncols_t; ++cpos)
-                                bool_v[cpos].erase(bool_v[cpos].begin() + x);
+                #pragma omp parallel num_threads(CORES)
+                {
 
-                            break; 
-                        }
-                case 3: {
-                            #pragma omp parallel for num_threads(CORES)
-                            for (size_t cpos = 0; cpos < ncols_t; ++cpos)
-                                int_v[cpos].erase(int_v[cpos].begin() + x);
+                    const int tid        = omp_get_thread_num();
+                    const int nthreads   = omp_get_num_threads();
+           
+                    MtStruct cur_struct;
 
-                            break; 
-                        }
-                case 4: {
-                            #pragma omp parallel for num_threads(CORES)
-                            for (size_t cpos = 0; cpos < ncols_t; ++cpos)
-                                uint_v[cpos].erase(uint_v[cpos].begin() + x); 
-
-                            break; 
-                        }
-                case 5: {
-                            #pragma omp parallel for num_threads(CORES)
-                            for (size_t cpos = 0; cpos < ncols_t; ++cpos)
-                                dbl_v[cpos].erase(dbl_v[cpos].begin() + x); 
+                    if constexpr (NUMA) {
+                        numa_mt(cur_struct,
+                                ncols_cur, 
+                                tid, 
+                                nthreads, 
+                                numa_nodes);
+                    } else {
+                        simple_mt(cur_struct,
+                                  ncols_cur, 
+                                  tid, 
+                                  nthreads);
+                    }
                         
-                            break; 
-                        }
+                    const unsigned int start = cur_struct.start;
+                    const unsigned int end   = cur_struct.end;
+
+                    for (size_t cpos = start; cpos < end; ++cpos) 
+                        matr[cpos].erase(matr[cpos].begin() + x);
+
+                }
+
+            } else {
+
+                for (size_t cpos = 0; cpos < ncols_cur; ++cpos) 
+                    matr[cpos].erase(matr[cpos].begin() + x);
+
             }
-                
-        }
+
+        };
+
+        eraser(str_v,  0);
+        eraser(chr_v,  1);
+        eraser(bool_v, 2);
+        eraser(int_v,  3);
+        eraser(uint_v, 4);
+        eraser(dbl_v,  5);
 
         if (!name_v_row.empty()) {
             name_v_row.erase(name_v_row.begin() + x);
@@ -95,6 +96,8 @@ void rm_row_mt(unsigned int x)
     nrow = old_nrow - 1; 
 
 };
+
+
 
 
 

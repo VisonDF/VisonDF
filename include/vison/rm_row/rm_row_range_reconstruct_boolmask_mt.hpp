@@ -17,6 +17,38 @@ void rm_row_range_reconstruct_boolmask_mt(std::vector<uint8_t>& x,
         return;
     }
 
+    auto compact_block_pod = [&x]<typename T>(std::vector<T>& dst, 
+                                              std::vector<T>& src) {
+
+        size_t i       = 0;
+        size_t written = strt_vl;
+        while (!x[i]) {
+            i += 1;
+            written += 1;
+        }
+        while (i < x.size()) {
+       
+            while (i < x.size() && x[i]) {
+                i += 1;
+            }
+
+            size_t start = i;
+            while (i < x.size() && !x[i]) ++i;
+        
+            size_t len = i - start;
+            {
+                T* __restrict d = dst.data() + written;
+                T* __restrict s = src.data() + strt_vl + start;
+       
+                memmove(d, s, len * sizeof(T))
+
+            }
+        
+            written += len;
+            i += 1;
+        }
+    };
+
     if constexpr (Soft) {
 
         if (!in_view) {
@@ -24,67 +56,14 @@ void rm_row_range_reconstruct_boolmask_mt(std::vector<uint8_t>& x,
             std::iota(row_view_idx.begin(), row_view_idx.end(), 0);
             in_view = true;
         }
-            
-        size_t i       = 0;
-        size_t written = strt_vl;
-        while (!x[i]) {
-            i += 1;
-            written += 1;
-        }
-        while (i < new_nrow && x[i]) {
-            i += 1;
-        }
-        while (i < x.size()) {
-            size_t start = i;
-            while (i < x.size() && !x[i]) ++i;
-            size_t len = i - start; 
-            {
-                T* __restrict d = row_view_idx.data() + written;
-                T* __restrict s = row_view_idx.data() + strt_vl + start;
-                
-                std::memmove(d, s, len * sizeof(size_t));
-            } 
-            written += len;
-            i += 1;
-        }
+
+        compact_block_pod(row_view_idx, row_view_idx);
 
     } else {
 
         if (in_view) {
             throw std::runtime_error("Can't perform this operation while `in_view` mode activated, consider applying `.materialize()`\n");
         }
-
-        auto compact_block_pod = [&x]<typename T>(std::vector<T>& dst, 
-                                                  std::vector<T>& src) {
-
-            size_t i       = 0;
-            size_t written = strt_vl;
-            while (!x[i]) {
-                i += 1;
-                written += 1;
-            }
-            while (i < x.size()) {
-           
-                while (i < x.size() && x[i]) {
-                    i += 1;
-                }
-
-                size_t start = i;
-                while (i < x.size() && !x[i]) ++i;
-            
-                size_t len = i - start;
-                {
-                    T* __restrict d = dst.data() + written;
-                    T* __restrict s = src.data() + strt_vl + start;
-           
-                    memmove(d, s, len * sizeof(T))
-
-                }
-            
-                written += len;
-                i += 1;
-            }
-        };
 
         auto compact_block_scalar = [&x](auto& dst, 
                                          auto& src) {
@@ -107,74 +86,66 @@ void rm_row_range_reconstruct_boolmask_mt(std::vector<uint8_t>& x,
             }
         };
 
-        for (size_t t = 0; t < 6; ++t) {
-            
-            const auto& idx = matr_idx[t];
-            const size_t ncols_t = idx.size();
-            if (ncols_t == 0) continue;
+        auto process_container = [&x](auto&& f,
+                                      auto& matr, 
+                                      const size_t idx_type) 
+        {
 
-            switch (t) {
-                case 0: 
-                    #pragma omp parallel for if(CORES > 1) num_threads(CORES)
-                    for (size_t cpos = 0; cpos < ncols_t; ++cpos)
-                        compact_block_scalar(str_v[cpos], str_v[cpos]);
-                    break;
-                case 1:
-                    #pragma omp parallel for if(CORES > 1) num_threads(CORES)
-                    for (size_t cpos = 0; cpos < ncols_t; ++cpos) {
-                        compact_block_pod.template operator()<CharT>(chr_v[cpos],  
-                                                                     chr_v[cpos]);
+            const size_t ncols_cur = matr_idx[idx_type];
+
+            if constexpr (CORES > 1) {
+
+                int numa_nodes = 1;
+                if (numa_available() >= 0) 
+                    numa_nodes = numa_max_node() + 1;
+
+                #pragma omp parallel if(CORES > 1) num_threads(CORES)
+                {
+
+                    const int tid        = omp_get_thread_num();
+                    const int nthreads   = omp_get_num_threads();
+           
+                    MtStruct cur_struct;
+
+                    if constexpr (NUMA) {
+                        numa_mt(cur_struct,
+                                ncols_cur, 
+                                tid, 
+                                nthreads, 
+                                numa_nodes);
+                    } else {
+                        simple_mt(cur_struct,
+                                  ncols_cur, 
+                                  tid, 
+                                  nthreads);
                     }
-                    break;
-                case 2: 
-                    #pragma omp parallel for if(CORES > 1) num_threads(CORES)
-                    for (size_t cpos = 0; cpos < ncols_t; ++cpos) {
-                        compact_block_pod.template operator()<uint8_t>(bool_v[cpos],  
-                                                                       bool_v[cpos]);
-                    }
-                    break;
-                case 3:
-                    #pragma omp parallel for if(CORES > 1) num_threads(CORES)
-                    for (size_t cpos = 0; cpos < ncols_t; ++cpos) {
-                        compact_block_pod.template operator()<IntT>(int_v[cpos], 
-                                                                    int_v[cpos]);
-                    }
-                    break;
-                case 4:
-                    #pragma omp parallel for if(CORES > 1) num_threads(CORES)
-                    for (size_t cpos = 0; cpos < ncols_t; ++cpos) {
-                        compact_block_pod.template operator()<UIntT>(uint_v[cpos], 
-                                                                     uint_v[cpos]);
-                    }
-                    break;
-                case 5:
-                    #pragma omp parallel for if(CORES > 1) num_threads(CORES)
-                    for (size_t cpos = 0; cpos < ncols_t; ++cpos) {
-                        compact_block_pod.template operator()<FloatT>(dbl_v[cpos],
-                                                                      dbl_v[cpos]);
-                    }
-                    break;
+                        
+                    const unsigned int start = cur_struct.start;
+                    const unsigned int end   = cur_struct.end;
+
+                    for (size_t cpos = start; cpos < end; ++cpos)
+                        f(matr[cpos]); 
+
+                }
+
+            } else {
+
+                for (size_t cpos = 0; cpos < ncols_cur; ++cpos)
+                    f(matr[cpos]); 
+
             }
-        }
-        
+
+        };
+
+        process_container(compact_block_scalar, str_v,  0);
+        process_container(compact_block_pod,    chr_v,  1);
+        process_container(compact_block_pod,    bool_v, 2);
+        process_container(compact_block_pod,    int_v,  3);
+        process_container(compact_block_pod,    uint_v, 4);
+        process_container(compact_block_pod,    dbl_v,  5);
+
         if (!name_v_row.empty()) {
-            size_t i = x[0] + 1;
-            size_t i2 = 0;
-            size_t written = x[0];
-            while (i2 < x.size()) {
-                const unsigned int ref_val = x[i2++];
-                while (i < ref_val) {
-                    name_v_row[row_view_idx[written]] = std::move(name_v_row[row_view_idx[i]]);
-                    i += 1;
-                    written += 1;
-                };
-                i += 1;
-            }
-            while (i < old_nrow) {
-                name_v_row[row_view_idx[written]] = std::move(name_v_row[row_view_idx[i]]);
-                i += 1;
-                written += 1;
-            };
+            compact_block_scalar(name_v_row, name_v_row);
             if constexpr (MemClean) {
                 name_v_row.resize(new_nrow);
                 name_v_row.shrink_to_fit();
