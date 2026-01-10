@@ -90,6 +90,7 @@ namespace vison {
     #include "types/mt_struct.inl"
     #include "types/OffsetBoolMask.inl"
     #include "types/RunsIdxMt.inl"
+    #include "types/supported_mt_methods.inl"
 
     #include "inlines/simple_mt.inl"
     #include "inlines/numa_mt.inl"
@@ -470,8 +471,12 @@ namespace vison {
         #include "rm_row/rm_row_mt.hpp"
         #include "rm_row/rm_row_range.hpp"
         #include "rm_row/rm_row_range_mt.hpp"
-        #include "rm_row/rm_row_range_reconstruct.hpp"
-        #include "rm_row/rm_row_range_reconstruct_mt.hpp"
+        #include "rm_row/rm_row_range_boolmask.hpp"
+        #include "rm_row/rm_row_range_boolmask_mt.hpp"
+        #include "rm_row/rm_row_range_dense.hpp"
+        #include "rm_row/rm_row_range_dense_mt.hpp"
+        #include "rm_row/rm_row_range_dense_boolmask.hpp"
+        #include "rm_row/rm_row_range_dense_boolmask_mt.hpp"
 
         #include "transform/reorder_col/reorder_col.hpp"
         #include "transform/reorder_col/reorder_col_mt.hpp"
@@ -511,19 +516,6 @@ namespace vison {
         #include "one_to_many_join/otm.hpp"
         #ifdef _OPENMP
         #include "one_to_many_join/otm_mt.hpp"
-        #endif
-
-        #include "transform/transform_filter/transform_filter.hpp"
-        #ifdef _OPENMP
-        #include "transform/transform_filter/transform_filter_mt.hpp"
-        #endif
-        #include "transform/transform_filter/transform_filter_range.hpp"
-        #ifdef _OPENMP
-        #include "transform/transform_filter/transform_filter_range_mt.hpp"
-        #endif
-        #include "transform/transform_filter/transform_filter_idx.hpp"
-        #ifdef _OPENMP
-        #include "transform/transform_filter/transform_filter_idx_mt.hpp"
         #endif
 
         #include "transform/transform_unique/transform_unique_mt.hpp"

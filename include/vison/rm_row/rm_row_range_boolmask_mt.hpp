@@ -2,21 +2,112 @@
 
 template <unsigned int CORES = 4, 
           bool NUMA = false,
+          MtMethod MtType = MtMethod::Row,
           bool MemClean = false,
-          bool Soft = true>
-void rm_row_range_boolmask_mt(std::vector<uint8_t>& x,
-                              const size_t strt_vl) 
+          bool Soft = true,
+          bool MakeAlloc = false,
+          bool OneIsTrue = true
+         >
+void rm_row_range_bool_mt(std::vector<uint8_t>& mask,
+                              const size_t strt_vl,
+                              OffsetBoolMask& start_offset) 
 {
 
     // Soft May auto switch to view mode
-
     const size_t old_nrow = nrow;
 
-    auto compact_block = [old_nrow, strt_vl](auto& vec) {
-        size_t out_idx = 0;
-        for (size_t i = 0; i < n; ++read) {
-            if (!mask[i]) {
-                vec[strt_vl + out_idx++] = std::move(vec[strt_vl + i]);
+    auto compact_block = [old_nrow, 
+                          strt_vl, 
+                          &mask]<typename T>(std::vector<T>& vec, 
+                                             const size_t inner_cores) {
+
+        std::vector<T> vec2;
+        if constexpr (MakeAlloc || CORES > 1) {
+            vec2 = vec;
+        }
+
+        if constexpr (CORES > 1) {
+            
+            int numa_nodes = 1;
+            if (numa_available() >= 0) 
+                numa_nodes = numa_max_node() + 1;
+
+            if (start_offset.vec.empty()) {
+                start_ofset.vec.resize(mask.size());
+                size_t active_rows = 0;
+                for (size_t i = 0; i < mask.size()) {
+                    active_rows += mask[i];
+                    start_offset.vec[i] = active_rows;
+                }
+            }
+
+            #pragma omp parallel if(inner_cores > 1) num_threads(inner_cores)
+            {
+
+                const int tid        = omp_get_thread_num();
+                const int nthreads   = omp_get_num_threads();
+           
+                MtStruct cur_struct;
+
+                if constexpr (NUMA) {
+                    numa_mt(cur_struct,
+                            mask.size(), 
+                            tid, 
+                            nthreads, 
+                            numa_nodes);
+                } else {
+                    simple_mt(cur_struct,
+                              mask.size(), 
+                              tid, 
+                              nthreads);
+                }
+                    
+                const unsigned int start = cur_struct.start;
+                const unsigned int end   = cur_struct.end;
+
+                size_t out_idx = start_offset.vec[start];
+
+                for (size_t i = start; i < end; ++read) {
+                    if constexpr (OneIsTrue) {
+                        if (!mask[i]) {
+                            vec[strt_vl + out_idx++] = std::move(vec2[strt_vl + i]);
+                        }
+                    } else {
+                        if (mask[i]) {
+                            vec[strt_vl + out_idx++] = std::move(vec2[strt_vl + i]);
+                        }
+                    }
+                }
+
+            }
+
+        } else {
+            if constexpr (MakeAlloc) {
+                size_t out_idx = 0;
+                for (size_t i = 0; i < mask.size(); ++read) {
+                    if constexpr (OneIsTrue) {
+                        if (!mask[i]) {
+                            vec[strt_vl + out_idx++] = std::move(vec2[strt_vl + i]);
+                        }
+                    } else {
+                        if (mask[i]) {
+                            vec[strt_vl + out_idx++] = std::move(vec2[strt_vl + i]);
+                        }
+                    }
+                }
+            } else {
+                size_t out_idx = 0;
+                for (size_t i = 0; i < mask.size(); ++read) {
+                    if constexpr (OneIsTrue) {
+                        if (!mask[i]) {
+                            vec[strt_vl + out_idx++] = std::move(vec[strt_vl + i]);
+                        }
+                    } else {
+                        if (mask[i]) {
+                            vec[strt_vl + out_idx++] = std::move(vec[strt_vl + i]);
+                        }
+                    }
+                }
             }
         }
     };
@@ -34,13 +125,14 @@ void rm_row_range_boolmask_mt(std::vector<uint8_t>& x,
 
     } else {
 
+        if (CORES == 1 && strt_vl > 0)
+            throw std::runtime_error("MakeAlloc required\n");
+
         if (in_view) {
-            std::cerr << "Can't perform this operation while `in_view` mode activated, consider applying `.materialize()`\n";
-            return;
+            throw std::runtime_error("Can't perform this operation while `in_view` mode activated, consider applying `.materialize()`\n");
         }
 
-        auto process_container = [&compact_block,
-                                  &x](auto& matr, const size_t idx_type) {
+        auto process_container = [&compact_block](auto& matr, const size_t idx_type) {
 
             const size_t ncols_cur = matr_idx[idx_type];
 
@@ -50,7 +142,18 @@ void rm_row_range_boolmask_mt(std::vector<uint8_t>& x,
                 if (numa_available() >= 0) 
                     numa_nodes = numa_max_node() + 1;
 
-                #pragma omp parallel if(CORES > 1) num_threads(CORES)
+                const unsigned int outer_threads = std::conditional_t<MtType == MtMethod::Col,
+                                                                      CORES,
+                                                                      std::min<unsigned int>(
+                                                                          matr_idx[idx_type].size(), std::max(1u, CORES / 2)
+                                                                       )
+                                                                     >;
+                const unsigned int inner_threads = std::conditional_t<MtType == MtMethod::Row,
+                                                                      CORES,
+                                                                      std::max(1u, CORES / outer_threads)
+                                                                     >;
+
+                #pragma omp parallel if(outer_cores > 1) num_threads(outer_cores)
                 {
 
                     const int tid        = omp_get_thread_num();
@@ -75,14 +178,14 @@ void rm_row_range_boolmask_mt(std::vector<uint8_t>& x,
                     const unsigned int end   = cur_struct.end;
 
                     for (size_t cpos = start; cpos < end; ++cpos)
-                        compact_block(matr[cpos]); 
+                        compact_block(matr[cpos], inner_cores); 
 
                 }
 
             } else {
 
                 for (size_t cpos = 0; cpos < ncols_cur; ++cpos)
-                    compact_block(matr[cpos]); 
+                    compact_block(matr[cpos], inner_cores); 
 
             }
 
@@ -99,7 +202,7 @@ void rm_row_range_boolmask_mt(std::vector<uint8_t>& x,
             auto& aux = name_v_row;
             size_t idx = 0;
             auto it = std::remove_if(aux.begin(), aux.end(),
-                                     [&](auto&) mutable { return x[idx++]; });
+                                     [&](auto&) mutable { return mask[idx++]; });
             aux.erase(it, aux.end());
             if constexpr (MemClean) {
                aux.shrink_to_fit();
@@ -117,7 +220,7 @@ void rm_row_range_boolmask_mt(std::vector<uint8_t>& x,
 
     }
 
-    nrow = old_nrow - x.size(); 
+    nrow = old_nrow - mask.size(); 
 
 };
 

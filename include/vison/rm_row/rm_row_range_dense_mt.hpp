@@ -1,79 +1,71 @@
 #pragma once
 
 template <unsigned int CORES = 4,
+          bool NUMA = false,
           bool MemClean = false,
           bool Soft = true,
-          bool OneIsTrue = true
+          bool Sorted = false,  // if not, it will modify x
+          bool SanityCheck = true,
          >
-void rm_row_range_reconstruct_boolmask_mt(std::vector<uint8_t>& x,
-                                          const size_t strt_vl)
+void rm_row_range_inplace_mt(std::vector<unsigned int>& x)
 {
 
     const size_t old_nrow = nrow;
     if (x.empty() || old_nrow == 0) return;
+    if constexpr (!Sorted) std::sort(x.begin(), x.end());
 
-    const size_t new_nrow = std::count(x.begin(), x.end(), 0);
-    if (new_nrow == nrow) return;
-    if (new_nrow == 0) {
-        std::cout << "Consider using .empty() if you want to remove all rows\n"; 
-        return;
-    }
+    const size_t new_nrow = old_nrow - x.size();
 
-    auto compact_block_pod = [&x]<typename T>(std::vector<T>& dst, 
-                                              std::vector<T>& src) {
+    auto compact_block_pod = [old_nrow, &x]<typename T>(std::vector<T>& dst, 
+                                                        std::vector<T>& src) 
+    {
 
-        size_t i       = 0;
-        size_t written = strt_vl;
-        if constexpr (OneIsTrue) {
-            while (!x[i]) {
-                i += 1;
-                written += 1;
-            }
-        } else {
-            while (x[i]) {
-                i += 1;
-                written += 1;
-            }
-        }
-        while (i < x.size()) {
-      
-            if constexpr (OneIsTrue) {
-                while (i < x.size() && x[i]) {
-                    i += 1;
-                }
-            } else {
-                while (i < x.size() && !x[i]) {
-                    i += 1;
-                }
-            }
-
+        size_t i  = 0;
+        size_t i2 = 0;
+        size_t written = x[0];
+        while (i2 < x.size()) {
+        
+            unsigned ref_val = x[i2++];
             size_t start = i;
-            if constexpr (OneIsTrue) {
-                while (i < x.size() && !x[i]) ++i;
-            } else {
-                while (i < x.size() && x[i]) ++i;
-            }
+            while (i < ref_val) ++i;
         
             size_t len = i - start;
             {
                 T* __restrict d = dst.data() + written;
-                T* __restrict s = src.data() + strt_vl + start;
+                T* __restrict s = src.data() + start;
        
                 memmove(d, s, len * sizeof(T))
-
             }
         
             written += len;
             i += 1;
         }
+        while (i < old_nrow) {
+            dst[written] = src[i];
+            i += 1;
+            written += 1;
+        };
     };
+
 
     if constexpr (Soft) {
 
+        if constexpr (!Sorted) {
+            std::sort(x.begin(), x.end());
+        }
+        if constexpr (SanityCheck) {
+            x.erase(
+                std::remove_if(x.begin(), x.end(),
+                               [&](size_t v){ return v >= old_nrow; }),
+                x.end()
+            );
+            x.erase(std::unique(x.begin(), x.end()), x.end());
+        }
+
         if (!in_view) {
-            row_view_idx.resize(old_nrow);
-            std::iota(row_view_idx.begin(), row_view_idx.end(), 0);
             in_view = true;
+            row_view_idx.resize(new_nrow);
+            std::iota(row_view_idx.begin(), row_view_idx.end(), 0);
         }
 
         compact_block_pod(row_view_idx, row_view_idx);
@@ -81,47 +73,30 @@ void rm_row_range_reconstruct_boolmask_mt(std::vector<uint8_t>& x,
     } else {
 
         if (in_view) {
-            throw std::runtime_error("Can't perform this operation while `in_view` mode activated, consider applying `.materialize()`\n");
+            std::cerr << "Can't perform this operation while `in_view` mode activated, consider applying `.materialize()`\n";
+            return;
         }
 
-        auto compact_block_scalar = [&x](auto& dst, 
-                                         auto& src) {
-            size_t i       = 0;
-            size_t written = strt_vl;
-            if constexpr (OneIsTrue) {
-                while (!x[i]) {
+        auto compact_block_scalar = [old_nrow, &x](auto& dst, 
+                                                   auto& src) 
+        {
+            size_t i  = 0;
+            size_t i2 = 0;
+            size_t written = x[0];
+            while (i2 < x.size()) {
+                const unsigned int ref_val = x[i2++];
+                while (i < ref_val) {
+                    dst[written] = std::move(src[i]);
                     i += 1;
                     written += 1;
-                }
-            } else {
-                while (x[i]) {
-                    i += 1;
-                    written += 1;
-                }
-            }
-            while (i < x.size()) {
-                if constexpr (OneIsTrue) {
-                    while (i < x.size() && x[i]) i += 1;
-                } else {
-                    while (i < x.size() && x[i]) i += 1;
-                }
-
-                if constexpr (OneIsTrue) {
-                   while (i < x.size() && !x[i]) {
-                       dst[written] = std::move(src[strt_vl + i]);
-                       i += 1;
-                       written += 1;
-                   };
-                } else {
-                   while (i < x.size() && x[i]) {
-                       dst[written] = std::move(src[strt_vl + i]);
-                       i += 1;
-                       written += 1;
-                   };
-                }
-
+                };
                 i += 1;
             }
+            while (i < old_nrow) {
+                dst[written] = std::move(src[i]);
+                i += 1;
+                written += 1;
+            };
         };
 
         auto process_container = [&x](auto&& f,
@@ -189,6 +164,7 @@ void rm_row_range_reconstruct_boolmask_mt(std::vector<uint8_t>& x,
                 name_v_row.shrink_to_fit();
             }
         }
+
         if constexpr (MemClean) {
             for (auto& el : str_v)        el.resize(new_nrow); el.shrink_to_fit();
             for (auto& el : chr_v)        el.resize(new_nrow); el.shrink_to_fit();
@@ -203,5 +179,6 @@ void rm_row_range_reconstruct_boolmask_mt(std::vector<uint8_t>& x,
     nrow = new_nrow;
 
 }
+
 
 
