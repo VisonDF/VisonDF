@@ -2,7 +2,9 @@
 
 template <unsigned int CORES = 4,
           bool MemClean = false,
-          bool Soft = true>
+          bool Soft = true,
+          bool OneIsTrue = true
+         >
 void rm_row_range_reconstruct_boolmask_mt(std::vector<uint8_t>& x,
                                           const size_t strt_vl)
 {
@@ -22,18 +24,35 @@ void rm_row_range_reconstruct_boolmask_mt(std::vector<uint8_t>& x,
 
         size_t i       = 0;
         size_t written = strt_vl;
-        while (!x[i]) {
-            i += 1;
-            written += 1;
+        if constexpr (OneIsTrue) {
+            while (!x[i]) {
+                i += 1;
+                written += 1;
+            }
+        } else {
+            while (x[i]) {
+                i += 1;
+                written += 1;
+            }
         }
         while (i < x.size()) {
-       
-            while (i < x.size() && x[i]) {
-                i += 1;
+      
+            if constexpr (OneIsTrue) {
+                while (i < x.size() && x[i]) {
+                    i += 1;
+                }
+            } else {
+                while (i < x.size() && !x[i]) {
+                    i += 1;
+                }
             }
 
             size_t start = i;
-            while (i < x.size() && !x[i]) ++i;
+            if constexpr (OneIsTrue) {
+                while (i < x.size() && !x[i]) ++i;
+            } else {
+                while (i < x.size() && x[i]) ++i;
+            }
         
             size_t len = i - start;
             {
@@ -69,19 +88,38 @@ void rm_row_range_reconstruct_boolmask_mt(std::vector<uint8_t>& x,
                                          auto& src) {
             size_t i       = 0;
             size_t written = strt_vl;
-            while (!x[i]) {
-                i += 1;
-                written += 1;
-            }
-            while (i < x.size()) {
-                while (i < x.size() && x[i]) {
-                    i += 1;
-                }
-                while (i < x.size() && !x[i]) {
-                    dst[written] = std::move(src[strt_vl + i]);
+            if constexpr (OneIsTrue) {
+                while (!x[i]) {
                     i += 1;
                     written += 1;
-                };
+                }
+            } else {
+                while (x[i]) {
+                    i += 1;
+                    written += 1;
+                }
+            }
+            while (i < x.size()) {
+                if constexpr (OneIsTrue) {
+                    while (i < x.size() && x[i]) i += 1;
+                } else {
+                    while (i < x.size() && x[i]) i += 1;
+                }
+
+                if constexpr (OneIsTrue) {
+                   while (i < x.size() && !x[i]) {
+                       dst[written] = std::move(src[strt_vl + i]);
+                       i += 1;
+                       written += 1;
+                   };
+                } else {
+                   while (i < x.size() && x[i]) {
+                       dst[written] = std::move(src[strt_vl + i]);
+                       i += 1;
+                       written += 1;
+                   };
+                }
+
                 i += 1;
             }
         };
