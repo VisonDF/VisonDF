@@ -2,6 +2,7 @@
 
 template <bool MapCol = false,
           unsigned int CORES = 4,
+          bool OneIsTrue = true,
           typename T, 
           typename F>
 inline void apply_numeric_filter_boolmask(const std::vector<T>& values, 
@@ -42,14 +43,16 @@ inline void apply_numeric_filter_boolmask(const std::vector<T>& values,
         if (CORES > mask.size())
             throw std::runtime_error("Too much cores for so little nrows\n");
 
-        size_t active_count = 0;
+       std::vector<size_t> thread_counts;
+       std::vector<size_t> thread_offsets;
+
+        size_t active_count;
         if (offset_start.vec.empty()) {
-            offset_start.vec.reserve(mask.size() / 3);
-            for (size_t i = 0; i < mask.size(); ++i) {
-                active_count += mask[i] != 0;
-                offset_start.vec.push_back(active_count);
-            }
-            offset_start.x = active_count;
+            boolmask_offset_per_thread<OneIsTrue>(thread_counts, 
+                                                  thread_offsets, 
+                                                  mask, 
+                                                  CORES,
+                                                  active_count);
         }
 
         int numa_nodes = 1;
@@ -80,12 +83,29 @@ inline void apply_numeric_filter_boolmask(const std::vector<T>& values,
             const unsigned int cur_start = cur_struct.start;
             const unsigned int cur_end   = cur_struct.end;
 
-            size_t out_idx = offset_start[cur_start];
+            size_t out_idx;
+            if (offset_start.vec.empty()) {
+                out_idx = thread_offsets[tid];
+            } else {
+                out_idx = offset_start[cur_start];
+            }
 
-            for (size_t i = cur_strt; i < cur_end; ++i) {
-                if (!mask[i]) { continue; }
-                f(dst[strt_vl + out_idx]);
-                out_idx += 1;
+            if constexpr (OneIsTrue) {
+
+                for (size_t i = cur_start; i < cur_end; ++i) {
+                    if (!mask[i]) { continue; }
+                    f(dst[strt_vl + out_idx]);
+                    out_idx += 1;
+                }
+
+            } else {
+
+                for (size_t i = cur_start; i < cur_end; ++i) {
+                    if (mask[i]) { continue; }
+                    f(dst[strt_vl + out_idx]);
+                    out_idx += 1;
+                }
+
             }
 
         }
@@ -93,14 +113,30 @@ inline void apply_numeric_filter_boolmask(const std::vector<T>& values,
     } else {
 
         size_t out_idx = 0;
-        for (size_t i = 0; i < end_val; ++i) {
-            if (!mask[i]) { continue; }
-            f(dst[strt_vl + out_idx]);
-            out_idx += 1;
+
+        if constexpr (OneIsTrue) {
+
+            for (size_t i = 0; i < end_val; ++i) {
+                if (!mask[i]) { continue; }
+                f(dst[strt_vl + out_idx]);
+                out_idx += 1;
+            }
+
+        } else {
+
+            for (size_t i = 0; i < end_val; ++i) {
+                if (mask[i]) { continue; }
+                f(dst[strt_vl + out_idx]);
+                out_idx += 1;
+            }
+
         }
 
     }
 }
+
+
+
 
 
 

@@ -4,7 +4,6 @@ template <
           MtMethod MtType = MtMethod::Row,
           bool MemClean = false,
           bool Soft = true,
-          bool MakeAlloc = false,
           bool OneIsTrue = true
          >
 void rm_row_range_boolmask(std::vector<uint8_t>& x,
@@ -15,7 +14,6 @@ void rm_row_range_boolmask(std::vector<uint8_t>& x,
                              MtType,
                              MemClean,
                              Soft,
-                             MakeAlloc,
                              OneIsTrue>(x, strt_vl);
 }
 

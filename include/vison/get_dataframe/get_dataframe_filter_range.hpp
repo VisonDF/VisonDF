@@ -1,6 +1,7 @@
 #pragma once
 
-template <bool IsDense = false>
+template <bool IsDense = false,
+          bool OneIsTrue = true>
 void get_dataframe_filter_range(
                                 const std::vector<size_t>& cols, 
                                 Dataframe& cur_obj,
@@ -13,7 +14,8 @@ void get_dataframe_filter_range(
 
     get_dataframe_filter_range_mt<1,     // CORES
                                   false, // NUMA locality
-                                  IsDense
+                                  IsDense,
+                                  OneIsTrue
                                  >(cols,
                                   cur_obj,
                                   mask,

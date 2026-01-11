@@ -4,6 +4,7 @@ template <unsigned int CORES = 4,
           bool NUMA = false,
           bool IsBool = false,
           bool MapCol = false,
+          bool OneIsTrue = true,
           typename F>
 requires FapplyFn<F, first_arg_t<F>>
 void fapply_filter_range_mt(F f, 
@@ -24,63 +25,81 @@ void fapply_filter_range_mt(F f,
           return;
         }
 
-        apply_numeric_filter_boolmask<MapCol, CORES, NUMA>(bool_v, 
-                                                           n, 
-                                                           2, 
-                                                           f, 
-                                                           mask,
-                                                           strt_vl,
-                                                           start_offset);
+        apply_numeric_filter_boolmask<MapCol, 
+                                      CORES, 
+                                      NUMA,
+                                      OneIsTrue>(bool_v, 
+                                                 n, 
+                                                 2, 
+                                                 f, 
+                                                 mask,
+                                                 strt_vl,
+                                                 start_offset);
 
     } else if constexpr (std::is_same_v<T, IntT>) {
 
-        apply_numeric_filter_boolmaks<MapCol, CORES, NUMA>(int_v, 
-                                                           n, 
-                                                           3, 
-                                                           f, 
-                                                           mask,
-                                                           strt_vl,
-                                                           start_offset);
+        apply_numeric_filter_boolmaks<MapCol, 
+                                      CORES, 
+                                      NUMA, 
+                                      OneIsTrue>(int_v, 
+                                                 n, 
+                                                 3, 
+                                                 f, 
+                                                 mask,
+                                                 strt_vl,
+                                                 start_offset);
 
     } else if constexpr (std::is_same_v<T, UIntT>) {
 
-        apply_numeric_filter_boomask<MapCol, CORES, NUMA>(uint_v, 
-                                                          n, 
-                                                          4, 
-                                                          f, 
-                                                          mask,
-                                                          strt_vl,
-                                                          start_offset);
+        apply_numeric_filter_boomask<MapCol, 
+                                     CORES, 
+                                     NUMA, 
+                                     OneIsTrue>(uint_v, 
+                                                n, 
+                                                4, 
+                                                f, 
+                                                mask,
+                                                strt_vl,
+                                                start_offset);
 
     } else if constexpr (std::is_same_v<T, FloatT>) {
 
-        apply_numeric_filter_boolmask<MapCol, CORES, NUMA>(dbl_v, 
-                                                           n, 
-                                                           5, 
-                                                           f, 
-                                                           mask,
-                                                           strt_vl,
-                                                           start_offset);
+        apply_numeric_filter_boolmask<MapCol, 
+                                      CORES, 
+                                      NUMA,
+                                      OneIsTrue>(dbl_v, 
+                                                 n, 
+                                                 5, 
+                                                 f, 
+                                                 mask,
+                                                 strt_vl,
+                                                 start_offset);
 
     } else if constexpr (std::is_same_v<T, CharT>) {
 
-        apply_numeric_filter_boolmask<MapCol, CORES, NUMA>(dbl_v, 
-                                                           n, 
-                                                           1, 
-                                                           f, 
-                                                           mask,
-                                                           strt_vl,
-                                                           start_offset);
+        apply_numeric_filter_boolmask<MapCol, 
+                                      CORES, 
+                                      NUMA, 
+                                      OneIsTrue>(dbl_v, 
+                                                 n, 
+                                                 1, 
+                                                 f, 
+                                                 mask,
+                                                 strt_vl,
+                                                 start_offset);
 
     } else if constexpr (std::is_same_v<T, std::string>) {
 
-        apply_numeric_filter_boolmask<MapCol, CORES, NUMA>(dbl_v, 
-                                                           n, 
-                                                           0, 
-                                                           f, 
-                                                           mask,
-                                                           strt_vl,
-                                                           start_offset);
+        apply_numeric_filter_boolmask<MapCol, 
+                                      CORES, 
+                                      NUMA,
+                                      OneIsTrue>(dbl_v, 
+                                                 n, 
+                                                 0, 
+                                                 f, 
+                                                 mask,
+                                                 strt_vl,
+                                                 start_offset);
 
     }
 

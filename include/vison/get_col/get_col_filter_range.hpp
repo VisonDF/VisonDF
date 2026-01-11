@@ -3,6 +3,7 @@
 template <bool IsBool = false,
           bool MapCol = false,
           bool IsDense = false,
+          bool OneIsTrue = true,
           typename T
         >
 void get_col_filter_range(
@@ -15,16 +16,17 @@ void get_col_filter_range(
                          )
 {
 
-    get_col_filter_range_mt<1, // CORES
+    get_col_filter_range_mt<1,     // CORES
                             false, // NUMA locality
                             IsBool,
                             MapCol,
-                            IsDense>(x, 
-                                    rtn_v, 
-                                    mask, 
-                                    strt_vl,
-                                    runs,
-                                    offset_start);
+                            IsDense,
+                            OneIsTrue>(x, 
+                                       rtn_v, 
+                                       mask, 
+                                       strt_vl,
+                                       runs,
+                                       offset_start);
 
 }
 

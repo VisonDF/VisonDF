@@ -92,6 +92,8 @@ namespace vison {
     #include "types/RunsIdxMt.inl"
     #include "types/supported_mt_methods.inl"
 
+    #include "inlines/rm_row/offset_per_thread.inl"
+
     #include "inlines/simple_mt.inl"
     #include "inlines/numa_mt.inl"
 

@@ -2,13 +2,13 @@
 
 template <unsigned int CORES = 4,
           bool NUMA = false,
-          bool IsDense = false
+          bool IsDense = false,
+          bool OneIsTrue = true
     >
 void get_dataframe_filter_range_mt(const std::vector<size_t>& cols, 
                                    Dataframe& cur_obj,
                                    const std::vector<uint8_t>& mask,
                                    const size_t strt_vl,
-                                   std::vector<RunsIdxMt>& runs = {},
                                    OffsetBoolMask& offset_start = {})
 {
 
@@ -25,42 +25,23 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
     }
 
     auto copy_col_dense = [&mask, 
-                           &runs,
                            &offset_start]<typename T>(
                                                        const std::vector<T>& src_vec2,
                                                        std::vector<T>& dst_vec
                                                       )
     {
 
-        if (runs.empty()) {
-            runs.reserve(mask.size() / 3); 
-            size_t out_idx = 0;
-            for (size_t i = 0; i < mask.size();) {
-                size_t start = out_idx;
-                size_t src_start = i;
-            
-                while (i + 1 < mask.size() && mask[i]) {
-                    ++i;
-                    ++out_idx;
-                }
-            
-                runs.push_back({start, strt_vl + src_start, i - start + 1});
-                ++i;
-            }
-            dst_vec.resize(out_idx);
-        }
 
-        if (!runs.empty()) {
-            if (offset_start.vec.empty()) {
-                size_t active_count = 0;
-                for (size_t i = 0; i < n_el; ++i) {
-                    active_count += mask[i] != 0;
-                }
-                dst_vec.resize(active_count);
-                offset_start.x = active_count;
-            } else if (!runs.empty()) {
-                dst_vec.resize(offset_start.x);
-            }
+        size_t active_count;
+        if (offset_start.vec.empty()) {
+            boolmask_offset_per_thread<OneIsTrue>(thread_counts, 
+                                                  thread_offsets, 
+                                                  mask, 
+                                                  CORES,
+                                                  active_count);
+            dst_vec.resize(active_count);
+        } else {
+            dst_vec.resize(offset_start.x);
         }
 
         const std::string* __restrict src = src_vec2.data();
@@ -96,25 +77,107 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
                               nthreads);
                 }
                     
-                const unsigned int start = cur_struct.start;
-                const unsigned int end   = cur_struct.end;
+                const unsigned int cur_start = cur_struct.start;
+                const unsigned int cur_end   = cur_struct.end;
 
-                for (size_t r = start; r < end; ++r) {
-                    const auto& run = runs[r]; 
-                    std::memcpy(dst.data() + run.mask_pos,
-                                src.data() + run.src_start,
-                                run.len * sizeof(T));
+                size_t out_idx;
+                if (start_offset.vec.empty()) {
+                    out_idx = thread_offsets[tid];
+                } else {
+                    out_idx = offset_start.vec[start];
+                }
+
+                size_t i = cur_start;
+                if constexpr (OneIsTrue) {
+                    while (!mask[i]) {
+                        i += 1;
+                        out_idx += 1;
+                    }
+                } else {
+                    while (mask[i]) {
+                        i += 1;
+                        out_idx += 1;
+                    }
+                }
+                while (i < cur_end) {
+      
+                    if constexpr (OneIsTrue) {
+                        while (i < cur_end && mask[i]) {
+                            i += 1;
+                        }
+                    } else {
+                        while (i < cur_end && !mask[i]) {
+                            i += 1;
+                        }
+                    }
+
+                    const size_t start = i;
+                    if constexpr (OneIsTrue) {
+                        while (i < cur_end && !mask[i]) ++i;
+                    } else {
+                        while (i < cur_end && mask[i]) ++i;
+                    }
+                
+                    size_t len = i - start;
+                    {
+                        T* __restrict d = dst.data() + out_idx;
+                        T* __restrict s = src.data() + strt_vl + start;
+       
+                        memcpy(d, s, len * sizeof(T))
+
+                    }
+                
+                    out_idx += len;
+                    i += 1;
                 }
 
             }
 
         } else {
 
-            for (size_t r = 0; r < runs.size(); ++r) {
-                const auto& run = runs[r]; 
-                std::memcpy(dst.data() + run.mask_pos,
-                            src.data() + run.src_start,
-                            run.len * sizeof(T));
+            size_t out_idx = 0;
+            size_t i       = 0;
+            if constexpr (OneIsTrue) {
+                while (!mask[i]) {
+                    i += 1;
+                    out_idx += 1;
+                }
+            } else {
+                while (mask[i]) {
+                    i += 1;
+                    out_idx += 1;
+                }
+            }
+            while (i < mask.size()) {
+      
+                if constexpr (OneIsTrue) {
+                    while (i < mask.size() && mask[i]) {
+                        i += 1;
+                    }
+                } else {
+                    while (i < mask.size() && !mask[i]) {
+                        i += 1;
+                    }
+                }
+
+                const size_t start = i;
+                if constexpr (OneIsTrue) {
+                    while (i < mask.size() && !mask[i]) ++i;
+                } else {
+                    while (i < mask.size() && mask[i]) ++i;
+                }
+            
+                size_t len = i - start;
+                {
+                    T* __restrict d = dst.data() + out_idx;
+                    T* __restrict s = src.data() + strt_vl + start;
+       
+                    memcpy(d, s, len * sizeof(T));
+
+                }
+            
+                out_idx += len;
+                i += 1;
             }
 
         }
@@ -122,45 +185,22 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
 
     auto copy_col_view_dense = [&mask, 
                                 &row_view_idx2, 
-                                &runs,
                                 &offset_start]<typename T>(
                                                              const auto& src_vec2,
                                                              auto& dst_vec
                                                            )
     {
 
-        if (runs.empty()) {
-            runs.reserve(mask.size() / 3); 
-            size_t out_idx = 0;
-            for (size_t i = 0; i < mask.size();) {
-                size_t start = out_idx;
-                size_t src_start = i;
-            
-                while (i + 1 < mask.size() && mask[i]) {
-                    ++i;
-                    ++out_idx;
-                }
-            
-                runs.push_back({start, strt_vl + src_start, i - start + 1});
-                ++i;
-            }
-            dst_vec.resize(out_idx);
-            row_view_idx.resize(out_idx);
-        }
-
-        if (!runs.empty()) {
-            if (offset_start.vec.empty()) {
-                size_t active_count = 0;
-                for (size_t i = 0; i < n_el; ++i) {
-                    active_count += mask[i] != 0;
-                }
-                dst_vec.resize(active_count);
-                row_view_idx.resize(active_count);
-                offset_start.x = active_count;
-            } else if (!runs.empty()) {
-                row_view_idx.resize(offset_start.x);
-                dst_vec.resize(offset_start.x);
-            }
+        size_t active_count;
+        if (offset_start.vec.empty()) {
+            boolmask_offset_per_thread<OneIsTrue>(thread_counts, 
+                                                  thread_offsets, 
+                                                  mask, 
+                                                  CORES,
+                                                  active_count);
+            dst_vec.resize(active_count);
+        } else {
+            dst_vec.resize(offset_start.x);
         }
 
         const std::string* __restrict src = src_vec2.data();
@@ -199,30 +239,114 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
                 const unsigned int start = cur_struct.start;
                 const unsigned int len   = cur_struct.len;
 
-                for (size_t r = start; r < end; ++r) {
-                    const auto& run = runs[r]; 
-                    std::memcpy(dst.data() + run.mask_pos,
-                                src.data() + run.src_start,
-                                run.len * sizeof(T));
-                    std::memcpy(row_view_idx.data()  + run.mask_pos,
-                                row_view_idx2.data() + run.src_start,
-                                run.len * sizeof(T));
+                size_t out_idx;
+                if (start_offset.vec.empty()) {
+                    out_idx = thread_offsets[tid];
+                } else {
+                    out_idx = offset_start.vec[start];
+                }
 
+                size_t i = cur_start;
+                if constexpr (OneIsTrue) {
+                    while (!mask[i]) {
+                        i += 1;
+                        out_idx += 1;
+                    }
+                } else {
+                    while (mask[i]) {
+                        i += 1;
+                        out_idx += 1;
+                    }
+                }
+                while (i < cur_end) {
+      
+                    if constexpr (OneIsTrue) {
+                        while (i < cur_end && mask[i]) {
+                            i += 1;
+                        }
+                    } else {
+                        while (i < cur_end && !mask[i]) {
+                            i += 1;
+                        }
+                    }
+
+                    const size_t start = i;
+                    if constexpr (OneIsTrue) {
+                        while (i < cur_end && !mask[i]) ++i;
+                    } else {
+                        while (i < cur_end && mask[i]) ++i;
+                    }
+                
+                    size_t len = i - start;
+                    {
+                        T* __restrict d = dst.data() + out_idx;
+                        T* __restrict s = src.data() + strt_vl + start;
+       
+                        memcpy(d, s, len * sizeof(T));
+
+                        unsigned int* __restrict d2 = row_view_idx.data()  + out_idx;
+                        unsigned int* __restrict s2 = row_view_idx2.data() + strt_vl + start;
+       
+                        memcpy(d2, s2, len * sizeof(unsigned int));
+
+                    }
+                
+                    out_idx += len;
+                    i += 1;
                 }
 
             }
 
         } else {
 
-            for (size_t r = 0; r < runs.size(); ++r) {
-                const auto& run = runs[r]; 
-                std::memcpy(dst.data() + run.mask_pos,
-                            src.data() + run.src_start,
-                            run.len * sizeof(T));
-                std::memcpy(row_view_idx.data()  + run.mask_pos,
-                            row_view_idx2.data() + run.src_start,
-                            run.len * sizeof(T));
+            size_t out_idx = 0;
+            size_t i       = 0;
+            if constexpr (OneIsTrue) {
+                while (!mask[i]) {
+                    i += 1;
+                    out_idx += 1;
+                }
+            } else {
+                while (mask[i]) {
+                    i += 1;
+                    out_idx += 1;
+                }
+            }
+            while (i < mask.size()) {
+      
+                if constexpr (OneIsTrue) {
+                    while (i < mask.size() && mask[i]) {
+                        i += 1;
+                    }
+                } else {
+                    while (i < mask.size() && !mask[i]) {
+                        i += 1;
+                    }
+                }
 
+                const size_t start = i;
+                if constexpr (OneIsTrue) {
+                    while (i < mask.size() && !mask[i]) ++i;
+                } else {
+                    while (i < mask.size() && mask[i]) ++i;
+                }
+            
+                size_t len = i - start;
+                {
+                    T* __restrict d = dst.data() + out_idx;
+                    T* __restrict s = src.data() + strt_vl + start;
+       
+                    memcpy(d, s, len * sizeof(T));
+
+                    unsigned int* __restrict d2 = row_view_idx.data()  + out_idx;
+                    unsigned int* __restrict s2 = row_view_idx2.data() + strt_vl + start;
+       
+                    memcpy(d2, s2, len * sizeof(unsigned int));
+
+                }
+            
+                out_idx += len;
+                i += 1;
             }
 
         }
@@ -235,26 +359,29 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
                                      auto& dst_vec
                                     )
     {
-        const std::string* __restrict src = src_vec2.data();
-        std::string*       __restrict dst = dst_vec.data();
    
         if constexpr (CORES > 1) {
 
             if (CORES > mask.size())
                 throw std::runtime_error("Too much cores for so little nrows\n");
 
-            size_t active_count = 0;
+            std::vector<size_t> thread_counts;
+            std::vector<size_t> thread_offsets;
+
+            size_t active_count;
             if (offset_start.vec.empty()) {
-                offset_start.vec.reserve(n_el / 3);
-                for (size_t i = 0; i < n_el; ++i) {
-                    active_count += mask[i] != 0;
-                    offset_start.vec.push_back(active_count);
-                }
+                boolmask_offset_per_thread<OneIsTrue>(thread_counts, 
+                                                      thread_offsets, 
+                                                      mask, 
+                                                      CORES,
+                                                      active_count);
                 dst_vec.resize(active_count);
-                offset_start.x = active_count;
             } else {
                 dst_vec.resize(offset_start.x);
             }
+
+            const std::string* __restrict src = src_vec2.data();
+            std::string*       __restrict dst = dst_vec.data();
 
             int numa_nodes = 1;
             if (numa_available() >= 0) 
@@ -284,7 +411,12 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
                 const unsigned int start = cur_struct.start;
                 const unsigned int end   = cur_struct.end;
 
-                size_t out_idx = offset_start.vec[start];
+                size_t out_idx;
+                if (offset_start.vec.empty()) {
+                    out_idx = thread_offsets[tid];
+                } else {
+                    out_idx = offset_start.vec[start];
+                }
 
                 for (size_t j = start; j < end; ++j) {
                     if (!mask[j]) continue;
@@ -294,6 +426,9 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
             }
 
         } else {
+
+            const std::string* __restrict src = src_vec2.data();
+            std::string*       __restrict dst = dst_vec.data();
 
             for (size_t j = 0; j < local_nrow; ++j) {
                 if (!mask[j]) continue;
@@ -310,28 +445,25 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
                                        const auto& src_vec2,
                                        auto& dst_vec
                                      )
-    {
-        const std::string* __restrict src = src_vec2.data();
-        std::string*       __restrict dst = dst_vec.data();
-   
+    {   
         if constexpr (CORES > 1) {
 
             if (CORES > local_nrow)
                 throw std::runtime_error("Too much cores for so little nrows\n");
 
-            size_t active_count = 0;
+            std::vector<size_t> thread_counts;
+            std::vector<size_t> thread_offsets;
+
+            size_t active_count;
             if (offset_start.vec.empty()) {
-                offset_start.vec.reserve(n_el / 3);
-                for (size_t i = 0; i < n_el; ++i) {
-                    active_count += mask[i] != 0;
-                    offset_start.vec.push_back(active_count);
-                }
+                boolmask_offset_per_thread<OneIsTrue>(thread_counts, 
+                                                      thread_offsets, 
+                                                      mask, 
+                                                      CORES,
+                                                      active_count);
                 dst_vec.resize(active_count);
-                row_view_idx.resize(offset_start.x);
-                offset_start.x = active_count;
             } else {
                 dst_vec.resize(offset_start.x);
-                row_view_idx.resize(offset_start.x);
             }
 
             int numa_nodes = 1;
@@ -362,7 +494,12 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
                 const unsigned int start = cur_struct.start;
                 const unsigned int end   = cur_struct.end;
 
-                size_t out_idx = offset_start.vec[start];
+                size_t out_idx;
+                if (offset_start.vec.empty()) {
+                    out_idx = thread_offsets[tid];
+                } else {
+                    out_idx = offset_start.vec[start];
+                }
 
                 for (size_t j = start; j < end; ++j) {
                     if (!mask[j]) continue;
@@ -373,6 +510,9 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
             }
 
         } else {
+
+            const std::string* __restrict src = src_vec2.data();
+            std::string*       __restrict dst = dst_vec.data();
 
             for (size_t j = 0; j < local_nrow; ++j) {
                 if (!mask[j]) continue;

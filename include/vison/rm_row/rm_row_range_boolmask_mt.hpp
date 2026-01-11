@@ -5,7 +5,6 @@ template <unsigned int CORES = 4,
           MtMethod MtType = MtMethod::Row,
           bool MemClean = false,
           bool Soft = true,
-          bool MakeAlloc = false,
           bool OneIsTrue = true
          >
 void rm_row_range_bool_mt(std::vector<uint8_t>& mask,
@@ -22,7 +21,7 @@ void rm_row_range_bool_mt(std::vector<uint8_t>& mask,
                                              const size_t inner_cores) {
 
         std::vector<T> vec2;
-        if constexpr (MakeAlloc || CORES > 1) {
+        if constexpr (CORES > 1) {
             vec2 = vec;
         }
 
@@ -32,14 +31,17 @@ void rm_row_range_bool_mt(std::vector<uint8_t>& mask,
             if (numa_available() >= 0) 
                 numa_nodes = numa_max_node() + 1;
 
-            if (start_offset.vec.empty()) {
-                start_ofset.vec.resize(mask.size());
-                size_t active_rows = 0;
-                for (size_t i = 0; i < mask.size()) {
-                    active_rows += mask[i];
-                    start_offset.vec[i] = active_rows;
-                }
-            }
+            std::vector<size_t> thread_counts;
+            std::vector<size_t> thread_offsets;
+
+            size_t dummy_tot;
+
+            if (start_offset.vec.empty())
+                boolmask_offset_per_thread<OneIsTrue>(thread_counts, 
+                                                      thread_offsets, 
+                                                      mask, 
+                                                      inner_cores, 
+                                                      dummy_tot);
 
             #pragma omp parallel if(inner_cores > 1) num_threads(inner_cores)
             {
@@ -65,51 +67,64 @@ void rm_row_range_bool_mt(std::vector<uint8_t>& mask,
                 const unsigned int start = cur_struct.start;
                 const unsigned int end   = cur_struct.end;
 
-                size_t out_idx = start_offset.vec[start];
+                if (start_offset.vec.empty()) {
+                    out_idx = thread_offsets[tid];
+                } else {
+                    out_idx = start_offset.vec[start];
+                }
 
-                for (size_t i = start; i < end; ++read) {
-                    if constexpr (OneIsTrue) {
+                if constexpr (OneIsTrue) {
+                    for (size_t i = start; i < end; ++read) {
                         if (!mask[i]) {
                             vec[strt_vl + out_idx++] = std::move(vec2[strt_vl + i]);
                         }
-                    } else {
+                    }
+                } else {
+                    for (size_t i = start; i < end; ++read) {
                         if (mask[i]) {
                             vec[strt_vl + out_idx++] = std::move(vec2[strt_vl + i]);
                         }
                     }
                 }
 
+                if constexpr (std::is_trivially_copyable_v<T>) {
+                    memcpy(vec.data() + out_idx, 
+                           vec.data() + mask.size(), 
+                           (old_nrow - mask.size()) * sizeof(T));
+                } else {
+                    std::move(vec2.begin() + mask.size(), 
+                              vec2.begin() + old_nrow, 
+                              vec.begin() + out_idx);
+                }
             }
 
         } else {
-            if constexpr (MakeAlloc) {
-                size_t out_idx = 0;
+            size_t out_idx = 0;
+            if constexpr (OneIsTrue) {
                 for (size_t i = 0; i < mask.size(); ++read) {
-                    if constexpr (OneIsTrue) {
-                        if (!mask[i]) {
-                            vec[strt_vl + out_idx++] = std::move(vec2[strt_vl + i]);
-                        }
-                    } else {
-                        if (mask[i]) {
-                            vec[strt_vl + out_idx++] = std::move(vec2[strt_vl + i]);
-                        }
+                    if (!mask[i]) {
+                        vec[strt_vl + out_idx++] = std::move(vec[strt_vl + i]);
                     }
                 }
             } else {
-                size_t out_idx = 0;
                 for (size_t i = 0; i < mask.size(); ++read) {
-                    if constexpr (OneIsTrue) {
-                        if (!mask[i]) {
-                            vec[strt_vl + out_idx++] = std::move(vec[strt_vl + i]);
-                        }
-                    } else {
-                        if (mask[i]) {
-                            vec[strt_vl + out_idx++] = std::move(vec[strt_vl + i]);
-                        }
+                    if (mask[i]) {
+                        vec[strt_vl + out_idx++] = std::move(vec[strt_vl + i]);
                     }
                 }
             }
+
+            if constexpr (std::is_trivially_copyable_v<T>) {
+                memmove(vec.data() + out_idx, 
+                        vec.data() + mask.size(), 
+                        (old_nrow - mask.size()) * sizeof(T));
+            } else {
+                std::move(vec.begin() + mask.size(), 
+                          vec.begin() + old_nrow, 
+                          vec.begin() + out_idx);
+            }
         }
+
     };
 
     if constexpr (Soft) {
@@ -125,9 +140,6 @@ void rm_row_range_bool_mt(std::vector<uint8_t>& mask,
 
     } else {
 
-        if (CORES == 1 && strt_vl > 0)
-            throw std::runtime_error("MakeAlloc required\n");
-
         if (in_view) {
             throw std::runtime_error("Can't perform this operation while `in_view` mode activated, consider applying `.materialize()`\n");
         }
@@ -142,16 +154,16 @@ void rm_row_range_bool_mt(std::vector<uint8_t>& mask,
                 if (numa_available() >= 0) 
                     numa_nodes = numa_max_node() + 1;
 
-                const unsigned int outer_threads = std::conditional_t<MtType == MtMethod::Col,
-                                                                      CORES,
-                                                                      std::min<unsigned int>(
-                                                                          matr_idx[idx_type].size(), std::max(1u, CORES / 2)
-                                                                       )
-                                                                     >;
-                const unsigned int inner_threads = std::conditional_t<MtType == MtMethod::Row,
-                                                                      CORES,
-                                                                      std::max(1u, CORES / outer_threads)
-                                                                     >;
+                const unsigned int outer_cores = std::conditional_t<MtType == MtMethod::Col,
+                                                                    CORES,
+                                                                    std::min<unsigned int>(
+                                                                        matr_idx[idx_type].size(), std::max(1u, CORES / 2)
+                                                                     )
+                                                                   >;
+                const unsigned int inner_cores = std::conditional_t<MtType == MtMethod::Row,
+                                                                    CORES,
+                                                                    std::max(1u, CORES / outer_threads)
+                                                                   >;
 
                 #pragma omp parallel if(outer_cores > 1) num_threads(outer_cores)
                 {
