@@ -4,6 +4,7 @@ template <bool IsBool = false,
           bool MapCol = false,
           unsigned int CORES = 4,
           bool NUMA = false,
+          bool IdxIsTrue = true,
           typename F>
 requires FapplyFn<F, first_arg_t<F>>
 void fapply_filter_idx_mt(F f, 
@@ -20,51 +21,69 @@ void fapply_filter_idx_mt(F f,
           return;
         }
 
-        apply_numeric_filter_idx<MapCol, CORES, NUMA>(bool_v, 
-                                                      n, 
-                                                      0, 
-                                                      f, 
-                                                      mask);
+        apply_numeric_filter_idx<MapCol, 
+                                 CORES, 
+                                 NUMA,
+                                 IdxIsTrue>(bool_v, 
+                                            n, 
+                                            2, // idx_type
+                                            f, 
+                                            mask);
 
     } else if constexpr (std::is_same_v<T, IntT>) {
 
-        apply_numeric_filter_idx<MapCol, CORES, NUMA>(int_v, 
-                                                      n, 
-                                                      3, 
-                                                      f, 
-                                                      mask);
+        apply_numeric_filter_idx<MapCol, 
+                                 CORES, 
+                                 NUMA, 
+                                 IdxIsTrue>(int_v, 
+                                            n, 
+                                            3,  // idx_type 
+                                            f, 
+                                            mask);
 
     } else if constexpr (std::is_same_v<T, UIntT>) {
 
-        apply_numeric_filter_idx<MapCol, CORES, NUMA>(uint_v, 
-                                                      n, 
-                                                      4, 
-                                                      f, 
-                                                      mask);
+        apply_numeric_filter_idx<MapCol, 
+                                 CORES, 
+                                 NUMA, 
+                                 IdxIsTrue>(uint_v, 
+                                            n, 
+                                            4, // idx_type 
+                                            f, 
+                                            mask);
 
     } else if constexpr (std::is_same_v<T, FloatT>) {
 
-        apply_numeric_filter_idx<MapCol, CORES, NUMA>(dbl_v, 
-                                                      n, 
-                                                      5, 
-                                                      f, 
-                                                      mask);
+        apply_numeric_filter_idx<MapCol, 
+                                 CORES, 
+                                 NUMA, 
+                                 IdxIsTrue>(dbl_v, 
+                                            n, 
+                                            5, // idx_type 
+                                            f, 
+                                            mask);
 
     } else if constexpr (std::is_same_v<T, CharT>) {
 
-        apply_numeric_filter_idx<MapCol, CORES, NUMA>(dbl_v, 
-                                                      n, 
-                                                      1, 
-                                                      f, 
-                                                      mask);
+        apply_numeric_filter_idx<MapCol, 
+                                 CORES, 
+                                 NUMA, 
+                                 IdxIsTrue>(dbl_v, 
+                                            n, 
+                                            1, // idx_type
+                                            f, 
+                                            mask);
 
     } else if constexpr (std::is_same_v<T, std::string>) {
 
-        apply_numeric_filter_idx<MapCol, CORES, NUMA>(dbl_v, 
-                                                      n, 
-                                                      0, 
-                                                      f, 
-                                                      mask);
+        apply_numeric_filter_idx<MapCol, 
+                                 CORES, 
+                                 NUMA, 
+                                 IdxIsTrue>(dbl_v, 
+                                            n, 
+                                            0,  // idx_type 
+                                            f, 
+                                            mask);
 
     }
 }

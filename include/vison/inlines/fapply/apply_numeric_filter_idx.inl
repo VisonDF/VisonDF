@@ -3,6 +3,8 @@
 template <bool MapCol = false,
           unsigned int CORES = 4,
           bool NUMA = false,
+          bool IdxIsTrue = true,
+          bool Sorted = true, // if no will modify mask if !IdxIsTrue
           typename T, 
           typename F>
 inline void apply_numeric_filter_idx(const std::vector<T>& values, 
@@ -11,6 +13,10 @@ inline void apply_numeric_filter_idx(const std::vector<T>& values,
                                      F&& f,
                                      const std::vector<unsigned int>& mask) 
 {
+
+    if constexpr (!Sorted && !IdxIsTrue) {
+        std::sort(mask.begin(), mask.end());
+    }
 
     unsigned int i2 = 0;
     if constexpr (!MapCol) {
@@ -69,14 +75,34 @@ inline void apply_numeric_filter_idx(const std::vector<T>& values,
             const unsigned int cur_start = cur_struct.start;
             const unsigned int cur_end   = cur_struct.end;
 
-            for (size_t i = cur_strt; i < cur_end; ++i)
-                f(dst[mask[i]]);
+            if constexpr (IdxIsTrue) {
+
+                for (size_t i = cur_start; i < cur_end; ++i)
+                    f(dst[mask[i]]);
+
+            } else {
+                size_t out_idx = mask[cur_start - 1] + 1;
+                size_t i       = cur_start;
+                while (i < cur_end) {
+                    while (out_idx < mask[i]) f(dst[out_idx++]);
+                    out_idx += 1;
+                }
+            }
 
         }
 
     } else {
-        for (auto i : mask)
-            f(dst[i]);
+        if constexpr (IdxIsTrue) {
+            for (auto i : mask)
+                f(dst[i]);
+        } else {
+            size_t out_idx = 0;
+            size_t i = 0;
+            while (i < mask.size()) {
+                while (out_idx < mask[i]) f(dst[out_idx++]);
+                out_idx += 1;
+            }
+        }
     }
 
 }
