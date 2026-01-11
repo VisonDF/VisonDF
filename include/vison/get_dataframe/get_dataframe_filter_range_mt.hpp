@@ -31,6 +31,8 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
                                                       )
     {
 
+        std::vector<size_t> thread_counts;
+        std::vector<size_t> thread_offsets;
 
         size_t active_count;
         if (offset_start.vec.empty()) {
@@ -49,7 +51,7 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
 
         if constexpr (CORES > 1) {
 
-            if (CORES > runs.size())
+            if (CORES > mask.size())
                 throw std::runtime_error("Too much cores for so little nrows\n");
 
             int numa_nodes = 1;
@@ -66,13 +68,13 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
 
                 if constexpr (NUMA) {
                     numa_mt(cur_struct,
-                            runs.size(), 
+                            mask.size(), 
                             tid, 
                             nthreads, 
                             numa_nodes);
                 } else {
                     simple_mt(cur_struct,
-                              runs.size(), 
+                              mask.size(), 
                               tid, 
                               nthreads);
                 }
@@ -191,6 +193,9 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
                                                            )
     {
 
+        std::vector<size_t> thread_counts;
+        std::vector<size_t> thread_offsets;
+
         size_t active_count;
         if (offset_start.vec.empty()) {
             boolmask_offset_per_thread<OneIsTrue>(thread_counts, 
@@ -208,7 +213,7 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
 
         if constexpr (CORES > 1) {
 
-            if (CORES > runs.size())
+            if (CORES > mask.size())
                 throw std::runtime_error("Too much cores for so little nrows\n");
 
             int numa_nodes = 1;
@@ -225,13 +230,13 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
 
                 if constexpr (NUMA) {
                     numa_mt(cur_struct,
-                            runs.size(), 
+                            mask.size(), 
                             tid, 
                             nthreads, 
                             numa_nodes);
                 } else {
                     simple_mt(cur_struct,
-                              runs.size(), 
+                              mask..size(), 
                               tid, 
                               nthreads);
                 }
