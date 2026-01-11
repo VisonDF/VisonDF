@@ -86,6 +86,7 @@ inline void apply_numeric_filter_idx(const std::vector<T>& values,
                 while (i < cur_end) {
                     while (out_idx < mask[i]) f(dst[out_idx++]);
                     out_idx += 1;
+                    i       += 1;
                 }
             }
 
@@ -101,6 +102,7 @@ inline void apply_numeric_filter_idx(const std::vector<T>& values,
             while (i < mask.size()) {
                 while (out_idx < mask[i]) f(dst[out_idx++]);
                 out_idx += 1;
+                i       += 1;
             }
         }
     }
