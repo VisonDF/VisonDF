@@ -46,11 +46,10 @@ inline void boolmask_offset_per_thread(std::vector<size_t>& thread_counts,
 
 
 template <bool IdxIsTrue>
-inline void idx_offset_per_thread_mt(std::vector<std::pair<size_t, size_t>>& thread_offsets,
+inline void idx_offset_per_thread_mt(std::vector<size_t>& thread_offsets,
                                      std::vector<size_t>& thread_counts,
                                      std::vector<uint8_t>& mask,
                                      const size_t inner_cores,
-                                     size_t& active_rows,
                                      const size_t local_nrow,
                                      std::vector<RunsMt>& runs)
 {
@@ -77,7 +76,6 @@ inline void idx_offset_per_thread_mt(std::vector<std::pair<size_t, size_t>>& thr
             const size_t cur_start = cur.start;
             const size_t cur_end = cur.end;
 
-            thread_offsets[tid].first = cur_start;
             size_t hmn = 0;
 
             for (size_t i = cur_start; i < cur_end; ) {
@@ -93,7 +91,7 @@ inline void idx_offset_per_thread_mt(std::vector<std::pair<size_t, size_t>>& thr
                 ++hmn;
             }
 
-            thread_offsets[tid].second = hmn;
+            thread_offsets[tid] = hmn;
 
         }
 
@@ -119,8 +117,6 @@ inline void idx_offset_per_thread_mt(std::vector<std::pair<size_t, size_t>>& thr
 
             const size_t cur_start = cur.start;
             const size_t cur_end = cur.end;
-
-            thread_offsets[tid].first = cur_start;
 
             size_t hmn = 0;
             size_t src_start;
@@ -156,18 +152,13 @@ inline void idx_offset_per_thread_mt(std::vector<std::pair<size_t, size_t>>& thr
                 src_start += 1;
                 hmn       += 1;
             }
-            thread_offsets[tid].second = hmn;
-            thread_counts[tid] = out_idx;
+            thread_offsets[tid] = hmn;
+            thread_counts[tid]  = out_idx;
         }
 
         mask.pop_back();
 
     }
-
-    size_t total = 0;
-    for (auto& el : thread_offsets)
-        total += el.second;
-    active_nrows = total;
 
     if constexpr (!IdxIsTrue) {
         size_t delta = 0;
@@ -181,12 +172,9 @@ inline void idx_offset_per_thread_mt(std::vector<std::pair<size_t, size_t>>& thr
 
 template <bool IdxIsTrue>
 inline void idx_offset_per_thread(std::vector<uint8_t>& mask,
-                                  size_t& active_rows,
                                   const size_t local_nrow,
                                   std::vector<RunsMt>& runs)
 {
-
-    thread_offsets.resize(inner_cores);
 
     if constexpr (IdxIsTrue) {
 
@@ -203,8 +191,6 @@ inline void idx_offset_per_thread(std::vector<uint8_t>& mask,
             runs.push_back({out_idx, src_start, i - out_idx + 1});
             ++i;
         }
-
-        active_rows = mask.size();
 
     } else {
 
@@ -239,8 +225,6 @@ inline void idx_offset_per_thread(std::vector<uint8_t>& mask,
         }
 
         mask.pop_back();
-
-        active_rows = local_nrow - mask.size();
 
     }
 
