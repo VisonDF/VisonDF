@@ -26,16 +26,16 @@ inline void radix_sort_uint32_mt(std::vector<uint32_t>& tkeys,
     std::vector<size_t>   tmp(n);
 
     // Per-thread histograms
-    std::vector<std::vector<size_t>>& hist = get_local_hist_u16();
-    std::vector<std::vector<size_t>>& thread_off = get_local_thread_off_u16();
+    std::array<std::array<size_t, RADIX_KI16>, MAX_THREADS>& hist       = get_local_hist_u16();
+    std::array<std::array<size_t, RADIX_KI16>, MAX_THREADS>& thread_off = get_local_thread_off_u16();
     #pragma omp parallel for if(THREADS > 1) num_threads(THREADS)
     for (size_t i = 0; i < THREADS; ++i) {
         memset(hist[i].data(),       0, RADIX_KI16 * sizeof(size_t));
         memset(thread_off[i].data(), 0, RADIX_KI16 * sizeof(size_t));
     }
 
-    std::vector<size_t>& bucket_size = get_local_bucket_size_u16();
-    std::vector<size_t>& bucket_base = get_local_bucket_base_u16();
+    std::array<size_t, RADIX_KI16>& bucket_size = get_local_bucket_size_u16();
+    std::array<size_t, RADIX_KI16>& bucket_base = get_local_bucket_base_u16();
     memset(bucket_size.data(), 0, RADIX_KI16 * sizeof(size_t));
     memset(bucket_base.data(), 0, RADIX_KI16 * sizeof(size_t));
 

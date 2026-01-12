@@ -22,7 +22,7 @@ inline void radix_sort_uint32(std::vector<uint32_t>& tkeys,
 
     std::vector<U> tmp_keys(n);
     std::vector<size_t> tmp(n);
-    std::vector<size_t>& count = get_local_count_u16();
+    std::array<size_t, RADIX_KI16>& count = get_local_count_u16();
     memset(count.data(), 0, RADIX_KI16 * sizeof(size_t));
 
     // 2 passes, each processing 16 bits of the 32-bit key.

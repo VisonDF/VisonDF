@@ -17,8 +17,9 @@ inline void radix_sort_uint64(std::vector<uint64_t>& tkeys,
         return;
     }
 
-    std::vector<size_t>& count = get_local_count_u16();
+    std::array<size_t, RADIX_KI16>& count = get_local_count_u16();
     memset(count.data(), 0, RADIX_KI16 * sizeof(size_t));
+    
     std::vector<size_t> tmp_idx(n);
     std::vector<uint64_t> tmp_keys(n);
 

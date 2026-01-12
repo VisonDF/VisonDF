@@ -14,9 +14,11 @@ inline void radix_sort_double(std::vector<uint64_t>& tkeys, size_t* idx, size_t 
         return;
     }
 
-    std::vector<size_t> count(RADIX_KI64);
     std::vector<size_t> tmp_idx(n);
     std::vector<uint64_t> tmp_keys(n);
+
+    std::array<size_t, RADIX_KI16>& count = get_local_count_u16();
+    memset(count.data(), 0, RADIX_KI16 * sizeof(size_t));
 
     for (size_t pass = 0; pass < 4; pass++)
     {
