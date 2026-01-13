@@ -88,13 +88,13 @@ void rm_row_range_bool_mt(std::vector<uint8_t>& mask,
                 }
 
                 if constexpr (std::is_trivially_copyable_v<T>) {
-                    memcpy(vec.data() + out_idx, 
-                           vec.data() + mask.size(), 
-                           (old_nrow - mask.size()) * sizeof(T));
+                    memcpy(vec.data()  + strt_vl + out_idx, 
+                           vec2.data() + strt_vl + mask.size(), 
+                           (old_nrow - strt_vl - mask.size()) * sizeof(T));
                 } else {
-                    std::move(vec2.begin() + mask.size(), 
+                    std::move(vec2.begin() + strt_vl + mask.size(), 
                               vec2.begin() + old_nrow, 
-                              vec.begin() + out_idx);
+                              vec.begin()  + strt_vl + out_idx);
                 }
             }
 
@@ -115,14 +115,19 @@ void rm_row_range_bool_mt(std::vector<uint8_t>& mask,
             }
 
             if constexpr (std::is_trivially_copyable_v<T>) {
-                memmove(vec.data() + out_idx, 
-                        vec.data() + mask.size(), 
-                        (old_nrow - mask.size()) * sizeof(T));
+                memmove(vec.data() + strt_vl + out_idx, 
+                        vec.data() + strt_vl + mask.size(), 
+                        (old_nrow - strt_vl - mask.size()) * sizeof(T));
             } else {
-                std::move(vec.begin() + mask.size(), 
-                          vec.begin() + old_nrow, 
-                          vec.begin() + out_idx);
+                std::move(vec2.begin() + strt_vl + mask.size(), 
+                          vec2.begin() + old_nrow, 
+                          vec.begin()  + strt_vl + out_idx);
             }
+        }
+
+        if constexpr (MemClean) {
+            vec.resize(strt_vl + out_idx);
+            vec.shrink_to_fit();
         }
 
     };
@@ -212,22 +217,13 @@ void rm_row_range_bool_mt(std::vector<uint8_t>& mask,
 
         if (!name_v_row.empty()) {
             auto& aux = name_v_row;
-            size_t idx = 0;
+            size_t idx = strt_vl;
             auto it = std::remove_if(aux.begin(), aux.end(),
                                      [&](auto&) mutable { return mask[idx++]; });
             aux.erase(it, aux.end());
             if constexpr (MemClean) {
                aux.shrink_to_fit();
             }
-        }
-
-        if constexpr (MemClean) {
-            for (auto& el : str_v)  el.shrink_to_fit();
-            for (auto& el : chr_v)  el.shrink_to_fit();
-            for (auto& el : bool_v) el.shrink_to_fit();
-            for (auto& el : int_v)  el.shrink_to_fit();
-            for (auto& el : uint_v) el.shrink_to_fit();
-            for (auto& el : dbl_v)  el.shrink_to_fit();
         }
 
     }
