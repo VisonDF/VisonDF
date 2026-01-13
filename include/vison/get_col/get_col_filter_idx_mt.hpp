@@ -11,16 +11,27 @@ template <unsigned int CORES = 4,
 void get_col_filter_idx_mt(unsigned int x,
                            std::vector<T> &rtn_v,
                            std::vector<unsigned int> &mask,
-                           std::vector<RunsIdxMt>& runs = {})
+                           Runs& runs)
 {
 
     if constexpr (IsDense && !Sorted) {
         throw std::runtime_error("To use `IsDense` parameter, you must sort the mask\n");
     }
 
+    if constexpr (!IsSorted && !IdxIsTrue) {
+        std::sort(mask.begin(), mask.end());
+    }
+
     const unsigned int local_nrow = nrow;
 
-    auto find_col_base = [x](const auto &idx_vec, [[maybe_unused]] const size_t idx_type) -> size_t {
+    if constexpr (IdxIsTrue) {
+        rtn_v.resize(mask.size());
+    } else {
+        rtn_v.resize(local_nrow - mask.size());
+    }
+
+    auto find_col_base = [x](const auto &idx_vec, [[maybe_unused]] const size_t idx_type) -> size_t 
+    {
         size_t pos;
         if constexpr (!MapCol) {
             pos = 0;
@@ -44,10 +55,19 @@ void get_col_filter_idx_mt(unsigned int x,
     };
 
     auto extract_idx_masked = [&rtn_v, &mask](const auto*__restrict src) {
+
         if constexpr (CORES > 1) {
 
-            if (CORES > n_el)
+            if (CORES > rtn_v.size())
                 throw std::runtime_error("Too much cores for so little nrows\n");
+
+            if constexpr (!IdxIsTrue) {
+                if (runs.thread_offsets.empty()) { 
+                    idx_offset_per_thread_mt_simple<IdxIsTrue>(runs.thread_offsets,
+                                                               mask,
+                                                               CORES);
+                }
+            }
 
             int numa_nodes = 1;
             if (numa_available() >= 0) 
@@ -62,13 +82,13 @@ void get_col_filter_idx_mt(unsigned int x,
 
                 if constexpr (NUMA) {
                     numa_mt(cur_struct,
-                            n_el, 
+                            rtn_v.size(), 
                             tid, 
                             nthreads, 
                             numa_nodes);
                 } else {
                     simple_mt(cur_struct,
-                              n_el, 
+                              rtn_v.size(), 
                               tid, 
                               nthreads);
                 }
@@ -76,14 +96,38 @@ void get_col_filter_idx_mt(unsigned int x,
                 const unsigned int start = cur_struct.start;
                 const unsigned int end   = cur_struct.end;
 
-                for (size_t i = start; i < end; ++i)
-                    rtn_v[i] = src[mask[i]];
+                if constexpr (IdxIsTrue) {
+                    for (size_t i = start; i < end; ++i)
+                        rtn_v[i] = src[mask[i]];
+                } else {
+                    size_t out_idx = runs.thread_offsets[tid];
+                    for (size_t i = start; i < end; ++i) {
+                        const size_t next_stop = mask[i];
+                        while (out_idx < next_stop) {
+                            rtn_v[out_idx] = src[out_idx];
+                            out_idx += 1;
+                        }
+                    }
+                }
 
             }
 
         } else {
-            for (size_t i = 0; i < mask.size(); ++i)
-                rtn_v[i] = src[mask[i]];
+
+            if constexpr (IdxIsTrue) {
+                for (size_t i = 0; i < mask.size(); ++i)
+                    rtn_v[i] = src[mask[i]];
+            } else {
+                size_t out_idx = 0;
+                for (size_t i = 0; i < mask.size(); ++i) {
+                    const size_t next_stop = mask[i];
+                    while (out_idx < next_stop) {
+                        rtn_v[out_idx] = src[out_idx];
+                        out_idx += 1;
+                    }
+                    out_idx += 1;
+                }
+            }
         }
     };
 
@@ -96,21 +140,21 @@ void get_col_filter_idx_mt(unsigned int x,
 
         if constexpr (CORES > 1) {
 
-            std::vector<std::pair<size_t, size_t>> thread_offsets;
+            if (CORES > rtn_v.size())
+                throw std::runtime_error("Too much cores for so little nrows\n");
+
             std::vector<size_t> thread_counts;
 
-            if (runs.empty()) {
+            if (runs.vec.empty() || runs.thread_offsets.empty()) {
 
-                idx_offset_per_thread_mt(thread_offsets,
-                                         thread_counts,
-                                         mask,
-                                         CORES,
-                                         size_t& active_rows,
-                                         local_nrow,
-                                         runs);
+                idx_offset_per_thread_mt<IdxIsTrue>(runs.thread_offsets,
+                                                    thread_counts,
+                                                    mask,
+                                                    CORES,
+                                                    local_nrow,
+                                                    runs.vec);
 
             }
-            (*dst).resize(active_rows);
            
             int numa_nodes = 1;
             if (numa_available() >= 0) 
@@ -137,18 +181,18 @@ void get_col_filter_idx_mt(unsigned int x,
                 }
                     
                 const size_t start = cur_struct.start;
-                const size_t end   = cur_struct.end;
+                const size_t len   = runs.thread_offsets[tid];
 
                 if constexpr (IdxIsTrue) {
-                    for (size_t r = start; r < end; ++r) {
-                        const auto& run = runs[r]; 
+                    for (size_t r = start; r < start + len; ++r) {
+                        const auto& run = runs.vec[r]; 
                         std::memcpy(dst.data() + run.mask_pos,
                                     src.data() + run.src_start,
                                     run.len * sizeof(T));
                     }
                 } else {
                     const size_t delta = thread_counts[tid];
-                    for (size_t r = start; r < end; ++r) {
+                    for (size_t r = start; r < start + len; ++r) {
                         const auto& run = runs[r]; 
                         std::memcpy(dst.data() + delta + run.mask_pos,
                                     src.data() + run.src_start,
@@ -161,16 +205,14 @@ void get_col_filter_idx_mt(unsigned int x,
 
             if (runs.empty()) {
 
-                idx_offset_per_thread(mask,
-                                      active_rows,
-                                      local_nrow,
-                                      runs);
+                idx_offset_per_thread<IdxIsTrue>(mask,
+                                                 local_nrow,
+                                                 runs.vec);
 
             }
-            (*dst).resize(active_rows);
 
-            for (size_t r = start; r < end; ++r) {
-                const auto& run = runs[r]; 
+            for (size_t r = 0; r < runs.size(); ++r) {
+                const auto& run = runs.vec[r]; 
                 std::memcpy(dst.data() + run.mask_pos,
                             src.data() + run.src_start,
                             run.len * sizeof(T));

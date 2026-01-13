@@ -119,6 +119,8 @@ inline void idx_offset_per_thread_mt(std::vector<size_t>& thread_offsets,
             const size_t cur_end = cur.end;
 
             size_t hmn = 0;
+
+            size_t out_idx = 0;
             size_t src_start;
             if (cur_start > 0) {
                 src_start = mask[cur_start - 1] + 1;
@@ -195,6 +197,8 @@ inline void idx_offset_per_thread(std::vector<uint8_t>& mask,
     } else {
 
         mask.push_back(mask.back() + 1);
+
+        size_t out_idx   = 0;
         size_t src_start = 0;
         if (mask[0] > 0) {
             while (src_start < mask[0]) ++src_start;
@@ -203,7 +207,6 @@ inline void idx_offset_per_thread(std::vector<uint8_t>& mask,
             hmn += 1;
         }
 
-        size_t out_idx   = 0;
         for (size_t i = 0; i < mask.size(); ) {
 
             while (i + 1 < mask.size() &&
@@ -230,6 +233,75 @@ inline void idx_offset_per_thread(std::vector<uint8_t>& mask,
 
 }
 
+template <bool IdxIsTrue>
+inline void idx_offset_per_thread_mt_simple(std::vector<size_t>& thread_offsets,
+                                            std::vector<uint8_t>& mask,
+                                            const size_t inner_cores)
+{
+
+    thread_offsets.resize(inner_cores);
+
+    if constexpr (IdxIsTrue) {
+
+        throw std::runtime_error("Not senset to use this function with `IdxIsTrue = true`");
+
+    } else {
+
+        thread_offsets.resize(inner_cores, 0);
+
+        mask.push_back(mask.back() + 1);
+
+        #pragma omp parallel if(inner_cores > 1) num_threads(inner_cores)
+        {
+            const int tid = omp_get_thread_num();
+            const int nthreads   = omp_get_num_threads();
+
+            MtStruct cur;
+            if constexpr (NUMA) {
+                numa_mt(cur, mask.size(), tid, nthreads, numa_nodes);
+            } else {
+                simple_mt(cur, mask.size(), tid, nthreads);
+            }
+
+            const size_t cur_start = cur.start;
+            const size_t cur_end = cur.end;
+
+            size_t src_start;
+
+            if (cur_start > 0) {
+                src_start = mask[cur_start - 1] + 1;
+            } else {
+                src_start = 0;
+                if (mask[0] > 0) {
+                    while (src_start < mask[0]) ++src_start;
+                    thread_offsets[tid] += src_start;
+                }
+            }
+
+            for (size_t i = cur_start; i < cur_end; ) {
+
+                while (i + 1 < cur_end &&
+                       mask[i + 1] == mask[i] + 1) {
+                    ++i;
+                    ++src_start;
+                }
+                src_start += 1;
+                i += 1;
+                const size_t ref_src_start = src_start;
+                while (src_start < mask[i]) src_start += 1;
+                const size_t len = src_start - ref_src_start;
+
+                thread_offsets[tid] += len;
+
+                i         += 1;
+                src_start += 1;
+            }
+        }
+
+        mask.pop_back();
+    }
+
+}
 
 
 

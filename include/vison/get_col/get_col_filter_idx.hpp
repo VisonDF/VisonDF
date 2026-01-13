@@ -8,7 +8,8 @@ template <bool IsBool    = false,
           typename T>
 void get_col_filter_idx(unsigned int x,
                         std::vector<T> &rtn_v,
-                        const std::vector<unsigned int> &mask)
+                        const std::vector<unsigned int> &mask,
+                        Runs& runs)
 {
 
     get_col_filter_idx_mt<1,      // CORES
@@ -17,7 +18,10 @@ void get_col_filter_idx(unsigned int x,
                           MapCol,
                           IsDense,
                           IsSorted,
-                          IdxIsTrue>(x, rtn_v, mask);
+                          IdxIsTrue>(x, 
+                                     rtn_v, 
+                                     mask,
+                                     runs);
 
 }
 

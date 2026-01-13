@@ -5,3 +5,8 @@ struct RunsIdxMt {
     size_t src_start;
     size_t len;
 };
+
+struct Runs {
+    std::vector<RunsIdxMt> vec;
+    std::vector<size_t> thread_offsets;
+}
