@@ -1,47 +1,79 @@
 #pragma once
 
-template <unsigned int CORES = 4, 
-          bool NUMA = false,
-          MtMethod MtType = MtMethod::Row,
-          bool MemClean = false,
-          bool Soft = true,
-          bool OneIsTrue = true
+template <unsigned int CORES           = 4, 
+          bool NUMA                    = false,
+          MtMethod MtType              = MtMethod::Row,
+          bool MemClean                = false,
+          bool Soft                    = true,
+          bool Sorted                  = true,
+          bool IdxIsTrue               = true,
+          AssertionType AssertionLevel = AssertionType::Simple
          >
-void rm_row_range_bool_mt(std::vector<uint8_t>& mask,
-                              const size_t strt_vl,
-                              OffsetBoolMask& start_offset) 
+void rm_row_range_mt(std::vector<uint8_t>& mask,
+                     Runs& runs = Runs{}) 
 {
 
     // Soft May auto switch to view mode
     const size_t old_nrow = nrow;
 
+    const size_t n_el = (IdxIsTrue) ? n_el : old_nrow - n_el;
+
+
+    if constexpr (IsDense && !Sorted) {
+        throw std::runtime_error("To use `IsDense` parameter, you must sort the mask\n");
+    }
+
+    if constexpr (!IsSorted && !IdxIsTrue) {
+        std::sort(mask.begin(), mask.end());
+    }
+
+    if constexpr (!IdxIsTrue) {
+        if (mask.back() >= old_nrow)
+            throw std::runtime_error("mask indices are exceeding nrow\n");
+    }
+
+    if constexpr (AssertionLevel == AssertionType::Hard) {
+        if constexpr (IdxIsTrue && IsDense) {
+            const ref_val = mask[0];
+            for (size_t i = 1; i < mask.size(); ++i) {
+                if (ref_val < mask[i]) [[unlikely]] {
+                    throw std::runtime_error("mask is not sorted ascendingly\n");
+                }
+            }
+            if (mask.back() >= old_nrow) {
+                throw std::runtime_error("mask indices are out of bound\n");
+            }
+        }
+    }
+
     auto compact_block = [old_nrow, 
-                          strt_vl, 
+                          n_el,
+                          &runs,
                           &mask]<typename T>(std::vector<T>& vec, 
                                              const size_t inner_cores) {
 
+        T* src;
         std::vector<T> vec2;
-        if constexpr (CORES > 1) {
+        if constexpr (CORES > 1 || !Sorted && IdxIsTrue) {
             vec2 = vec;
+            src = &vec2;
+        } else {
+            src = &vec;
         }
 
         if constexpr (CORES > 1) {
-            
+           
+            if constexpr (!IdxIsTrue) {
+                if (runs.thread_offsets.empty()) { 
+                    idx_offset_per_thread_mt_simple<IdxIsTrue>(runs.thread_offsets,
+                                                               mask,
+                                                               CORES);
+                }
+            }
+
             int numa_nodes = 1;
             if (numa_available() >= 0) 
                 numa_nodes = numa_max_node() + 1;
-
-            std::vector<size_t> thread_counts;
-            std::vector<size_t> thread_offsets;
-
-            size_t dummy_tot;
-
-            if (start_offset.vec.empty())
-                boolmask_offset_per_thread<OneIsTrue>(thread_counts, 
-                                                      thread_offsets, 
-                                                      mask, 
-                                                      inner_cores, 
-                                                      dummy_tot);
 
             #pragma omp parallel if(inner_cores > 1) num_threads(inner_cores)
             {
@@ -67,66 +99,42 @@ void rm_row_range_bool_mt(std::vector<uint8_t>& mask,
                 const unsigned int start = cur_struct.start;
                 const unsigned int end   = cur_struct.end;
 
-                if (start_offset.vec.empty()) {
-                    out_idx = thread_offsets[tid];
+                if constexpr (IdxIsTrue) {
+                    for (size_t i = start; i < end; ++i)
+                        vec[i] = std::move((*src)[mask[i]]);
                 } else {
-                    out_idx = start_offset.vec[start];
-                }
-
-                if constexpr (OneIsTrue) {
-                    for (size_t i = start; i < end; ++read) {
-                        if (!mask[i]) {
-                            vec[strt_vl + out_idx++] = std::move(vec2[strt_vl + i]);
-                        }
-                    }
-                } else {
-                    for (size_t i = start; i < end; ++read) {
-                        if (mask[i]) {
-                            vec[strt_vl + out_idx++] = std::move(vec2[strt_vl + i]);
+                    size_t out_idx = runs.thread_offsets[tid];
+                    for (size_t i = start; i < end; ++i) {
+                        const size_t next_stop = mask[i];
+                        while (out_idx < next_stop) {
+                            vec[out_idx] = std::move((*src)[out_idx]);
+                            out_idx += 1;
                         }
                     }
                 }
 
-                if constexpr (std::is_trivially_copyable_v<T>) {
-                    memcpy(vec.data()  + strt_vl + out_idx, 
-                           vec2.data() + strt_vl + mask.size(), 
-                           (old_nrow - strt_vl - mask.size()) * sizeof(T));
-                } else {
-                    std::move(vec2.begin() + strt_vl + mask.size(), 
-                              vec2.begin() + old_nrow, 
-                              vec.begin()  + strt_vl + out_idx);
-                }
             }
 
         } else {
-            size_t out_idx = 0;
-            if constexpr (OneIsTrue) {
-                for (size_t i = 0; i < mask.size(); ++read) {
-                    if (!mask[i]) {
-                        vec[strt_vl + out_idx++] = std::move(vec[strt_vl + i]);
-                    }
-                }
-            } else {
-                for (size_t i = 0; i < mask.size(); ++read) {
-                    if (mask[i]) {
-                        vec[strt_vl + out_idx++] = std::move(vec[strt_vl + i]);
-                    }
-                }
-            }
 
-            if constexpr (std::is_trivially_copyable_v<T>) {
-                memmove(vec.data() + strt_vl + out_idx, 
-                        vec.data() + strt_vl + mask.size(), 
-                        (old_nrow - strt_vl - mask.size()) * sizeof(T));
+            if constexpr (IdxIsTrue) {
+                for (size_t i = 0; i < mask.size(); ++i)
+                    vec[i] = std::move((*src)[mask[i]]);
             } else {
-                std::move(vec2.begin() + strt_vl + mask.size(), 
-                          vec2.begin() + old_nrow, 
-                          vec.begin()  + strt_vl + out_idx);
+                size_t out_idx = 0;
+                for (size_t i = 0; i < mask.size(); ++i) {
+                    const size_t next_stop = mask[i];
+                    while (out_idx < next_stop) {
+                        vec[out_idx] = std::move((*src)[out_idx]);
+                        out_idx += 1;
+                    }
+                    out_idx += 1;
+                }
             }
         }
 
         if constexpr (MemClean) {
-            vec.resize(strt_vl + out_idx);
+            vec.resize(n_el);
             vec.shrink_to_fit();
         }
 
@@ -221,7 +229,7 @@ void rm_row_range_bool_mt(std::vector<uint8_t>& mask,
 
     }
 
-    nrow = old_nrow - mask.size(); 
+    nrow = (IdxIsTrue) ? old_nrow - mask.size() : mask.size(); 
 
 };
 
