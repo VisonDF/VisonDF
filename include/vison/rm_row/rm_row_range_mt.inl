@@ -210,7 +210,7 @@ void rm_row_range_mt(std::vector<uint8_t>& mask,
             } else {
 
                 for (size_t cpos = 0; cpos < ncols_cur; ++cpos)
-                    compact_block(matr[cpos], inner_cores); 
+                    compact_block(matr[cpos], CORES); 
 
             }
 
