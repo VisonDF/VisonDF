@@ -9,7 +9,7 @@ template <bool IsBool    = false,
 void get_col_filter_idx(unsigned int x,
                         std::vector<T> &rtn_v,
                         const std::vector<unsigned int> &mask,
-                        Runs& runs)
+                        Runs& runs = Runs{})
 {
 
     get_col_filter_idx_mt<1,      // CORES

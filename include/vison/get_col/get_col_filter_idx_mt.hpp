@@ -11,7 +11,7 @@ template <unsigned int CORES = 4,
 void get_col_filter_idx_mt(unsigned int x,
                            std::vector<T> &rtn_v,
                            std::vector<unsigned int> &mask,
-                           Runs& runs)
+                           Runs& runs = Runs{})
 {
 
     if constexpr (IsDense && !Sorted) {
