@@ -83,7 +83,7 @@ inline void idx_offset_per_thread_mt(std::vector<size_t>& thread_offsets,
                 size_t src_start = mask[i];
     
                 while (i + 1 < cur_end &&
-                       mask[i + 1] == mask[i] + 1) {
+                       (int)((int)mask[i + 1] - ((int)mask[i] + 1)) < 2) {
                     ++i;
                 }
                 runs[cur_start + hmn] = {out_idx, src_start, i - out_idx + 1};
@@ -187,7 +187,7 @@ inline void idx_offset_per_thread(std::vector<uint8_t>& mask,
             size_t src_start = mask[i];
     
             while (i + 1 < cur_end &&
-                   mask[i + 1] == mask[i] + 1) {
+                   (int)((int)mask[i + 1] - ((int)mask[i] + 1)) < 2) {
                 ++i;
             }
             runs.push_back({out_idx, src_start, i - out_idx + 1});
