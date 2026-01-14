@@ -1,13 +1,12 @@
 #pragma once
 
 template <bool OneIsTrue>
-inline void boolmask_offset_per_thread(std::vector<size_t>& thread_counts, 
-                                       std::vector<size_t>& thread_offsets,
+inline void boolmask_offset_per_thread(std::vector<size_t>& thread_offsets,
                                        const std::vector<uint8_t>& mask,
                                        const size_t inner_cores,
                                        size_t& active_rows)
 {
-    thread_counts.resize(inner_cores);
+    std::vector<size_t> thread_counts(inner_cores);
     thread_offsets.resize(inner_cores);
 
     #pragma omp parallel if(inner_cores > 1) num_threads(inner_cores)

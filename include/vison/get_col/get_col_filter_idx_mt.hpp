@@ -17,23 +17,25 @@ void get_col_filter_idx_mt(unsigned int x,
 
     const unsigned int local_nrow = nrow;
 
-    if constexpr (IsDense && !Sorted) {
-        throw std::runtime_error("To use `IsDense` parameter, you must sort the mask\n");
-    }
+    if constexpr (AssertionLevel > AssertionType::None) {
+        if constexpr (IsDense && !Sorted) {
+            throw std::runtime_error("To use `IsDense` parameter, you must sort the mask\n");
+        }
 
-    if constexpr (!IsSorted && !IdxIsTrue) {
-        std::sort(mask.begin(), mask.end());
-    }
+        if constexpr (!IsSorted && !IdxIsTrue) {
+            std::sort(mask.begin(), mask.end());
+        }
 
-    if constexpr (!IdxIsTrue) {
-        if (mask.back() >= local_nrow)
-            throw std::runtime_error("mask indices are exceeding nrow\n");
-    }
+        if constexpr (!IdxIsTrue) {
+            if (mask.back() >= local_nrow)
+                throw std::runtime_error("mask indices are exceeding nrow\n");
+        }
 
-    if constexpr (IdxIsTrue) {
-        rtn_v.resize(mask.size());
-    } else {
-        rtn_v.resize(local_nrow - mask.size());
+        if constexpr (IdxIsTrue) {
+            rtn_v.resize(mask.size());
+        } else {
+            rtn_v.resize(local_nrow - mask.size());
+        }
     }
 
     if constexpr (AssertionLevel == AssertionType::Hard) {

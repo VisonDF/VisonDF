@@ -12,7 +12,7 @@ void get_col_filter_range(unsigned int x,
                           std::vector<T> &rtn_v,
                           const std::vector<uint8_t> &mask,
                           const unsigned int strt_vl,
-                          OffsetBoolMask& offset_start = {})
+                          OffsetBoolMask& offset_start = default_offset_start)
 {
 
     const unsigned int n_el = mask.size();
@@ -50,20 +50,13 @@ void get_col_filter_range(unsigned int x,
             if (CORES > n_el)
                 throw std::runtime_error("Too much cores for so little nrows\n");
 
-            std::vector<size_t> thread_counts;
-            std::vector<size_t> thread_offsets;
-
-            size_t active_count;
             if (offset_start.vec.empty()) {
-                boolmask_offset_per_thread<OneIsTrue>(thread_counts, 
-                                                      thread_offsets, 
+                boolmask_offset_per_thread<OneIsTrue>(offset_start.thread_offsets, 
                                                       mask, 
                                                       CORES,
-                                                      active_count);
-                rtn_v.resize(active_count);
+                                                      offset_start.active_rows);
             } else {
-                rtn_v.resize(offset_start.x);
-            }
+            rtn_v.resize(offset_start.active_rows);
 
             int numa_nodes = 1;
             if (numa_available() >= 0) 
@@ -123,25 +116,18 @@ void get_col_filter_range(unsigned int x,
                                  &offset_start,
                                  n_el]<typename TB>(const TB* __restrict src) {
 
-        size_t active_count;
         if (offset_start.vec.empty()) {
-            boolmask_offset_per_thread<OneIsTrue>(thread_counts, 
-                                                  thread_offsets, 
+            boolmask_offset_per_thread<OneIsTrue>(offset_start.thread_offsets, 
                                                   mask, 
                                                   CORES,
-                                                  active_count);
-            rtn_v.resize(active_count);
-        } else {
-            rtn_v.resize(offset_start.x);
+                                                  ofset_start.active_rows);
         }
+        rtn_v.resize(offset_start.active_rows);
 
         if constexpr (CORES > 1) {
 
             if (CORES > n_el)
                 throw std::runtime_error("Too much cores for so little nrows\n");
-
-            std::vector<size_t> thread_counts;
-            std::vector<size_t> thread_offsets;
 
             int numa_nodes = 1;
             if (numa_available() >= 0) 

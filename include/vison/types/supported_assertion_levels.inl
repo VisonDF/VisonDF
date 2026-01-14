@@ -1,6 +1,7 @@
 #pragma once
 
 enum class AssertionLevel {
+    None,
     Simple,
     Hard
 };
