@@ -1,18 +1,21 @@
 #pragma once
 
-template <unsigned int CORES = 4,
-          bool NUMA          = false,
-          bool IsBool        = false,
-          bool MapCol        = false,
-          bool IsDense       = false, // assumed sorted increasingly
-          bool IsSorted      = true, 
-          bool IdxIsTrue     = true,
+template <unsigned int CORES           = 4,
+          bool NUMA                    = false,
+          bool IsBool                  = false,
+          bool MapCol                  = false,
+          bool IsDense                 = false, // assumed sorted increasingly
+          bool IsSorted                = true, 
+          bool IdxIsTrue               = true,
+          AssertionType AssertionLevel = AssertionType::Simple,
           typename T>
 void get_col_filter_idx_mt(unsigned int x,
                            std::vector<T> &rtn_v,
                            std::vector<unsigned int> &mask,
                            Runs& runs = Runs{})
 {
+
+    const unsigned int local_nrow = nrow;
 
     if constexpr (IsDense && !Sorted) {
         throw std::runtime_error("To use `IsDense` parameter, you must sort the mask\n");
@@ -22,12 +25,35 @@ void get_col_filter_idx_mt(unsigned int x,
         std::sort(mask.begin(), mask.end());
     }
 
-    const unsigned int local_nrow = nrow;
+    if constexpr (!IdxIsTrue) {
+        if (mask.back() >= local_nrow)
+            throw std::runtime_error("mask indices are exceeding nrow\n");
+    }
 
     if constexpr (IdxIsTrue) {
         rtn_v.resize(mask.size());
     } else {
         rtn_v.resize(local_nrow - mask.size());
+    }
+
+    if constexpr (AssertionLevel == AssertionType::Hard) {
+        if constexpr (IdxIsTrue && IsDense) {
+            const ref_val = mask[0];
+            for (size_t i = 1; i < mask.size(); ++i) {
+                if (ref_val < mask[i]) [[unlikely]] {
+                    throw std::runtime_error("mask is not sorted ascendingly\n");
+                }
+            }
+            if (mask.back() >= local_nrow) {
+                throw std::runtime_error("mask indices are out of bound\n");
+            }
+        } else if constexpr (IdxIsTrue) {
+            for (auto el : mask) {
+                if (el >= local_nrow) {
+                    throw std::runtime_error("mask indices are out of bound\n");
+                }
+            }
+        }
     }
 
     auto find_col_base = [x](const auto &idx_vec, [[maybe_unused]] const size_t idx_type) -> size_t 

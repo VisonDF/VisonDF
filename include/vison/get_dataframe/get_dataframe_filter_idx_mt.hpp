@@ -1,10 +1,11 @@
 #pragma once
 
-template <unsigned int CORES = 4,
-          bool NUMA          = false,
-          bool IsDense       = false, // assumed sorted
-          bool IsSorted      = true, 
-          bool IdxIsTrue     = true,
+template <unsigned int CORES           = 4,
+          bool NUMA                    = false,
+          bool IsDense                 = false, // assumed sorted
+          bool IsSorted                = true, 
+          bool IdxIsTrue               = true,
+          AssertionType AssertionLevel = AssertionType::Normal
         >
 void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols, 
                                  Dataframe& cur_obj,
@@ -24,23 +25,31 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
     }
 
     if constexpr (!IdxIsTrue) {
-        std::sort(mask.begin(), mask.end());
         if (mask.back() >= nrow2)
             throw std::runtime_error("mask indices are exceeding nrow\n");
     }
 
-    const unsigned int local_nrow = () ? mask.size() : cur_obj.get_nrow() - mask.size();
     if constexpr (AssertionLevel == AssertionType::Hard) {
-        if constexpr (IdxIsTrue) {
+        if constexpr (IdxIsTrue && IsDense) {
             const ref_val = mask[0];
             for (size_t i = 1; i < mask.size(); ++i) {
                 if (ref_val < mask[i]) [[unlikely]] {
                     throw std::runtime_error("mask is not sorted ascendingly\n");
                 }
             }
+            if (mask.back() >= nrow2) {
+                throw std::runtime_error("mask indices are out of bound\n");
+            }
+        } else if constexpr (IdxIsTrue) {
+            for (auto el : mask) {
+                if (el >= nrow2) {
+                    throw std::runtime_error("mask indices are out of bound\n");
+                }
+            }
         }
     }
 
+    const unsigned int local_nrow = () ? mask.size() : nrow2 - mask.size();
     nrow = local_nrow;
 
     in_view = cur_obj.get_in_view();

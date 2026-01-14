@@ -4,6 +4,7 @@ template <
           bool IsDense   = false, // assumed sorted
           bool IsSorted  = true, 
           bool IdxIsTrue = true,
+          AssertionType AssertionLevel = AssertionType::Normal
          >
 void get_dataframe_filter_idx(const std::vector<size_t>& cols, 
                               Dataframe& cur_obj,
@@ -16,10 +17,11 @@ void get_dataframe_filter_idx(const std::vector<size_t>& cols,
                                 false, // NUMA locality
                                 IsDense,
                                 IsSorted,
-                                IdxIsTrue>(cols, 
-                                           cur_obj, 
-                                           mask, 
-                                           runs);
+                                IdxIsTrue,
+                                AssertionLevel>(cols, 
+                                                cur_obj, 
+                                                mask, 
+                                                runs);
 
 }
 

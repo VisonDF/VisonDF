@@ -1,10 +1,11 @@
 #pragma once
 
-template <bool IsBool    = false,
-          bool MapCol    = false,
-          bool IsDense   = false,
-          bool IsSorted  = true,
-          bool IdxIsTrue = true,
+template <bool IsBool                  = false,
+          bool MapCol                  = false,
+          bool IsDense                 = false,
+          bool IsSorted                = true,
+          bool IdxIsTrue               = true,
+          AssertionType AssertionLevel = AssertionType::Normal
           typename T>
 void get_col_filter_idx(unsigned int x,
                         std::vector<T> &rtn_v,
@@ -18,10 +19,11 @@ void get_col_filter_idx(unsigned int x,
                           MapCol,
                           IsDense,
                           IsSorted,
-                          IdxIsTrue>(x, 
-                                     rtn_v, 
-                                     mask,
-                                     runs);
+                          IdxIsTrue,
+                          AssertionLevel>(x, 
+                                          rtn_v, 
+                                          mask,
+                                          runs);
 
 }
 
