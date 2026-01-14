@@ -10,3 +10,9 @@ struct Runs {
     std::vector<RunsIdxMt> vec;
     std::vector<size_t> thread_offsets;
 }
+
+Runs default_idx_runs{{}, {}};
+
+
+
+

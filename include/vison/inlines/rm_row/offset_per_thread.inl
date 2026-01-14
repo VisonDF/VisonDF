@@ -1,10 +1,12 @@
 #pragma once
 
 template <bool OneIsTrue>
-inline void boolmask_offset_per_thread(std::vector<size_t>& thread_offsets,
-                                       const std::vector<uint8_t>& mask,
-                                       const size_t inner_cores,
-                                       size_t& active_rows)
+inline void build_boolmask(
+                           std::vector<size_t>& thread_offsets,
+                           const std::vector<uint8_t>& mask,
+                           const size_t inner_cores,
+                           size_t& active_rows
+                          )
 {
     std::vector<size_t> thread_counts(inner_cores);
     thread_offsets.resize(inner_cores);
@@ -45,12 +47,14 @@ inline void boolmask_offset_per_thread(std::vector<size_t>& thread_offsets,
 
 
 template <bool IdxIsTrue>
-inline void idx_offset_per_thread_mt(std::vector<size_t>& thread_offsets,
-                                     std::vector<size_t>& thread_counts,
-                                     std::vector<uint8_t>& mask,
-                                     const size_t inner_cores,
-                                     const size_t local_nrow,
-                                     std::vector<RunsMt>& runs)
+inline void build_runs_mt(
+                          std::vector<size_t>& thread_offsets,
+                          std::vector<size_t>& thread_counts,
+                          std::vector<uint8_t>& mask,
+                          const size_t inner_cores,
+                          const size_t local_nrow,
+                          std::vector<RunsMt>& runs
+                         )
 {
 
     thread_offsets.resize(inner_cores);
@@ -172,9 +176,11 @@ inline void idx_offset_per_thread_mt(std::vector<size_t>& thread_offsets,
 }
 
 template <bool IdxIsTrue>
-inline void idx_offset_per_thread(std::vector<uint8_t>& mask,
-                                  const size_t local_nrow,
-                                  std::vector<RunsMt>& runs)
+inline void build_runs(
+                       std::vector<uint8_t>& mask,
+                       const size_t local_nrow,
+                       std::vector<RunsMt>& runs
+                      )
 {
 
     if constexpr (IdxIsTrue) {
@@ -233,16 +239,18 @@ inline void idx_offset_per_thread(std::vector<uint8_t>& mask,
 }
 
 template <bool IdxIsTrue>
-inline void idx_offset_per_thread_mt_simple(std::vector<size_t>& thread_offsets,
-                                            std::vector<uint8_t>& mask,
-                                            const size_t inner_cores)
+inline void build_runs_mt_simple(
+                                 std::vector<size_t>& thread_offsets,
+                                 std::vector<uint8_t>& mask,
+                                 const size_t inner_cores
+                                )
 {
 
     thread_offsets.resize(inner_cores);
 
     if constexpr (IdxIsTrue) {
 
-        throw std::runtime_error("Not senset to use this function with `IdxIsTrue = true`");
+        throw std::runtime_error("Not sensed to use this function with `IdxIsTrue = true`");
 
     } else {
 

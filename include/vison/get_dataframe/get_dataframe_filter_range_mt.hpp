@@ -22,10 +22,10 @@ void get_dataframe_filter_range_mt(
     }
 
     if (offset_start.thread_offsets.empty()) {
-        boolmask_offset_per_thread<OneIsTrue>(offset_start.thread_offsets, 
-                                              mask, 
-                                              CORES,
-                                              offset_start.active_rows);
+        build_boolmask<OneIsTrue>(offset_start.thread_offsets, 
+                                  mask, 
+                                  CORES,
+                                  offset_start.active_rows);
     }
 
     nrow = offset_start.active_rows;
@@ -33,7 +33,7 @@ void get_dataframe_filter_range_mt(
     in_view = cur_obj.get_in_view();
     ankerl::unordered_dense::set<unsigned int>& col_alrd_materialized2  = cur_obj.get_col_alrd_materialized();
     const auto row_view_idx2                                            = cur_obj.get_row_view_idx();    
-    std::vector<std::string> name_v_row2                                = cur_obj.get_rowname();
+    const std::vector<std::string>& name_v_row2                         = cur_obj.get_rowname();
 
     auto copy_col_dense = [&mask, 
                            &offset_start]<typename T>(
@@ -578,7 +578,7 @@ void get_dataframe_filter_range_mt(
     }
 
     if (!name_v_row2.empty())
-        copy_col(name_v_row2, name_v_row);
+        copy_col(name_v_row, name_v_row2);
 
     if constexpr (!IsDense) {
         if (in_view)

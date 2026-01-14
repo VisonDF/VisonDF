@@ -1,9 +1,10 @@
 #pragma once
 
-template <bool IsBool = false,
-          bool MapCol = false,
-          bool IsDense = false,
-          bool OneIsTrue = true,
+template <bool IsBool                  = false,
+          bool MapCol                  = false,
+          bool IsDense                 = false,
+          bool OneIsTrue               = true,
+          AssertionType AssertionLevel = AssertionType::Simple,
           typename T
         >
 void get_col_filter_range(
@@ -20,11 +21,12 @@ void get_col_filter_range(
                             IsBool,
                             MapCol,
                             IsDense,
-                            OneIsTrue>(x, 
-                                       rtn_v, 
-                                       mask, 
-                                       strt_vl,
-                                       offset_start);
+                            OneIsTrue,
+                            AssertionLevel>(x, 
+                                            rtn_v, 
+                                            mask, 
+                                            strt_vl,
+                                            offset_start);
 
 }
 

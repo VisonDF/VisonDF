@@ -6,6 +6,7 @@ template <unsigned int CORES = 4,
           bool MapCol = false,
           bool IsDense = false,
           bool OneIsTrue = true,
+          AssertionType AssertionLevel = AssertionType::Simple,
           typename T
         >
 void get_col_filter_range(
@@ -18,6 +19,12 @@ void get_col_filter_range(
 {
 
     const unsigned int n_el = mask.size();
+
+    if constexpr (AssertionLevel > AssertionType::None) {
+        if (start_vl + mask.size >= nrow) {
+            throw std::runtime_error("strt_vl + mask.size() > nrow\n");
+        }
+    }
 
     auto find_col_base = [x](const auto &idx_vec, [[maybe_unused]] const size_t idx_type) -> size_t {
         size_t pos;
