@@ -91,6 +91,7 @@ namespace vison {
     #include "types/OffsetBoolMask.inl"
     #include "types/RunsIdxMt.inl"
     #include "types/supported_mt_methods.inl"
+    #include "types/supported_assertion_levels.inl"
 
     #include "inlines/rm_row/offset_per_thread.inl"
 
