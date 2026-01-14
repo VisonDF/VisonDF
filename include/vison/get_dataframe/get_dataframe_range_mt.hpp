@@ -1,12 +1,25 @@
 #pragma once
 
 template <unsigned int CORES = 4,
-          bool NUMA = false>
-void get_dataframe_mt(const std::vector<size_t>& cols, 
+          bool NUMA = false,
+          AssertionType AssertionLevel = AssertionType::Simple
+         >
+void get_dataframe_mt(
+                      const std::vector<size_t>& cols, 
                       Dataframe& cur_obj,
                       const size_t start,
-                      const size_t end)
+                      const size_t end
+                     )
 {
+
+    if constexpr (AssertionLevel > AssertionType::None) {
+        if (end <= start) {
+            throw std::runtime_error("end <= start");
+        }
+        if (end > cur_obj.get_nrow()) {
+            throw std::runtime_error("end > cur_obj.get_nrow()");
+        }
+    }
 
     nrow                   = end - start;
     const unsigned int local_nrow = nrow;
@@ -199,8 +212,8 @@ void get_dataframe_mt(const std::vector<size_t>& cols,
         size_t i2 = 0;
         for (int i : cols) {
 
-            switch (type_refv[i]) {
-                  case 's': {
+            switch (i) {
+                  case 0: {
 
                               matr_idx_map[0] = i2;
                               str_v.emplace_back();
@@ -209,35 +222,40 @@ void get_dataframe_mt(const std::vector<size_t>& cols,
                                  str_vec2[i].data()); 
                               break;
                             }
-                  case 'c': {
+                  case 1: {
+                              matr_idx_map[1] = i2;
                               chr_v.emplace_back();
                               chr_v.back().resize(local_nrow);
                               f1(chr_v.back().data(),  
                                  chr_vec2[i].data()); 
                               break;
                             }
-                  case 'b': {
+                  case 2: {
+                              matr_idx_map[2] = i2;
                               bool_v.emplace_back();
                               bool_v.back().resize(local_nrow);
                               f1(bool_v.back().data(),  
                                  bool_vec2[i].data()); 
                               break;
                             }
-                  case 'i': {
+                  case 3: {
+                              matr_idx_map[3] = i2;
                               int_v.emplace_back();
                               int_v.back().resize(local_nrow);
                               f1(int_v.back().data(),  
                                  int_vec2[i].data()); 
                               break;
                             }
-                 case 'u': {
+                 case 4: {
+                              matr_idx_map[4] = i2;
                               uint_v.emplace_back();
                               uint_v.back().resize(local_nrow);
                               f1(uint_v.back().data(),  
                                  uint_vec2[i].data()); 
                               break;
                             }
-                  case 'd': {
+                  case 5: {
+                              matr_idx_map[5] = i2;
                               dbl_v.emplace_back();
                               dbl_v.back().resize(local_nrow);
                               f1(dbl_v.back().data(),  
@@ -302,8 +320,10 @@ void get_dataframe_mt(const std::vector<size_t>& cols,
 
     }
 
-    name_v_row.resize(local_nrow);
-    str_copy_col(name_v_row.data(), name_v_row2.data());
+    if (!name_v_row2.empty()) {
+        name_v_row.resize(local_nrow);
+        str_copy_col(name_v_row.data(), name_v_row2.data());
+    }
 
     if (in_view)
         copy_view();
