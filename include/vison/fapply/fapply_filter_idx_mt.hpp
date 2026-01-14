@@ -1,16 +1,34 @@
 #pragma once
 
-template <bool IsBool = false,
-          bool MapCol = false,
-          unsigned int CORES = 4,
-          bool NUMA = false,
-          bool IdxIsTrue = true,
+template <bool IsBool                  = false,
+          bool MapCol                  = false,
+          unsigned int CORES           = 4,
+          bool NUMA                    = false,
+          bool IdxIsTrue               = true,
+          AssertionType AssertionLevel = AssertionType::Simple,
           typename F>
 requires FapplyFn<F, first_arg_t<F>>
 void fapply_filter_idx_mt(F f, 
                           const unsigned int n, 
                           const std::vector<unsigned int>& mask) 
 {
+
+    const unsigned int local_nrow = nrow;
+
+    if constexpr (AssertionLevel > AssertionType::None) {
+        auto it = std::unique(mask.begin(), mask.end());
+        if (it != mask.end()) {
+            throw std::runtime_error("mask indices are not unique\n");
+        }
+    }
+
+    if constexpr (AssertionLevel > AssertionType::Simple) {
+        for (auto el : mask) {
+            if (el >= local_nrow) {
+                throw std::runtime_error("mask indices out of bounds\n");
+            }
+        }
+    }
 
     using T = first_arg_t<F>;
 

@@ -1,8 +1,9 @@
 #pragma once
 
-template <bool IsBool = false,
-          bool MapCol = false,
-          bool IdxIsTrue = true,
+template <bool IsBool                  = false,
+          bool MapCol                  = false,
+          bool IdxIsTrue               = true,
+          AssertionType AssertionLevel = AssertionType::Simple,
           typename F>
 requires FapplyFn<F, first_arg_t<F>>
 void fapply_filter_idx(F f, 
@@ -14,7 +15,8 @@ void fapply_filter_idx(F f,
                          MapCol, 
                          1,     // CORES
                          false, // NUMA locality
-                         IdxIsTrue
+                         IdxIsTrue,
+                         AssertionLevel
                          >(f,
                            n,
                            mask);
