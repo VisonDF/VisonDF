@@ -11,8 +11,7 @@ void get_col_filter_range(
                           std::vector<T> &rtn_v,
                           const std::vector<uint8_t> &mask,
                           const unsigned int strt_vl,
-                          std::vector<RunsIdxMt>& runs = {},
-                          OffsetBoolMask& offset_start = {}
+                          OffsetBoolMask& offset_start = default_offset_start
                          )
 {
 
@@ -25,7 +24,6 @@ void get_col_filter_range(
                                        rtn_v, 
                                        mask, 
                                        strt_vl,
-                                       runs,
                                        offset_start);
 
 }

@@ -8,11 +8,13 @@ template <unsigned int CORES = 4,
           bool OneIsTrue = true,
           typename T
         >
-void get_col_filter_range(unsigned int x,
+void get_col_filter_range(
+                          unsigned int x,
                           std::vector<T> &rtn_v,
                           const std::vector<uint8_t> &mask,
                           const unsigned int strt_vl,
-                          OffsetBoolMask& offset_start = default_offset_start)
+                          OffsetBoolMask& offset_start = default_offset_start
+                         )
 {
 
     const unsigned int n_el = mask.size();
@@ -55,7 +57,7 @@ void get_col_filter_range(unsigned int x,
                                                       mask, 
                                                       CORES,
                                                       offset_start.active_rows);
-            } else {
+            }
             rtn_v.resize(offset_start.active_rows);
 
             int numa_nodes = 1;
@@ -86,12 +88,7 @@ void get_col_filter_range(unsigned int x,
                 const unsigned int start = cur_struct.start;
                 const unsigned int end   = cur_struct.end;
            
-                size_t out_idx;
-                if (offset_start.vec.empty()) {
-                    out_idx = thread_offsets[tid];
-                } else {
-                    out_idx = offset_start.vec[start];
-                }
+                const size_t out_idx = out_idx = offset_start.thread_offsets[tid];
 
                 for (size_t i = start; i < end; ++i) {
                     if (mask[i])
@@ -157,12 +154,7 @@ void get_col_filter_range(unsigned int x,
                 const unsigned int cur_start = cur_struct.start;
                 const unsigned int cur_end   = cur_struct.end;
             
-                size_t out_idx;
-                if (start_offset.vec.empty()) {
-                    out_idx = thread_offsets[tid];
-                } else {
-                    out_idx = offset_start.vec[start];
-                }
+                const size_t out_idx = offset_start.thread_offsets[tid];
 
                 size_t i = cur_start;
                 if constexpr (OneIsTrue) {
