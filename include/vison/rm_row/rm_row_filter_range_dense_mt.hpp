@@ -4,7 +4,8 @@ template <unsigned int CORES = 4,
           bool NUMA = false,
           bool MemClean = false,
           bool Soft = true,
-          bool OneIsTrue = true
+          bool OneIsTrue = true,
+          AssertionType AssertionLevel = AssertionType::Simple
          >
 void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
                                     const size_t strt_vl,
@@ -14,20 +15,27 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
     const size_t old_nrow = nrow;
     if (mask.empty() || old_nrow == 0) return;
 
-    const size_t new_nrow = std::count(mask.begin(), mask.end(), 0);
-    if (new_nrow == nrow) return;
-    if (new_nrow == 0) {
-        std::cout << "Consider using .empty() if you want to remove all rows\n"; 
-        return;
+    if (AssertionLevel > AssertionType::None) {
+
+        const size_t new_nrow = (OneIsTrue) ? std::count(mask.begin(), mask.end(), 0) : std::count(mask.begin(), mask.end(), 1);
+        if (new_nrow == nrow) return;
+        if (new_nrow == 0) {
+            std::cout << "Consider using .empty() if you want to remove all rows\n"; 
+            return;
+        }
+
     }
 
     auto compact_block_pod = [&mask]<typename T>(std::vector<T>& dst, 
-                                                 std::vector<T>& src,
                                                  const size_t inner_cores) {
 
         std::vector<T> src2;
+        T* src;
         if constexpr (CORES > 1) {
-            src2 = src;
+            src2 = dst;
+            src = &src2;
+        } else {
+            src = &dst;
         }
 
         if constexpr (CORES > 1) {
@@ -113,7 +121,7 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
                     size_t len = i - start;
                     {
                         T* __restrict d = dst.data() + out_idx;
-                        T* __restrict s = src2.data() + strt_vl + start;
+                        T* __restrict s = src + strt_vl + start;
        
                         memmove(d, s, len * sizeof(T))
 
@@ -125,9 +133,14 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
 
             }
 
-            memcpy(vec.data() + out_idx, 
-                   vec2.data() + mask.size(), 
-                   (old_nrow - mask.size()) * sizeof(T));
+            memcpy(vec.data() + strt_vl + dummy_tot, 
+                   src + strt_vl + mask.size(), 
+                   (old_nrow - mask.size() - strt_vl) * sizeof(T));
+
+            if constexpr (MemClean) {
+                dst.resize(strt_vl + dummy_tot);
+                dst.shrink_to_fit();
+            }
 
         } else {
 
@@ -166,7 +179,7 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
                 size_t len = i - start;
                 {
                     T* __restrict d = dst.data() + out_idx;
-                    T* __restrict s = src.data() + strt_vl + start;
+                    T* __restrict s = src + strt_vl + start;
        
                     memmove(d, s, len * sizeof(T))
 
@@ -176,9 +189,14 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
                 i += 1;
             }
 
-            memmove(vec.data() + out_idx, 
-                    vec.data() + mask.size(), 
-                    (old_nrow - mask.size()) * sizeof(T));
+            memmove(vec.data() + strt_vl + out_idx, 
+                    src + strt_vl + mask.size(), 
+                    (old_nrow - mask.size() - strt_vl) * sizeof(T));
+
+            if constexpr (MemClean) {
+                dst.resize(out_idx + dummy_tot);
+                dst.shrink_to_fit();
+            }
 
         }
 
@@ -192,7 +210,7 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
             in_view = true;
         }
 
-        compact_block_pod(row_view_idx, row_view_idx);
+        compact_block_pod(row_view_idx, CORES);
 
     } else {
 
@@ -200,13 +218,12 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
             throw std::runtime_error("Can't perform this operation while `in_view` mode activated, consider applying `.materialize()`\n");
         }
 
-        auto compact_block_scalar = [&mask](auto& dst, 
-                                            auto& src,
+        auto compact_block_scalar = [&mask](auto& vec, 
                                             const size_t inner_cores) {
 
-            std::vector<T> src2;
+            std::vector<std::string> vec2;
             if constexpr (CORES > 1) {
-                src2 = src;
+                vec2 = dst;
             }
 
             if constexpr (CORES > 1) {
@@ -280,13 +297,13 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
 
                         if constexpr (OneIsTrue) {
                            while (i < mask.size() && !mask[i]) {
-                               dst[out_idx] = std::move(src[strt_vl + i]);
+                               vec[out_idx] = std::move(vec2[strt_vl + i]);
                                i += 1;
                                out_idx += 1;
                            };
                         } else {
                            while (i < mask.size() && mask[i]) {
-                               dst[out_idx] = std::move(src[strt_vl + i]);
+                               vec[out_idx] = std::move(vec2[strt_vl + i]);
                                i += 1;
                                out_idx += 1;
                            };
@@ -295,6 +312,10 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
                     }
 
                 }
+
+                std::move(vec.begin() + strt_vl + mask.size(), 
+                          vec.begin() + old_nrow, 
+                          vec2.begin() + strt_vl + dummy_tot);
 
             } else {
 
@@ -320,13 +341,13 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
 
                     if constexpr (OneIsTrue) {
                        while (i < mask.size() && !mask[i]) {
-                           dst[written] = std::move(src[strt_vl + i]);
+                           vec[written] = std::move(vec[strt_vl + i]);
                            i += 1;
                            out_idx += 1;
                        };
                     } else {
                        while (i < mask.size() && mask[i]) {
-                           dst[written] = std::move(src[strt_vl + i]);
+                           vec[written] = std::move(vec[strt_vl + i]);
                            i += 1;
                            out_idx += 1;
                        };
@@ -335,11 +356,11 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
                     i += 1;
                 }
 
-            }
+                std::move_backward(vec.begin() + strt_vl + mask.size(), 
+                                   vec.begin() + old_nrow, 
+                                   vec.begin() + strt_vl + out_idx);
 
-            std::move(dst.begin() + mask.size(), 
-                      dst.begin() + old_nrow, 
-                      src.begin() + out_idx);
+            }
 
         };
 
@@ -392,14 +413,14 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
                     const unsigned int end   = cur_struct.end;
 
                     for (size_t cpos = start; cpos < end; ++cpos)
-                        f(matr[cpos], matr[cpos], inner_cores); 
+                        f(matr[cpos], inner_cores); 
 
                 }
 
             } else {
 
                 for (size_t cpos = 0; cpos < ncols_cur; ++cpos)
-                    f(matr[cpos], matr[cpos], inner_cores); 
+                    f(matr[cpos], inner_cores); 
 
             }
 
@@ -413,19 +434,7 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
         process_container(compact_block_pod,    dbl_v,  5);
 
         if (!name_v_row.empty()) {
-            compact_block_scalar(name_v_row, name_v_row);
-            if constexpr (MemClean) {
-                name_v_row.resize(new_nrow);
-                name_v_row.shrink_to_fit();
-            }
-        }
-        if constexpr (MemClean) {
-            for (auto& el : str_v)        el.resize(new_nrow); el.shrink_to_fit();
-            for (auto& el : chr_v)        el.resize(new_nrow); el.shrink_to_fit();
-            for (auto& el : bool_v)       el.resize(new_nrow); el.shrink_to_fit();
-            for (auto& el : int_v)        el.resize(new_nrow); el.shrink_to_fit();
-            for (auto& el : uint_v)       el.resize(new_nrow); el.shrink_to_fit();
-            for (auto& el : dbl_v)        el.resize(new_nrow); el.shrink_to_fit();
+            compact_block_scalar(name_v_row, CORES);
         }
 
     }

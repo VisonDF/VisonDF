@@ -86,16 +86,16 @@ void rm_row_filter_range_mt(std::vector<uint8_t>& mask,
                         }
                     }
                 }
+            }
 
-                if constexpr (std::is_trivially_copyable_v<T>) {
-                    memcpy(vec.data()  + strt_vl + out_idx, 
-                           vec2.data() + strt_vl + mask.size(), 
-                           (old_nrow - strt_vl - mask.size()) * sizeof(T));
-                } else {
-                    std::move(vec2.begin() + strt_vl + mask.size(), 
-                              vec2.begin() + old_nrow, 
-                              vec.begin()  + strt_vl + out_idx);
-                }
+            if constexpr (std::is_trivially_copyable_v<T>) {
+                memcpy(vec.data()  + strt_vl + dummy_tot, 
+                       vec2.data() + strt_vl + mask.size(), 
+                       (old_nrow - strt_vl - mask.size()) * sizeof(T));
+            } else {
+                std::move(vec2.begin() + strt_vl + mask.size(), 
+                          vec2.begin() + old_nrow, 
+                          vec.begin()  + strt_vl + dummy_tot);
             }
 
         } else {
@@ -119,9 +119,9 @@ void rm_row_filter_range_mt(std::vector<uint8_t>& mask,
                         vec.data() + strt_vl + mask.size(), 
                         (old_nrow - strt_vl - mask.size()) * sizeof(T));
             } else {
-                std::move(vec2.begin() + strt_vl + mask.size(), 
-                          vec2.begin() + old_nrow, 
-                          vec.begin()  + strt_vl + out_idx);
+                std::move_backward(vec.begin() + strt_vl + mask.size(), 
+                                   vec.begin() + old_nrow, 
+                                   vec.begin()  + strt_vl + out_idx);
             }
         }
 
