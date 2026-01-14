@@ -33,6 +33,7 @@ void get_dataframe_filter_range_mt(
     in_view = cur_obj.get_in_view();
     ankerl::unordered_dense::set<unsigned int>& col_alrd_materialized2  = cur_obj.get_col_alrd_materialized();
     const auto row_view_idx2                                            = cur_obj.get_row_view_idx();    
+    std::vector<std::string> name_v_row2                                = cur_obj.get_rowname();
 
     auto copy_col_dense = [&mask, 
                            &offset_start]<typename T>(
@@ -475,6 +476,8 @@ void get_dataframe_filter_range_mt(
         matr_idx_map = cur_obj.get_matr_idx_map();
         sync_map_col = cur_obj.get_sync_map_col();
         ncol         = cur_obj.get_ncol();
+        name_v    = cur_obj.get_colname();
+        type_refv = cur_obj.get_typecol(); 
 
         process_container(str_v2,  str_v);
         process_container(chr_v2,  chr_v);
@@ -482,9 +485,6 @@ void get_dataframe_filter_range_mt(
         process_container(int_v2,  int_v);
         process_container(uint_v2, uint_v);
         process_container(dbl_v2,  dbl_v);
-
-        name_v    = cur_obj.get_colname();
-        type_refv = cur_obj.get_typecol(); 
 
     } else {
 
@@ -507,6 +507,8 @@ void get_dataframe_filter_range_mt(
             cols_proceed(copy_col_dense, copy_col);
         }
     }
+
+    copy_col(name_v_row2,  name_v_row);
 
     if (in_view)
         copy_view();
