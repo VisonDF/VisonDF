@@ -6,10 +6,11 @@ template <
           bool IdxIsTrue = true,
           AssertionType AssertionLevel = AssertionType::Normal
          >
-void get_dataframe_filter_idx(const std::vector<size_t>& cols, 
+void get_dataframe_filter_idx(
+                              const std::vector<size_t>& cols, 
                               Dataframe& cur_obj,
                               const std::vector<unsigned int>& mask,
-                              Runs& runs = {}
+                              Runs& runs = default_idx_runs
                              )
 {
 

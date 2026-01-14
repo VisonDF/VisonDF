@@ -7,8 +7,10 @@ template <MtMethod MtType              = MtMethod::Row,
           bool IdxIsTrue               = true,
           AssertionType AssertionLevel = AssertionType::Simple
          >
-void rm_row_filter_idx(std::vector<uint8_t>& mask,
-                       Runs& runs = Runs{}) 
+void rm_row_filter_idx(
+                       std::vector<uint8_t>& mask,
+                       Runs& runs = default_idx_runs
+                      ) 
 {
 
     rm_row_filter_idx_mt<1,     // CORES

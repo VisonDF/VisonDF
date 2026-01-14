@@ -9,10 +9,12 @@ template <unsigned int CORES           = 4,
           bool IdxIsTrue               = true,
           AssertionType AssertionLevel = AssertionType::Simple,
           typename T>
-void get_col_filter_idx_mt(unsigned int x,
+void get_col_filter_idx_mt(
+                           unsigned int x,
                            std::vector<T> &rtn_v,
                            std::vector<unsigned int> &mask,
-                           Runs& runs = Runs{})
+                           Runs& runs = default_idx_runs
+                          )
 {
 
     const unsigned int local_nrow = nrow;

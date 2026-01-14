@@ -7,10 +7,11 @@ template <unsigned int CORES           = 4,
           bool IdxIsTrue               = true,
           AssertionType AssertionLevel = AssertionType::Normal
         >
-void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols, 
+void get_dataframe_filter_idx_mt(
+                                 const std::vector<size_t>& cols, 
                                  Dataframe& cur_obj,
                                  const std::vector<unsigned int>& mask,
-                                 Runs& runs = Runs{}
+                                 Runs& runs = default_idx_runs
                                  )
 {
 

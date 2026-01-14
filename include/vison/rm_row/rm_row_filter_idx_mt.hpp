@@ -9,8 +9,10 @@ template <unsigned int CORES           = 4,
           bool IdxIsTrue               = true,
           AssertionType AssertionLevel = AssertionType::Simple
          >
-void rm_row_filter_idx_mt(std::vector<uint8_t>& mask,
-                          Runs& runs = Runs{}) 
+void rm_row_filter_idx_mt(
+                          std::vector<uint8_t>& mask,
+                          Runs& runs = default_idx_runs
+                         ) 
 {
 
     // Soft May auto switch to view mode
@@ -18,17 +20,19 @@ void rm_row_filter_idx_mt(std::vector<uint8_t>& mask,
 
     const size_t n_el = (IdxIsTrue) ? n_el : old_nrow - n_el;
 
-    if constexpr (IsDense && !Sorted) {
-        throw std::runtime_error("To use `IsDense` parameter, you must sort the mask\n");
-    }
+    if constexpr (AssertionLevel > AssertionType::Simple) {
+        if constexpr (IsDense && !Sorted) {
+            throw std::runtime_error("To use `IsDense` parameter, you must sort the mask\n");
+        }
 
-    if constexpr (!IsSorted && !IdxIsTrue) {
-        std::sort(mask.begin(), mask.end());
-    }
+        if constexpr (!IsSorted && !IdxIsTrue) {
+            std::sort(mask.begin(), mask.end());
+        }
 
-    if constexpr (!IdxIsTrue) {
-        if (mask.back() >= old_nrow)
-            throw std::runtime_error("mask indices are exceeding nrow\n");
+        if constexpr (!IdxIsTrue) {
+            if (mask.back() >= old_nrow)
+                throw std::runtime_error("mask indices are exceeding nrow\n");
+        }
     }
 
     if constexpr (AssertionLevel == AssertionType::Hard) {
