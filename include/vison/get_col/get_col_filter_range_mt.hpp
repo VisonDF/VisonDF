@@ -60,10 +60,10 @@ void get_col_filter_range(
                 throw std::runtime_error("Too much cores for so little nrows\n");
 
             if (offset_start.vec.empty()) {
-                boolmask_offset_per_thread<OneIsTrue>(offset_start.thread_offsets, 
-                                                      mask, 
-                                                      CORES,
-                                                      offset_start.active_rows);
+                build_boolmask<OneIsTrue>(offset_start.thread_offsets, 
+                                          mask, 
+                                          CORES,
+                                          offset_start.active_rows);
             }
             rtn_v.resize(offset_start.active_rows);
 
@@ -121,10 +121,10 @@ void get_col_filter_range(
                                  n_el]<typename TB>(const TB* __restrict src) {
 
         if (offset_start.vec.empty()) {
-            boolmask_offset_per_thread<OneIsTrue>(offset_start.thread_offsets, 
-                                                  mask, 
-                                                  CORES,
-                                                  ofset_start.active_rows);
+            build_boolmask<OneIsTrue>(offset_start.thread_offsets, 
+                                      mask, 
+                                      CORES,
+                                      ofset_start.active_rows);
         }
         rtn_v.resize(offset_start.active_rows);
 

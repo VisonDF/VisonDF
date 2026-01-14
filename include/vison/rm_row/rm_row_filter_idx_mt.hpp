@@ -80,9 +80,9 @@ void rm_row_filter_idx_mt(
            
             if constexpr (!IdxIsTrue) {
                 if (runs.thread_offsets.empty()) { 
-                    idx_offset_per_thread_mt_simple<IdxIsTrue>(runs.thread_offsets,
-                                                               mask,
-                                                               CORES);
+                    build_runs_mt_simple<IdxIsTrue>(runs.thread_offsets,
+                                                    mask,
+                                                    CORES);
                 }
             }
 

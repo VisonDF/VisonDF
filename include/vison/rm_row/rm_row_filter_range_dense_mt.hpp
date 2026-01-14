@@ -49,10 +49,10 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
             size_t dummy_tot;
 
             if (offset_start.thread_offset.empty()) {
-                boolmask_offset_per_thread<OneIsTrue>(offset_start.thread_offsets, 
-                                                      mask, 
-                                                      inner_cores,
-                                                      offset_start.dummy_tot);
+                build_boolmask<OneIsTrue>(offset_start.thread_offsets, 
+                                          mask, 
+                                          inner_cores,
+                                          offset_start.dummy_tot);
             }
 
             #pragma omp parallel if(inner_cores > 1) num_threads(inner_cores)
@@ -231,10 +231,10 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
                 size_t dummy_tot;
 
                 if (offset_start.offset_start.empty()) {
-                    boolmask_offset_per_thread<OneIsTrue>(offset_start.thread_offsets, 
-                                                          mask, 
-                                                          inner_cores, 
-                                                          offset_start.active_rows);
+                    build_boolmask<OneIsTrue>(offset_start.thread_offsets, 
+                                              mask, 
+                                              inner_cores, 
+                                              offset_start.active_rows);
                 }
 
                 #pragma omp parallel if(inner_cores > 1) num_threads(inner_cores)

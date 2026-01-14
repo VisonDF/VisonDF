@@ -32,12 +32,12 @@ void get_col_filter_idx_mt(
             if (mask.back() >= local_nrow)
                 throw std::runtime_error("mask indices are exceeding nrow\n");
         }
+    }
 
-        if constexpr (IdxIsTrue) {
-            rtn_v.resize(mask.size());
-        } else {
-            rtn_v.resize(local_nrow - mask.size());
-        }
+    if constexpr (IdxIsTrue) {
+        rtn_v.resize(mask.size());
+    } else {
+        rtn_v.resize(local_nrow - mask.size());
     }
 
     if constexpr (AssertionLevel == AssertionType::Hard) {
@@ -93,9 +93,9 @@ void get_col_filter_idx_mt(
 
             if constexpr (!IdxIsTrue) {
                 if (runs.thread_offsets.empty()) { 
-                    idx_offset_per_thread_mt_simple<IdxIsTrue>(runs.thread_offsets,
-                                                               mask,
-                                                               CORES);
+                    build_runs_mt_simple<IdxIsTrue>(runs.thread_offsets,
+                                                    mask,
+                                                    CORES);
                 }
             }
 
@@ -177,12 +177,12 @@ void get_col_filter_idx_mt(
 
             if (runs.vec.empty() || runs.thread_offsets.empty()) {
 
-                idx_offset_per_thread_mt<IdxIsTrue>(runs.thread_offsets,
-                                                    thread_counts,
-                                                    mask,
-                                                    CORES,
-                                                    local_nrow,
-                                                    runs.vec);
+                build_runs_mt<IdxIsTrue>(runs.thread_offsets,
+                                         thread_counts,
+                                         mask,
+                                         CORES,
+                                         local_nrow,
+                                         runs.vec);
 
             }
            
@@ -235,9 +235,9 @@ void get_col_filter_idx_mt(
 
             if (runs.empty()) {
 
-                idx_offset_per_thread<IdxIsTrue>(mask,
-                                                 local_nrow,
-                                                 runs.vec);
+                build_runs<IdxIsTrue>(mask,
+                                      local_nrow,
+                                      runs.vec);
 
             }
 

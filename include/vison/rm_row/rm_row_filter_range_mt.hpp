@@ -36,10 +36,10 @@ void rm_row_filter_range_mt(
             std::vector<size_t> thread_offsets;
 
             if (offset_start.thread_offsets.empty())
-                boolmask_offset_per_thread<OneIsTrue>(offset_start.thread_offsets, 
-                                                      mask, 
-                                                      inner_cores, 
-                                                      offset_start.active_rows);
+                build_boolmask<OneIsTrue>(offset_start.thread_offsets, 
+                                          mask, 
+                                          inner_cores, 
+                                          offset_start.active_rows);
 
             #pragma omp parallel if(inner_cores > 1) num_threads(inner_cores)
             {
