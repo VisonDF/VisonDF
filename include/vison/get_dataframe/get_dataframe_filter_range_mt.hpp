@@ -577,8 +577,8 @@ void get_dataframe_filter_range_mt(
         }
     }
 
-    if (!name_v_row.empty())
-        copy_col(name_v_row2,  name_v_row);
+    if (!name_v_row2.empty())
+        copy_col(name_v_row2, name_v_row);
 
     if constexpr (!IsDense) {
         if (in_view)
