@@ -5,4 +5,4 @@ struct OffsetBoolMask {
     unsigned int active_rows;
 }
 
-inline OffsetBoolMask default_offset_start;
+inline OffsetBoolMask default_offset_start{{}, 0};

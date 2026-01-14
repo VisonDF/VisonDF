@@ -1,14 +1,13 @@
 #pragma once
 
-template <bool IsDense = false,
+template <bool IsDense   = false,
           bool OneIsTrue = true>
 void get_dataframe_filter_range(
                                 const std::vector<size_t>& cols, 
                                 Dataframe& cur_obj,
                                 const std::vector<uint8_t>& mask,
                                 const size_t strt_vl,
-                                std::vector<RunsIdxMt>& runs = {},
-                                OffsetBoolMask& offset_start = {}
+                                OffsetBoolMask& offset_start = default_offset_start
                                 )
 {
 

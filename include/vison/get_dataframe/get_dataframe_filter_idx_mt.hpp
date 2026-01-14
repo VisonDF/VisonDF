@@ -16,17 +16,19 @@ void get_dataframe_filter_idx_mt(const std::vector<size_t>& cols,
 
     const size_t nrow2 = cur_obj.get_nrow();
 
-    if constexpr (IsDense && !Sorted) {
-        throw std::runtime_error("To use `IsDense` parameter, you must sort the mask\n");
-    }
+    if constexpr (AssertionLevel > AssertionType::Hard) {
+        if constexpr (IsDense && !Sorted) {
+            throw std::runtime_error("To use `IsDense` parameter, you must sort the mask\n");
+        }
 
-    if constexpr (!IsSorted && !IdxIsTrue) {
-        std::sort(mask.begin(), mask.end());
-    }
+        if constexpr (!IsSorted && !IdxIsTrue) {
+            std::sort(mask.begin(), mask.end());
+        }
 
-    if constexpr (!IdxIsTrue) {
-        if (mask.back() >= nrow2)
-            throw std::runtime_error("mask indices are exceeding nrow\n");
+        if constexpr (!IdxIsTrue) {
+            if (mask.back() >= nrow2)
+                throw std::runtime_error("mask indices are exceeding nrow\n");
+        }
     }
 
     if constexpr (AssertionLevel == AssertionType::Hard) {

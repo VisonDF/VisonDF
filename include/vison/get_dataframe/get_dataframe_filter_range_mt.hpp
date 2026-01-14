@@ -5,11 +5,13 @@ template <unsigned int CORES = 4,
           bool IsDense = false,
           bool OneIsTrue = true
     >
-void get_dataframe_filter_range_mt(const std::vector<size_t>& cols, 
+void get_dataframe_filter_range_mt(
+                                   const std::vector<size_t>& cols, 
                                    Dataframe& cur_obj,
                                    const std::vector<uint8_t>& mask,
                                    const size_t strt_vl,
-                                   OffsetBoolMask& offset_start = {})
+                                   OffsetBoolMask& offset_start = default_offset_start
+                                   )
 {
 
     const unsigned int n_el       = mask.size();
@@ -31,20 +33,13 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
                                                       )
     {
 
-        std::vector<size_t> thread_counts;
-        std::vector<size_t> thread_offsets;
-
-        size_t active_count;
         if (offset_start.vec.empty()) {
-            boolmask_offset_per_thread<OneIsTrue>(thread_counts, 
-                                                  thread_offsets, 
+            boolmask_offset_per_thread<OneIsTrue>(offset_start.thread_offsets, 
                                                   mask, 
                                                   CORES,
-                                                  active_count);
-            dst_vec.resize(active_count);
-        } else {
-            dst_vec.resize(offset_start.x);
+                                                  offset_start.active_rows);
         }
+        dst_vec.resize(offset_start.active_rows);
 
         const std::string* __restrict src = src_vec2.data();
         std::string*       __restrict dst = dst_vec.data();
@@ -82,12 +77,7 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
                 const unsigned int cur_start = cur_struct.start;
                 const unsigned int cur_end   = cur_struct.end;
 
-                size_t out_idx;
-                if (start_offset.vec.empty()) {
-                    out_idx = thread_offsets[tid];
-                } else {
-                    out_idx = offset_start.vec[start];
-                }
+                const size_t out_idx = offset_start.thread_offsets[tid];
 
                 size_t i = cur_start;
                 if constexpr (OneIsTrue) {
@@ -193,20 +183,13 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
                                                            )
     {
 
-        std::vector<size_t> thread_counts;
-        std::vector<size_t> thread_offsets;
-
-        size_t active_count;
         if (offset_start.vec.empty()) {
-            boolmask_offset_per_thread<OneIsTrue>(thread_counts, 
-                                                  thread_offsets, 
+            boolmask_offset_per_thread<OneIsTrue>(offset_start.thread_offsets, 
                                                   mask, 
                                                   CORES,
-                                                  active_count);
-            dst_vec.resize(active_count);
-        } else {
-            dst_vec.resize(offset_start.x);
+                                                  offset_start.active_rows);
         }
+        dst_vec.resize(offset_start.active_rows);
 
         const std::string* __restrict src = src_vec2.data();
         std::string*       __restrict dst = dst_vec.data();
@@ -244,12 +227,7 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
                 const unsigned int start = cur_struct.start;
                 const unsigned int len   = cur_struct.len;
 
-                size_t out_idx;
-                if (start_offset.vec.empty()) {
-                    out_idx = thread_offsets[tid];
-                } else {
-                    out_idx = offset_start.vec[start];
-                }
+                const size_t out_idx = offset_start.thread_offsets[tid];
 
                 size_t i = cur_start;
                 if constexpr (OneIsTrue) {
@@ -370,20 +348,13 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
             if (CORES > mask.size())
                 throw std::runtime_error("Too much cores for so little nrows\n");
 
-            std::vector<size_t> thread_counts;
-            std::vector<size_t> thread_offsets;
-
-            size_t active_count;
             if (offset_start.vec.empty()) {
-                boolmask_offset_per_thread<OneIsTrue>(thread_counts, 
-                                                      thread_offsets, 
+                boolmask_offset_per_thread<OneIsTrue>(offset_start.thread_offsets, 
                                                       mask, 
                                                       CORES,
-                                                      active_count);
-                dst_vec.resize(active_count);
-            } else {
-                dst_vec.resize(offset_start.x);
+                                                      offset_start.active_rows);
             }
+            dst_vec.resize(offset_start.active_rows);
 
             const std::string* __restrict src = src_vec2.data();
             std::string*       __restrict dst = dst_vec.data();
@@ -416,12 +387,7 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
                 const unsigned int start = cur_struct.start;
                 const unsigned int end   = cur_struct.end;
 
-                size_t out_idx;
-                if (offset_start.vec.empty()) {
-                    out_idx = thread_offsets[tid];
-                } else {
-                    out_idx = offset_start.vec[start];
-                }
+                const size_t out_idx = offset_start.thread_offsets[tid];
 
                 for (size_t j = start; j < end; ++j) {
                     if (!mask[j]) continue;
@@ -456,20 +422,16 @@ void get_dataframe_filter_range_mt(const std::vector<size_t>& cols,
             if (CORES > local_nrow)
                 throw std::runtime_error("Too much cores for so little nrows\n");
 
-            std::vector<size_t> thread_counts;
             std::vector<size_t> thread_offsets;
 
             size_t active_count;
             if (offset_start.vec.empty()) {
-                boolmask_offset_per_thread<OneIsTrue>(thread_counts, 
-                                                      thread_offsets, 
+                boolmask_offset_per_thread<OneIsTrue>(offset_start.thread_offsets, 
                                                       mask, 
                                                       CORES,
-                                                      active_count);
-                dst_vec.resize(active_count);
-            } else {
-                dst_vec.resize(offset_start.x);
+                                                      offset_start.active_count);
             }
+            dst_vec.resize(offset_start.active_rows);
 
             int numa_nodes = 1;
             if (numa_available() >= 0) 

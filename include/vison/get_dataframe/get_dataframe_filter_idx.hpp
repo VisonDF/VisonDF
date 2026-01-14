@@ -9,7 +9,7 @@ template <
 void get_dataframe_filter_idx(const std::vector<size_t>& cols, 
                               Dataframe& cur_obj,
                               const std::vector<unsigned int>& mask,
-                              std::vector<RunsIdxMt>& runs = {}
+                              Runs& runs = {}
                              )
 {
 
