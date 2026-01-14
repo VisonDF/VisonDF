@@ -33,7 +33,7 @@ void get_dataframe_filter_range_mt(
                                                       )
     {
 
-        if (offset_start.vec.empty()) {
+        if (offset_start.thread_offsets.empty()) {
             boolmask_offset_per_thread<OneIsTrue>(offset_start.thread_offsets, 
                                                   mask, 
                                                   CORES,
@@ -183,7 +183,7 @@ void get_dataframe_filter_range_mt(
                                                            )
     {
 
-        if (offset_start.vec.empty()) {
+        if (offset_start.thread_offsets.empty()) {
             boolmask_offset_per_thread<OneIsTrue>(offset_start.thread_offsets, 
                                                   mask, 
                                                   CORES,
@@ -348,7 +348,7 @@ void get_dataframe_filter_range_mt(
             if (CORES > mask.size())
                 throw std::runtime_error("Too much cores for so little nrows\n");
 
-            if (offset_start.vec.empty()) {
+            if (offset_start.thread_offsets.empty()) {
                 boolmask_offset_per_thread<OneIsTrue>(offset_start.thread_offsets, 
                                                       mask, 
                                                       CORES,
@@ -425,7 +425,7 @@ void get_dataframe_filter_range_mt(
             std::vector<size_t> thread_offsets;
 
             size_t active_count;
-            if (offset_start.vec.empty()) {
+            if (offset_start.thread_offsets.empty()) {
                 boolmask_offset_per_thread<OneIsTrue>(offset_start.thread_offsets, 
                                                       mask, 
                                                       CORES,
@@ -461,12 +461,7 @@ void get_dataframe_filter_range_mt(
                 const unsigned int start = cur_struct.start;
                 const unsigned int end   = cur_struct.end;
 
-                size_t out_idx;
-                if (offset_start.vec.empty()) {
-                    out_idx = thread_offsets[tid];
-                } else {
-                    out_idx = offset_start.vec[start];
-                }
+                const size_t out_idx = offset_start.thread_offsets[tid];
 
                 for (size_t j = start; j < end; ++j) {
                     if (!mask[j]) continue;
