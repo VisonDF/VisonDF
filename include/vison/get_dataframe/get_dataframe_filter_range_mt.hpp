@@ -3,7 +3,8 @@
 template <unsigned int CORES = 4,
           bool NUMA = false,
           bool IsDense = false,
-          bool OneIsTrue = true
+          bool OneIsTrue = true,
+          AssertionType AssertionLevel = AssertionType::Simple
     >
 void get_dataframe_filter_range_mt(
                                    const std::vector<size_t>& cols, 
@@ -14,17 +15,24 @@ void get_dataframe_filter_range_mt(
                                    )
 {
 
-    const unsigned int n_el       = mask.size();
-    const unsigned int local_nrow = active_rows;
-    nrow = local_nrow;
+    if constexpr (AssertionLevel > AssertionType::Simple) {
+        if (strt_vl + mask.size() > cur_obj.get_nrow()) {
+            throw std::runtime_error("strt_vl + mask.size() > nrow\n");
+        }
+    }
+
+    if (offset_start.thread_offsets.empty()) {
+        boolmask_offset_per_thread<OneIsTrue>(offset_start.thread_offsets, 
+                                              mask, 
+                                              CORES,
+                                              offset_start.active_rows);
+    }
+
+    nrow = offset_start.active_rows;
 
     in_view = cur_obj.get_in_view();
     ankerl::unordered_dense::set<unsigned int>& col_alrd_materialized2  = cur_obj.get_col_alrd_materialized();
-    const auto row_view_idx2           = cur_obj.get_row_view_idx();
-
-    if (in_view) {
-        row_view_idx.resize(local_nrow);
-    }
+    const auto row_view_idx2                                            = cur_obj.get_row_view_idx();    
 
     auto copy_col_dense = [&mask, 
                            &offset_start]<typename T>(
@@ -33,12 +41,6 @@ void get_dataframe_filter_range_mt(
                                                       )
     {
 
-        if (offset_start.thread_offsets.empty()) {
-            boolmask_offset_per_thread<OneIsTrue>(offset_start.thread_offsets, 
-                                                  mask, 
-                                                  CORES,
-                                                  offset_start.active_rows);
-        }
         dst_vec.resize(offset_start.active_rows);
 
         const std::string* __restrict src = src_vec2.data();
@@ -175,21 +177,10 @@ void get_dataframe_filter_range_mt(
         }
     };
 
-    auto copy_col_view_dense = [&mask, 
-                                &row_view_idx2, 
-                                &offset_start]<typename T>(
-                                                             const auto& src_vec2,
-                                                             auto& dst_vec
-                                                           )
+    auto copy_view = [&mask, 
+                      &row_view_idx2, 
+                      &offset_start]()
     {
-
-        if (offset_start.thread_offsets.empty()) {
-            boolmask_offset_per_thread<OneIsTrue>(offset_start.thread_offsets, 
-                                                  mask, 
-                                                  CORES,
-                                                  offset_start.active_rows);
-        }
-        dst_vec.resize(offset_start.active_rows);
 
         const std::string* __restrict src = src_vec2.data();
         std::string*       __restrict dst = dst_vec.data();
@@ -198,6 +189,8 @@ void get_dataframe_filter_range_mt(
 
             if (CORES > mask.size())
                 throw std::runtime_error("Too much cores for so little nrows\n");
+
+            row_view_idx.resize(offset_start.active_rows);
 
             int numa_nodes = 1;
             if (numa_available() >= 0) 
@@ -262,15 +255,11 @@ void get_dataframe_filter_range_mt(
                 
                     size_t len = i - start;
                     {
-                        T* __restrict d = dst.data() + out_idx;
-                        T* __restrict s = src.data() + strt_vl + start;
-       
-                        memcpy(d, s, len * sizeof(T));
 
-                        unsigned int* __restrict d2 = row_view_idx.data()  + out_idx;
-                        unsigned int* __restrict s2 = row_view_idx2.data() + strt_vl + start;
+                        unsigned int* __restrict d = row_view_idx.data()  + out_idx;
+                        unsigned int* __restrict s = row_view_idx2.data() + strt_vl + start;
        
-                        memcpy(d2, s2, len * sizeof(unsigned int));
+                        memcpy(d, s, len * sizeof(unsigned int));
 
                     }
                 
@@ -316,15 +305,11 @@ void get_dataframe_filter_range_mt(
             
                 size_t len = i - start;
                 {
-                    T* __restrict d = dst.data() + out_idx;
-                    T* __restrict s = src.data() + strt_vl + start;
-       
-                    memcpy(d, s, len * sizeof(T));
 
-                    unsigned int* __restrict d2 = row_view_idx.data()  + out_idx;
-                    unsigned int* __restrict s2 = row_view_idx2.data() + strt_vl + start;
+                    unsigned int* __restrict d = row_view_idx.data()  + out_idx;
+                    unsigned int* __restrict s = row_view_idx2.data() + strt_vl + start;
        
-                    memcpy(d2, s2, len * sizeof(unsigned int));
+                    memcpy(d, s, len * sizeof(unsigned int));
 
                 }
             
@@ -342,20 +327,14 @@ void get_dataframe_filter_range_mt(
                                      auto& dst_vec
                                     )
     {
-   
+  
+        dst_vec.resize(offset_start.active_rows);
+
         if constexpr (CORES > 1) {
 
             if (CORES > mask.size())
                 throw std::runtime_error("Too much cores for so little nrows\n");
 
-            if (offset_start.thread_offsets.empty()) {
-                boolmask_offset_per_thread<OneIsTrue>(offset_start.thread_offsets, 
-                                                      mask, 
-                                                      CORES,
-                                                      offset_start.active_rows);
-            }
-            dst_vec.resize(offset_start.active_rows);
-
             const std::string* __restrict src = src_vec2.data();
             std::string*       __restrict dst = dst_vec.data();
 
@@ -373,13 +352,13 @@ void get_dataframe_filter_range_mt(
 
                 if constexpr (NUMA) {
                     numa_mt(cur_struct,
-                            local_nrow, 
+                            mask.size(), 
                             tid, 
                             nthreads, 
                             numa_nodes);
                 } else {
                     simple_mt(cur_struct,
-                              local_nrow, 
+                              mask.size(), 
                               tid, 
                               nthreads);
                 }
@@ -391,7 +370,7 @@ void get_dataframe_filter_range_mt(
 
                 for (size_t j = start; j < end; ++j) {
                     if (!mask[j]) continue;
-                    dst[out_idx++]     = src[j];
+                    dst[out_idx++] = src[strt_vl + j];
                 }
 
             }
@@ -401,85 +380,9 @@ void get_dataframe_filter_range_mt(
             const std::string* __restrict src = src_vec2.data();
             std::string*       __restrict dst = dst_vec.data();
 
-            for (size_t j = 0; j < local_nrow; ++j) {
+            for (size_t j = 0; j < mask.size(); ++j) {
                 if (!mask[j]) continue;
-                dst.push_back(src[act]);
-            }
-
-        }
-    };
-
-    auto copy_col_view = [&mask, 
-                          &row_view_idx2, 
-                          &offset_start,
-                          local_nrow](
-                                       const auto& src_vec2,
-                                       auto& dst_vec
-                                     )
-    {   
-        if constexpr (CORES > 1) {
-
-            if (CORES > local_nrow)
-                throw std::runtime_error("Too much cores for so little nrows\n");
-
-            std::vector<size_t> thread_offsets;
-
-            size_t active_count;
-            if (offset_start.thread_offsets.empty()) {
-                boolmask_offset_per_thread<OneIsTrue>(offset_start.thread_offsets, 
-                                                      mask, 
-                                                      CORES,
-                                                      offset_start.active_count);
-            }
-            dst_vec.resize(offset_start.active_rows);
-
-            int numa_nodes = 1;
-            if (numa_available() >= 0) 
-                numa_nodes = numa_max_node() + 1;
-
-            #pragma omp parallel num_threads(CORES)
-            {
-
-                const int tid        = omp_get_thread_num();
-                const int nthreads   = omp_get_num_threads();
-           
-                MtStruct cur_struct;
-
-                if constexpr (NUMA) {
-                    numa_mt(cur_struct,
-                            local_nrow, 
-                            tid, 
-                            nthreads, 
-                            numa_nodes);
-                } else {
-                    simple_mt(cur_struct,
-                              local_nrow, 
-                              tid, 
-                              nthreads);
-                }
-                    
-                const unsigned int start = cur_struct.start;
-                const unsigned int end   = cur_struct.end;
-
-                const size_t out_idx = offset_start.thread_offsets[tid];
-
-                for (size_t j = start; j < end; ++j) {
-                    if (!mask[j]) continue;
-                    dst[out_idx]          = src[j];
-                    row_view_idx[out_idx] = row_view_idx2[j];
-                }
-
-            }
-
-        } else {
-
-            const std::string* __restrict src = src_vec2.data();
-            std::string*       __restrict dst = dst_vec.data();
-
-            for (size_t j = 0; j < local_nrow; ++j) {
-                if (!mask[j]) continue;
-                dst.push_back(src[j]);
-                row_view_idx.push_back(row_view_idx2[j]);
+                dst[j] = src[strt_vl + j];
             }
 
         }
@@ -492,8 +395,8 @@ void get_dataframe_filter_range_mt(
     const auto& uint_vec2 = cur_obj.get_uint_vec();
     const auto& dbl_vec2  = cur_obj.get_dbl_vec();
 
-    auto process_container = [local_nrow]<typename T>(const std::vector<std::vector<T>>& matr2,
-                                                      std::vector<std::vector<T>>& matr){
+    auto process_container = []<typename T>(const std::vector<std::vector<T>>& matr2,
+                                            std::vector<std::vector<T>>& matr){
         for (const auto& el : matr2) {
             matr.emplace_back();
             auto* dst       = matr_v.back().data();
@@ -506,8 +409,8 @@ void get_dataframe_filter_range_mt(
         }
     };
 
-    auto process_container_view = [local_nrow]<typename T>(const std::vector<std::vector<T>>& matr2,
-                                                           std::vector<std::vector<T>>& matr){
+    auto process_container_view = []<typename T>(const std::vector<std::vector<T>>& matr2,
+                                                 std::vector<std::vector<T>>& matr){
         for (const auto& el : matr2) {
             matr.emplace_back();
             auto* dst       = matr_v.back().data();
@@ -520,8 +423,7 @@ void get_dataframe_filter_range_mt(
         }
     };
 
-    auto cols_proceed = [local_nrow, 
-                         &col_alrd_materialized2,
+    auto cols_proceed = [&col_alrd_materialized2,
                          &cols](auto&& f1, auto&& f2) 
     {
         size_t i2 = 0;
@@ -626,33 +528,15 @@ void get_dataframe_filter_range_mt(
 
         sync_map_col = {true, true, true, true, true, true};
 
-        if (!in_view) {
-
-            if constexpr (!IsDense) {
-
-                cols_proceed(copy_col, copy_col);
-
-            } else {
-
-                cols_proceed(copy_col_dense, copy_col);
-
-            }
-
+        if constexpr (!IsDense) {
+            cols_proceed(copy_col, copy_col);
         } else {
-
-            if constexpr (!IsDense) {
-
-                cols_proceed(copy_col_view, copy_col_view);
-
-            } else {
-
-                cols_proceed(copy_col_view_dense, copy_col_view);
-
-            }
-
+            cols_proceed(copy_col_dense, copy_col);
         }
-
     }
+
+    if (in_view)
+        copy_view();
 
 }
 

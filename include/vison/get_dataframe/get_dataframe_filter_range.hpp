@@ -1,7 +1,9 @@
 #pragma once
 
 template <bool IsDense   = false,
-          bool OneIsTrue = true>
+          bool OneIsTrue = true,
+          AssertionType AssertionLevel = AssertionType::Simple
+         >
 void get_dataframe_filter_range(
                                 const std::vector<size_t>& cols, 
                                 Dataframe& cur_obj,
@@ -14,7 +16,8 @@ void get_dataframe_filter_range(
     get_dataframe_filter_range_mt<1,     // CORES
                                   false, // NUMA locality
                                   IsDense,
-                                  OneIsTrue
+                                  OneIsTrue,
+                                  AssertionType
                                  >(cols,
                                   cur_obj,
                                   mask,
