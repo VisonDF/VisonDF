@@ -178,9 +178,9 @@ void get_dataframe_filter_range_mt(
         }
     };
 
-    auto copy_view = [&mask, 
-                      &row_view_idx2, 
-                      &offset_start]()
+    auto copy_view_dense = [&mask, 
+                            &row_view_idx2, 
+                            &offset_start]()
     {
 
         const std::string* __restrict src = src_vec2.data();
@@ -389,6 +389,71 @@ void get_dataframe_filter_range_mt(
         }
     };
 
+    auto copy_view = [&mask,
+                     &row_view_idx2,
+                     &offset_start]()
+    {
+  
+        dst_vec.resize(offset_start.active_rows);
+
+        if constexpr (CORES > 1) {
+
+            if (CORES > mask.size())
+                throw std::runtime_error("Too much cores for so little nrows\n");
+
+            const std::string* __restrict src = row_view_idx2.data();
+            std::string*       __restrict dst = row_view_idx.data();
+
+            int numa_nodes = 1;
+            if (numa_available() >= 0) 
+                numa_nodes = numa_max_node() + 1;
+
+            #pragma omp parallel num_threads(CORES)
+            {
+
+                const int tid        = omp_get_thread_num();
+                const int nthreads   = omp_get_num_threads();
+           
+                MtStruct cur_struct;
+
+                if constexpr (NUMA) {
+                    numa_mt(cur_struct,
+                            mask.size(), 
+                            tid, 
+                            nthreads, 
+                            numa_nodes);
+                } else {
+                    simple_mt(cur_struct,
+                              mask.size(), 
+                              tid, 
+                              nthreads);
+                }
+                    
+                const unsigned int start = cur_struct.start;
+                const unsigned int end   = cur_struct.end;
+
+                const size_t out_idx = offset_start.thread_offsets[tid];
+
+                for (size_t j = start; j < end; ++j) {
+                    if (!mask[j]) continue;
+                    dst[out_idx++] = src[strt_vl + j];
+                }
+
+            }
+
+        } else {
+
+            const std::string* __restrict src = src_vec2.data();
+            std::string*       __restrict dst = dst_vec.data();
+
+            for (size_t j = 0; j < mask.size(); ++j) {
+                if (!mask[j]) continue;
+                dst[j] = src[strt_vl + j];
+            }
+
+        }
+    };
+
     const auto& str_vec2  = cur_obj.get_str_vec();
     const auto& chr_vec2  = cur_obj.get_chr_vec();
     const auto& bool_vec2 = cur_obj.get_bool_vec();
@@ -510,10 +575,19 @@ void get_dataframe_filter_range_mt(
 
     copy_col(name_v_row2,  name_v_row);
 
-    if (in_view)
-        copy_view();
+    if constexpr (!IsDense) {
+        if (in_view)
+            copy_view();
+    } else {
+        if (in_view)
+            copy_view_dense();
+    }
 
 }
+
+
+
+
 
 
 
