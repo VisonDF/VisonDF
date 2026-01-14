@@ -96,9 +96,9 @@ void get_dataframe_filter_idx_mt(
                            &runs,
                            &thread_counts,
                            local_nrow]<typename T>(
-                                                   std::vector<T>& dst_vec
+                                                   std::vector<T>& dst_vec,
                                                    const std::vector<T>& src_vec2
-                                                  )
+                                                   )
     {
         const std::string* __restrict src = src_vec2.data();
         std::string*       __restrict dst = dst_vec.data();
@@ -239,9 +239,9 @@ void get_dataframe_filter_idx_mt(
     auto copy_col = [&mask,
                      &runs,
                      local_nrow](
-                                const auto& src_vec2,
-                                auto& dst_vec
-                               )
+                                 auto& dst_vec,
+                                 const auto& src_vec2
+                                )
     {
         const std::string* __restrict src = src_vec2.data();
         std::string*       __restrict dst = dst_vec.data();
@@ -431,48 +431,48 @@ void get_dataframe_filter_idx_mt(
                               matr_idx_map[0] = i2;
                               str_v.emplace_back();
                               str_v.back().resize(local_nrow);
-                              f2(str_vec2[i],  
-                                 str_v.back()); 
+                              f2(str_v.back(),  
+                                 str_vec2[i]); 
                               break;
                             }
                   case 1: {
                               matr_idx_map[1] = i2;
                               chr_v.emplace_back();
                               chr_v.back().resize(local_nrow);
-                              f1(chr_vec2[i],  
-                                 chr_v.back()); 
+                              f1(chr_v.back(),  
+                                 chr_vec2[i]); 
                               break;
                             }
                   case 2: {
                               matr_idx_map[2] = i2;
                               bool_v.emplace_back();
                               bool_v.back().resize(local_nrow);
-                              f1(bool_vec2[i],  
-                                 bool_v.back()); 
+                              f1(bool_v.back(),  
+                                 bool_vec2[i]); 
                               break;
                             }
                   case 3: {
                               matr_idx_map[3] = i2;
                               int_v.emplace_back();
                               int_v.back().resize(local_nrow);
-                              f1(int_vec2[i],  
-                                 int_v.back()); 
+                              f1(int_v.back(),  
+                                 int_vec2[i]); 
                               break;
                             }
                  case 4: {
                               matr_idx_map[4] = i2;
                               uint_v.emplace_back();
                               uint_v.back().resize(local_nrow);
-                              f1(uint_vec2[i],  
-                                 uint_v.back()); 
+                              f1(uint_v.back(),  
+                                 uint_vec2[i]); 
                               break;
                             }
                   case 5: {
                               matr_idx_map[5] = i2;
                               dbl_v.emplace_back();
                               dbl_v.back().resize(local_nrow);
-                              f1(dbl_vec2[i],  
-                                 dbl_v.back()); 
+                              f1(dbl_v.back(),  
+                                 dbl_vec2[i]); 
                               break;
                             }
             }
@@ -529,6 +529,9 @@ void get_dataframe_filter_idx_mt(
         }
 
     }
+
+    if (!name_v_row2.empty())
+        copy_col(name_v_row, name_v_row2);
 
     if constexpr (!IsDense) {
         copy_view();
