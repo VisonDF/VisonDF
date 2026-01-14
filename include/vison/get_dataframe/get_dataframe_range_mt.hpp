@@ -13,70 +13,12 @@ void get_dataframe_mt(const std::vector<size_t>& cols,
     
     in_view                = cur_obj.get_in_view();
     ankerl::unordered_dense::set<unsigned int>& col_alrd_materialized2  = cur_obj.get_col_alrd_materialized();
-    const auto row_view_idx2           = cur_obj.get_row_view_idx();
+    const auto row_view_idx2                                            = cur_obj.get_row_view_idx();
+    const std::vector<std::string>& name_v_row2 = cur_obj.get_rowname();
 
-
-    if (in_view) {
-        row_view_idx2.resize(local_nrow);
-    }
-
-    auto str_copy_col_view = [local_nrow,
-                              &row_view_idx2](std::string* dst, 
-                                              const std::string* src) {
-
-        if constexpr (CORES > 1) {
-
-            if (CORES > local_nrow)
-                throw std::runtime_error("Too much cores for so little nrows\n");
-
-            int numa_nodes = 1;
-            if (numa_available() >= 0) 
-                numa_nodes = numa_max_node() + 1;
-
-            #pragma omp parallel num_threads(CORES)
-            {
-
-                const int tid        = omp_get_thread_num();
-                const int nthreads   = omp_get_num_threads();
-           
-                MtStruct cur_struct;
-
-                if constexpr (NUMA) {
-                    numa_mt(cur_struct,
-                            local_nrow, 
-                            tid, 
-                            nthreads, 
-                            numa_nodes);
-                } else {
-                    simple_mt(cur_struct,
-                              local_nrow, 
-                              tid, 
-                              nthreads);
-                }
-                    
-                const unsigned int cur_start = cur_struct.start;
-                const unsigned int cur_end   = cur_struct.end;
-
-                for (size_t i = cur_start; i < cur_end; ++i) {
-                    dst[i] = src[start + i];
-                    row_view_idx[i] = row_view_idx2[start + i];
-                }
-
-            }
-
-        } else {
-
-            for (size_t i = 0; i < local_nrow; ++i) {
-                dst[i] = src[start + i];
-                row_view_idx[i] = row_view_idx2[start + i];
-            }
-
-        }
-    }
-
-    auto copy_col_view = [local_nrow,
-                          &row_view_idx2]<typename T>(T* dst, 
-                                                      const T* src) {
+    auto copy_view = [local_nrow,
+                      &row_view_idx2]() 
+    {
 
         if constexpr (CORES > 1) {
 
@@ -112,9 +54,6 @@ void get_dataframe_mt(const std::vector<size_t>& cols,
                 const unsigned int cur_end   = cur_struct.end;
                 const unsigned int cur_len   = cur_struct.len;
 
-                memcpy(dst + cur_start, 
-                       src + start + cur_start, 
-                       len * sizeof(T));
                 memcpy(row_view_idx.data()  + cur_start, 
                        row_view_idx2.data() + start + cur_start, 
                        len * sizeof(T));
@@ -124,9 +63,6 @@ void get_dataframe_mt(const std::vector<size_t>& cols,
 
         } else {
 
-           memcpy(dst, 
-                  src + start, 
-                  local_nrow * sizeof(T));
            memcpy(row_view_idx.data()  + cur_start, 
                   row_view_idx2.data() + start + cur_start, 
                   len * sizeof(T));
@@ -256,21 +192,6 @@ void get_dataframe_mt(const std::vector<size_t>& cols,
         }
     };
 
-    auto process_container_view = [local_nrow]<typename T>(const std::vector<std::vector<T>>& matr2,
-                                                           std::vector<std::vector<T>>& matr) {
-        for (const auto& el : matr2) {
-            matr.emplace_back();
-            matr.back().resize(local_nrow);
-            auto* dst       = matr_v.back().data();
-            const auto* src = el.data();
-            if constexpr (std::is_same_v<T, std::string>) {
-                str_copy_col_view(dst, src);
-            } else {
-                copy_col_view(dst, src);
-            }
-        }
-    };
-
     auto cols_proceed = [local_nrow, 
                          &col_alrd_materialized2,
                          &cols](auto&& f, auto&& f2) 
@@ -284,43 +205,43 @@ void get_dataframe_mt(const std::vector<size_t>& cols,
                               matr_idx_map[0] = i2;
                               str_v.emplace_back();
                               str_v.back().resize(local_nrow);
-                              f2(str_vec2[i],  
-                                 str_v.back()); 
+                              f2(str_v.back().data(),  
+                                 str_vec2[i].data()); 
                               break;
                             }
                   case 'c': {
                               chr_v.emplace_back();
                               chr_v.back().resize(local_nrow);
-                              f1(chr_vec2[i],  
-                                 chr_v.back()); 
+                              f1(chr_v.back().data(),  
+                                 chr_vec2[i].data()); 
                               break;
                             }
                   case 'b': {
                               bool_v.emplace_back();
                               bool_v.back().resize(local_nrow);
-                              f1(bool_vec2[i],  
-                                 bool_v.back()); 
+                              f1(bool_v.back().data(),  
+                                 bool_vec2[i].data()); 
                               break;
                             }
                   case 'i': {
                               int_v.emplace_back();
                               int_v.back().resize(local_nrow);
-                              f1(int_vec2[i],  
-                                 int_v.back()); 
+                              f1(int_v.back().data(),  
+                                 int_vec2[i].data()); 
                               break;
                             }
                  case 'u': {
                               uint_v.emplace_back();
                               uint_v.back().resize(local_nrow);
-                              f1(uint_vec2[i],  
-                                 uint_v.back()); 
+                              f1(uint_v.back().data(),  
+                                 uint_vec2[i].data()); 
                               break;
                             }
                   case 'd': {
                               dbl_v.emplace_back();
                               dbl_v.back().resize(local_nrow);
-                              f1(dbl_vec2[i],  
-                                 dbl_v.back()); 
+                              f1(dbl_v.back().data(),  
+                                 dbl_vec2[i].data()); 
                               break;
                             }
             }
@@ -345,25 +266,12 @@ void get_dataframe_mt(const std::vector<size_t>& cols,
         sync_map_col = cur_obj.get_sync_map_col();
         ncol         = cur_obj.get_ncol();
 
-        if (!in_view) {
-
-            process_container(str_v2,  str_v);
-            process_container(chr_v2,  chr_v);
-            process_container(bool_v2, bool_v);
-            process_container(int_v2,  int_v);
-            process_container(uint_v2, uint_v);
-            process_container(dbl_v2,  dbl_v);
-
-        } else {
-
-            process_container_view(str_v2,  str_v);
-            process_container_view(chr_v2,  chr_v);
-            process_container_view(bool_v2, bool_v);
-            process_container_view(int_v2,  int_v);
-            process_container_view(uint_v2, uint_v);
-            process_container_view(dbl_v2,  dbl_v);
-
-        }
+        process_container(str_v2,  str_v);
+        process_container(chr_v2,  chr_v);
+        process_container(bool_v2, bool_v);
+        process_container(int_v2,  int_v);
+        process_container(uint_v2, uint_v);
+        process_container(dbl_v2,  dbl_v);
 
         name_v    = cur_obj.get_colname();
         type_refv = cur_obj.get_typecol();
@@ -390,20 +298,18 @@ void get_dataframe_mt(const std::vector<size_t>& cols,
 
         sync_map_col = {true, true, true, true, true, true};
 
-        if (!in_view) {
-
-            cols_proceed(copy_col, str_copy_col);
-
-        } else {
-
-            cols_proceed(copy_col_view, str_copy_col_view);
-
-        }
+        cols_proceed(copy_col, str_copy_col);
 
     }
 
-    name_v_row = cur_obj.get_rowname();
+    name_v_row.resize(local_nrow);
+    str_copy_col(name_v_row.data(), name_v_row2.data());
+
+    if (in_view)
+        copy_view();
 }
+
+
 
 
 
