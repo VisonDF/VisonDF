@@ -409,20 +409,6 @@ void get_dataframe_filter_range_mt(
         }
     };
 
-    auto process_container_view = []<typename T>(const std::vector<std::vector<T>>& matr2,
-                                                 std::vector<std::vector<T>>& matr){
-        for (const auto& el : matr2) {
-            matr.emplace_back();
-            auto* dst       = matr_v.back().data();
-            const auto* src = el.data();
-            if constexpr (!IsDense || std::is_same_v<T, std::string>) {
-                copy_col_view(dst, src);
-            } else {
-                copy_col_view_dense(dst, src);
-            }
-        }
-    };
-
     auto cols_proceed = [&col_alrd_materialized2,
                          &cols](auto&& f1, auto&& f2) 
     {
@@ -490,25 +476,12 @@ void get_dataframe_filter_range_mt(
         sync_map_col = cur_obj.get_sync_map_col();
         ncol         = cur_obj.get_ncol();
 
-        if (!in_view) {
-
-            process_container(str_v2,  str_v);
-            process_container(chr_v2,  chr_v);
-            process_container(bool_v2, bool_v);
-            process_container(int_v2,  int_v);
-            process_container(uint_v2, uint_v);
-            process_container(dbl_v2,  dbl_v);
-
-        } else {
-
-            process_container_view(str_v2,  str_v);
-            process_container_view(chr_v2,  chr_v);
-            process_container_view(bool_v2, bool_v);
-            process_container_view(int_v2,  int_v);
-            process_container_view(uint_v2, uint_v);
-            process_container_view(dbl_v2,  dbl_v);
-
-        }
+        process_container(str_v2,  str_v);
+        process_container(chr_v2,  chr_v);
+        process_container(bool_v2, bool_v);
+        process_container(int_v2,  int_v);
+        process_container(uint_v2, uint_v);
+        process_container(dbl_v2,  dbl_v);
 
         name_v    = cur_obj.get_colname();
         type_refv = cur_obj.get_typecol(); 
