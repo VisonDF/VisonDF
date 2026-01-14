@@ -9,7 +9,7 @@ template <unsigned int CORES = 4,
          >
 void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
                                     const size_t strt_vl,
-                                    OffsetBoolMask& start_offset)
+                                    OffsetBoolMask& offset_start)
 {
 
     const size_t old_nrow = nrow;
@@ -48,7 +48,7 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
 
             size_t dummy_tot;
 
-            if (start_offset.thread_offset.empty()) {
+            if (offset_start.thread_offset.empty()) {
                 boolmask_offset_per_thread<OneIsTrue>(offset_start.thread_offsets, 
                                                       mask, 
                                                       inner_cores,
@@ -230,7 +230,7 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
 
                 size_t dummy_tot;
 
-                if (start_offset.offset_start.empty()) {
+                if (offset_start.offset_start.empty()) {
                     boolmask_offset_per_thread<OneIsTrue>(offset_start.thread_offsets, 
                                                           mask, 
                                                           inner_cores, 
