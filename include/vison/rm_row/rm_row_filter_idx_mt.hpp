@@ -48,7 +48,7 @@ void rm_row_filter_idx_mt(std::vector<uint8_t>& mask,
             if (mask.back() >= old_nrow) {
                 throw std::runtime_error("mask indices are out of bound\n");
             }
-        } else {
+        } else if constexpr (IdxIsTrue) {
             for (auto el : mask) {
                 if (el >= old_nrow) {
                     throw std::runtime_error("mask indices are out of bound\n");
