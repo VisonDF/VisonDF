@@ -44,17 +44,16 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
             if (numa_available() >= 0) 
                 numa_nodes = numa_max_node() + 1;
 
-            std::vector<size_t> thread_counts;
             std::vector<size_t> thread_offsets;
 
             size_t dummy_tot;
 
-            if (start_offset.vec.empty())
-                boolmask_offset_per_thread<OneIsTrue>(thread_counts, 
-                                                      thread_offsets, 
+            if (start_offset.thread_offset.empty()) {
+                boolmask_offset_per_thread<OneIsTrue>(offset_start.thread_offsets, 
                                                       mask, 
                                                       inner_cores,
-                                                      dummy_tot);
+                                                      offset_start.dummy_tot);
+            }
 
             #pragma omp parallel if(inner_cores > 1) num_threads(inner_cores)
             {
@@ -80,12 +79,7 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
                 const unsigned int cur_start = cur_struct.start;
                 const unsigned int cur_end   = cur_struct.end;
 
-                size_t out_idx;
-                if (start_offset.vec.empty()) {
-                    out_idx = thread_offsets[tid];
-                } else {
-                    out_idx = offset_start.vec[start];
-                }
+                const size_t out_idx = offset_start.thread_offsets[tid];
 
                 size_t i = cur_start;
                 if constexpr (OneIsTrue) {
@@ -232,17 +226,16 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
                 if (numa_available() >= 0) 
                     numa_nodes = numa_max_node() + 1;
 
-                std::vector<size_t> thread_counts;
                 std::vector<size_t> thread_offsets;
 
                 size_t dummy_tot;
 
-                if (start_offset.vec.empty())
-                    boolmask_offset_per_thread<OneIsTrue>(thread_counts, 
-                                                          thread_offsets, 
+                if (start_offset.offset_start.empty()) {
+                    boolmask_offset_per_thread<OneIsTrue>(offset_start.thread_offsets, 
                                                           mask, 
                                                           inner_cores, 
-                                                          dummy_tot);
+                                                          offset_start.active_rows);
+                }
 
                 #pragma omp parallel if(inner_cores > 1) num_threads(inner_cores)
                 {
@@ -268,12 +261,7 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
                     const unsigned int cur_start = cur_struct.start;
                     const unsigned int cur_end   = cur_struct.end;
 
-                    size_t out_idx;
-                    if (start_offset.vec.empty()) {
-                        out_idx = thread_offsets[tid];
-                    } else {
-                        out_idx = offset_start.vec[start];
-                    }
+                    const size_t out_idx = offset_start.thread_offsets[tid];
 
                     size_t i = cur_start;
                     if constexpr (OneIsTrue) {

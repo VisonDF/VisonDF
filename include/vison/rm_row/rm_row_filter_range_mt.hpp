@@ -7,9 +7,11 @@ template <unsigned int CORES = 4,
           bool Soft = true,
           bool OneIsTrue = true
          >
-void rm_row_filter_range_mt(std::vector<uint8_t>& mask,
+void rm_row_filter_range_mt(
+                            std::vector<uint8_t>& mask,
                             const size_t strt_vl,
-                            OffsetBoolMask& start_offset) 
+                            OffsetBoolMask& offset_start = default_offset_start
+                           ) 
 {
 
     // Soft May auto switch to view mode
@@ -31,17 +33,13 @@ void rm_row_filter_range_mt(std::vector<uint8_t>& mask,
             if (numa_available() >= 0) 
                 numa_nodes = numa_max_node() + 1;
 
-            std::vector<size_t> thread_counts;
             std::vector<size_t> thread_offsets;
 
-            size_t dummy_tot;
-
-            if (start_offset.vec.empty())
-                boolmask_offset_per_thread<OneIsTrue>(thread_counts, 
-                                                      thread_offsets, 
+            if (offset_start.thread_offsets.empty())
+                boolmask_offset_per_thread<OneIsTrue>(offset_start.thread_offsets, 
                                                       mask, 
                                                       inner_cores, 
-                                                      dummy_tot);
+                                                      offset_start.active_rows);
 
             #pragma omp parallel if(inner_cores > 1) num_threads(inner_cores)
             {
@@ -67,11 +65,7 @@ void rm_row_filter_range_mt(std::vector<uint8_t>& mask,
                 const unsigned int start = cur_struct.start;
                 const unsigned int end   = cur_struct.end;
 
-                if (start_offset.vec.empty()) {
-                    out_idx = thread_offsets[tid];
-                } else {
-                    out_idx = start_offset.vec[start];
-                }
+                const size_t out_idx = offset_start.thread_offsets[tid];
 
                 if constexpr (OneIsTrue) {
                     for (size_t i = start; i < end; ++read) {
