@@ -1,38 +1,62 @@
 #pragma once
 
-using ColumnView = std::variant<
-    std::span<const std::string>&,
-    std::span<const CharT>&,
-    std::span<const uint8_t>&,
-    std::span<const IntT>&,
-    std::span<const UIntT>&,
-    std::span<const FloatT>&
->;
+template <typename T, 
+          bool MapCol = false>
+const std::vector<T>& view_col(unsigned int x) const {
 
-ColumnView view_col(unsigned int x) const {
+    static_assert(is_supported_type<T>, "Type not supported");
 
-    for (unsigned int i = 0; i < 6; ++i) {
-        for (unsigned int i2 = 0; i2 < matr_idx[i].size(); ++i2) {
-            if (x == matr_idx[i][i2]) {
-                switch (i) {
-                    case 0:
-                        return str_v[i2];
-                    case 1:
-                        return chr_v[i2];
-                    case 2:
-                        return bool_v[i2];
-                    case 3:
-                        return int_v[i2];
-                    case 4:
-                        return uint_v[i2];
-                    case 5:
-                        return dbl_v[i2];
-                }
-            }
+    if (x >= ncol)
+        throw std::runtime_error("col number out of bounds\n");
+
+    auto find_col_base = [this, x](const auto& idx_vec, size_t idx_type) -> size_t {
+
+        size_t pos;
+
+        if constexpr (!MapCol) {
+            pos = 0;
+            while (pos < idx_vec.size() && idx_vec[pos] != x)
+                ++pos;
+    
+            if (pos == idx_vec.size())
+                throw std::runtime_error("no column found");
+        } else {
+            if (!matr_idx_map[idx_type].contains(x))
+                throw std::runtime_error("col not found in map");
+            if (!sync_map_col[idx_type])
+                throw std::runtime_error("map not synced");
+    
+            pos = matr_idx_map[idx_type][x];
         }
+        return pos;
+    };
+
+    if constexpr (std::is_same_v<element_type_t<T>, std::string>) {
+        size_t idx = find_col_base(matr_idx[0], 0);
+        return str_v[idx];
+    } else if constexpr (std::is_same_v<element_type_t<T>, CharT>) {
+        size_t idx = find_col_base(matr_idx[1], 1);
+        return chr_v[idx];
+    } else if constexpr (std::is_same_v<element_type_t<T>, uint8_t>) {
+        size_t idx = find_col_base(matr_idx[2], 2);
+        return bool_v[idx];
+    } else if constexpr (std::is_same_v<element_type_t<T>, IntT>) {
+        size_t idx = find_col_base(matr_idx[3], 3);
+        return int_v[idx];
+    } else if constexpr (std::is_same_v<element_type_t<T>, UIntT>) {
+        size_t idx = find_col_base(matr_idx[4], 4);
+        return uint_v[idx];
+    } else if constexpr (std::is_same_v<element_type_t<T>, FloatT>) {
+        size_t idx = find_col_base(matr_idx[5], 5);
+        return dbl_v[idx];
+    } else {
+        static_assert(dependent_false<T>, "Unsupported type");
     }
 
-    throw std::out_of_range("view_colnb(): column not found");
 }
+
+
+
+
 
 

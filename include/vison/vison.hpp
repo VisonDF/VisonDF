@@ -221,14 +221,7 @@ namespace vison {
 
         std::array<
             ankerl::unordered_dense::map<unsigned int,
-                                         unsigned int>, 6> matr_idx_map = {
-                                                                            {}, 
-                                                                            {}, 
-                                                                            {}, 
-                                                                            {}, 
-                                                                            {}, 
-                                                                            {}
-                                                                           };
+                                         unsigned int>, 6> matr_idx_map;
 
         std::array<bool, 6> sync_map_col {true, true, true, true, true, true};
 
@@ -399,11 +392,6 @@ namespace vison {
         #include "fapply/fapply_filter_idx.hpp"
 
         #include "view_col/view_col.hpp" 
-        #include "view_col/view_colstr.hpp"
-        #include "view_col/view_colchr.hpp"
-        #include "view_col/view_colint.hpp"
-        #include "view_col/view_coluint.hpp"
-        #include "view_col/view_colflt.hpp"
 
         #include "inlines/get_col/vectorized/avx2_lut4.inl"
         #include "inlines/get_col/vectorized/avx2_lut8.inl"
