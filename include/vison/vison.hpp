@@ -494,11 +494,10 @@ namespace vison {
         #include "transform/merge/transform_merge_excluding.hpp"
    
         #include "merge/merge_inner.hpp"
-        #include "merge/no_dupplicates/merge_inner2.hpp"
         #include "merge/merge_excluding.hpp"
         #include "merge/merge_excluding_both.hpp"
         #include "merge/merge_all.hpp"
-        #include "merge/no_dupplicates/merge_all2.hpp"
+        #include "merge/merge_nodp.hpp"
 
         #include "transform/transform_left_join/transform_left_join.hpp"
         #ifdef _OPENMP
@@ -510,7 +509,10 @@ namespace vison {
         #endif
 
         #include "transform/transform_unique/transform_unique_mt.hpp"
-               
+        
+        #include "transform/transform_nodp/transform_nodp_sametype.inl"
+        #include "transform/transform_nodp/transform_nodp_difftype.inl"
+
         #include "inlines/transform/transform_group_by/group_by_dispatch2.inl"
         #include "inlines/transform/transform_group_by/group_by_dispatch1.inl"
         #include "inlines/transform/transform_group_by/idx_build_onecol.inl"

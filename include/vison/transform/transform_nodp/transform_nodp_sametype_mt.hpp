@@ -7,7 +7,7 @@ template <typename T = void,
           bool MapCol = false,
           bool Soft = true,
           bool SimdHash = true>
-void transform_unique_mt(unsigned int n) 
+void transform_nodp_sametype_mt(std::vector<unsigned int>& n) 
 {  
 
     if (in_view && !Soft) {
@@ -102,39 +102,63 @@ void transform_unique_mt(unsigned int n)
         real_pos = matr_idx_map[idx_type][n]; 
     }
 
+    std::string key_str;
+    key_str.reserve(512);
+
     auto apply_filter = [val_size,
+                         &key_str,
                          &mask,
-                         &lookup]<typename Elem>(const auto& key_col) {
+                         &lookup]<typename Elem>(const auto& key_table) {
 
         if constexpr (!Last) {
             if constexpr (std::is_same_v<Elem, std::string>) {
                  for (size_t i = 0; i < local_nrow; ++i) {
-                     if (!lookup.contains(key_col[i])) {
+                     key_str.clear();
+                     for (auto ncol : n) {
+                        key_str += table_col[ncol][i];
+                        key_str += "_";
+                     }
+                     if (!lookup.contains(key_str)) {
                          mask[i] = 0;
-                         lookup.emplace(key_col[i]);
+                         lookup.emplace(key_str);
                      }
                  }
             } else {
                 for (size_t i = 0; i < local_nrow; ++i) {
-                    if (!lookup.contains(std::string_view{reinterpret_cast<const char*>(&key_col[i]), val_size})) {
+                     key_str.clear();
+                     for (auto ncol : n) {
+                        key_str.append(reinterpret_cast<const char*>(&table_col[n][i], sizeof(Elem)));
+                        key_str += "_";
+                     }
+                    if (!lookup.contains(key_str)) {
                         mask[i] = 0;
-                        lookup.emplace(std::string_view{reinterpret_cast<const char*>(&key_col[i]), val_size});
+                        lookup.emplace(key_str);
                     }
                 }
             }
         } else {
             if constexpr (std::is_same_v<Elem, std::string>) {
                 for (int i = int(local_nrow) - 1; i >= 0; --i) {
-                    if (!lookup.contains(key_col[i])) [[unlikely]] {
-                        mask[i] = 0;
-                        lookup.emplace(key_col[i]);
-                    }
+                     key_str.clear();
+                     for (auto ncol : n) {
+                        key_str += table_col[ncol][i];
+                        key_str += "_";
+                     }
+                     if (!lookup.contains(key_str)) {
+                         mask[i] = 0;
+                         lookup.emplace(key_str);
+                     }
                 }
             } else {
                 for (int i = int(local_nrow) - 1; i >= 0; --i) {
-                    if (!lookup.contains(std::string_view{reinterpret_cast<const char*>(&key_col[i]), val_size})) [[unlikely]] {
+                     key_str.clear();
+                     for (auto ncol : n) {
+                        key_str.append(reinterpret_cast<const char*>(&table_col[n][i], sizeof(Elem)));
+                        key_str += "_";
+                     }
+                    if (!lookup.contains(key_str)) {
                         mask[i] = 0;
-                        lookup.emplace(std::string_view{reinterpret_cast<const char*>(&key_col[i]), val_size});
+                        lookup.emplace(key_str);
                     }
                 }
             }
@@ -154,9 +178,7 @@ void transform_unique_mt(unsigned int n)
 
                 using Elem = TP::value_type::value_type;
 
-                const auto& key_col = (*key_table)[real_pos];
-
-                apply_filter<Elem>(key_col);
+                apply_filter<Elem>(key_table);
 
             }
 
@@ -164,9 +186,7 @@ void transform_unique_mt(unsigned int n)
 
     } else {
 
-        const auto& key_col = (*var_key_table)[real_pos];
-
-        apply_filter<element_type_t<T>>(key_col);
+        apply_filter<element_type_t<T>>(key_table);
 
     }
 
