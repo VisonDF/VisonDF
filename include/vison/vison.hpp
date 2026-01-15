@@ -353,17 +353,17 @@ namespace vison {
 
         #include "inlines/operator_overloading/equality.inl"
 
-        #include "inlines/read_csv/parsers_core/parse_rows_chunk_warmed.inl"
-        #include "inlines/read_csv/parsers_core/parse_rows_chunk.inl"
-        #include "inlines/read_csv/warming_parser_mt/warming_parser_mt.inl"
-        #include "inlines/read_csv/standard_parser_mt/standard_parser_mt.inl"
-        #include "inlines/read_csv/standard_parser/standard_parser.inl"
-        #include "read_csv/read_csv.hpp"
-        #include "read_csv/read_csv_noinfer.hpp"
-        #include "read_csv/read_csv_trim.hpp"
-        #include "read_csv/read_csv_trim_noinfer.hpp"
-        #include "read_csv/read_csv_apply.hpp"
-        #include "read_csv/read_csv_apply_noinfer.hpp"
+        #include "inlines/read/read_csv/parsers_core/parse_rows_chunk_warmed.inl"
+        #include "inlines/read/read_csv/parsers_core/parse_rows_chunk.inl"
+        #include "inlines/read/read_csv/warming_parser_mt/warming_parser_mt.inl"
+        #include "inlines/read/read_csv/standard_parser_mt/standard_parser_mt.inl"
+        #include "inlines/read/read_csv/standard_parser/standard_parser.inl"
+        #include "read/read_csv/read_csv.hpp"
+        #include "read/read_csv/read_csv_noinfer.hpp"
+        #include "read/read_csv/read_csv_trim.hpp"
+        #include "read/read_csv/read_csv_trim_noinfer.hpp"
+        #include "read/read_csv/read_csv_apply.hpp"
+        #include "read/read_csv/read_csv_apply_noinfer.hpp"
         
         #include "inlines/read_csv/type_inference/type_classification.inl"
 
@@ -439,7 +439,7 @@ namespace vison {
         #include "get_dataframe/get_dataframe_filter_idx.hpp"
         #include "get_dataframe/vectorized/get_dataframe_filter_idx_simd.hpp"
 
-        #include "write_csv/writef.hpp"
+        #include "write/write_csv/writef.hpp"
   
         #include "inlines/rep_col/rep_col_filter_boolmask.inl"
         #include "inlines/rep_col/rep_col_filter_boolmask_bacth.inl"
