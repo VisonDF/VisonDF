@@ -426,8 +426,8 @@ void get_dataframe_filter_idx_mt(
         size_t i2 = 0;
         for (int i : cols) {
 
-            switch (i) {
-                  case 0: {
+            switch (type_refv[i]) {
+                  case 's': {
                               matr_idx_map[0] = i2;
                               str_v.emplace_back();
                               str_v.back().resize(local_nrow);
@@ -435,7 +435,7 @@ void get_dataframe_filter_idx_mt(
                                  str_vec2[i]); 
                               break;
                             }
-                  case 1: {
+                  case 'c': {
                               matr_idx_map[1] = i2;
                               chr_v.emplace_back();
                               chr_v.back().resize(local_nrow);
@@ -443,7 +443,7 @@ void get_dataframe_filter_idx_mt(
                                  chr_vec2[i]); 
                               break;
                             }
-                  case 2: {
+                  case 'b': {
                               matr_idx_map[2] = i2;
                               bool_v.emplace_back();
                               bool_v.back().resize(local_nrow);
@@ -451,7 +451,7 @@ void get_dataframe_filter_idx_mt(
                                  bool_vec2[i]); 
                               break;
                             }
-                  case 3: {
+                  case 'i': {
                               matr_idx_map[3] = i2;
                               int_v.emplace_back();
                               int_v.back().resize(local_nrow);
@@ -459,7 +459,7 @@ void get_dataframe_filter_idx_mt(
                                  int_vec2[i]); 
                               break;
                             }
-                 case 4: {
+                 case 'u': {
                               matr_idx_map[4] = i2;
                               uint_v.emplace_back();
                               uint_v.back().resize(local_nrow);
@@ -467,7 +467,7 @@ void get_dataframe_filter_idx_mt(
                                  uint_vec2[i]); 
                               break;
                             }
-                  case 5: {
+                  case 'd': {
                               matr_idx_map[5] = i2;
                               dbl_v.emplace_back();
                               dbl_v.back().resize(local_nrow);
