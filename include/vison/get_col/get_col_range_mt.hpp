@@ -12,7 +12,8 @@ void get_col_mt(const unsigned int x,
     const unsigned int local_nrow = end - strt;
     rtn_v.resize(local_nrow);
 
-    auto find_col_base = [x](const auto &idx_vec, [[maybe_unused]] const size_t idx_type) -> size_t {
+    auto find_col_base = [x]([[maybe_unused]] const auto &idx_vec, 
+                             [[maybe_unused]] const size_t idx_type) -> size_t {
         size_t pos;
         if constexpr (!MapCol) {
             pos = 0;
