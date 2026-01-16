@@ -58,18 +58,19 @@ void get_col_filter_range(
                            n_el2,
                            n_el](const auto*__restrict src) {
 
+        if (offset_start.vec.empty()) {
+            build_boolmask<OneIsTrue,
+                           Periodic>(offset_start.thread_offsets, 
+                                     mask, 
+                                     CORES,
+                                     offset_start.active_rows);
+        }
+        rtn_v.resize(offset_start.active_rows);
+
         if constexpr (CORES > 1) {
 
             if (CORES > n_el)
                 throw std::runtime_error("Too much cores for so little nrows\n");
-
-            if (offset_start.vec.empty()) {
-                build_boolmask<OneIsTrue>(offset_start.thread_offsets, 
-                                          mask, 
-                                          CORES,
-                                          offset_start.active_rows);
-            }
-            rtn_v.resize(offset_start.active_rows);
 
             int numa_nodes = 1;
             if (numa_available() >= 0) 
@@ -105,24 +106,24 @@ void get_col_filter_range(
                     if constexpr (OneIsTrue) {
                         for (size_t i = start; i < end; ++i) {
                             if (mask[i])
-                                rtn_v[out_idx++] = src[strt_vl + i];
+                                rtn_v[out_idx++] = src[i];
                         }
                     } else {
                         for (size_t i = start; i < end; ++i) {
                             if (!mask[i])
-                                rtn_v[out_idx++] = src[strt_vl + i];
+                                rtn_v[out_idx++] = src[i];
                         }
                     }
                 } else {
                     if constexpr (OnsIsTrue) {
                         for (size_t i = start; i < end; ++i) {
                             if (mask[i % n_el2])
-                                rtn_v[out_idx++] = src[strt_vl + i];
+                                rtn_v[out_idx++] = src[i];
                         }
                     } else {
                         for (size_t i = start; i < end; ++i) {
                             if (!mask[i % n_el2])
-                                rtn_v[out_idx++] = src[strt_vl + i];
+                                rtn_v[out_idx++] = src[i];
                         }
                     }
                 }
@@ -131,32 +132,34 @@ void get_col_filter_range(
 
         } else {
 
+            size_t i2 = 0;
+
             if constexpr (!Periodic) {
                 if constexpr (OneIsTrue) {
                     for (size_t i = 0; i < n_el; ++i) {
                         if (mask[i])
-                            rtn_v.push_back(src[strt_vl + i]);
+                            rtn_v[i2++] = src[i];
                     }
                 } else {
+                    #pragma unroll
                     for (size_t i = 0; i < n_el; ++i) {
                         if (!mask[i])
-                            rtn_v.push_back(src[strt_vl + i]);
+                            rtn_v[i2++] = src[i];
                     }
                 }
             } else {
                 if constexpr (OneIsTrue) {
                     for (size_t i = 0; i < n_el; ++i) {
                         if (mask[i % n_el2])
-                            rtn_v.push_back(src[strt_vl + i]);
+                            rtn_v[i2++] = src[i];
                     }
                 } else {
                     for (size_t i = 0; i < n_el; ++i) {
                         if (!mask[i % n_el2])
-                            rtn_v.push_back(src[strt_vl + i]);
+                            rtn_v[i2++] = src[i];
                     }
                 }
             }
-
         }
 
     };
@@ -400,12 +403,20 @@ void get_col_filter_range(
     if constexpr (std::is_same_v<T, std::string>) {
 
         const size_t pos_base = find_col_base(matr_idx[0], 0);
-        extract_masked(str_v[pos_base].data());
+        extract_masked(str_v[pos_base].data() + strt_vl);
 
     } else if constexpr (std::is_same_v<T, CharT>) {
 
         const size_t pos_base = find_col_base(matr_idx[1], 1);
-        extract_masked(chr_v[pos_base].data());
+        if constexpr (!IsDense) {
+
+            extract_masked(chr_v[pos_base].data() + strt_vl);
+
+        } else {
+
+            extract_masked_dense(chr_v[pos_base].data() + strt_vl);
+
+        }
 
     } else if constexpr (IsBool) {
 
@@ -413,11 +424,11 @@ void get_col_filter_range(
 
         if constexpr (!IsDense) {
 
-            extract_masked(bool_v[pos_base].data());
+            extract_masked(bool_v[pos_base].data() + strt_vl);
 
         } else {
 
-            extract_masked_dense(bool_v[pos_base].data());
+            extract_masked_dense(bool_v[pos_base].data() + strt_vl);
 
         }
 
@@ -427,11 +438,11 @@ void get_col_filter_range(
 
         if constexpr (!IsDense) {
 
-            extract_masked(int_v[pos_base].data());
+            extract_masked(int_v[pos_base].data() + strt_vl);
 
         } else {
 
-            extract_masked_dense(int_v[pos_base].data());
+            extract_masked_dense(int_v[pos_base].data() + strt_vl);
 
         }
 
@@ -441,11 +452,11 @@ void get_col_filter_range(
 
         if constexpr (!IsDense) {
 
-            extract_masked(uint_v[pos_base].data());
+            extract_masked(uint_v[pos_base].data() + strt_vl);
 
         } else {
 
-            extract_masked_dense(uint_v[pos_base].data());
+            extract_masked_dense(uint_v[pos_base].data() + strt_vl);
 
         }
 
@@ -455,11 +466,11 @@ void get_col_filter_range(
 
         if constexpr (!IsDense) {
 
-            extract_masked(dbl_v[pos_base].data());
+            extract_masked(dbl_v[pos_base].data() + strt_vl);
 
         } else {
 
-            extract_masked_dense(dbl_v[pos_base].data());
+            extract_masked_dense(dbl_v[pos_base].data() + strt_vl);
 
         }
 
