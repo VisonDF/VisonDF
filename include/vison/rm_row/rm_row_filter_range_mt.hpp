@@ -129,14 +129,21 @@ void rm_row_filter_range_mt(
                 }
             }
 
-            if constexpr (std::is_trivially_copyable_v<T>) {
-                memcpy(dst + dummy_tot, 
-                       src + mask.size(), 
-                       (old_nrow - strt_vl - mask.size()) * sizeof(T));
-            } else {
-                std::move(src + mask.size(), 
-                          src + old_nrow, 
-                          dst + dummy_tot);
+            if constexpr (!Periodic) {
+                if constexpr (std::is_trivially_copyable_v<T>) {
+                    memcpy(dst + dummy_tot, 
+                           src + mask.size(), 
+                           (old_nrow - strt_vl - n_el) * sizeof(T));
+                } else {
+                    std::move(src + n_el, 
+                              src + old_nrow, 
+                              dst + offset_start.active_rows);
+                }
+            }
+
+            if constexpr (MemClean) {
+                vec.resize(strt_vl + offset_start.active_rows + (old_nrow - strt_vl - n_el));
+                vec.shrink_to_fit();
             }
 
         } else {
@@ -172,20 +179,22 @@ void rm_row_filter_range_mt(
                 }
             }
 
-            if constexpr (std::is_trivially_copyable_v<T>) {
-                memmove(dst + out_idx, 
-                        src + mask.size(), 
-                        (old_nrow - strt_vl - mask.size()) * sizeof(T));
-            } else {
-                std::move_backward(src + mask.size(), 
-                                   src + old_nrow, 
-                                   dst + out_idx);
+            if constexpr (!Periodic) {
+                if constexpr (std::is_trivially_copyable_v<T>) {
+                    memmove(dst + out_idx, 
+                            src + mask.size(), 
+                            (old_nrow - strt_vl - mask.size()) * sizeof(T));
+                } else {
+                    std::move_backward(src + mask.size(), 
+                                       src + old_nrow, 
+                                       dst + out_idx);
+                }
             }
-        }
 
-        if constexpr (MemClean) {
-            vec.resize(strt_vl + out_idx);
-            vec.shrink_to_fit();
+            if constexpr (MemClean) {
+                vec.resize(strt_vl + out_idx + (old_nrow - strt_vl - n_el));
+                vec.shrink_to_fit();
+            }
         }
 
     };
