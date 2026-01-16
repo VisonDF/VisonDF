@@ -19,6 +19,25 @@ void rm_row_filter_range_mt(
     // Soft May auto switch to view mode
     const size_t old_nrow = nrow;
 
+    if constexpr (AssertionLevel > AssertionType::None) {
+        if (strt_vl + mask.size() >= old_nrow)
+            throw std::runtime_error("strt_vl + mask.size() out of bounds\n");
+    }
+
+    if constexpr (AssertionLevel > AssertionType::Simple) {
+
+        const size_t new_nrow = (OneIsTrue) ? std::count(mask.begin(), mask.end(), 0) : std::count(mask.begin(), mask.end(), 1);
+        if (new_nrow == nrow) return;
+        if (new_nrow == 0) {
+            std::cout << "Consider using .empty() if you want to remove all rows\n"; 
+            return;
+        }
+
+    }
+
+    const unsigned int n_el  = (Periodic) ? old_nrow - strt_vl : mask.size();
+    const unsigned int n_el2 = mask.size();
+
     if constexpr (CORES > 1) {
         if (offset_start.thread_offsets.empty())
             build_boolmask<OneIsTrue,
@@ -31,13 +50,20 @@ void rm_row_filter_range_mt(
 
     auto compact_block = [old_nrow, 
                           strt_vl,
+                          n_el,
+                          n_el2,
                           &offset_start,
                           &mask]<typename T>(std::vector<T>& vec, 
                                              const size_t inner_cores) {
 
+        T* dst = vec.data() + strt_vl;
+        T* src;
         std::vector<T> vec2;
         if constexpr (CORES > 1) {
             vec2 = vec;
+            src = vec2.data() + strt_vl;
+        } else {
+            src = vec.data() + strt_vl;
         }
 
         if constexpr (CORES > 1) {
@@ -56,13 +82,13 @@ void rm_row_filter_range_mt(
 
                 if constexpr (NUMA) {
                     numa_mt(cur_struct,
-                            mask.size(), 
+                            n_el, 
                             tid, 
                             nthreads, 
                             numa_nodes);
                 } else {
                     simple_mt(cur_struct,
-                              mask.size(), 
+                              n_el, 
                               tid, 
                               nthreads);
                 }
@@ -71,56 +97,89 @@ void rm_row_filter_range_mt(
                 const unsigned int end   = cur_struct.end;
 
                 const size_t out_idx = offset_start.thread_offsets[tid];
-
-                if constexpr (OneIsTrue) {
-                    for (size_t i = start; i < end; ++read) {
-                        if (!mask[i]) {
-                            vec[strt_vl + out_idx++] = std::move(vec2[strt_vl + i]);
+            
+                if constexpr (!Periodic) {
+                    if constexpr (OneIsTrue) {
+                        for (size_t i = start; i < end; ++read) {
+                            if (!mask[i]) {
+                                dst[out_idx++] = std::move(src[i]);
+                            }
+                        }
+                    } else {
+                        for (size_t i = start; i < end; ++read) {
+                            if (mask[i]) {
+                                dst[out_idx++] = std::move(src[i]);
+                            }
                         }
                     }
                 } else {
-                    for (size_t i = start; i < end; ++read) {
-                        if (mask[i]) {
-                            vec[strt_vl + out_idx++] = std::move(vec2[strt_vl + i]);
+                    if constexpr (OneIsTrue) {
+                        for (size_t i = start; i < end; ++read) {
+                            if (!mask[i % n_el2]) {
+                                dst[out_idx++] = std::move(src[i]);
+                            }
+                        }
+                    } else {
+                        for (size_t i = start; i < end; ++read) {
+                            if (mask[i % n_el2]) {
+                                dst[out_idx++] = std::move(src[i]);
+                            }
                         }
                     }
                 }
             }
 
             if constexpr (std::is_trivially_copyable_v<T>) {
-                memcpy(vec.data()  + strt_vl + dummy_tot, 
-                       vec2.data() + strt_vl + mask.size(), 
+                memcpy(dst + dummy_tot, 
+                       src + mask.size(), 
                        (old_nrow - strt_vl - mask.size()) * sizeof(T));
             } else {
-                std::move(vec2.begin() + strt_vl + mask.size(), 
-                          vec2.begin() + old_nrow, 
-                          vec.begin()  + strt_vl + dummy_tot);
+                std::move(src + mask.size(), 
+                          src + old_nrow, 
+                          dst + dummy_tot);
             }
 
         } else {
             size_t out_idx = 0;
-            if constexpr (OneIsTrue) {
-                for (size_t i = 0; i < mask.size(); ++read) {
-                    if (!mask[i]) {
-                        vec[strt_vl + out_idx++] = std::move(vec[strt_vl + i]);
+
+            if constexpr (!Periodic) {
+                if constexpr (OneIsTrue) {
+                    for (size_t i = 0; i < n_el; ++read) {
+                        if (!mask[i]) {
+                            dst[out_idx++] = std::move(src[i]);
+                        }
+                    }
+                } else {
+                    for (size_t i = 0; i < n_el; ++read) {
+                        if (mask[i]) {
+                            dst[out_idx++] = std::move(src[i]);
+                        }
                     }
                 }
             } else {
-                for (size_t i = 0; i < mask.size(); ++read) {
-                    if (mask[i]) {
-                        vec[strt_vl + out_idx++] = std::move(vec[strt_vl + i]);
+                if constexpr (OneIsTrue) {
+                    for (size_t i = 0; i < n_el; ++read) {
+                        if (!mask[i % n_el2]) {
+                            dst[out_idx++] = std::move(src[i]);
+                        }
+                    }
+                } else {
+                    for (size_t i = 0; i < n_el; ++read) {
+                        if (mask[i % n_el2]) {
+                            dst[out_idx++] = std::move(src[i]);
+                        }
                     }
                 }
             }
 
             if constexpr (std::is_trivially_copyable_v<T>) {
-                memmove(vec.data() + strt_vl + out_idx, 
-                        vec.data() + strt_vl + mask.size(), 
+                memmove(dst + out_idx, 
+                        src + mask.size(), 
                         (old_nrow - strt_vl - mask.size()) * sizeof(T));
             } else {
-                std::move_backward(vec.begin() + strt_vl + mask.size(), 
-                                   vec.begin() + old_nrow, 
-                                   vec.begin()  + strt_vl + out_idx);
+                std::move_backward(src + mask.size(), 
+                                   src + old_nrow, 
+                                   dst + out_idx);
             }
         }
 
@@ -220,7 +279,7 @@ void rm_row_filter_range_mt(
 
     }
 
-    nrow = old_nrow - mask.size(); 
+    nrow = old_nrow - n_el; 
 
 };
 
