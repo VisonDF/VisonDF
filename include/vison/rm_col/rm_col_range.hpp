@@ -3,6 +3,7 @@
 template <typename T                    = void,
            bool MapCol                  = false,
            bool MemClean                = false,
+           bool SortedDesc              = true,  // you can lie here
            AssertionType AssertionLevel = AssertionType::Simple
          >
 void rm_col_range(std::vector<unsigned int>& nbcol) {
@@ -18,8 +19,10 @@ void rm_col_range(std::vector<unsigned int>& nbcol) {
         }
     }
 
-    std::sort(nbcol.begin(), nbcol.end());
-    std::reverse(nbcol.begin(), nbcol.end());
+    if constexpr (!SortedDesc) {
+        std::sort(nbcol.begin(), nbcol.end());
+        std::reverse(nbcol.begin(), nbcol.end());
+    }
 
     size_t idx_in_type;
     size_t idx_type;
@@ -31,7 +34,7 @@ void rm_col_range(std::vector<unsigned int>& nbcol) {
                  std::vector::std::vector<IntT>&,
                  std::vector::std::vector<UIntT>&,
                  std::vector::std::vector<FloatT>&,
-                 > key_table;
+                 > var_key_table;
     ankerl::unordered_dense::map<char, unsigned int> map_idx_col;
 
     if constexpr (!std::is_same_v<T, void>) {
@@ -107,10 +110,7 @@ void rm_col_range(std::vector<unsigned int>& nbcol) {
         if constexpr (!std::is_same_v<T, void>) {
 
             std::visit([idx_type](auto&& key_table) {
-
                 key_table.erase(key_table.begin()  + idx_in_type); 
-                sync_map_col[idx_type] = false; 
-
             }, var_key_table);
 
         } else {
@@ -118,34 +118,33 @@ void rm_col_range(std::vector<unsigned int>& nbcol) {
             switch (type_i) {
                 case 0: {
                             str_v.erase(str_v.begin()  + idx_in_type); 
-                            sync_map_col[0] = false; 
                             break;
                         }
                 case 1: {
                             chr_v.erase(chr_v.begin()  + idx_in_type); 
-                            sync_map_col[1] = false;
                             break;
                         }
                 case 2: {
                             bool_v.erase(bool_v.begin() + idx_in_type); 
-                            sync_map_col[2] = false;
                             break;
                         }
                 case 3: {
                             int_v.erase(int_v.begin()  + idx_in_type); 
-                            sync_map_col[3] = false;
                             break;
                         }
                 case 4: {
                             uint_v.erase(uint_v.begin() + idx_in_type); 
-                            sync_map_col[4] = false;
                             break;
                         }
                 case 5: {
                             dbl_v.erase(dbl_v.begin()  + idx_in_type); 
-                            sync_map_col[5] = false; 
                             break;
                         }
+            }
+
+            for (auto& [k, v] : matr_idx_map[idx_type]) {
+                if (v > idx_in_type)
+                    v -= 1;
             }
 
         }
