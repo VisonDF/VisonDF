@@ -369,9 +369,16 @@ void get_dataframe_filter_range_mt(
 
                 const size_t out_idx = offset_start.thread_offsets[tid];
 
-                for (size_t j = start; j < end; ++j) {
-                    if (!mask[j]) continue;
-                    dst[out_idx++] = src[strt_vl + j];
+                if constexpr (OneIsTrue) {
+                    for (size_t j = start; j < end; ++j) {
+                        if (!mask[j]) continue;
+                        dst[out_idx++] = src[strt_vl + j];
+                    }
+                } else {
+                    for (size_t j = start; j < end; ++j) {
+                        if (mask[j]) continue;
+                        dst[out_idx++] = src[strt_vl + j];
+                    }
                 }
 
             }
@@ -381,9 +388,16 @@ void get_dataframe_filter_range_mt(
             const std::string* __restrict src = src_vec2.data();
             std::string*       __restrict dst = dst_vec.data();
 
-            for (size_t j = 0; j < mask.size(); ++j) {
-                if (!mask[j]) continue;
-                dst[j] = src[strt_vl + j];
+            if constexpr (OneIsTrue) {
+                for (size_t j = 0; j < mask.size(); ++j) {
+                    if (!mask[j]) continue;
+                    dst[j] = src[strt_vl + j];
+                }
+            } else {
+                for (size_t j = 0; j < mask.size(); ++j) {
+                    if (mask[j]) continue;
+                    dst[j] = src[strt_vl + j];
+                }
             }
 
         }
@@ -434,9 +448,16 @@ void get_dataframe_filter_range_mt(
 
                 const size_t out_idx = offset_start.thread_offsets[tid];
 
-                for (size_t j = start; j < end; ++j) {
-                    if (!mask[j]) continue;
-                    dst[out_idx++] = src[strt_vl + j];
+                if constexpr (OneIsTrue) {
+                    for (size_t j = start; j < end; ++j) {
+                        if (!mask[j]) continue;
+                        dst[out_idx++] = src[strt_vl + j];
+                    }
+                } else {
+                    for (size_t j = start; j < end; ++j) {
+                        if (mask[j]) continue;
+                        dst[out_idx++] = src[strt_vl + j];
+                    }
                 }
 
             }
@@ -446,9 +467,16 @@ void get_dataframe_filter_range_mt(
             const std::string* __restrict src = src_vec2.data();
             std::string*       __restrict dst = dst_vec.data();
 
-            for (size_t j = 0; j < mask.size(); ++j) {
-                if (!mask[j]) continue;
-                dst[j] = src[strt_vl + j];
+            if constexpr (OneIsTrue) {
+                for (size_t j = 0; j < mask.size(); ++j) {
+                    if (!mask[j]) continue;
+                    dst[j] = src[strt_vl + j];
+                }
+            } else {
+                for (size_t j = 0; j < mask.size(); ++j) {
+                    if (mask[j]) continue;
+                    dst[j] = src[strt_vl + j];
+                }
             }
 
         }
