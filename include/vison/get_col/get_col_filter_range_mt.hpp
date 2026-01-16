@@ -63,7 +63,8 @@ void get_col_filter_range(
                            Periodic>(offset_start.thread_offsets, 
                                      mask, 
                                      CORES,
-                                     offset_start.active_rows);
+                                     offset_start.active_rows,
+                                     n_el);
         }
         rtn_v.resize(offset_start.active_rows);
 
@@ -175,7 +176,8 @@ void get_col_filter_range(
                            Periodic>(offset_start.thread_offsets, 
                                        mask, 
                                        CORES,
-                                       ofset_start.active_rows);
+                                       ofset_start.active_rows,
+                                       n_el);
         }
         rtn_v.resize(offset_start.active_rows);
 

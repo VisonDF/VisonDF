@@ -1,11 +1,13 @@
 #pragma once
 
-template <unsigned int CORES = 4, 
-          bool NUMA = false,
-          MtMethod MtType = MtMethod::Row,
-          bool MemClean = false,
-          bool Soft = true,
-          bool OneIsTrue = true
+template <unsigned int CORES           = 4, 
+          bool NUMA                    = false,
+          MtMethod MtType              = MtMethod::Row,
+          bool MemClean                = false,
+          bool Soft                    = true,
+          bool OneIsTrue               = true
+          bool Periodic                = false,
+          AssertionType AssertionLevel = AssertionType::Simple
          >
 void rm_row_filter_range_mt(
                             std::vector<uint8_t>& mask,
@@ -17,8 +19,19 @@ void rm_row_filter_range_mt(
     // Soft May auto switch to view mode
     const size_t old_nrow = nrow;
 
+    if constexpr (CORES > 1) {
+        if (offset_start.thread_offsets.empty())
+            build_boolmask<OneIsTrue,
+                           Periodic>(offset_start.thread_offsets, 
+                                     mask, 
+                                     inner_cores, 
+                                     offset_start.active_rows,
+                                     n_el);
+    }
+
     auto compact_block = [old_nrow, 
-                          strt_vl, 
+                          strt_vl,
+                          &offset_start,
                           &mask]<typename T>(std::vector<T>& vec, 
                                              const size_t inner_cores) {
 
@@ -32,14 +45,6 @@ void rm_row_filter_range_mt(
             int numa_nodes = 1;
             if (numa_available() >= 0) 
                 numa_nodes = numa_max_node() + 1;
-
-            std::vector<size_t> thread_offsets;
-
-            if (offset_start.thread_offsets.empty())
-                build_boolmask<OneIsTrue>(offset_start.thread_offsets, 
-                                          mask, 
-                                          inner_cores, 
-                                          offset_start.active_rows);
 
             #pragma omp parallel if(inner_cores > 1) num_threads(inner_cores)
             {

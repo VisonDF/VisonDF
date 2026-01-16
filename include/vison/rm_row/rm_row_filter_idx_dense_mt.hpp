@@ -15,7 +15,7 @@ void rm_row_filter_idx_dense_mt(std::vector<unsigned int>& mask,
 
     const size_t old_nrow = nrow;
     if (x.empty() || old_nrow == 0) return;
-    
+
     const size_t n_el = (IdxIsTrue) ? n_el : old_nrow - n_el;
 
     if constexpr (IsDense && !Sorted) {
@@ -48,7 +48,7 @@ void rm_row_filter_idx_dense_mt(std::vector<unsigned int>& mask,
             if (mask.back() >= old_nrow) {
                 throw std::runtime_error("mask indices are out of bound\n");
             }
-        } else {
+        } else if constexpr (IdxIsTrue) {
             for (auto el : mask) {
                 if (el >= old_nrow) {
                     throw std::runtime_error("mask indices are out of bound\n");
@@ -60,36 +60,31 @@ void rm_row_filter_idx_dense_mt(std::vector<unsigned int>& mask,
     const size_t n_el = (IdxIsTrue) ? mask.size() : old_nrow - mask.size();
 
     auto compact_block_pod = [old_nrow, &x]<typename T>(std::vector<T>& dst,
-                                                        const size_t inner_threads) 
+                                                        std::vector<T>& src,
+                                                        const size_t inner_threads)
     {
 
-        size_t i  = 0;
-        size_t i2 = 0;
-        size_t written = x[0];
-        while (i2 < x.size()) {
-        
-            unsigned ref_val = x[i2++];
-            size_t start = i;
-            while (i < ref_val) ++i;
-        
-            size_t len = i - start;
-            {
-                T* __restrict d = dst.data() + written;
-                T* __restrict s = src.data() + start;
-       
-                memmove(d, s, len * sizeof(T))
-            }
-        
-            written += len;
-            i += 1;
-        }
-        while (i < old_nrow) {
-            dst[written] = src[i];
-            i += 1;
-            written += 1;
-        };
-    };
+        if constexpr (CORES > 1) {
 
+        } else {
+
+            if (runs.empty()) {
+
+                build_runs<IdxIsTrue>(mask,
+                                      local_nrow,
+                                      runs.vec);
+
+            }
+
+            for (size_t r = 0; r < runs.size(); ++r) {
+                const auto& run = runs.vec[r];
+                std::memcpy(dst.data() + run.mask_pos,
+                            src.data() + run.src_start,
+                            run.len * sizeof(T));
+            }
+
+        }
+    };
 
     if constexpr (Soft) {
 
@@ -102,7 +97,7 @@ void rm_row_filter_idx_dense_mt(std::vector<unsigned int>& mask,
             std::iota(row_view_idx.begin(), row_view_idx.end(), 0);
         }
 
-        compact_block_pod(row_view_idx, CORES);
+        compact_block_pod(row_view_idx, row_view_idx, CORES);
 
     } else {
 
@@ -111,8 +106,9 @@ void rm_row_filter_idx_dense_mt(std::vector<unsigned int>& mask,
             return;
         }
 
-        auto compact_block_scalar = [old_nrow, &x](auto& dst, 
-                                                   auto& src) 
+        auto compact_block_scalar = [old_nrow, &x](auto& dst,
+                                                   auto& src,
+                                                   const size_t inner_cores)
         {
             size_t i  = 0;
             size_t i2 = 0;
@@ -133,9 +129,9 @@ void rm_row_filter_idx_dense_mt(std::vector<unsigned int>& mask,
             };
         };
 
-        auto process_container = [&x](auto&& f,
-                                      auto& matr, 
-                                      const size_t idx_type) 
+        auto process_container = [&mask](auto&& f,
+                                         auto& matr,
+                                         const size_t idx_type)
         {
 
             const size_t ncols_cur = matr_idx[idx_type];
@@ -143,42 +139,53 @@ void rm_row_filter_idx_dense_mt(std::vector<unsigned int>& mask,
             if constexpr (CORES > 1) {
 
                 int numa_nodes = 1;
-                if (numa_available() >= 0) 
+                if (numa_available() >= 0)
                     numa_nodes = numa_max_node() + 1;
 
-                #pragma omp parallel if(CORES > 1) num_threads(CORES)
+                const unsigned int outer_cores = std::conditional_t<MtType == MtMethod::Col,
+                                                                    CORES,
+                                                                    std::min<unsigned int>(
+                                                                        matr_idx[idx_type].size(), std::max(1u, CORES / 2)
+                                                                     )
+                                                                   >;
+                const unsigned int inner_cores = std::conditional_t<MtType == MtMethod::Row,
+                                                                    CORES,
+                                                                    std::max(1u, CORES / outer_threads)
+                                                                   >;
+
+                #pragma omp parallel if(outer_cores > 1) num_threads(outer_cores)
                 {
 
                     const int tid        = omp_get_thread_num();
                     const int nthreads   = omp_get_num_threads();
-           
+
                     MtStruct cur_struct;
 
                     if constexpr (NUMA) {
                         numa_mt(cur_struct,
-                                ncols_cur, 
-                                tid, 
-                                nthreads, 
+                                ncols_cur,
+                                tid,
+                                nthreads,
                                 numa_nodes);
                     } else {
                         simple_mt(cur_struct,
-                                  ncols_cur, 
-                                  tid, 
+                                  ncols_cur,
+                                  tid,
                                   nthreads);
                     }
-                        
+
                     const unsigned int start = cur_struct.start;
                     const unsigned int end   = cur_struct.end;
 
                     for (size_t cpos = start; cpos < end; ++cpos)
-                        f(matr[cpos]); 
+                        f(matr[cpos], matr[cpos], inner_cores);
 
                 }
 
             } else {
 
                 for (size_t cpos = 0; cpos < ncols_cur; ++cpos)
-                    f(matr[cpos]); 
+                    f(matr[cpos], matr[cpos], inner_cores);
 
             }
 
@@ -192,13 +199,10 @@ void rm_row_filter_idx_dense_mt(std::vector<unsigned int>& mask,
         process_container(compact_block_pod,    dbl_v,  5);
 
         if (!name_v_row.empty()) {
-            compact_block_scalar(name_v_row, inner_threads);
+            compact_block_scalar(name_v_row, name_v_row, CORES);
         }
     }
 
     nrow = n_el;
 
 }
-
-
-

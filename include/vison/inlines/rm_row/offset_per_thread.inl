@@ -1,11 +1,13 @@
 #pragma once
 
-template <bool OneIsTrue>
+template <bool OneIsTrue,
+          bool Periodic>
 inline void build_boolmask(
                            std::vector<size_t>& thread_offsets,
                            const std::vector<uint8_t>& mask,
                            const size_t inner_cores,
-                           size_t& active_rows
+                           size_t& active_rows,
+                           [[maybe_unused]] const size_t n_el
                           )
 {
     std::vector<size_t> thread_counts(inner_cores);
@@ -24,13 +26,23 @@ inline void build_boolmask(
         }
     
         size_t local = 0;
-    
-        if constexpr (OneIsTrue) {
-            for (size_t i = cur.start; i < cur.end; ++i)
-                local += !mask[i];
+   
+        if constexpr (!Periodic) {
+            if constexpr (OneIsTrue) {
+                for (size_t i = cur.start; i < cur.end; ++i)
+                    local += !mask[i];
+            } else {
+                for (size_t i = cur.start; i < cur.end; ++i)
+                    local += mask[i];
+            }
         } else {
-            for (size_t i = cur.start; i < cur.end; ++i)
-                local += mask[i];
+            if constexpr (OneIsTrue) {
+                for (size_t i = cur.start; i < cur.end; ++i)
+                    local += !mask[i % n_el];
+            } else {
+                for (size_t i = cur.start; i < cur.end; ++i)
+                    local += mask[i % n_el];
+            }
         }
     
         thread_counts[tid] = local;

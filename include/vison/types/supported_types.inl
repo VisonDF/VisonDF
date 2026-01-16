@@ -37,7 +37,8 @@ struct is_supported_type
           std::is_same_v<T, uint8_t>     ||
           std::is_same_v<T, IntT>        ||
           std::is_same_v<T, UIntT>       ||
-          std::is_same_v<T, FloatT>
+          std::is_same_v<T, FloatT>      ||
+          std::is_same_v<T, void>
       > {};
 
 

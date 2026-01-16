@@ -1,10 +1,11 @@
 #pragma once
 
-template <unsigned int CORES = 4,
-          bool NUMA = false,
-          bool MemClean = false,
-          bool Soft = true,
-          bool OneIsTrue = true,
+template <unsigned int CORES           = 4,
+          bool NUMA                    = false,
+          bool MemClean                = false,
+          bool Soft                    = true,
+          bool OneIsTrue               = true,
+          bool Periodic                = false,
           AssertionType AssertionLevel = AssertionType::Simple
          >
 void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
@@ -26,7 +27,19 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
 
     }
 
-    auto compact_block_pod = [&mask]<typename T>(std::vector<T>& dst, 
+    if constexpr (CORES > 1) {
+        if (offset_start.thread_offset.empty()) {
+            build_boolmask<OneIsTrue,
+                           Periodic>(offset_start.thread_offsets, 
+                                     mask, 
+                                     inner_cores,
+                                     offset_start.active_rows,
+                                     n_el);
+        }
+    }
+
+    auto compact_block_pod = [&offset_start,
+                              &mask]<typename T>(std::vector<T>& dst, 
                                                  const size_t inner_cores) {
 
         std::vector<T> src2;
@@ -43,17 +56,6 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
             int numa_nodes = 1;
             if (numa_available() >= 0) 
                 numa_nodes = numa_max_node() + 1;
-
-            std::vector<size_t> thread_offsets;
-
-            size_t dummy_tot;
-
-            if (offset_start.thread_offset.empty()) {
-                build_boolmask<OneIsTrue>(offset_start.thread_offsets, 
-                                          mask, 
-                                          inner_cores,
-                                          offset_start.dummy_tot);
-            }
 
             #pragma omp parallel if(inner_cores > 1) num_threads(inner_cores)
             {
@@ -212,7 +214,8 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
             throw std::runtime_error("Can't perform this operation while `in_view` mode activated, consider applying `.materialize()`\n");
         }
 
-        auto compact_block_scalar = [&mask](auto& vec, 
+        auto compact_block_scalar = [&offset_start,
+                                     &mask](auto& vec, 
                                             const size_t inner_cores) {
 
             std::vector<std::string> vec2;
@@ -225,17 +228,6 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
                 int numa_nodes = 1;
                 if (numa_available() >= 0) 
                     numa_nodes = numa_max_node() + 1;
-
-                std::vector<size_t> thread_offsets;
-
-                size_t dummy_tot;
-
-                if (offset_start.offset_start.empty()) {
-                    build_boolmask<OneIsTrue>(offset_start.thread_offsets, 
-                                              mask, 
-                                              inner_cores, 
-                                              offset_start.active_rows);
-                }
 
                 #pragma omp parallel if(inner_cores > 1) num_threads(inner_cores)
                 {

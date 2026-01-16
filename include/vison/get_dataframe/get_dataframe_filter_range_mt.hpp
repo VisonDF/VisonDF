@@ -1,9 +1,10 @@
 #pragma once
 
-template <unsigned int CORES = 4,
-          bool NUMA = false,
-          bool IsDense = false,
-          bool OneIsTrue = true,
+template <unsigned int CORES           = 4,
+          bool NUMA                    = false,
+          bool IsDense                 = false,
+          bool OneIsTrue               = true,
+          bool Periodic                = false,
           AssertionType AssertionLevel = AssertionType::Simple
     >
 void get_dataframe_filter_range_mt(
@@ -21,11 +22,16 @@ void get_dataframe_filter_range_mt(
         }
     }
 
+    const unsigned int n_el  = (!Periodic) ? mask.size() : nrow - strt_vl;
+    const unsigned int n_el2 = mask.size();
+
     if (offset_start.thread_offsets.empty()) {
-        build_boolmask<OneIsTrue>(offset_start.thread_offsets, 
-                                  mask, 
-                                  CORES,
-                                  offset_start.active_rows);
+        build_boolmask<OneIsTrue,
+                       Periodic>(offset_start.thread_offsets, 
+                                 mask, 
+                                 CORES,
+                                 offset_start.active_rows,
+                                 n_el);
     }
 
     nrow = offset_start.active_rows;
@@ -36,6 +42,8 @@ void get_dataframe_filter_range_mt(
     const std::vector<std::string>& name_v_row2                         = cur_obj.get_rowname();
 
     auto copy_col_dense = [strt_vl,
+                           n_el,
+                           n_el2,
                            &mask, 
                            &offset_start]<typename T>(
                                                        std::vector<T>& dst_vec,
@@ -67,13 +75,13 @@ void get_dataframe_filter_range_mt(
 
                 if constexpr (NUMA) {
                     numa_mt(cur_struct,
-                            mask.size(), 
+                            n_el, 
                             tid, 
                             nthreads, 
                             numa_nodes);
                 } else {
                     simple_mt(cur_struct,
-                              mask.size(), 
+                              n_el, 
                               tid, 
                               nthreads);
                 }
@@ -84,6 +92,103 @@ void get_dataframe_filter_range_mt(
                 const size_t out_idx = offset_start.thread_offsets[tid];
 
                 size_t i = cur_start;
+
+                if constexpr (!Periodic) {
+                    if constexpr (OneIsTrue) {
+                        while (!mask[i]) {
+                            i += 1;
+                            out_idx += 1;
+                        }
+                    } else {
+                        while (mask[i]) {
+                            i += 1;
+                            out_idx += 1;
+                        }
+                    }
+                    while (i < cur_end) {
+      
+                        if constexpr (OneIsTrue) {
+                            while (i < cur_end && mask[i]) {
+                                i += 1;
+                            }
+                        } else {
+                            while (i < cur_end && !mask[i]) {
+                                i += 1;
+                            }
+                        }
+
+                        const size_t start = i;
+                        if constexpr (OneIsTrue) {
+                            while (i < cur_end && !mask[i]) ++i;
+                        } else {
+                            while (i < cur_end && mask[i]) ++i;
+                        }
+                    
+                        size_t len = i - start;
+                        {
+                            T* __restrict d = dst.data() + out_idx;
+                            T* __restrict s = src.data() + start;
+       
+                            memcpy(d, s, len * sizeof(T))
+
+                        }
+                    
+                        out_idx += len;
+                        i += 1;
+                    }
+                } else {
+                    if constexpr (OneIsTrue) {
+                        while (!mask[i % n_el2]) {
+                            i += 1;
+                            out_idx += 1;
+                        }
+                    } else {
+                        while (mask[i % n_el2]) {
+                            i += 1;
+                            out_idx += 1;
+                        }
+                    }
+                    while (i < cur_end) {
+      
+                        if constexpr (OneIsTrue) {
+                            while (i < cur_end && mask[i % n_el2]) {
+                                i += 1;
+                            }
+                        } else {
+                            while (i < cur_end && !mask[i % n_el2]) {
+                                i += 1;
+                            }
+                        }
+
+                        const size_t start = i;
+                        if constexpr (OneIsTrue) {
+                            while (i < cur_end && !mask[i % n_el2]) ++i;
+                        } else {
+                            while (i < cur_end && mask[i % n_el2]) ++i;
+                        }
+                    
+                        size_t len = i - start;
+                        {
+                            T* __restrict d = dst.data() + out_idx;
+                            T* __restrict s = src.data() + start;
+       
+                            memcpy(d, s, len * sizeof(T))
+
+                        }
+                    
+                        out_idx += len;
+                        i += 1;
+                    }
+                }
+            }
+
+        } else {
+
+            size_t out_idx = 0;
+            size_t i       = 0;
+
+            if constexpr (!Periodic) {
+
                 if constexpr (OneIsTrue) {
                     while (!mask[i]) {
                         i += 1;
@@ -95,23 +200,23 @@ void get_dataframe_filter_range_mt(
                         out_idx += 1;
                     }
                 }
-                while (i < cur_end) {
+                while (i < mask.size()) {
       
                     if constexpr (OneIsTrue) {
-                        while (i < cur_end && mask[i]) {
+                        while (i < mask.size() && mask[i]) {
                             i += 1;
                         }
                     } else {
-                        while (i < cur_end && !mask[i]) {
+                        while (i < mask.size() && !mask[i]) {
                             i += 1;
                         }
                     }
 
                     const size_t start = i;
                     if constexpr (OneIsTrue) {
-                        while (i < cur_end && !mask[i]) ++i;
+                        while (i < mask.size() && !mask[i]) ++i;
                     } else {
-                        while (i < cur_end && mask[i]) ++i;
+                        while (i < mask.size() && mask[i]) ++i;
                     }
                 
                     size_t len = i - start;
@@ -119,7 +224,7 @@ void get_dataframe_filter_range_mt(
                         T* __restrict d = dst.data() + out_idx;
                         T* __restrict s = src.data() + start;
        
-                        memcpy(d, s, len * sizeof(T))
+                        memcpy(d, s, len * sizeof(T));
 
                     }
                 
@@ -127,60 +232,57 @@ void get_dataframe_filter_range_mt(
                     i += 1;
                 }
 
-            }
-
-        } else {
-
-            size_t out_idx = 0;
-            size_t i       = 0;
-            if constexpr (OneIsTrue) {
-                while (!mask[i]) {
-                    i += 1;
-                    out_idx += 1;
-                }
             } else {
-                while (mask[i]) {
-                    i += 1;
-                    out_idx += 1;
+                if constexpr (OneIsTrue) {
+                    while (!mask[i % n_el2]) {
+                        i += 1;
+                        out_idx += 1;
+                    }
+                } else {
+                    while (mask[i % n_el2]) {
+                        i += 1;
+                        out_idx += 1;
+                    }
                 }
-            }
-            while (i < mask.size()) {
+                while (i < mask.size()) {
       
-                if constexpr (OneIsTrue) {
-                    while (i < mask.size() && mask[i]) {
-                        i += 1;
+                    if constexpr (OneIsTrue) {
+                        while (i < mask.size() && mask[i % n_el2]) {
+                            i += 1;
+                        }
+                    } else {
+                        while (i < mask.size() && !mask[i % n_el2]) {
+                            i += 1;
+                        }
                     }
-                } else {
-                    while (i < mask.size() && !mask[i]) {
-                        i += 1;
-                    }
-                }
 
-                const size_t start = i;
-                if constexpr (OneIsTrue) {
-                    while (i < mask.size() && !mask[i]) ++i;
-                } else {
-                    while (i < mask.size() && mask[i]) ++i;
-                }
-            
-                size_t len = i - start;
-                {
-                    T* __restrict d = dst.data() + out_idx;
-                    T* __restrict s = src.data() + start;
+                    const size_t start = i;
+                    if constexpr (OneIsTrue) {
+                        while (i < mask.size() && !mask[i % n_el2]) ++i;
+                    } else {
+                        while (i < mask.size() && mask[i % n_el2]) ++i;
+                    }
+                
+                    size_t len = i - start;
+                    {
+                        T* __restrict d = dst.data() + out_idx;
+                        T* __restrict s = src.data() + start;
        
-                    memcpy(d, s, len * sizeof(T));
+                        memcpy(d, s, len * sizeof(T));
 
+                    }
+                
+                    out_idx += len;
+                    i += 1;
                 }
-            
-                out_idx += len;
-                i += 1;
             }
-
         }
     };
 
     auto copy_view_dense = [this,
                             strt_vl,
+                            n_el,
+                            n_el2,
                             &mask, 
                             &row_view_idx2, 
                             &offset_start]()
@@ -210,13 +312,13 @@ void get_dataframe_filter_range_mt(
 
                 if constexpr (NUMA) {
                     numa_mt(cur_struct,
-                            mask.size(), 
+                            n_el, 
                             tid, 
                             nthreads, 
                             numa_nodes);
                 } else {
                     simple_mt(cur_struct,
-                              mask..size(), 
+                              n_el, 
                               tid, 
                               nthreads);
                 }
@@ -227,6 +329,109 @@ void get_dataframe_filter_range_mt(
                 const size_t out_idx = offset_start.thread_offsets[tid];
 
                 size_t i = cur_start;
+
+                if constexpr (!Periodic) {
+
+                    if constexpr (OneIsTrue) {
+                        while (!mask[i]) {
+                            i += 1;
+                            out_idx += 1;
+                        }
+                    } else {
+                        while (mask[i]) {
+                            i += 1;
+                            out_idx += 1;
+                        }
+                    }
+                    while (i < cur_end) {
+      
+                        if constexpr (OneIsTrue) {
+                            while (i < cur_end && mask[i]) {
+                                i += 1;
+                            }
+                        } else {
+                            while (i < cur_end && !mask[i]) {
+                                i += 1;
+                            }
+                        }
+
+                        const size_t start = i;
+                        if constexpr (OneIsTrue) {
+                            while (i < cur_end && !mask[i]) ++i;
+                        } else {
+                            while (i < cur_end && mask[i]) ++i;
+                        }
+                    
+                        size_t len = i - start;
+                        {
+
+                            unsigned int* __restrict d = dst + out_idx;
+                            unsigned int* __restrict s = src + start;
+       
+                            memcpy(d, s, len * sizeof(unsigned int));
+
+                        }
+                    
+                        out_idx += len;
+                        i += 1;
+                    }
+
+                } else {
+
+                    if constexpr (OneIsTrue) {
+                        while (!mask[i % n_el2]) {
+                            i += 1;
+                            out_idx += 1;
+                        }
+                    } else {
+                        while (mask[i % n_el2]) {
+                            i += 1;
+                            out_idx += 1;
+                        }
+                    }
+                    while (i < cur_end) {
+      
+                        if constexpr (OneIsTrue) {
+                            while (i < cur_end && mask[i % n_el2]) {
+                                i += 1;
+                            }
+                        } else {
+                            while (i < cur_end && !mask[i % n_el2]) {
+                                i += 1;
+                            }
+                        }
+
+                        const size_t start = i;
+                        if constexpr (OneIsTrue) {
+                            while (i < cur_end && !mask[i % n_el2]) ++i;
+                        } else {
+                            while (i < cur_end && mask[i % n_el2]) ++i;
+                        }
+                    
+                        size_t len = i - start;
+                        {
+
+                            unsigned int* __restrict d = dst + out_idx;
+                            unsigned int* __restrict s = src + start;
+       
+                            memcpy(d, s, len * sizeof(unsigned int));
+
+                        }
+                    
+                        out_idx += len;
+                        i += 1;
+                    }
+
+                }
+
+            }
+
+        } else {
+
+            size_t out_idx = 0;
+            size_t i       = 0;
+
+            if constexpr (!Periodic) {
                 if constexpr (OneIsTrue) {
                     while (!mask[i]) {
                         i += 1;
@@ -238,23 +443,23 @@ void get_dataframe_filter_range_mt(
                         out_idx += 1;
                     }
                 }
-                while (i < cur_end) {
+                while (i < mask.size()) {
       
                     if constexpr (OneIsTrue) {
-                        while (i < cur_end && mask[i]) {
+                        while (i < mask.size() && mask[i]) {
                             i += 1;
                         }
                     } else {
-                        while (i < cur_end && !mask[i]) {
+                        while (i < mask.size() && !mask[i]) {
                             i += 1;
                         }
                     }
 
                     const size_t start = i;
                     if constexpr (OneIsTrue) {
-                        while (i < cur_end && !mask[i]) ++i;
+                        while (i < mask.size() && !mask[i]) ++i;
                     } else {
-                        while (i < cur_end && mask[i]) ++i;
+                        while (i < mask.size() && mask[i]) ++i;
                     }
                 
                     size_t len = i - start;
@@ -270,62 +475,58 @@ void get_dataframe_filter_range_mt(
                     out_idx += len;
                     i += 1;
                 }
-
-            }
-
-        } else {
-
-            size_t out_idx = 0;
-            size_t i       = 0;
-            if constexpr (OneIsTrue) {
-                while (!mask[i]) {
-                    i += 1;
-                    out_idx += 1;
-                }
             } else {
-                while (mask[i]) {
-                    i += 1;
-                    out_idx += 1;
+                if constexpr (OneIsTrue) {
+                    while (!mask[i % n_el2]) {
+                        i += 1;
+                        out_idx += 1;
+                    }
+                } else {
+                    while (mask[i % n_el2]) {
+                        i += 1;
+                        out_idx += 1;
+                    }
                 }
-            }
-            while (i < mask.size()) {
+                while (i < mask.size()) {
       
-                if constexpr (OneIsTrue) {
-                    while (i < mask.size() && mask[i]) {
-                        i += 1;
+                    if constexpr (OneIsTrue) {
+                        while (i < mask.size() && mask[i % n_el2]) {
+                            i += 1;
+                        }
+                    } else {
+                        while (i < mask.size() && !mask[i % n_el2]) {
+                            i += 1;
+                        }
                     }
-                } else {
-                    while (i < mask.size() && !mask[i]) {
-                        i += 1;
+
+                    const size_t start = i;
+                    if constexpr (OneIsTrue) {
+                        while (i < mask.size() && !mask[i % n_el2]) ++i;
+                    } else {
+                        while (i < mask.size() && mask[i % n_el2]) ++i;
                     }
-                }
+                
+                    size_t len = i - start;
+                    {
 
-                const size_t start = i;
-                if constexpr (OneIsTrue) {
-                    while (i < mask.size() && !mask[i]) ++i;
-                } else {
-                    while (i < mask.size() && mask[i]) ++i;
-                }
-            
-                size_t len = i - start;
-                {
-
-                    unsigned int* __restrict d = dst + out_idx;
-                    unsigned int* __restrict s = src + start;
+                        unsigned int* __restrict d = dst + out_idx;
+                        unsigned int* __restrict s = src + start;
        
-                    memcpy(d, s, len * sizeof(unsigned int));
+                        memcpy(d, s, len * sizeof(unsigned int));
 
+                    }
+                
+                    out_idx += len;
+                    i += 1;
                 }
-            
-                out_idx += len;
-                i += 1;
             }
-
         }
 
     };
 
     auto copy_col = [strt_vl,
+                     n_el,
+                     n_el2,
                      &mask, 
                      &offset_start]<typename T>(
                                                 auto& dst_vec,
@@ -357,13 +558,13 @@ void get_dataframe_filter_range_mt(
 
                 if constexpr (NUMA) {
                     numa_mt(cur_struct,
-                            mask.size(), 
+                            n_el, 
                             tid, 
                             nthreads, 
                             numa_nodes);
                 } else {
                     simple_mt(cur_struct,
-                              mask.size(), 
+                              n_el, 
                               tid, 
                               nthreads);
                 }
@@ -373,15 +574,29 @@ void get_dataframe_filter_range_mt(
 
                 const size_t out_idx = offset_start.thread_offsets[tid];
 
-                if constexpr (OneIsTrue) {
-                    for (size_t j = start; j < end; ++j) {
-                        if (!mask[j]) continue;
-                        dst[out_idx++] = src[j];
+                if constexpr (!Periodic) {
+                    if constexpr (OneIsTrue) {
+                        for (size_t j = start; j < end; ++j) {
+                            if (!mask[j]) continue;
+                            dst[out_idx++] = src[j];
+                        }
+                    } else {
+                        for (size_t j = start; j < end; ++j) {
+                            if (mask[j]) continue;
+                            dst[out_idx++] = src[j];
+                        }
                     }
                 } else {
-                    for (size_t j = start; j < end; ++j) {
-                        if (mask[j]) continue;
-                        dst[out_idx++] = src[j];
+                    if constexpr (OneIsTrue) {
+                        for (size_t j = start; j < end; ++j) {
+                            if (!mask[j % n_el2]) continue;
+                            dst[out_idx++] = src[j];
+                        }
+                    } else {
+                        for (size_t j = start; j < end; ++j) {
+                            if (mask[j % n_el2]) continue;
+                            dst[out_idx++] = src[j];
+                        }
                     }
                 }
 
@@ -390,15 +605,29 @@ void get_dataframe_filter_range_mt(
         } else {
 
             size_t out_idx = 0;
-            if constexpr (OneIsTrue) {
-                for (size_t j = 0; j < mask.size(); ++j) {
-                    if (!mask[j]) continue;
-                    dst[out_idx++] = src[j];
+            if constexpr (!Periodic) {
+                if constexpr (OneIsTrue) {
+                    for (size_t j = 0; j < mask.size(); ++j) {
+                        if (!mask[j]) continue;
+                        dst[out_idx++] = src[j];
+                    }
+                } else {
+                    for (size_t j = 0; j < mask.size(); ++j) {
+                        if (mask[j]) continue;
+                        dst[out_idx++] = src[j];
+                    }
                 }
             } else {
-                for (size_t j = 0; j < mask.size(); ++j) {
-                    if (mask[j]) continue;
-                    dst[out_idx++] = src[j];
+                if constexpr (OneIsTrue) {
+                    for (size_t j = 0; j < mask.size(); ++j) {
+                        if (!mask[j % n_el2]) continue;
+                        dst[out_idx++] = src[j];
+                    }
+                } else {
+                    for (size_t j = 0; j < mask.size(); ++j) {
+                        if (mask[j % n_el2]) continue;
+                        dst[out_idx++] = src[j];
+                    }
                 }
             }
 
@@ -407,6 +636,8 @@ void get_dataframe_filter_range_mt(
 
     auto copy_view = [this,
                       strt_vl,
+                      n_el,
+                      n_el2,
                       &mask,
                       &row_view_idx2,
                       &offset_start]()
@@ -436,13 +667,13 @@ void get_dataframe_filter_range_mt(
 
                 if constexpr (NUMA) {
                     numa_mt(cur_struct,
-                            mask.size(), 
+                            n_el, 
                             tid, 
                             nthreads, 
                             numa_nodes);
                 } else {
                     simple_mt(cur_struct,
-                              mask.size(), 
+                              n_el, 
                               tid, 
                               nthreads);
                 }
@@ -452,15 +683,29 @@ void get_dataframe_filter_range_mt(
 
                 const size_t out_idx = offset_start.thread_offsets[tid];
 
-                if constexpr (OneIsTrue) {
-                    for (size_t j = start; j < end; ++j) {
-                        if (!mask[j]) continue;
-                        dst[out_idx++] = src[j];
+                if constexpr (!Periodic) {
+                    if constexpr (OneIsTrue) {
+                        for (size_t j = start; j < end; ++j) {
+                            if (!mask[j]) continue;
+                            dst[out_idx++] = src[j];
+                        }
+                    } else {
+                        for (size_t j = start; j < end; ++j) {
+                            if (mask[j]) continue;
+                            dst[out_idx++] = src[j];
+                        }
                     }
                 } else {
-                    for (size_t j = start; j < end; ++j) {
-                        if (mask[j]) continue;
-                        dst[out_idx++] = src[j];
+                    if constexpr (OneIsTrue) {
+                        for (size_t j = start; j < end; ++j) {
+                            if (!mask[j % n_el2]) continue;
+                            dst[out_idx++] = src[j];
+                        }
+                    } else {
+                        for (size_t j = start; j < end; ++j) {
+                            if (mask[j % n_el2]) continue;
+                            dst[out_idx++] = src[j];
+                        }
                     }
                 }
 
@@ -469,18 +714,31 @@ void get_dataframe_filter_range_mt(
         } else {
 
             size_t out_idx = 0;
-            if constexpr (OneIsTrue) {
-                for (size_t j = 0; j < mask.size(); ++j) {
-                    if (!mask[j]) continue;
-                    dst[out_idx++] = src[j];
+            if constexpr (!Periodic) {
+                if constexpr (OneIsTrue) {
+                    for (size_t j = 0; j < n_el; ++j) {
+                        if (!mask[j]) continue;
+                        dst[out_idx++] = src[j];
+                    }
+                } else {
+                    for (size_t j = 0; j < n_el; ++j) {
+                        if (mask[j]) continue;
+                        dst[out_idx++] = src[j];
+                    }
                 }
             } else {
-                for (size_t j = 0; j < mask.size(); ++j) {
-                    if (mask[j]) continue;
-                    dst[out_idx++] = src[j];
+                if constexpr (OneIsTrue) {
+                    for (size_t j = 0; j < n_el; ++j) {
+                        if (!mask[j % n_el2]) continue;
+                        dst[out_idx++] = src[j];
+                    }
+                } else {
+                    for (size_t j = 0; j < n_el; ++j) {
+                        if (mask[j % n_el2]) continue;
+                        dst[out_idx++] = src[j];
+                    }
                 }
             }
-
         }
     };
 
