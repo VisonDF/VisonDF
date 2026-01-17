@@ -1,7 +1,12 @@
 #pragma once
 
-template <bool IsDense = false,
-          AssertionType AssertionLevel = AssertionType::Simple>
+template <
+          bool MapCol                  = false,
+          bool IsDense                 = false,
+          bool OneIsTrue               = true,
+          bool Periodic                = false,
+          AssertionType AssertionLevel = AssertionType::Simple
+         >
 void get_dataframe_filter(
                           const std::vector<size_t>& cols, 
                           Dataframe& cur_obj,
@@ -10,16 +15,19 @@ void get_dataframe_filter(
                          )
 {
 
-    get_dataframe_filter_range_mt<1,     // CORES
-                                  false, // NUMA locality
+    get_dataframe_filter_range_mt<1,                    // CORES
+                                  false,                // NUMA locality
+                                  MapCol,
                                   IsDense,
+                                  OneIsTrue,
+                                  Periodic,
                                   AssertionType>(
-                                  cols,
-                                  cur_obj,
-                                  mask,
-                                  0,     // strt_vl
-                                  runs,
-                                  offset_start); 
+                                                 cols,
+                                                 cur_obj,
+                                                 mask,
+                                                 0,     // strt_vl
+                                                 offset_start
+                                                ); 
 
 }
 

@@ -1,8 +1,11 @@
 #pragma once
 
-template <unsigned int CORES = 4,
-          bool NUMA = false,
-          bool IsDense = false,
+template <unsigned int CORES           = 4,
+          bool NUMA                    = false,
+          bool MapCol                  = false,
+          bool IsDense                 = false,
+          bool OneIsTrue               = true,
+          bool Periodic                = false,
           AssertionType AssertionLevel = AssertionType::Simple
          >
 void get_dataframe_filter_mt(
@@ -14,15 +17,18 @@ void get_dataframe_filter_mt(
 {
 
     get_dataframe_filter_range_mt<CORES,   
-                                  NUMA, 
+                                  NUMA,
+                                  MapCol,
                                   IsDense,
+                                  OneIsTrue,
+                                  Periodic,
                                   AssertionLevel>(
-                                  cols,
-                                  cur_obj,
-                                  mask,
-                                  0,     // strt_vl
-                                  runs,
-                                  offset_start); 
+                                                  cols,
+                                                  cur_obj,
+                                                  mask,
+                                                  0,     // strt_vl
+                                                  offset_start
+                                                 ); 
 
 }
 

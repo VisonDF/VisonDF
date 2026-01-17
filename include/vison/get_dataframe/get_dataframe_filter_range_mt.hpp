@@ -2,6 +2,7 @@
 
 template <unsigned int CORES           = 4,
           bool NUMA                    = false,
+          bool MapCol                  = false,
           bool IsDense                 = false,
           bool OneIsTrue               = true,
           bool Periodic                = false,
@@ -21,6 +22,32 @@ void get_dataframe_filter_range_mt(
             throw std::runtime_error("strt_vl + mask.size() > nrow\n");
         }
     }
+
+    auto find_col_base = [this]([[maybe_unused]] const auto &idx_vec, 
+                                [[maybe_unused]] const size_t idx_type,
+                                const size_t x) -> size_t 
+    {
+        size_t pos;
+
+        if constexpr (!MapCol) {
+            pos = 0;
+            while (pos < idx_vec.size() && idx_vec[pos] != x)
+                ++pos;
+
+            if (pos == idx_vec.size()) {
+                throw std::runtime_error("Error in (get_col), no column found\n");
+            }
+        } else {
+            if (!matr_idx_map[idx_type].contains(x)) {
+                throw std::runtime_error("MapCol chosen but col not found in map\n");
+            }
+            if (!sync_map_col[idx_type]) {
+                throw std::runtime_error("Map not synced\n");
+            }
+            pos = matr_idx_map[idx_type][x];
+        }
+        return pos;
+    };
 
     const unsigned int n_el  = (!Periodic) ? mask.size() : nrow - strt_vl;
     const unsigned int n_el2 = mask.size();
@@ -763,7 +790,8 @@ void get_dataframe_filter_range_mt(
         }
     };
 
-    auto cols_proceed = [&col_alrd_materialized2,
+    auto cols_proceed = [&find_col_base,
+                         &col_alrd_materialized2,
                          &cols](auto&& f1, auto&& f2) 
     {
         size_t i2 = 0;
@@ -773,43 +801,49 @@ void get_dataframe_filter_range_mt(
                   case 's': {
                               matr_idx_map[0] = i2;
                               str_v.emplace_back();
+                              const size_t idx_in_type = find_col_base(matr_idx[0], 0, i);
                               f2(str_v.back(),  
-                                 str_vec2[i]); 
+                                 str_vec2[idx_in_type]); 
                               break;
                             }
                   case 'c': {
                               matr_idx_map[1] = i2;
                               chr_v.emplace_back();
+                              const size_t idx_in_type = find_col_base(matr_idx[1], 1, i);
                               f1(chr_v.back(),  
-                                 chr_vec2[i]); 
+                                 chr_vec2[idx_in_type]); 
                               break;
                             }
                   case 'b': {
                               matr_idx_map[2] = i2;
                               bool_v.emplace_back();
+                              const size_t idx_in_type = find_col_base(matr_idx[2], 2, i);
                               f1(bool_v.back(),  
-                                 bool_vec2[i]); 
+                                 bool_vec2[idx_in_type]); 
                               break;
                             }
                   case 'i': {
                               matr_idx_map[3] = i2;
                               int_v.emplace_back();
+                              const size_t idx_in_type = find_col_base(matr_idx[3], 3, i);
                               f1(int_v.back(),  
-                                 int_vec2[i]); 
+                                 int_vec2[idx_in_type]); 
                               break;
                             }
                  case 'u': {
                               matr_idx_map[4] = i2;
                               uint_v.emplace_back();
+                              const size_t idx_in_type = find_col_base(matr_idx[4], 4, i);
                               f1(uint_v.back(),  
-                                 uint_vec2[i]); 
+                                 uint_vec2[idx_in_type]); 
                               break;
                             }
                   case 'd': {
                               matr_idx_map[5] = i2;
                               dbl_v.emplace_back();
+                              const size_t idx_in_type = find_col_base(matr_idx[5], 5, i);
                               f1(dbl_v.back(),  
-                                 dbl_vec2[i]); 
+                                 dbl_vec2[idx_in_type]); 
                               break;
                             }
             }
