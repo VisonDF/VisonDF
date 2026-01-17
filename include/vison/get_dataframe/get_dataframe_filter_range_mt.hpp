@@ -58,7 +58,7 @@ void get_dataframe_filter_range_mt(
                                  mask, 
                                  CORES,
                                  offset_start.active_rows,
-                                 n_el);
+                                 n_el2);
     }
 
     nrow = offset_start.active_rows;

@@ -41,7 +41,7 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
                                  mask, 
                                  inner_cores, 
                                  offset_start.active_rows,
-                                 n_el);
+                                 n_el2);
 
     auto compact_block_pod = [n_el,
                               n_el2,

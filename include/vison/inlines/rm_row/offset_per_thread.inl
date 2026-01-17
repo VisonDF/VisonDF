@@ -7,7 +7,7 @@ inline void build_boolmask(
                            const std::vector<uint8_t>& mask,
                            const size_t inner_cores,
                            size_t& active_rows,
-                           [[maybe_unused]] const size_t n_el
+                           [[maybe_unused]] const size_t n_el2
                           )
 {
     std::vector<size_t> thread_counts(inner_cores);
@@ -38,10 +38,10 @@ inline void build_boolmask(
         } else {
             if constexpr (OneIsTrue) {
                 for (size_t i = cur.start; i < cur.end; ++i)
-                    local += !mask[i % n_el];
+                    local += !mask[i % n_el2];
             } else {
                 for (size_t i = cur.start; i < cur.end; ++i)
-                    local += mask[i % n_el];
+                    local += mask[i % n_el2];
             }
         }
     

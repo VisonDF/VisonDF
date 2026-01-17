@@ -66,7 +66,7 @@ void get_col_filter_range(
                                      mask, 
                                      CORES,
                                      offset_start.active_rows,
-                                     n_el);
+                                     n_el2);
         }
         rtn_v.resize(offset_start.active_rows);
 
