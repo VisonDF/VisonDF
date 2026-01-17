@@ -136,7 +136,7 @@ void rm_row_filter_range_mt(
                            (old_nrow - strt_vl - n_el) * sizeof(T));
                 } else {
                     std::move(src + n_el, 
-                              src + old_nrow, 
+                              src + (old_nrow - strt_vl), 
                               dst + offset_start.active_rows);
                 }
             }
@@ -186,7 +186,7 @@ void rm_row_filter_range_mt(
                             (old_nrow - strt_vl - mask.size()) * sizeof(T));
                 } else {
                     std::move_backward(src + mask.size(), 
-                                       src + old_nrow, 
+                                       src + (old_nrow - strt_vl), 
                                        dst + out_idx);
                 }
             }
@@ -196,7 +196,6 @@ void rm_row_filter_range_mt(
                 vec.shrink_to_fit();
             }
         }
-
     };
 
     if constexpr (Soft) {
