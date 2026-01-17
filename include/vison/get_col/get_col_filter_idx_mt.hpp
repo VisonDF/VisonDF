@@ -47,26 +47,6 @@ void get_col_filter_idx_mt(
         rtn_v.resize(local_nrow - mask.size());
     }
 
-    if constexpr (AssertionLevel == AssertionType::Hard) {
-        if constexpr (!IdxIsTrue || IsDense) {
-            const ref_val = mask[0];
-            for (size_t i = 1; i < mask.size(); ++i) {
-                if (ref_val < mask[i]) [[unlikely]] {
-                    throw std::runtime_error("mask is not sorted ascendingly\n");
-                }
-            }
-            if (mask.back() >= local_nrow) {
-                throw std::runtime_error("mask indices are out of bound\n");
-            }
-        } else if constexpr (IdxIsTrue) {
-            for (auto el : mask) {
-                if (el >= local_nrow) {
-                    throw std::runtime_error("mask indices are out of bound\n");
-                }
-            }
-        }
-    }
-
     auto find_col_base = [this,
                           x]([[maybe_unused]] const auto &idx_vec, 
                              [[maybe_unused]] const size_t idx_type) -> size_t 
