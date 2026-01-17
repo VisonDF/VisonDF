@@ -1,7 +1,8 @@
 #pragma once
 
-template <bool IsDense   = false,
-          bool OneIsTrue = true,
+template <bool IsDense                 = false,
+          bool OneIsTrue               = true,
+          bool Periodic                = false,
           AssertionType AssertionLevel = AssertionType::Simple
          >
 void get_dataframe_filter_range(
@@ -17,6 +18,7 @@ void get_dataframe_filter_range(
                                   false, // NUMA locality
                                   IsDense,
                                   OneIsTrue,
+                                  Periodic,
                                   AssertionType
                                  >(cols,
                                   cur_obj,
