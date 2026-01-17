@@ -2,8 +2,8 @@
 
 template <unsigned int CORES           = 4,
           bool NUMA                    = false,
+          bool MapCol                  = false,
           bool IsDense                 = false, // assumed sorted
-          bool IsSorted                = true, 
           bool IdxIsTrue               = true,
           AssertionType AssertionLevel = AssertionType::Normal
         >
@@ -17,40 +17,54 @@ void get_dataframe_filter_idx_mt(
 
     const size_t nrow2 = cur_obj.get_nrow();
 
-    if constexpr (AssertionLevel > AssertionType::Hard) {
-        if constexpr (IsDense && !Sorted) {
-            throw std::runtime_error("To use `IsDense` parameter, you must sort the mask\n");
+    if constexpr (AssertionLevel == AssertionType::Hard) {
+        if constexpr (!IdxIsTrue || IsDense) {
+            unsigned int ref_val = mask[0];
+            for (size_t i = 1; i < mask.size(); ++i) {
+                if (ref_val < mask[i]) 
+                    throw std::runtime_error("mask is not sorted increasingly\n");
+                ref_val = mask[i];
+            }
+        } else {
+            for (auto el : mask) {
+                if (el >= nrow2)
+                    throw std::runtime_error("mask index out of bouds\n");
+            }
         }
+    }
 
-        if constexpr (!IsSorted && !IdxIsTrue) {
-            std::sort(mask.begin(), mask.end());
-        }
-
+    if constexpr (AssertionLevel > AssertionType::None) {
         if constexpr (!IdxIsTrue) {
             if (mask.back() >= nrow2)
                 throw std::runtime_error("mask indices are exceeding nrow\n");
         }
     }
 
-    if constexpr (AssertionLevel == AssertionType::Hard) {
-        if constexpr (IdxIsTrue && IsDense) {
-            const ref_val = mask[0];
-            for (size_t i = 1; i < mask.size(); ++i) {
-                if (ref_val < mask[i]) [[unlikely]] {
-                    throw std::runtime_error("mask is not sorted ascendingly\n");
-                }
+    auto find_col_base = [this]([[maybe_unused]] const auto &idx_vec, 
+                                [[maybe_unused]] const size_t idx_type,
+                                const size_t x) -> size_t 
+    {
+        size_t pos;
+
+        if constexpr (!MapCol) {
+            pos = 0;
+            while (pos < idx_vec.size() && idx_vec[pos] != x)
+                ++pos;
+
+            if (pos == idx_vec.size()) {
+                throw std::runtime_error("Error in (get_col), no column found\n");
             }
-            if (mask.back() >= nrow2) {
-                throw std::runtime_error("mask indices are out of bound\n");
+        } else {
+            if (!matr_idx_map[idx_type].contains(x)) {
+                throw std::runtime_error("MapCol chosen but col not found in map\n");
             }
-        } else if constexpr (IdxIsTrue) {
-            for (auto el : mask) {
-                if (el >= nrow2) {
-                    throw std::runtime_error("mask indices are out of bound\n");
-                }
+            if (!sync_map_col[idx_type]) {
+                throw std::runtime_error("Map not synced\n");
             }
+            pos = matr_idx_map[idx_type][x];
         }
-    }
+        return pos;
+    };
 
     const unsigned int local_nrow = () ? mask.size() : nrow2 - mask.size();
     nrow = local_nrow;
@@ -420,6 +434,7 @@ void get_dataframe_filter_idx_mt(
     };
 
     auto cols_proceed = [local_nrow, 
+                         &find_col_base,
                          &col_alrd_materialized2,
                          &cols](auto&& f1, auto&& f2) 
     {
@@ -431,48 +446,54 @@ void get_dataframe_filter_idx_mt(
                               matr_idx_map[0] = i2;
                               str_v.emplace_back();
                               str_v.back().resize(local_nrow);
+                              const size_t idx_in_type = find_col_base(matr_idx[0], 0, i);
                               f2(str_v.back(),  
-                                 str_vec2[i]); 
+                                 str_vec2[idx_in_type]); 
                               break;
                             }
                   case 'c': {
                               matr_idx_map[1] = i2;
                               chr_v.emplace_back();
                               chr_v.back().resize(local_nrow);
+                              const size_t idx_in_type = find_col_base(matr_idx[1], 1, i);
                               f1(chr_v.back(),  
-                                 chr_vec2[i]); 
+                                 chr_vec2[idx_in_type]); 
                               break;
                             }
                   case 'b': {
                               matr_idx_map[2] = i2;
                               bool_v.emplace_back();
                               bool_v.back().resize(local_nrow);
+                              const size_t idx_in_type = find_col_base(matr_idx[2], 2, i);
                               f1(bool_v.back(),  
-                                 bool_vec2[i]); 
+                                 bool_vec2[idx_in_type]); 
                               break;
                             }
                   case 'i': {
                               matr_idx_map[3] = i2;
                               int_v.emplace_back();
                               int_v.back().resize(local_nrow);
+                              const size_t idx_in_type = find_col_base(matr_idx[3], 3, i);
                               f1(int_v.back(),  
-                                 int_vec2[i]); 
+                                 int_vec2[idx_in_type]); 
                               break;
                             }
                  case 'u': {
                               matr_idx_map[4] = i2;
                               uint_v.emplace_back();
                               uint_v.back().resize(local_nrow);
+                              const size_t idx_in_type = find_col_base(matr_idx[4], 4, i);
                               f1(uint_v.back(),  
-                                 uint_vec2[i]); 
+                                 uint_vec2[idx_in_type]); 
                               break;
                             }
                   case 'd': {
                               matr_idx_map[5] = i2;
                               dbl_v.emplace_back();
                               dbl_v.back().resize(local_nrow);
+                              const size_t idx_in_type = find_col_base(matr_idx[5], 5, i);
                               f1(dbl_v.back(),  
-                                 dbl_vec2[i]); 
+                                 dbl_vec2[idx_in_type]); 
                               break;
                             }
             }

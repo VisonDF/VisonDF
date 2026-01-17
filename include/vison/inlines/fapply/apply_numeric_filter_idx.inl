@@ -1,10 +1,10 @@
 #pragma once
 
-template <bool MapCol = false,
+template <bool MapCol        = false,
           unsigned int CORES = 4,
-          bool NUMA = false,
-          bool IdxIsTrue = true,
-          bool Sorted = true, // if no will modify mask if !IdxIsTrue
+          bool NUMA          = false,
+          bool IdxIsTrue     = true,
+          bool Periodic      = false,
           typename T, 
           typename F>
 inline void apply_numeric_filter_idx(const std::vector<T>& values, 
@@ -13,10 +13,6 @@ inline void apply_numeric_filter_idx(const std::vector<T>& values,
                                      F&& f,
                                      const std::vector<unsigned int>& mask) 
 {
-
-    if constexpr (!Sorted && !IdxIsTrue) {
-        std::sort(mask.begin(), mask.end());
-    }
 
     unsigned int i2 = 0;
     if constexpr (!MapCol) {

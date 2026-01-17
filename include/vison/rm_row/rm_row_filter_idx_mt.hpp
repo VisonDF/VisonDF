@@ -5,7 +5,6 @@ template <unsigned int CORES           = 4,
           MtMethod MtType              = MtMethod::Row,
           bool MemClean                = false,
           bool Soft                    = true,
-          bool Sorted                  = true,
           bool IdxIsTrue               = true,
           AssertionType AssertionLevel = AssertionType::Simple
          >
@@ -18,48 +17,30 @@ void rm_row_filter_idx_mt(
     // Soft May auto switch to view mode
     const size_t old_nrow = nrow;
 
-    const size_t n_el = (IdxIsTrue) ? n_el : old_nrow - n_el;
-
-    if constexpr (AssertionLevel > AssertionType::Simple) {
-        if constexpr (IsDense && !Sorted) {
-            throw std::runtime_error("To use `IsDense` parameter, you must sort the mask\n");
+    if constexpr (AssertionLevel == AssertionType::Hard) {
+        if constexpr (!IdxIsTrue) {
+            unsigned int ref_val = mask[0];
+            for (size_t i = 1; i < mask.size(); ++i) {
+                if (ref_val < mask[i]) 
+                    throw std::runtime_error("mask is not sorted increasingly\n");
+                ref_val = mask[i];
+            }
+        } else {
+            for (auto el : mask) {
+                if (el >= old_nrow)
+                    throw std::runtime_error("mask index out of bouds\n");
+            }
         }
+    }
 
-        if constexpr (!IsSorted && !IdxIsTrue) {
-            std::sort(mask.begin(), mask.end());
-        }
-
+    if constexpr (AssertionLevel > AssertionType::None) {
         if constexpr (!IdxIsTrue) {
             if (mask.back() >= old_nrow)
                 throw std::runtime_error("mask indices are exceeding nrow\n");
         }
     }
 
-    if constexpr (AssertionLevel == AssertionType::Hard) {
-
-        auto it = std::unique(mask.begin(), mask.end()), mask.end();
-        if (it != mask.end()) {
-            throw std::runtime_error("mask indices are not distincts\n");
-        }
-
-        if constexpr (IdxIsTrue && IsDense) {
-            const ref_val = mask[0];
-            for (size_t i = 1; i < mask.size(); ++i) {
-                if (ref_val < mask[i]) [[unlikely]] {
-                    throw std::runtime_error("mask is not sorted ascendingly\n");
-                }
-            }
-            if (mask.back() >= old_nrow) {
-                throw std::runtime_error("mask indices are out of bound\n");
-            }
-        } else if constexpr (IdxIsTrue) {
-            for (auto el : mask) {
-                if (el >= old_nrow) {
-                    throw std::runtime_error("mask indices are out of bound\n");
-                }
-            }
-        }
-    }
+    const size_t n_el = (IdxIsTrue) ? n_el : old_nrow - n_el;
 
     auto compact_block = [old_nrow, 
                           n_el,

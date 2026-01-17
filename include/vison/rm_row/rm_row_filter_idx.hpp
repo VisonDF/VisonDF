@@ -3,7 +3,6 @@
 template <MtMethod MtType              = MtMethod::Row,
           bool MemClean                = false,
           bool Soft                    = true,
-          bool Sorted                  = true,
           bool IdxIsTrue               = true,
           AssertionType AssertionLevel = AssertionType::Simple
          >
@@ -18,7 +17,6 @@ void rm_row_filter_idx(
                           MType,
                           MemClean,
                           Soft,
-                          Sorted,
                           IdxIsTrue,
                           AssertionLevel>(mask, runs);
 

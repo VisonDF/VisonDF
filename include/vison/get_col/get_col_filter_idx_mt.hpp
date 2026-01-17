@@ -5,7 +5,6 @@ template <unsigned int CORES           = 4,
           bool IsBool                  = false,
           bool MapCol                  = false,
           bool IsDense                 = false, // assumed sorted increasingly
-          bool IsSorted                = true, 
           bool IdxIsTrue               = true,
           AssertionType AssertionLevel = AssertionType::Simple,
           typename T>
@@ -19,15 +18,23 @@ void get_col_filter_idx_mt(
 
     const unsigned int local_nrow = nrow;
 
+    if constexpr (AssertionLevel == AssertionType::Hard) {
+        if constexpr (!IdxIsTrue || IsDense) {
+            unsigned int ref_val = mask[0];
+            for (size_t i = 1; i < mask.size(); ++i) {
+                if (ref_val < mask[i]) 
+                    throw std::runtime_error("mask is not sorted increasingly\n");
+                ref_val = mask[i];
+            }
+        } else {
+            for (auto el : mask) {
+                if (el >= local_nrow)
+                    throw std::runtime_error("mask index out of bouds\n");
+            }
+        }
+    }
+
     if constexpr (AssertionLevel > AssertionType::None) {
-        if constexpr (IsDense && !Sorted) {
-            throw std::runtime_error("To use `IsDense` parameter, you must sort the mask\n");
-        }
-
-        if constexpr (!IsSorted && !IdxIsTrue) {
-            std::sort(mask.begin(), mask.end());
-        }
-
         if constexpr (!IdxIsTrue) {
             if (mask.back() >= local_nrow)
                 throw std::runtime_error("mask indices are exceeding nrow\n");
@@ -41,7 +48,7 @@ void get_col_filter_idx_mt(
     }
 
     if constexpr (AssertionLevel == AssertionType::Hard) {
-        if constexpr (IdxIsTrue && IsDense) {
+        if constexpr (!IdxIsTrue || IsDense) {
             const ref_val = mask[0];
             for (size_t i = 1; i < mask.size(); ++i) {
                 if (ref_val < mask[i]) [[unlikely]] {

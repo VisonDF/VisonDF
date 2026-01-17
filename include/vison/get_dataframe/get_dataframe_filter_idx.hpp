@@ -1,9 +1,10 @@
 #pragma once
 
 template <
-          bool IsDense   = false, // assumed sorted
-          bool IsSorted  = true, 
-          bool IdxIsTrue = true,
+          bool IsDense                 = false, // assumed sorted
+          bool MapCol                  = false,
+          bool IdxIsTrue               = true,
+          bool Periodic                = false,
           AssertionType AssertionLevel = AssertionType::Normal
          >
 void get_dataframe_filter_idx(
@@ -17,8 +18,9 @@ void get_dataframe_filter_idx(
     get_dataframe_filter_idx_mt<1,     // CORES
                                 false, // NUMA locality
                                 IsDense,
-                                IsSorted,
+                                MapCol,
                                 IdxIsTrue,
+                                Periodic,
                                 AssertionLevel>(cols, 
                                                 cur_obj, 
                                                 mask, 
