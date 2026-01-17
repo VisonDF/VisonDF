@@ -1,18 +1,20 @@
 #pragma once
 
-template <unsigned int CORES = 4,
-          bool NUMA = false,
-          bool IsBool = false,
-          bool MapCol = false,
-          bool IsDense = false,
+template <unsigned int CORES           = 4,
+          bool NUMA                    = false,
+          bool IsBool                  = false,
+          bool MapCol                  = false,
+          bool IsDense                 = false,
+          bool OneIsTrue               = true,
+          bool Periodic                = false,
+          AssertionType AssertionLevel = AssertionType::Simple,
           typename T
          >
 void get_col_filter_mt(
                         const unsigned int x,
                         std::vector<T> &rtn_v,
                         const std::vector<uint8_t> &mask,
-                        std::vector<RunsIdxMt>& runs = {},
-                        OffsetBoolMask& offset_start = {}
+                        OffsetBoolMask& offset_start = default_offset_start
                       )
 {
 
@@ -20,12 +22,15 @@ void get_col_filter_mt(
                             NUMA, 
                             IsBool,
                             MapCol,
-                            IsDense>(x,
-                                    rtn_v,
-                                    mask,
-                                    0,     // strt_vl
-                                    runs,
-                                    offset_start);
+                            IsDense,
+                            OneIsTrue,
+                            Periodic,
+                            AssertionLevel>(x,
+                                            rtn_v,
+                                            mask,
+                                            0,     // strt_vl
+                                            runs,
+                                            offset_start);
 }
 
 

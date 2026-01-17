@@ -60,7 +60,8 @@ void get_col_filter_idx_mt(
         }
     }
 
-    auto find_col_base = [x]([[maybe_unused]] const auto &idx_vec, 
+    auto find_col_base = [this,
+                          x]([[maybe_unused]] const auto &idx_vec, 
                              [[maybe_unused]] const size_t idx_type) -> size_t 
     {
         size_t pos;
