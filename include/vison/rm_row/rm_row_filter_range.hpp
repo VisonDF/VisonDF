@@ -1,10 +1,12 @@
 #pragma once
 
 template <
-          MtMethod MtType = MtMethod::Row,
-          bool MemClean = false,
-          bool Soft = true,
-          bool OneIsTrue = true
+          MtMethod MtType              = MtMethod::Row,
+          bool MemClean                = false,
+          bool Soft                    = true,
+          bool OneIsTrue               = true,
+          bool Perdiodic               = false,
+          AssertionType AssertionLevel = AssertionType::Simple
          >
 void rm_row_filter_range(
                          std::vector<uint8_t>& x,
@@ -17,6 +19,8 @@ void rm_row_filter_range(
                            MtType,
                            MemClean,
                            Soft,
-                           OneIsTrue>(x, strt_vl, offset_start);
+                           OneIsTrue,
+                           Periodic,
+                           AssertionLevel>(x, strt_vl, offset_start);
 }
 
