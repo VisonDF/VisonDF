@@ -10,6 +10,7 @@ inline void build_boolmask(
                            [[maybe_unused]] const size_t n_el2
                           )
 {
+
     std::vector<size_t> thread_counts(inner_cores);
     thread_offsets.resize(inner_cores);
 

@@ -1,7 +1,10 @@
 #pragma once
 
-template <bool IsBool = false,
-          bool MapCol = false,
+template <bool IsBool                  = false,
+          bool MapCol                  = false,
+          bool OneIsTrue               = true,
+          bool Periodic                = false,
+          AssertionType AssertionLevel = AssertionType::Simple,
           typename F>
 requires FapplyFn<F, first_arg_t<F>>
 void fapply_filter(
@@ -15,11 +18,14 @@ void fapply_filter(
     fapply_filter_range_mt<1,     // CORES
                            false, // NUMA locality
                            IsBool, 
-                           MapCol>(f,
-                                   n,
-                                   mask,
-                                   0,  // strt_vl
-                                   start_offset);
+                           MapCol,
+                           OneIsTrue,
+                           Periodic,
+                           AssertionLevel>(f,
+                                           n,
+                                           mask,
+                                           0,  // strt_vl
+                                           start_offset);
 }
 
 
