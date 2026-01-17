@@ -66,7 +66,7 @@ void get_dataframe_filter_idx_mt(
         return pos;
     };
 
-    const unsigned int local_nrow = () ? mask.size() : nrow2 - mask.size();
+    const unsigned int local_nrow = (IdxIsTrue) ? mask.size() : nrow2 - mask.size();
     nrow = local_nrow;
 
     std::vector<size_t> thread_counts;
