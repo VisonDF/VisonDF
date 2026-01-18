@@ -119,47 +119,62 @@ void get_col_filter_range(
                     }
                 } else {
                     if constexpr (OnsIsTrue) {
-                        for (size_t i = start; i < end; ++i) {
-                            if (mask[i % n_el2])
-                                rtn_v[out_idx++] = src[i];
+                        for (size_t i = cur_start, k = cur_start % n_el2; i < cur_end; ++i) {
+                            if (!mask[k]) { 
+                                k += 1;
+                                k -= (k == n_el2) * n_el2;
+                                continue; 
+                            }
+                            rtn_v[out_idx++] = src[i];
                         }
                     } else {
-                        for (size_t i = start; i < end; ++i) {
-                            if (!mask[i % n_el2])
-                                rtn_v[out_idx++] = src[i];
+                        for (size_t i = cur_start, k = cur_start % n_el2; i < cur_end; ++i) {
+                            if (mask[k]) { 
+                                k += 1;
+                                k -= (k == n_el2) * n_el2;
+                                continue; 
+                            }
+                            rtn_v[out_idx++] = src[i];
                         }
                     }
                 }
-
             }
 
         } else {
 
-            size_t i2 = 0;
+            size_t out_idx = 0;
 
             if constexpr (!Periodic) {
                 if constexpr (OneIsTrue) {
                     for (size_t i = 0; i < n_el; ++i) {
                         if (mask[i])
-                            rtn_v[i2++] = src[i];
+                            rtn_v[out_idx++] = src[i];
                     }
                 } else {
                     #pragma unroll
                     for (size_t i = 0; i < n_el; ++i) {
                         if (!mask[i])
-                            rtn_v[i2++] = src[i];
+                            rtn_v[out_idx++] = src[i];
                     }
                 }
             } else {
                 if constexpr (OneIsTrue) {
-                    for (size_t i = 0; i < n_el; ++i) {
-                        if (mask[i % n_el2])
-                            rtn_v[i2++] = src[i];
+                    for (size_t i = 0, k = 0; i < n_el; ++i) {
+                        if (!mask[k]) { 
+                            k += 1;
+                            k -= (k == n_el2) * n_el2;
+                            continue; 
+                        }
+                        rtn_v[out_idx++] = src[i];
                     }
                 } else {
-                    for (size_t i = 0; i < n_el; ++i) {
-                        if (!mask[i % n_el2])
-                            rtn_v[i2++] = src[i];
+                    for (size_t i = 0, k = 0; i < n_el; ++i) {
+                        if (mask[k]) { 
+                            k += 1;
+                            k -= (k == n_el2) * n_el2;
+                            continue; 
+                        }
+                        rtn_v[out_idx++] = src[i];
                     }
                 }
             }
@@ -235,7 +250,7 @@ void get_col_filter_range(
                     while (i < cur_end) {
       
                         if constexpr (OneIsTrue) {
-                            while (i < end && mask[i]) {
+                            while (i < cur_end && mask[i]) {
                                 i += 1;
                             }
                         } else {
@@ -264,34 +279,53 @@ void get_col_filter_range(
                         i += 1;
                     }
                 } else {
+
+                    size_t k = cur_start % n_el2;
+
                     if constexpr (OneIsTrue) {
-                        while (!mask[i % n_el2]) {
+                        while (!mask[k]) {
                             i += 1;
+                            k += 1;
                             out_idx += 1;
+                            k -= (k == n_el2) * n_el2;
                         }
                     } else {
-                        while (mask[i % n_el2]) {
+                        while (mask[k]) {
                             i += 1;
+                            k += 1;
                             out_idx += 1;
+                            k -= (k == n_el2) * n_el2;
                         }
                     }
                     while (i < cur_end) {
       
                         if constexpr (OneIsTrue) {
-                            while (i < end && mask[i % n_el2]) {
+                            while (i < cur_end && mask[k]) {
                                 i += 1;
+                                k += 1;
+                                k -= (k == n_el2) * n_el2;
                             }
                         } else {
-                            while (i < cur_end && !mask[i % n_el2]) {
+                            while (i < cur_end && !mask[k]) {
                                 i += 1;
+                                k += 1;
+                                k -= (k == n_el2) * n_el2;
                             }
                         }
 
                         const size_t start = i;
                         if constexpr (OneIsTrue) {
-                            while (i < cur_end && !mask[i % n_el2]) ++i;
+                            while (i < cur_end && !mask[k]) { 
+                                ++i;
+                                k += 1;
+                                k -= (k == n_el2) * n_el2;
+                            }
                         } else {
-                            while (i < cur_end && mask[i % n_el2]) ++i;
+                            while (i < cur_end && mask[k]) {
+                                ++i;
+                                k += 1;
+                                k -= (k == n_el2) * n_el2;
+                            }
                         }
                     
                         size_t len = i - start;
@@ -358,34 +392,53 @@ void get_col_filter_range(
                     i += 1;
                 }
             } else {
+
+                size_t k = 0;
+
                 if constexpr (OneIsTrue) {
-                    while (!mask[i % n_el2]) {
+                    while (!mask[k]) {
                         i += 1;
+                        k += 1;
                         out_idx += 1;
+                        k -= (k == n_el2) * n_el2;
                     }
                 } else {
-                    while (mask[i % n_el2]) {
+                    while (mask[k]) {
                         i += 1;
+                        k += 1;
                         out_idx += 1;
+                        k -= (k == n_el2) * n_el2;
                     }
                 }
                 while (i < mask.size()) {
       
                     if constexpr (OneIsTrue) {
-                        while (i < mask.size() && mask[i % n_el2]) {
+                        while (i < mask.size() && mask[k]) {
                             i += 1;
+                            k += 1;
+                            k -= (k == n_el2) * n_el2;
                         }
                     } else {
-                        while (i < mask.size() && !mask[i % n_el2]) {
+                        while (i < mask.size() && !mask[k]) {
                             i += 1;
+                            k += 1;
+                            k -= (k == n_el2) * n_el2;
                         }
                     }
 
                     const size_t start = i;
                     if constexpr (OneIsTrue) {
-                        while (i < mask.size() && !mask[i % n_el2]) ++i;
+                        while (i < mask.size() && !mask[k]) {
+                            ++i;
+                            k += 1;
+                            k -= (k == n_el2) * n_el2;
+                        }
                     } else {
-                        while (i < mask.size() && mask[i % n_el2]) ++i;
+                        while (i < mask.size() && mask[k])  {
+                            ++i;
+                            k += 1;
+                            k -= (k == n_el2) * n_el2;
+                        }
                     }
                 
                     size_t len = i - start;

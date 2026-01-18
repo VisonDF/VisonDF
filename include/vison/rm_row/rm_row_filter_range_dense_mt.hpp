@@ -106,23 +106,23 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
                             out_idx += 1;
                         }
                     }
-                    while (i < end) {
+                    while (i < cur_end) {
       
                         if constexpr (OneIsTrue) {
-                            while (i < end && mask[i]) {
+                            while (i < cur_end && mask[i]) {
                                 i += 1;
                             }
                         } else {
-                            while (i < end && !mask[i]) {
+                            while (i < cur_end && !mask[i]) {
                                 i += 1;
                             }
                         }
 
                         const size_t start = i;
                         if constexpr (OneIsTrue) {
-                            while (i < end && !mask[i]) ++i;
+                            while (i < cur_end && !mask[i]) ++i;
                         } else {
-                            while (i < end && mask[i]) ++i;
+                            while (i < cur_end && mask[i]) ++i;
                         }
                     
                         size_t len = i - start;
@@ -138,34 +138,53 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
                         i += 1;
                     }
                 } else {
+
+                    size_t k = start % n_el2;
+
                     if constexpr (OneIsTrue) {
-                        while (!mask[i % n_el2]) {
+                        while (!mask[k]) {
                             i += 1;
+                            k += 1;
                             out_idx += 1;
+                            k -= (k == n_el2) * n_el2;
                         }
                     } else {
-                        while (mask[i % n_el2]) {
+                        while (mask[k]) {
                             i += 1;
+                            k += 1;
                             out_idx += 1;
+                            k -= (k == n_el2) * n_el2;
                         }
                     }
-                    while (i < end) {
+                    while (i < cur_end) {
       
                         if constexpr (OneIsTrue) {
-                            while (i < end && mask[i % n_el2]) {
+                            while (i < cur_end && mask[k]) {
                                 i += 1;
+                                k += 1;
+                                k -= (k == n_el2) * n_el2;
                             }
                         } else {
-                            while (i < end && !mask[i % n_el2]) {
+                            while (i < cur_end && !mask[k]) {
                                 i += 1;
+                                k += 1;
+                                k -= (k == n_el2) * n_el2;
                             }
                         }
 
                         const size_t start = i;
                         if constexpr (OneIsTrue) {
-                            while (i < end && !mask[i % n_el2]) ++i;
+                            while (i < cur_end && !mask[k]) {
+                                ++i;
+                                k += 1;
+                                k -= (k == n_el2) * n_el2;
+                            }
                         } else {
-                            while (i < end && mask[i % n_el2]) ++i;
+                            while (i < cur_end && mask[k]) {
+                                ++i;
+                                k += 1;
+                                k -= (k == n_el2) * n_el2;
+                            }
                         }
                     
                         size_t len = i - start;
@@ -237,34 +256,53 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
                     i += 1;
                 }
             } else {
+
+                size_t k = 0;
+
                 if constexpr (OneIsTrue) {
-                    while (!mask[i % n_el2]) {
+                    while (!mask[k]) {
                         i += 1;
+                        k += 1;
                         out_idx += 1;
+                        k -= (k == n_el2) * n_el2;
                     }
                 } else {
-                    while (mask[i % n_el2]) {
+                    while (mask[k]) {
                         i += 1;
+                        k += 1;
                         out_idx += 1;
+                        k -= (k == n_el2) * n_el2;
                     }
                 }
                 while (i < mask.size()) {
       
                     if constexpr (OneIsTrue) {
-                        while (i < mask.size() && mask[i % n_el2]) {
+                        while (i < mask.size() && mask[k]) {
                             i += 1;
+                            k += 1;
+                            k -= (k == n_el2) * n_el2;
                         }
                     } else {
-                        while (i < mask.size() && !mask[i % n_el2]) {
+                        while (i < mask.size() && !mask[k]) {
                             i += 1;
+                            k += 1;
+                            k -= (k == n_el2) * n_el2;
                         }
                     }
 
                     size_t start = i;
                     if constexpr (OneIsTrue) {
-                        while (i < mask.size() && !mask[i % n_el2]) ++i;
+                        while (i < mask.size() && !mask[k]) {
+                            ++i;
+                            k += 1;
+                            k -= (k == n_el2) * n_el2;
+                        }
                     } else {
-                        while (i < mask.size() && mask[i % n_el2]) ++i;
+                        while (i < mask.size() && mask[k]) {
+                            ++i;
+                            k += 1;
+                            k -= (k == n_el2) * n_el2;
+                        }
                     }
                 
                     size_t len = i - start;
@@ -378,19 +416,19 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
                         while (i < end) {
       
                             if constexpr (OneIsTrue) {
-                                while (i < end && mask[i]) i += 1;
+                                while (i < cur_end && mask[i]) i += 1;
                             } else {
-                                while (i < end && !mask[i]) i += 1;
+                                while (i < cur_end && !mask[i]) i += 1;
                             }
 
                             if constexpr (OneIsTrue) {
-                               while (i < mask.size() && !mask[i]) {
+                               while (i < cur_end && !mask[i]) {
                                    vec[out_idx] = std::move(vec2[i]);
                                    i += 1;
                                    out_idx += 1;
                                };
                             } else {
-                               while (i < mask.size() && mask[i]) {
+                               while (i < cur_end && mask[i]) {
                                    vec[out_idx] = std::move(vec2[i]);
                                    i += 1;
                                    out_idx += 1;
@@ -399,36 +437,55 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
                             i += 1;
                         }
                     } else {
+
+                        size_t k = cur_start % n_el2;
+
                         if constexpr (OneIsTrue) {
-                            while (!mask[i % n_el2]) {
+                            while (!mask[k]) {
                                 i += 1;
+                                k += 1;
                                 out_idx += 1;
+                                k -= (k == n_el2) * n_el2;
                             }
                         } else {
-                            while (mask[i % n_el2]) {
+                            while (mask[k]) {
                                 i += 1;
+                                k += 1;
                                 out_idx += 1;
+                                k -= (k == n_el2) * n_el2;
                             }
                         }
                         while (i < end) {
       
                             if constexpr (OneIsTrue) {
-                                while (i < end && mask[i % n_el2]) i += 1;
+                                while (i < cur_end && mask[k]) {
+                                    i += 1;
+                                    k += 1;
+                                    k -= (k == n_el2) * n_el2;
+                                }
                             } else {
-                                while (i < end && !mask[i % n_el2]) i += 1;
+                                while (i < cur_end && !mask[k]) {
+                                    i += 1;
+                                    k += 1;
+                                    k -= (k == n_el2) * n_el2;
+                                }
                             }
 
                             if constexpr (OneIsTrue) {
-                               while (i < mask.size() && !mask[i % n_el2]) {
+                               while (i < cur_end && !mask[k]) {
                                    vec[out_idx] = std::move(vec2[i]);
                                    i += 1;
+                                   k += 1;
                                    out_idx += 1;
+                                   k -= (k == n_el2) * n_el2;
                                };
                             } else {
-                               while (i < mask.size() && mask[i % n_el2]) {
+                               while (i < cur_end && mask[k]) {
                                    vec[out_idx] = std::move(vec2[i]);
                                    i += 1;
+                                   k += 1;
                                    out_idx += 1;
+                                   k -= (k == n_el2) * n_el2;
                                };
                             }
                             i += 1;
@@ -462,7 +519,7 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
                         if constexpr (OneIsTrue) {
                             while (i < mask.size() && mask[i]) i += 1;
                         } else {
-                            while (i < mask.size() && mask[i]) i += 1;
+                            while (i < !mask.size() && mask[i]) i += 1;
                         }
 
                         if constexpr (OneIsTrue) {
@@ -482,41 +539,59 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
                         i += 1;
                     }
                 } else {
+
+                    size_t k = 0;
+
                     if constexpr (OneIsTrue) {
-                        while (!mask[i % n_el2]) {
+                        while (!mask[k]) {
                             i += 1;
+                            k += 1;
                             out_idx += 1;
+                            k -= (k == n_el2) * n_el2;
                         }
                     } else {
-                        while (mask[i % n_el2]) {
+                        while (mask[k]) {
                             i += 1;
+                            k += 1;
                             out_idx += 1;
+                            k -= (k == n_el2) * n_el2;
                         }
                     }
                     while (i < mask.size()) {
                         if constexpr (OneIsTrue) {
-                            while (i < mask.size() && mask[i % n_el2]) i += 1;
+                            while (i < mask.size() && mask[k]) {
+                                i += 1;
+                                k += 1;
+                                k -= (k == n_el2) * n_el2;
+                            }
                         } else {
-                            while (i < mask.size() && mask[i % n_el2]) i += 1;
+                            while (i < mask.size() && !mask[k]) {
+                                i += 1;
+                                k += 1;
+                                k -= (k == n_el2) * n_el2;
+                            }
                         }
 
                         if constexpr (OneIsTrue) {
-                           while (i < mask.size() && !mask[i % n_el2]) {
+                           while (i < mask.size() && !mask[k]) {
                                vec[out_idx] = std::move(vec[i]);
                                i += 1;
+                               k += 1;
                                out_idx += 1;
+                               k -= (k == n_el2) * n_el2;
                            };
                         } else {
-                           while (i < mask.size() && mask[i % n_el2]) {
+                           while (i < mask.size() && mask[k]) {
                                vec[out_idx] = std::move(vec[i]);
                                i += 1;
+                               k += 1;
                                out_idx += 1;
+                               k -= (k == n_el2) * n_el2;
                            };
                         }
 
                         i += 1;
                     }
-
                 }
 
                 if constexpr (!Periodic) {

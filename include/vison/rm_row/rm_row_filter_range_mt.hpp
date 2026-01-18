@@ -114,16 +114,22 @@ void rm_row_filter_range_mt(
                     }
                 } else {
                     if constexpr (OneIsTrue) {
-                        for (size_t i = start; i < end; ++read) {
-                            if (!mask[i % n_el2]) {
-                                dst[out_idx++] = std::move(src[i]);
+                        for (size_t i = start, k = start % n_el2; i < end; ++read) {
+                            if (mask[k]) {
+                                k += 1;
+                                k -= (k == n_el2) * n_el2;
+                                continue;
                             }
+                            dst[out_idx++] = std::move(src[i]);
                         }
                     } else {
-                        for (size_t i = start; i < end; ++read) {
-                            if (mask[i % n_el2]) {
-                                dst[out_idx++] = std::move(src[i]);
+                        for (size_t i = start, k = start % n_el2; i < end; ++read) {
+                            if (!mask[k]) {
+                                k += 1;
+                                k -= (k == n_el2) * n_el2;
+                                continue;
                             }
+                            dst[out_idx++] = std::move(src[i]);
                         }
                     }
                 }
@@ -165,16 +171,22 @@ void rm_row_filter_range_mt(
                 }
             } else {
                 if constexpr (OneIsTrue) {
-                    for (size_t i = 0; i < n_el; ++read) {
-                        if (!mask[i % n_el2]) {
-                            dst[out_idx++] = std::move(src[i]);
+                    for (size_t i = 0, k = 0; i < n_el; ++read) {
+                        if (mask[k]) {
+                            k += 1;
+                            k -= (k == n_el2) * n_el2;
+                            continue;
                         }
+                        dst[out_idx++] = std::move(src[i]);
                     }
                 } else {
                     for (size_t i = 0; i < n_el; ++read) {
-                        if (mask[i % n_el2]) {
-                            dst[out_idx++] = std::move(src[i]);
+                        if (mask[k]) {
+                            k += 1;
+                            k -= (k == n_el2) * n_el2;
+                            continue;
                         }
+                        dst[out_idx++] = std::move(src[i]);
                     }
                 }
             }

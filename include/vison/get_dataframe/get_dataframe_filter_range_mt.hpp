@@ -164,34 +164,53 @@ void get_dataframe_filter_range_mt(
                         i += 1;
                     }
                 } else {
+
+                    size_t k = cur_start % n_el2;
+
                     if constexpr (OneIsTrue) {
-                        while (!mask[i % n_el2]) {
+                        while (!mask[k]) {
                             i += 1;
+                            k += 1;
                             out_idx += 1;
+                            k -= (k == n_el2) * n_el2;
                         }
                     } else {
-                        while (mask[i % n_el2]) {
+                        while (mask[k]) {
                             i += 1;
+                            k += 1;
                             out_idx += 1;
+                            k -= (k == n_el2) * n_el2;
                         }
                     }
                     while (i < cur_end) {
       
                         if constexpr (OneIsTrue) {
-                            while (i < cur_end && mask[i % n_el2]) {
+                            while (i < cur_end && mask[k]) {
                                 i += 1;
+                                k += 1;
+                                k -= (k == n_el2) * n_el2;
                             }
                         } else {
-                            while (i < cur_end && !mask[i % n_el2]) {
+                            while (i < cur_end && !mask[k]) {
                                 i += 1;
+                                k += 1;
+                                k -= (k == n_el2) * n_el2;
                             }
                         }
 
                         const size_t start = i;
                         if constexpr (OneIsTrue) {
-                            while (i < cur_end && !mask[i % n_el2]) ++i;
+                            while (i < cur_end && !mask[k])  {
+                                ++i;
+                                k += 1;
+                                k -= (k == n_el2) * n_el2;
+                            }
                         } else {
-                            while (i < cur_end && mask[i % n_el2]) ++i;
+                            while (i < cur_end && mask[k])  { 
+                                ++i;
+                                k += 1;
+                                k -= (k == n_el2) * n_el2;
+                            }
                         }
                     
                         size_t len = i - start;
@@ -260,34 +279,53 @@ void get_dataframe_filter_range_mt(
                 }
 
             } else {
+
+                size_t k = 0;
+
                 if constexpr (OneIsTrue) {
-                    while (!mask[i % n_el2]) {
+                    while (!mask[k]) {
                         i += 1;
+                        k += 1;
                         out_idx += 1;
+                        k -= (k == n_el2) * n_el2;
                     }
                 } else {
-                    while (mask[i % n_el2]) {
+                    while (mask[k]) {
                         i += 1;
+                        k += 1;
                         out_idx += 1;
+                        k -= (k == n_el2) * n_el2;
                     }
                 }
                 while (i < mask.size()) {
       
                     if constexpr (OneIsTrue) {
-                        while (i < mask.size() && mask[i % n_el2]) {
+                        while (i < mask.size() && mask[k]) {
                             i += 1;
+                            k += 1;
+                            k -= (k == n_el2) * n_el2;
                         }
                     } else {
-                        while (i < mask.size() && !mask[i % n_el2]) {
+                        while (i < mask.size() && !mask[k]) {
                             i += 1;
+                            k += 1;
+                            k -= (k == n_el2) * n_el2;
                         }
                     }
 
                     const size_t start = i;
                     if constexpr (OneIsTrue) {
-                        while (i < mask.size() && !mask[i % n_el2]) ++i;
+                        while (i < mask.size() && !mask[k]) {
+                            ++i;
+                            k += 1;
+                            k -= (k == n_el2) * n_el2;
+                        }
                     } else {
-                        while (i < mask.size() && mask[i % n_el2]) ++i;
+                        while (i < mask.size() && mask[k])  {
+                            ++i;
+                            k += 1;
+                            k -= (k == n_el2) * n_el2;
+                        }
                     }
                 
                     size_t len = i - start;
@@ -405,34 +443,52 @@ void get_dataframe_filter_range_mt(
 
                 } else {
 
+                    size_t k = cur_start % n_el2;
+
                     if constexpr (OneIsTrue) {
-                        while (!mask[i % n_el2]) {
+                        while (!mask[k]) {
                             i += 1;
+                            k += 1;
                             out_idx += 1;
+                            k -= (k == n_el2) * n_el2;
                         }
                     } else {
-                        while (mask[i % n_el2]) {
+                        while (mask[k]) {
                             i += 1;
+                            k += 1;
                             out_idx += 1;
+                            k -= (k == n_el2) * n_el2;
                         }
                     }
                     while (i < cur_end) {
       
                         if constexpr (OneIsTrue) {
-                            while (i < cur_end && mask[i % n_el2]) {
+                            while (i < cur_end && mask[k]) {
                                 i += 1;
+                                k += 1;
+                                k -= (k == n_el2) * n_el2;
                             }
                         } else {
-                            while (i < cur_end && !mask[i % n_el2]) {
+                            while (i < cur_end && !mask[k]) {
                                 i += 1;
+                                k += 1;
+                                k -= (k == n_el2) * n_el2;
                             }
                         }
 
                         const size_t start = i;
                         if constexpr (OneIsTrue) {
-                            while (i < cur_end && !mask[i % n_el2]) ++i;
+                            while (i < cur_end && !mask[k]) {
+                                ++i;
+                                k += 1;
+                                k -= (k == n_el2) * n_el2;
+                            }
                         } else {
-                            while (i < cur_end && mask[i % n_el2]) ++i;
+                            while (i < cur_end && mask[k]) {
+                                ++i;
+                                k += 1;
+                                k -= (k == n_el2) * n_el2;
+                            }
                         }
                     
                         size_t len = i - start;
@@ -503,34 +559,53 @@ void get_dataframe_filter_range_mt(
                     i += 1;
                 }
             } else {
+
+                size_t k = 0;
+
                 if constexpr (OneIsTrue) {
-                    while (!mask[i % n_el2]) {
+                    while (!mask[k]) {
                         i += 1;
+                        k += 1;
                         out_idx += 1;
+                        k -= (k == n_el2) * n_el2;
                     }
                 } else {
-                    while (mask[i % n_el2]) {
+                    while (mask[k]) {
                         i += 1;
+                        k += 1;
                         out_idx += 1;
+                        k -= (k == n_el2) * n_el2;
                     }
                 }
                 while (i < mask.size()) {
       
                     if constexpr (OneIsTrue) {
-                        while (i < mask.size() && mask[i % n_el2]) {
+                        while (i < mask.size() && mask[k]) {
                             i += 1;
+                            k += 1;
+                            k -= (k == n_el2) * n_el2;
                         }
                     } else {
-                        while (i < mask.size() && !mask[i % n_el2]) {
+                        while (i < mask.size() && !mask[k]) {
                             i += 1;
+                            k += 1;
+                            k -= (k == n_el2) * n_el2;
                         }
                     }
 
                     const size_t start = i;
                     if constexpr (OneIsTrue) {
-                        while (i < mask.size() && !mask[i % n_el2]) ++i;
+                        while (i < mask.size() && !mask[k]) {
+                            ++i;
+                            k += 1;
+                            k -= (k == n_el2) * n_el2;
+                        }
                     } else {
-                        while (i < mask.size() && mask[i % n_el2]) ++i;
+                        while (i < mask.size() && mask[k]) {
+                            ++i;
+                            k += 1;
+                            k -= (k == n_el2) * n_el2;
+                        }
                     }
                 
                     size_t len = i - start;
@@ -615,13 +690,21 @@ void get_dataframe_filter_range_mt(
                     }
                 } else {
                     if constexpr (OneIsTrue) {
-                        for (size_t j = start; j < end; ++j) {
-                            if (!mask[j % n_el2]) continue;
+                        for (size_t j = start, k = start % n_el2; j < end; ++j) {
+                            if (!mask[k])  {
+                                k += 1;
+                                k -= (k == n_el2) * n_el2;
+                                continue;
+                            }
                             dst[out_idx++] = src[j];
                         }
                     } else {
-                        for (size_t j = start; j < end; ++j) {
-                            if (mask[j % n_el2]) continue;
+                        for (size_t j = start, k = start % n_el2; j < end; ++j) {
+                            if (mask[k]) {
+                                k += 1;
+                                k -= (k == n_el2) * n_el2;
+                                continue;
+                            }
                             dst[out_idx++] = src[j];
                         }
                     }
@@ -646,13 +729,21 @@ void get_dataframe_filter_range_mt(
                 }
             } else {
                 if constexpr (OneIsTrue) {
-                    for (size_t j = 0; j < mask.size(); ++j) {
-                        if (!mask[j % n_el2]) continue;
+                    for (size_t j = 0, k = 0; j < mask.size(); ++j) {
+                        if (!mask[k]) {
+                            k += 1;
+                            k -= (k == n_el2) * n_el2;
+                            continue;
+                        }
                         dst[out_idx++] = src[j];
                     }
                 } else {
-                    for (size_t j = 0; j < mask.size(); ++j) {
-                        if (mask[j % n_el2]) continue;
+                    for (size_t j = 0, k = 0; j < mask.size(); ++j) {
+                        if (mask[k]) {
+                            k += 1;
+                            k -= (k == n_el2) * n_el2;
+                            continue;
+                        }
                         dst[out_idx++] = src[j];
                     }
                 }
@@ -724,13 +815,21 @@ void get_dataframe_filter_range_mt(
                     }
                 } else {
                     if constexpr (OneIsTrue) {
-                        for (size_t j = start; j < end; ++j) {
-                            if (!mask[j % n_el2]) continue;
+                        for (size_t j = start, k = start % n_el2; j < end; ++j) {
+                            if (!mask[k]) {
+                                k += 1;
+                                k -= (k == n_el2) * n_el2;
+                                continue;
+                            }
                             dst[out_idx++] = src[j];
                         }
                     } else {
-                        for (size_t j = start; j < end; ++j) {
-                            if (mask[j % n_el2]) continue;
+                        for (size_t j = start, k = start % n_el2; j < end; ++j) {
+                            if (mask[k]) {
+                                k += 1;
+                                k -= (k == n_el2) * n_el2;
+                                continue;
+                            }
                             dst[out_idx++] = src[j];
                         }
                     }
@@ -755,13 +854,21 @@ void get_dataframe_filter_range_mt(
                 }
             } else {
                 if constexpr (OneIsTrue) {
-                    for (size_t j = 0; j < n_el; ++j) {
-                        if (!mask[j % n_el2]) continue;
+                    for (size_t j = 0, k = 0; j < n_el; ++j) {
+                        if (!mask[k]) {
+                            k += 1;
+                            k -= (k == n_el2) * n_el2;
+                            continue;
+                        }
                         dst[out_idx++] = src[j];
                     }
                 } else {
-                    for (size_t j = 0; j < n_el; ++j) {
-                        if (mask[j % n_el2]) continue;
+                    for (size_t j = 0, k = 0; j < n_el; ++j) {
+                        if (mask[k]) {
+                            k += 1;
+                            k -= (k == n_el2) * n_el2;
+                            continue;
+                        }
                         dst[out_idx++] = src[j];
                     }
                 }
