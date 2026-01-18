@@ -68,14 +68,14 @@ void get_dataframe_filter_range_mt(
     const auto row_view_idx2                                            = cur_obj.get_row_view_idx();    
     const std::vector<std::string>& name_v_row2                         = cur_obj.get_rowname();
 
-    auto copy_col_dense = [strt_vl,
-                           n_el,
-                           n_el2,
-                           &mask, 
-                           &offset_start]<typename T>(
-                                                       std::vector<T>& dst_vec,
-                                                       const std::vector<T>& src_vec2
-                                                     )
+    auto copy_col_dns = [strt_vl,
+                         n_el,
+                         n_el2,
+                         &mask, 
+                         &offset_start]<typename T>(
+                                                     std::vector<T>& dst_vec,
+                                                     const std::vector<T>& src_vec2
+                                                   )
     {
 
         dst_vec.resize(offset_start.active_rows);
@@ -120,112 +120,20 @@ void get_dataframe_filter_range_mt(
 
                 size_t i = cur_start;
 
-                if constexpr (!Periodic) {
-                    if constexpr (OneIsTrue) {
-                        while (!mask[i]) {
-                            i += 1;
-                            out_idx += 1;
-                        }
-                    } else {
-                        while (mask[i]) {
-                            i += 1;
-                            out_idx += 1;
-                        }
-                    }
-                    while (i < cur_end) {
-      
-                        if constexpr (OneIsTrue) {
-                            while (i < cur_end && mask[i]) {
-                                i += 1;
-                            }
-                        } else {
-                            while (i < cur_end && !mask[i]) {
-                                i += 1;
-                            }
-                        }
-
-                        const size_t start = i;
-                        if constexpr (OneIsTrue) {
-                            while (i < cur_end && !mask[i]) ++i;
-                        } else {
-                            while (i < cur_end && mask[i]) ++i;
-                        }
-                    
-                        size_t len = i - start;
-                        {
-                            T* __restrict d = dst.data() + out_idx;
-                            T* __restrict s = src.data() + start;
-       
-                            memcpy(d, s, len * sizeof(T))
-
-                        }
-                    
-                        out_idx += len;
-                        i += 1;
-                    }
-                } else {
-
-                    size_t k = cur_start % n_el2;
-
-                    if constexpr (OneIsTrue) {
-                        while (!mask[k]) {
-                            i += 1;
-                            k += 1;
-                            out_idx += 1;
-                            k -= (k == n_el2) * n_el2;
-                        }
-                    } else {
-                        while (mask[k]) {
-                            i += 1;
-                            k += 1;
-                            out_idx += 1;
-                            k -= (k == n_el2) * n_el2;
-                        }
-                    }
-                    while (i < cur_end) {
-      
-                        if constexpr (OneIsTrue) {
-                            while (i < cur_end && mask[k]) {
-                                i += 1;
-                                k += 1;
-                                k -= (k == n_el2) * n_el2;
-                            }
-                        } else {
-                            while (i < cur_end && !mask[k]) {
-                                i += 1;
-                                k += 1;
-                                k -= (k == n_el2) * n_el2;
-                            }
-                        }
-
-                        const size_t start = i;
-                        if constexpr (OneIsTrue) {
-                            while (i < cur_end && !mask[k])  {
-                                ++i;
-                                k += 1;
-                                k -= (k == n_el2) * n_el2;
-                            }
-                        } else {
-                            while (i < cur_end && mask[k])  { 
-                                ++i;
-                                k += 1;
-                                k -= (k == n_el2) * n_el2;
-                            }
-                        }
-                    
-                        size_t len = i - start;
-                        {
-                            T* __restrict d = dst.data() + out_idx;
-                            T* __restrict s = src.data() + start;
-       
-                            memcpy(d, s, len * sizeof(T))
-
-                        }
-                    
-                        out_idx += len;
-                        i += 1;
-                    }
-                }
+                copy_col_dense<
+                               OneIsTrue,
+                               Periodic,
+                               true     // distinct
+                              >(
+                                 dst,
+                                 src,
+                                 mask,
+                                 i,
+                                 out_idx,
+                                 cur_start,
+                                 cur_end,
+                                 n_el2
+                               );
             }
 
         } else {
@@ -233,114 +141,20 @@ void get_dataframe_filter_range_mt(
             size_t out_idx = 0;
             size_t i       = 0;
 
-            if constexpr (!Periodic) {
-
-                if constexpr (OneIsTrue) {
-                    while (!mask[i]) {
-                        i += 1;
-                        out_idx += 1;
-                    }
-                } else {
-                    while (mask[i]) {
-                        i += 1;
-                        out_idx += 1;
-                    }
-                }
-                while (i < mask.size()) {
-      
-                    if constexpr (OneIsTrue) {
-                        while (i < mask.size() && mask[i]) {
-                            i += 1;
-                        }
-                    } else {
-                        while (i < mask.size() && !mask[i]) {
-                            i += 1;
-                        }
-                    }
-
-                    const size_t start = i;
-                    if constexpr (OneIsTrue) {
-                        while (i < mask.size() && !mask[i]) ++i;
-                    } else {
-                        while (i < mask.size() && mask[i]) ++i;
-                    }
-                
-                    size_t len = i - start;
-                    {
-                        T* __restrict d = dst.data() + out_idx;
-                        T* __restrict s = src.data() + start;
-       
-                        memcpy(d, s, len * sizeof(T));
-
-                    }
-                
-                    out_idx += len;
-                    i += 1;
-                }
-
-            } else {
-
-                size_t k = 0;
-
-                if constexpr (OneIsTrue) {
-                    while (!mask[k]) {
-                        i += 1;
-                        k += 1;
-                        out_idx += 1;
-                        k -= (k == n_el2) * n_el2;
-                    }
-                } else {
-                    while (mask[k]) {
-                        i += 1;
-                        k += 1;
-                        out_idx += 1;
-                        k -= (k == n_el2) * n_el2;
-                    }
-                }
-                while (i < mask.size()) {
-      
-                    if constexpr (OneIsTrue) {
-                        while (i < mask.size() && mask[k]) {
-                            i += 1;
-                            k += 1;
-                            k -= (k == n_el2) * n_el2;
-                        }
-                    } else {
-                        while (i < mask.size() && !mask[k]) {
-                            i += 1;
-                            k += 1;
-                            k -= (k == n_el2) * n_el2;
-                        }
-                    }
-
-                    const size_t start = i;
-                    if constexpr (OneIsTrue) {
-                        while (i < mask.size() && !mask[k]) {
-                            ++i;
-                            k += 1;
-                            k -= (k == n_el2) * n_el2;
-                        }
-                    } else {
-                        while (i < mask.size() && mask[k])  {
-                            ++i;
-                            k += 1;
-                            k -= (k == n_el2) * n_el2;
-                        }
-                    }
-                
-                    size_t len = i - start;
-                    {
-                        T* __restrict d = dst.data() + out_idx;
-                        T* __restrict s = src.data() + start;
-       
-                        memcpy(d, s, len * sizeof(T));
-
-                    }
-                
-                    out_idx += len;
-                    i += 1;
-                }
-            }
+            copy_col_dense<
+                           OneIsTrue,
+                           Periodic,
+                           true     // distinct
+                          >(
+                             dst,
+                             src,
+                             mask,
+                             i,
+                             out_idx,
+                             0,
+                             n_el,
+                             n_el2
+                           );
         }
     };
 
@@ -352,9 +166,6 @@ void get_dataframe_filter_range_mt(
                             &row_view_idx2, 
                             &offset_start]()
     {
-
-        const unsigned int* __restrict src = src_vec2.data() + strt_vl;
-        unsigned int*       __restrict dst = dst_vec.data();
 
         row_view_idx.resize(offset_start.active_rows);
 
@@ -395,117 +206,20 @@ void get_dataframe_filter_range_mt(
 
                 size_t i = cur_start;
 
-                if constexpr (!Periodic) {
-
-                    if constexpr (OneIsTrue) {
-                        while (!mask[i]) {
-                            i += 1;
-                            out_idx += 1;
-                        }
-                    } else {
-                        while (mask[i]) {
-                            i += 1;
-                            out_idx += 1;
-                        }
-                    }
-                    while (i < cur_end) {
-      
-                        if constexpr (OneIsTrue) {
-                            while (i < cur_end && mask[i]) {
-                                i += 1;
-                            }
-                        } else {
-                            while (i < cur_end && !mask[i]) {
-                                i += 1;
-                            }
-                        }
-
-                        const size_t start = i;
-                        if constexpr (OneIsTrue) {
-                            while (i < cur_end && !mask[i]) ++i;
-                        } else {
-                            while (i < cur_end && mask[i]) ++i;
-                        }
-                    
-                        size_t len = i - start;
-                        {
-
-                            unsigned int* __restrict d = dst + out_idx;
-                            unsigned int* __restrict s = src + start;
-       
-                            memcpy(d, s, len * sizeof(unsigned int));
-
-                        }
-                    
-                        out_idx += len;
-                        i += 1;
-                    }
-
-                } else {
-
-                    size_t k = cur_start % n_el2;
-
-                    if constexpr (OneIsTrue) {
-                        while (!mask[k]) {
-                            i += 1;
-                            k += 1;
-                            out_idx += 1;
-                            k -= (k == n_el2) * n_el2;
-                        }
-                    } else {
-                        while (mask[k]) {
-                            i += 1;
-                            k += 1;
-                            out_idx += 1;
-                            k -= (k == n_el2) * n_el2;
-                        }
-                    }
-                    while (i < cur_end) {
-      
-                        if constexpr (OneIsTrue) {
-                            while (i < cur_end && mask[k]) {
-                                i += 1;
-                                k += 1;
-                                k -= (k == n_el2) * n_el2;
-                            }
-                        } else {
-                            while (i < cur_end && !mask[k]) {
-                                i += 1;
-                                k += 1;
-                                k -= (k == n_el2) * n_el2;
-                            }
-                        }
-
-                        const size_t start = i;
-                        if constexpr (OneIsTrue) {
-                            while (i < cur_end && !mask[k]) {
-                                ++i;
-                                k += 1;
-                                k -= (k == n_el2) * n_el2;
-                            }
-                        } else {
-                            while (i < cur_end && mask[k]) {
-                                ++i;
-                                k += 1;
-                                k -= (k == n_el2) * n_el2;
-                            }
-                        }
-                    
-                        size_t len = i - start;
-                        {
-
-                            unsigned int* __restrict d = dst + out_idx;
-                            unsigned int* __restrict s = src + start;
-       
-                            memcpy(d, s, len * sizeof(unsigned int));
-
-                        }
-                    
-                        out_idx += len;
-                        i += 1;
-                    }
-
-                }
+                copy_col_dense<
+                               OneIsTrue,
+                               Periodic,
+                               true     // distinct
+                              >(
+                                 row_view_idx.data(),
+                                 row_view_idx2.data(),
+                                 mask,
+                                 i,
+                                 out_idx,
+                                 cur_start,
+                                 cur_end,
+                                 n_el2
+                               );
 
             }
 
@@ -514,114 +228,20 @@ void get_dataframe_filter_range_mt(
             size_t out_idx = 0;
             size_t i       = 0;
 
-            if constexpr (!Periodic) {
-                if constexpr (OneIsTrue) {
-                    while (!mask[i]) {
-                        i += 1;
-                        out_idx += 1;
-                    }
-                } else {
-                    while (mask[i]) {
-                        i += 1;
-                        out_idx += 1;
-                    }
-                }
-                while (i < mask.size()) {
-      
-                    if constexpr (OneIsTrue) {
-                        while (i < mask.size() && mask[i]) {
-                            i += 1;
-                        }
-                    } else {
-                        while (i < mask.size() && !mask[i]) {
-                            i += 1;
-                        }
-                    }
-
-                    const size_t start = i;
-                    if constexpr (OneIsTrue) {
-                        while (i < mask.size() && !mask[i]) ++i;
-                    } else {
-                        while (i < mask.size() && mask[i]) ++i;
-                    }
-                
-                    size_t len = i - start;
-                    {
-
-                        unsigned int* __restrict d = dst + out_idx;
-                        unsigned int* __restrict s = src + start;
-       
-                        memcpy(d, s, len * sizeof(unsigned int));
-
-                    }
-                
-                    out_idx += len;
-                    i += 1;
-                }
-            } else {
-
-                size_t k = 0;
-
-                if constexpr (OneIsTrue) {
-                    while (!mask[k]) {
-                        i += 1;
-                        k += 1;
-                        out_idx += 1;
-                        k -= (k == n_el2) * n_el2;
-                    }
-                } else {
-                    while (mask[k]) {
-                        i += 1;
-                        k += 1;
-                        out_idx += 1;
-                        k -= (k == n_el2) * n_el2;
-                    }
-                }
-                while (i < mask.size()) {
-      
-                    if constexpr (OneIsTrue) {
-                        while (i < mask.size() && mask[k]) {
-                            i += 1;
-                            k += 1;
-                            k -= (k == n_el2) * n_el2;
-                        }
-                    } else {
-                        while (i < mask.size() && !mask[k]) {
-                            i += 1;
-                            k += 1;
-                            k -= (k == n_el2) * n_el2;
-                        }
-                    }
-
-                    const size_t start = i;
-                    if constexpr (OneIsTrue) {
-                        while (i < mask.size() && !mask[k]) {
-                            ++i;
-                            k += 1;
-                            k -= (k == n_el2) * n_el2;
-                        }
-                    } else {
-                        while (i < mask.size() && mask[k]) {
-                            ++i;
-                            k += 1;
-                            k -= (k == n_el2) * n_el2;
-                        }
-                    }
-                
-                    size_t len = i - start;
-                    {
-
-                        unsigned int* __restrict d = dst + out_idx;
-                        unsigned int* __restrict s = src + start;
-       
-                        memcpy(d, s, len * sizeof(unsigned int));
-
-                    }
-                
-                    out_idx += len;
-                    i += 1;
-                }
-            }
+            copy_col_dense<
+                           OneIsTrue,
+                           Periodic,
+                           true     // distinct
+                          >(
+                             row_view_idx.data(),
+                             row_view_idx2.data(),
+                             mask,
+                             i,
+                             out_idx,
+                             0,
+                             n_el,
+                             n_el2
+                           );
         }
 
     };
@@ -892,7 +512,7 @@ void get_dataframe_filter_range_mt(
             if constexpr (!IsDense || std::is_same_v<T, std::string>) {
                 copy_col(dst, src);
             } else {
-                copy_col_dense(dst, src);
+                copy_col_dns(dst, src);
             }
         }
     };
@@ -1002,7 +622,7 @@ void get_dataframe_filter_range_mt(
         if constexpr (!IsDense) {
             cols_proceed(copy_col, copy_col);
         } else {
-            cols_proceed(copy_col_dense, copy_col);
+            cols_proceed(copy_col_dns, copy_col);
         }
     }
 

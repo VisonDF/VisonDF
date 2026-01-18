@@ -94,6 +94,7 @@ namespace vison {
     #include "types/supported_assertion_levels.inl"
 
     #include "inlines/offset_per_thread.inl"
+    #include "inlines/copy_col_dense.inl"
 
     #include "inlines/simple_mt.inl"
     #include "inlines/numa_mt.inl"
