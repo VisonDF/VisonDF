@@ -3,16 +3,16 @@
 template <bool OneIsTrue,
           bool Periodic,
           bool Distinct>
-inline void copy_col_dense(
-                            auto* __restrict dst,
-                            const auto* __restrict src,
-                            std::vector<uint8_t>& mask,
-                            size_t i,
-                            size_t out_idx,
-                            const size_t cur_start,
-                            const size_t cur_end,
-                            const size_t n_el2
-                          )
+inline void copy_col_filter_range_dense(
+                                         auto* dst,
+                                         const auto* src,
+                                         const std::vector<uint8_t>& mask,
+                                         size_t i,
+                                         size_t out_idx,
+                                         const size_t cur_start,
+                                         const size_t cur_end,
+                                         const size_t n_el2
+                                       )
 {
 
     if constexpr (!Periodic) {

@@ -120,20 +120,20 @@ void get_dataframe_filter_range_mt(
 
                 size_t i = cur_start;
 
-                copy_col_dense<
-                               OneIsTrue,
-                               Periodic,
-                               true     // distinct
-                              >(
-                                 dst,
-                                 src,
-                                 mask,
-                                 i,
-                                 out_idx,
-                                 cur_start,
-                                 cur_end,
-                                 n_el2
-                               );
+                copy_col_filter_range_dense<
+                                            OneIsTrue,
+                                            Periodic,
+                                            true     // distinct
+                                           >(
+                                              dst,
+                                              src,
+                                              mask,
+                                              i,
+                                              out_idx,
+                                              cur_start,
+                                              cur_end,
+                                              n_el2
+                                            );
             }
 
         } else {
@@ -141,20 +141,20 @@ void get_dataframe_filter_range_mt(
             size_t out_idx = 0;
             size_t i       = 0;
 
-            copy_col_dense<
-                           OneIsTrue,
-                           Periodic,
-                           true     // distinct
-                          >(
-                             dst,
-                             src,
-                             mask,
-                             i,
-                             out_idx,
-                             0,
-                             n_el,
-                             n_el2
-                           );
+            copy_col_filter_range_dense<
+                                        OneIsTrue,
+                                        Periodic,
+                                        true     // distinct
+                                       >(
+                                          dst,
+                                          src,
+                                          mask,
+                                          i,
+                                          out_idx,
+                                          0,
+                                          n_el,
+                                          n_el2
+                                        );
         }
     };
 
@@ -206,20 +206,20 @@ void get_dataframe_filter_range_mt(
 
                 size_t i = cur_start;
 
-                copy_col_dense<
-                               OneIsTrue,
-                               Periodic,
-                               true     // distinct
-                              >(
-                                 row_view_idx.data(),
-                                 row_view_idx2.data(),
-                                 mask,
-                                 i,
-                                 out_idx,
-                                 cur_start,
-                                 cur_end,
-                                 n_el2
-                               );
+                copy_col_filter_range_dense<
+                                            OneIsTrue,
+                                            Periodic,
+                                            true     // distinct
+                                           >(
+                                              row_view_idx.data(),
+                                              row_view_idx2.data(),
+                                              mask,
+                                              i,
+                                              out_idx,
+                                              cur_start,
+                                              cur_end,
+                                              n_el2
+                                            );
 
             }
 
@@ -228,20 +228,20 @@ void get_dataframe_filter_range_mt(
             size_t out_idx = 0;
             size_t i       = 0;
 
-            copy_col_dense<
-                           OneIsTrue,
-                           Periodic,
-                           true     // distinct
-                          >(
-                             row_view_idx.data(),
-                             row_view_idx2.data(),
-                             mask,
-                             i,
-                             out_idx,
-                             0,
-                             n_el,
-                             n_el2
-                           );
+            copy_col_filter_range_dense<
+                                        OneIsTrue,
+                                        Periodic,
+                                        true     // distinct
+                                       >(
+                                          row_view_idx.data(),
+                                          row_view_idx2.data(),
+                                          mask,
+                                          i,
+                                          out_idx,
+                                          0,
+                                          n_el,
+                                          n_el2
+                                        );
         }
 
     };
@@ -291,83 +291,42 @@ void get_dataframe_filter_range_mt(
                               nthreads);
                 }
                     
-                const unsigned int start = cur_struct.start;
-                const unsigned int end   = cur_struct.end;
+                const unsigned int cur_start = cur_struct.start;
+                const unsigned int cur_end   = cur_struct.end;
 
                 const size_t out_idx = offset_start.thread_offsets[tid];
 
-                if constexpr (!Periodic) {
-                    if constexpr (OneIsTrue) {
-                        for (size_t j = start; j < end; ++j) {
-                            if (!mask[j]) continue;
-                            dst[out_idx++] = src[j];
-                        }
-                    } else {
-                        for (size_t j = start; j < end; ++j) {
-                            if (mask[j]) continue;
-                            dst[out_idx++] = src[j];
-                        }
-                    }
-                } else {
-                    if constexpr (OneIsTrue) {
-                        for (size_t j = start, k = start % n_el2; j < end; ++j) {
-                            if (!mask[k])  {
-                                k += 1;
-                                k -= (k == n_el2) * n_el2;
-                                continue;
-                            }
-                            dst[out_idx++] = src[j];
-                        }
-                    } else {
-                        for (size_t j = start, k = start % n_el2; j < end; ++j) {
-                            if (mask[k]) {
-                                k += 1;
-                                k -= (k == n_el2) * n_el2;
-                                continue;
-                            }
-                            dst[out_idx++] = src[j];
-                        }
-                    }
-                }
+                copy_col_filter_range<OneIsTrue,
+                                      Periodic,
+                                      true      // distinct
+                                     >(
+                                       dst,
+                                       src,
+                                       mask,
+                                       out_idx,
+                                       cur_start,
+                                       cur_end,
+                                       n_el2
+                                      );
 
             }
 
         } else {
 
             size_t out_idx = 0;
-            if constexpr (!Periodic) {
-                if constexpr (OneIsTrue) {
-                    for (size_t j = 0; j < mask.size(); ++j) {
-                        if (!mask[j]) continue;
-                        dst[out_idx++] = src[j];
-                    }
-                } else {
-                    for (size_t j = 0; j < mask.size(); ++j) {
-                        if (mask[j]) continue;
-                        dst[out_idx++] = src[j];
-                    }
-                }
-            } else {
-                if constexpr (OneIsTrue) {
-                    for (size_t j = 0, k = 0; j < mask.size(); ++j) {
-                        if (!mask[k]) {
-                            k += 1;
-                            k -= (k == n_el2) * n_el2;
-                            continue;
-                        }
-                        dst[out_idx++] = src[j];
-                    }
-                } else {
-                    for (size_t j = 0, k = 0; j < mask.size(); ++j) {
-                        if (mask[k]) {
-                            k += 1;
-                            k -= (k == n_el2) * n_el2;
-                            continue;
-                        }
-                        dst[out_idx++] = src[j];
-                    }
-                }
-            }
+
+            copy_col_filter_range<OneIsTrue,
+                                  Periodic,
+                                  true       // distinct
+                                 >(
+                                   dst,
+                                   src,
+                                   mask,
+                                   out_idx,
+                                   0,
+                                   n_el,
+                                   n_el2
+                                  );
 
         }
     };
@@ -421,78 +380,38 @@ void get_dataframe_filter_range_mt(
 
                 const size_t out_idx = offset_start.thread_offsets[tid];
 
-                if constexpr (!Periodic) {
-                    if constexpr (OneIsTrue) {
-                        for (size_t j = start; j < end; ++j) {
-                            if (!mask[j]) continue;
-                            dst[out_idx++] = src[j];
-                        }
-                    } else {
-                        for (size_t j = start; j < end; ++j) {
-                            if (mask[j]) continue;
-                            dst[out_idx++] = src[j];
-                        }
-                    }
-                } else {
-                    if constexpr (OneIsTrue) {
-                        for (size_t j = start, k = start % n_el2; j < end; ++j) {
-                            if (!mask[k]) {
-                                k += 1;
-                                k -= (k == n_el2) * n_el2;
-                                continue;
-                            }
-                            dst[out_idx++] = src[j];
-                        }
-                    } else {
-                        for (size_t j = start, k = start % n_el2; j < end; ++j) {
-                            if (mask[k]) {
-                                k += 1;
-                                k -= (k == n_el2) * n_el2;
-                                continue;
-                            }
-                            dst[out_idx++] = src[j];
-                        }
-                    }
-                }
+                copy_col_filter_range<OneIsTrue,
+                                      Periodic,
+                                      true      // distinct
+                                     >(
+                                       dst,
+                                       src,
+                                       mask,
+                                       out_idx,
+                                       cur_start,
+                                       cur_end,
+                                       n_el2
+                                      );
 
             }
 
         } else {
 
             size_t out_idx = 0;
-            if constexpr (!Periodic) {
-                if constexpr (OneIsTrue) {
-                    for (size_t j = 0; j < n_el; ++j) {
-                        if (!mask[j]) continue;
-                        dst[out_idx++] = src[j];
-                    }
-                } else {
-                    for (size_t j = 0; j < n_el; ++j) {
-                        if (mask[j]) continue;
-                        dst[out_idx++] = src[j];
-                    }
-                }
-            } else {
-                if constexpr (OneIsTrue) {
-                    for (size_t j = 0, k = 0; j < n_el; ++j) {
-                        if (!mask[k]) {
-                            k += 1;
-                            k -= (k == n_el2) * n_el2;
-                            continue;
-                        }
-                        dst[out_idx++] = src[j];
-                    }
-                } else {
-                    for (size_t j = 0, k = 0; j < n_el; ++j) {
-                        if (mask[k]) {
-                            k += 1;
-                            k -= (k == n_el2) * n_el2;
-                            continue;
-                        }
-                        dst[out_idx++] = src[j];
-                    }
-                }
-            }
+
+            copy_col_filter_range<OneIsTrue,
+                                  Periodic,
+                                  true      // distinct
+                                 >(
+                                   dst,
+                                   src,
+                                   mask,
+                                   out_idx,
+                                   0,
+                                   n_el,
+                                   n_el2
+                                  );
+
         }
     };
 

@@ -98,41 +98,18 @@ void rm_row_filter_range_mt(
 
                 const size_t out_idx = offset_start.thread_offsets[tid];
             
-                if constexpr (!Periodic) {
-                    if constexpr (OneIsTrue) {
-                        for (size_t i = start; i < end; ++read) {
-                            if (!mask[i]) {
-                                dst[out_idx++] = std::move(src[i]);
-                            }
-                        }
-                    } else {
-                        for (size_t i = start; i < end; ++read) {
-                            if (mask[i]) {
-                                dst[out_idx++] = std::move(src[i]);
-                            }
-                        }
-                    }
-                } else {
-                    if constexpr (OneIsTrue) {
-                        for (size_t i = start, k = start % n_el2; i < end; ++read) {
-                            if (mask[k]) {
-                                k += 1;
-                                k -= (k == n_el2) * n_el2;
-                                continue;
-                            }
-                            dst[out_idx++] = std::move(src[i]);
-                        }
-                    } else {
-                        for (size_t i = start, k = start % n_el2; i < end; ++read) {
-                            if (!mask[k]) {
-                                k += 1;
-                                k -= (k == n_el2) * n_el2;
-                                continue;
-                            }
-                            dst[out_idx++] = std::move(src[i]);
-                        }
-                    }
-                }
+                copy_col_filter_range<OneIsTrue,
+                                      Periodic,
+                                      false      // distinct but still want move
+                                     >(
+                                       dst,
+                                       src,
+                                       mask,
+                                       out_idx,
+                                       cur_start,
+                                       cur_end,
+                                       n_el2
+                                      );
             }
 
             if constexpr (!Periodic) {
@@ -155,41 +132,18 @@ void rm_row_filter_range_mt(
         } else {
             size_t out_idx = 0;
 
-            if constexpr (!Periodic) {
-                if constexpr (OneIsTrue) {
-                    for (size_t i = 0; i < n_el; ++read) {
-                        if (!mask[i]) {
-                            dst[out_idx++] = std::move(src[i]);
-                        }
-                    }
-                } else {
-                    for (size_t i = 0; i < n_el; ++read) {
-                        if (mask[i]) {
-                            dst[out_idx++] = std::move(src[i]);
-                        }
-                    }
-                }
-            } else {
-                if constexpr (OneIsTrue) {
-                    for (size_t i = 0, k = 0; i < n_el; ++read) {
-                        if (mask[k]) {
-                            k += 1;
-                            k -= (k == n_el2) * n_el2;
-                            continue;
-                        }
-                        dst[out_idx++] = std::move(src[i]);
-                    }
-                } else {
-                    for (size_t i = 0; i < n_el; ++read) {
-                        if (mask[k]) {
-                            k += 1;
-                            k -= (k == n_el2) * n_el2;
-                            continue;
-                        }
-                        dst[out_idx++] = std::move(src[i]);
-                    }
-                }
-            }
+            copy_col_filter_range<OneIsTrue,
+                                  Periodic,
+                                  false      // not distinct
+                                 >(
+                                   dst,
+                                   src,
+                                   mask,
+                                   out_idx,
+                                   0,
+                                   n_el,
+                                   n_el2
+                                  );
 
             if constexpr (!Periodic) {
                 if constexpr (std::is_trivially_copyable_v<T>) {

@@ -97,7 +97,7 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
                 copy_col_dense<
                                OneIsTrue,
                                Periodic,
-                               false     // not distinct
+                               true     // distinct
                               >c(
                                   dst,
                                   src,
