@@ -100,14 +100,22 @@ inline void apply_numeric_filter_boolmask(const std::vector<T>& values,
                 }
             } else {
                 if constexpr (OneIsTrue) {
-                    for (size_t i = cur_start; i < cur_end; ++i) {
-                        if (!mask[i % n_el2]) { continue; }
+                    for (size_t i = cur_start, k = cur_start % n_el2; i < cur_end; ++i) {
+                        if (!mask[k]) { 
+                            k += 1;
+                            k -= (k == n_el2) * n_el2;
+                            continue; 
+                        }
                         f(dst[out_idx]);
                         out_idx += 1;
                     }
                 } else {
-                    for (size_t i = cur_start; i < cur_end; ++i) {
-                        if (mask[i % n_el2]) { continue; }
+                    for (size_t i = cur_start, k = cur_start % n_el2; i < cur_end; ++i) {
+                        if (mask[k]) { 
+                            k += 1;
+                            k -= (k == n_el2) * n_el2;
+                            continue; 
+                        }
                         f(dst[out_idx]);
                         out_idx += 1;
                     }
@@ -136,14 +144,22 @@ inline void apply_numeric_filter_boolmask(const std::vector<T>& values,
             }
         } else {
             if constexpr (OneIsTrue) {
-                for (size_t i = 0; i < n_el; ++i) {
-                    if (!mask[i % n_el2]) { continue; }
+                for (size_t i = 0, k = 0; i < n_el; ++i) {
+                    if (!mask[k]) { 
+                        k += 1;
+                        k -= (k == n_el2) * n_el2;
+                        continue; 
+                    }
                     f(dst[out_idx]);
                     out_idx += 1;
                 }
             } else {
-                for (size_t i = 0; i < n_el; ++i) {
-                    if (mask[i % n_el2]) { continue; }
+                for (size_t i = 0, k = 0; i < n_el; ++i) {
+                    if (mask[k]) { 
+                        k += 1;
+                        k -= (k == n_el2) * n_el2;
+                        continue; 
+                    }
                     f(dst[out_idx]);
                     out_idx += 1;
                 }
