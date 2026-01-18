@@ -1,10 +1,10 @@
 #pragma once
 
-template <bool MapCol        = false,
-          unsigned int CORES = 4,
-          bool NUMA          = false,
-          bool IdxIsTrue     = true,
-          bool Periodic      = false,
+template <bool MapCol         = false,
+          unsigned int CORES  = 4,
+          bool NUMA           = false,
+          bool IdxIsTrue      = true,
+          bool Periodic       = false,
           typename T, 
           typename F>
 inline void apply_numeric_filter_idx(const std::vector<T>& values, 
@@ -37,7 +37,10 @@ inline void apply_numeric_filter_idx(const std::vector<T>& values,
     }
 
     std::vector<T>& dst = values[i2];
-    
+
+    const unsigned int n_el  = (Periodic) ? nrow : mask.size();
+    const unsigned int n_el2 = mask.size();
+
     if constexpr (CORES > 1) {
 
         if (CORES > mask.size())
@@ -57,13 +60,13 @@ inline void apply_numeric_filter_idx(const std::vector<T>& values,
 
             if constexpr (NUMA) {
                 numa_mt(cur_struct,
-                        mask.size(), 
+                        n_el, 
                         tid, 
                         nthreads, 
                         numa_nodes);
             } else {
                 simple_mt(cur_struct,
-                          mask.size(), 
+                          n_el, 
                           tid, 
                           nthreads);
             }
@@ -71,38 +74,78 @@ inline void apply_numeric_filter_idx(const std::vector<T>& values,
             const unsigned int cur_start = cur_struct.start;
             const unsigned int cur_end   = cur_struct.end;
 
-            if constexpr (IdxIsTrue) {
+            if constexpr (!Periodic) {
+                if constexpr (IdxIsTrue) {
 
-                for (size_t i = cur_start; i < cur_end; ++i)
-                    f(dst[mask[i]]);
+                    for (size_t i = cur_start; i < cur_end; ++i)
+                        f(dst[mask[i]]);
 
+                } else {
+                    size_t out_idx = (cur_start == 0) ? mask[cur_start] : mask[cur_start - 1] + 1;
+                    size_t i       = cur_start;
+                    while (i < cur_end) {
+                        while (out_idx < mask[i]) f(dst[out_idx++]);
+                        out_idx += 1;
+                        i       += 1;
+                    }
+                }
             } else {
-                size_t out_idx = mask[cur_start - 1] + 1;
-                size_t i       = cur_start;
-                while (i < cur_end) {
+                size_t k = cur_start % n_el2;
+                if constexpr (IdxIsTrue) {
+                    for (size_t i = cur_start; i < cur_end; ++i) {
+                        f(dst[k]);
+                        k += 1;
+                        k -= (k == n_el2) * n_el2;
+                    }                
+                } else {
+                    size_t out_idx = (cur_start == 0) ? mask[cur_start] : mask[cur_start - 1] + 1;
+                    size_t i       = cur_start;
+                    while (i < cur_end) {
+                        while (out_idx < mask[k]) f(dst[out_idx++]);
+                        i       += 1;
+                        out_idx += 1;
+                        k += 1;
+                        k -= (k == n_el2) * n_el2;
+                    }
+                }
+            }
+
+        }
+    } else {
+        if constexpr (!Periodic) {
+            if constexpr (IdxIsTrue) {
+                for (auto i : mask)
+                    f(dst[i]);
+            } else {
+                size_t out_idx = 0;
+                size_t i = 0;
+                while (i < mask.size()) {
                     while (out_idx < mask[i]) f(dst[out_idx++]);
                     out_idx += 1;
                     i       += 1;
                 }
             }
-
-        }
-
-    } else {
-        if constexpr (IdxIsTrue) {
-            for (auto i : mask)
-                f(dst[i]);
         } else {
-            size_t out_idx = 0;
-            size_t i = 0;
-            while (i < mask.size()) {
-                while (out_idx < mask[i]) f(dst[out_idx++]);
-                out_idx += 1;
-                i       += 1;
+            if constexpr (IdxIsTrue) {
+                for (size_t i = 0, k = 0; i < n_el; ++i) {
+                    f(dst[k]);
+                    k += 1;
+                    k -= (k == n_el2) * n_el2;
+                }                
+            } else {
+                size_t out_idx  = 0;
+                size_t k        = 0;
+                size_t i        = 0;
+                while (i < mask.size()) {
+                    while (out_idx < mask[k]) f(dst[out_idx++]);
+                    i       += 1;
+                    out_idx += 1;
+                    k += 1;
+                    k -= (k == n_el2) * n_el2;
+                }
             }
         }
     }
-
 }
 
 
