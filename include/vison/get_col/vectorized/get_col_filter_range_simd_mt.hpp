@@ -1,9 +1,9 @@
 #pragma once
 
 template <unsigned int CORES = 4,
-          bool NUMA = false,
-          bool IsBool = false,
-          bool MapCol = false,
+          bool NUMA          = false,
+          bool IsBool        = false,
+          bool MapCol        = false,
           typename T>
 void get_col_filter_range_simd_mt(const unsigned int x, 
                                   std::vector<T>& rtn_v,
