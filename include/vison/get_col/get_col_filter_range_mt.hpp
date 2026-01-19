@@ -148,10 +148,11 @@ void get_col_filter_range(
         if (offset_start.vec.empty()) {
             build_boolmask<OneIsTrue,
                            Periodic>(offset_start.thread_offsets, 
-                                       mask, 
-                                       CORES,
-                                       ofset_start.active_rows,
-                                       n_el);
+                                     mask, 
+                                     CORES,
+                                     ofset_start.active_rows,
+                                     n_el,
+                                     n_el2);
         }
         rtn_v.resize(offset_start.active_rows);
 

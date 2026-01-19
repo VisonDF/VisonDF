@@ -51,6 +51,7 @@ inline void apply_numeric_filter_boolmask(const std::vector<T>& values,
                                                  mask, 
                                                  CORES,
                                                  offset_start.active_rows,
+                                                 n_el,
                                                  n_el2);
         }
 

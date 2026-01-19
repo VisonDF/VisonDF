@@ -45,6 +45,7 @@ void rm_row_filter_range_mt(
                                      mask, 
                                      inner_cores, 
                                      offset_start.active_rows,
+                                     n_el,
                                      n_el2);
     }
 
