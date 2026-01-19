@@ -11,7 +11,8 @@ inline void apply_numeric_filter_idx(const std::vector<T>& values,
                                      const unsigned int n, 
                                      const size_t idx_type, 
                                      F&& f,
-                                     const std::vector<unsigned int>& mask) 
+                                     const std::vector<unsigned int>& mask,
+                                     Runs& runs = default_idx_runs) 
 {
 
     unsigned int i2 = 0;
@@ -45,6 +46,15 @@ inline void apply_numeric_filter_idx(const std::vector<T>& values,
 
         if (CORES > mask.size())
             throw std::runtime_error("Too much cores for so little nrows\n");
+
+        if constexpr (!IdxIsTrue) {
+            if (runs.thread_offsets.empty()) { 
+                build_runs_mt_simple<IdxIsTrue,
+                                     Periodic>(runs.thread_offsets,
+                                               mask,
+                                               CORES);
+            }
+        }
 
         int numa_nodes = 1;
         if (numa_available() >= 0) 
@@ -81,7 +91,7 @@ inline void apply_numeric_filter_idx(const std::vector<T>& values,
                         f(dst[mask[i]]);
 
                 } else {
-                    size_t out_idx = (cur_start == 0) ? mask[cur_start] : mask[cur_start - 1] + 1;
+                    size_t out_idx = runs.thread_offsets[tid];
                     size_t i       = cur_start;
                     while (i < cur_end) {
                         while (out_idx < mask[i]) f(dst[out_idx++]);
@@ -98,12 +108,17 @@ inline void apply_numeric_filter_idx(const std::vector<T>& values,
                         k -= (k == n_el2) * n_el2;
                     }                
                 } else {
-                    size_t out_idx = (cur_start == 0) ? mask[cur_start] : mask[cur_start - 1] + 1;
+                    size_t out_idx = runs.thread_offsets[tid];
+                    size_t out_idx2 = (k > 0) ? mask[k - 1] + 1 : 0;
                     size_t i       = cur_start;
                     while (i < cur_end) {
-                        while (out_idx < mask[k]) f(dst[out_idx++]);
-                        i       += 1;
-                        out_idx += 1;
+                        while (out_idx2 < mask[k]) {
+                            f(dst[out_idx++]);
+                            out_idx2 += 1;
+                        }
+                        i        += 1;
+                        out_idx  += 1;
+                        out_idx2 += 1;
                         k += 1;
                         k -= (k == n_el2) * n_el2;
                     }
@@ -133,13 +148,18 @@ inline void apply_numeric_filter_idx(const std::vector<T>& values,
                     k -= (k == n_el2) * n_el2;
                 }                
             } else {
-                size_t out_idx  = 0;
                 size_t k        = 0;
+                size_t out_idx  = 0;
+                size_t out_idx2 = 0;
                 size_t i        = 0;
                 while (i < mask.size()) {
-                    while (out_idx < mask[k]) f(dst[out_idx++]);
-                    i       += 1;
-                    out_idx += 1;
+                    while (out_idx2 < mask[k]) {
+                        f(dst[out_idx++]);
+                        out_idx2 += 1;
+                    }
+                    i        += 1;
+                    out_idx  += 1;
+                    out_idx2 += 1
                     k += 1;
                     k -= (k == n_el2) * n_el2;
                 }

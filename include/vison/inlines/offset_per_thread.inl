@@ -59,14 +59,16 @@ inline void build_boolmask(
 }
 
 
-template <bool IdxIsTrue>
+template <bool IdxIsTrue,
+          bool Periodic>
 inline void build_runs_mt(
                           std::vector<size_t>& thread_offsets,
                           std::vector<size_t>& thread_counts,
                           std::vector<uint8_t>& mask,
                           const size_t inner_cores,
                           const size_t local_nrow,
-                          std::vector<RunsMt>& runs
+                          std::vector<RunsMt>& runs,
+                          const size_t n_el2
                          )
 {
 
@@ -94,17 +96,21 @@ inline void build_runs_mt(
 
             size_t hmn = 0;
 
-            for (size_t i = cur_start; i < cur_end; ) {
-                size_t out_idx   = i;
-                size_t src_start = mask[i];
+            if constexpr (!Periodic) {
+                for (size_t i = cur_start; i < cur_end; ) {
+                    size_t out_idx   = i;
+                    size_t src_start = mask[i];
     
-                while (i + 1 < cur_end &&
-                       (int)((int)mask[i + 1] - ((int)mask[i] + 1)) < 2) {
+                    while (i + 1 < cur_end &&
+                           (int)((int)mask[i + 1] - ((int)mask[i] + 1)) < 2) {
+                        ++i;
+                    }
+                    runs[cur_start + hmn] = {out_idx, src_start, i - out_idx + 1};
                     ++i;
+                    ++hmn;
                 }
-                runs[cur_start + hmn] = {out_idx, src_start, i - out_idx + 1};
-                ++i;
-                ++hmn;
+            } else {
+
             }
 
             thread_offsets[tid] = hmn;
@@ -188,7 +194,8 @@ inline void build_runs_mt(
 
 }
 
-template <bool IdxIsTrue>
+template <bool IdxIsTrue,
+          bool Periodic>
 inline void build_runs(
                        std::vector<uint8_t>& mask,
                        const size_t local_nrow,
@@ -251,7 +258,8 @@ inline void build_runs(
 
 }
 
-template <bool IdxIsTrue>
+template <bool IdxIsTrue,
+          bool Periodic>
 inline void build_runs_mt_simple(
                                  std::vector<size_t>& thread_offsets,
                                  std::vector<uint8_t>& mask,
