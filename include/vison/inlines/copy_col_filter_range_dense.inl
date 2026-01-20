@@ -2,10 +2,12 @@
 
 template <bool OneIsTrue,
           bool Periodic,
-          bool Distinct>
+          bool Distinct,
+          typename T
+         >
 inline void copy_col_filter_range_dense(
-                                         auto* dst,
-                                         const auto* src,
+                                         T* dst,
+                                         const T* src,
                                          const std::vector<uint8_t>& mask,
                                          size_t i,
                                          size_t out_idx,

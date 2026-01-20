@@ -77,7 +77,6 @@ inline void build_runs_mt(
                           size_t& active_rows,
                           const unsigned int n_el,
                           const unsigned int n_el2,
-                          const unsigned int local_nrow
                          )
 {
 
@@ -437,9 +436,8 @@ inline void build_runs_mt_simple(
 {
 
     if constexpr (IdxIsTrue) {
-
-        throw std::runtime_error("Not sensed to use this function with `IdxIsTrue = true`");
-
+        active_rows = n_el;
+        return;
     }
     
     thread_offsets.resize(inner_cores);
@@ -489,7 +487,7 @@ inline void build_runs_mt_simple(
                     ++src_start;
                 }
                 src_start += 1;
-                i += 1;
+                i         += 1;
                 const size_t ref_src_start = src_start;
                 while (src_start < mask[i]) src_start += 1;
                 const size_t len = src_start - ref_src_start;
@@ -536,6 +534,78 @@ inline void build_runs_mt_simple(
     }
 
     active_rows = total;
+
+}
+
+template <bool IdxIsTrue,
+          bool Periodic>
+inline void build_runs_simple(
+                              std::vector<uint8_t>& mask,
+                              size_t& active_rows,
+                              const size_t n_el,
+                              const size_t n_el2
+                             )
+{
+
+    if constexpr (IdxIsTrue) {
+        active_rows = n_el;
+        return;
+    }
+    
+    mask.push_back(mask.back() + 1);
+    size_t src_start  = 0;
+    size_t global_len = 0;
+
+    if (mask[0] > 0) {
+        while (src_start < mask[0]) ++src_start;
+        global_len += src_start;
+    }
+
+    if constexpr (!Periodic) {
+        for (size_t i = 0; i < n_el; ) {
+
+            while (i + 1 < n_el &&
+                   (int)((int)mask[i + 1] - ((int)mask[i] + 1)) < 2) {
+                ++i;
+                ++src_start;
+            }
+            src_start += 1;
+            i         += 1;
+            const size_t ref_src_start = src_start;
+            while (src_start < mask[i]) src_start += 1;
+            const size_t len = src_start - ref_src_start;
+            i          += 1;
+            src_start  += 1;
+            global_len += len;
+        }
+    } else {
+        for (size_t i = 0, k = 0; i < n_el; ) {
+
+            while (i + 1 < n_el &&
+                   (int)((int)mask[k + 1] - ((int)mask[k] + 1)) < 2) {
+                ++i;
+                ++k;
+                ++src_start;
+                k -= (k == n_el2) * n_el2;
+            }
+            src_start += 1;
+            i         += 1;
+            k         += 1;
+            k         -= (k == n_el2) * n_el2;
+            const size_t ref_src_start = src_start;
+            while (src_start < mask[k]) src_start += 1;
+            const size_t len = src_start - ref_src_start;
+            i          += 1;
+            src_start  += 1;
+            k          += 1;
+            global_len += len;
+            k          -= (k == n_el2) * n_el2;
+        }
+    }
+
+    mask.pop_back();
+
+    active_rows = global_len;
 
 }
 

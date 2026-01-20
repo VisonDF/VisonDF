@@ -159,94 +159,6 @@ void get_dataframe_filter_range_mt(
         }
     };
 
-    auto copy_view_dense = [this,
-                            strt_vl,
-                            n_el,
-                            n_el2,
-                            &mask, 
-                            &row_view_idx2, 
-                            &offset_start]()
-    {
-
-        row_view_idx.resize(offset_start.active_rows);
-
-        if constexpr (CORES > 1) {
-
-            if (CORES > mask.size())
-                throw std::runtime_error("Too much cores for so little nrows\n");
-
-            int numa_nodes = 1;
-            if (numa_available() >= 0) 
-                numa_nodes = numa_max_node() + 1;
-
-            #pragma omp parallel num_threads(CORES)
-            {
-
-                const int tid        = omp_get_thread_num();
-                const int nthreads   = omp_get_num_threads();
-           
-                MtStruct cur_struct;
-
-                if constexpr (NUMA) {
-                    numa_mt(cur_struct,
-                            n_el, 
-                            tid, 
-                            nthreads, 
-                            numa_nodes);
-                } else {
-                    simple_mt(cur_struct,
-                              n_el, 
-                              tid, 
-                              nthreads);
-                }
-                    
-                const unsigned int start = cur_struct.start;
-                const unsigned int len   = cur_struct.len;
-
-                const size_t out_idx = offset_start.thread_offsets[tid];
-
-                size_t i = cur_start;
-
-                copy_col_filter_range_dense<
-                                            OneIsTrue,
-                                            Periodic,
-                                            true     // distinct
-                                           >(
-                                              row_view_idx.data(),
-                                              row_view_idx2.data(),
-                                              mask,
-                                              i,
-                                              out_idx,
-                                              cur_start,
-                                              cur_end,
-                                              n_el2
-                                            );
-
-            }
-
-        } else {
-
-            size_t out_idx = 0;
-            size_t i       = 0;
-
-            copy_col_filter_range_dense<
-                                        OneIsTrue,
-                                        Periodic,
-                                        true     // distinct
-                                       >(
-                                          row_view_idx.data(),
-                                          row_view_idx2.data(),
-                                          mask,
-                                          i,
-                                          out_idx,
-                                          0,
-                                          n_el,
-                                          n_el2
-                                        );
-        }
-
-    };
-
     auto copy_col = [strt_vl,
                      n_el,
                      n_el2,
@@ -319,90 +231,6 @@ void get_dataframe_filter_range_mt(
             copy_col_filter_range<OneIsTrue,
                                   Periodic,
                                   true       // distinct
-                                 >(
-                                   dst,
-                                   src,
-                                   mask,
-                                   out_idx,
-                                   0,
-                                   n_el,
-                                   n_el2
-                                  );
-
-        }
-    };
-
-    auto copy_view = [this,
-                      strt_vl,
-                      n_el,
-                      n_el2,
-                      &mask,
-                      &row_view_idx2,
-                      &offset_start]()
-    {
-  
-        dst_vec.resize(offset_start.active_rows);
-
-        const unsigned int* __restrict src = row_view_idx2.data() + strt_vl;
-        unsigned int*       __restrict dst = row_view_idx.data();
-
-        if constexpr (CORES > 1) {
-
-            if (CORES > mask.size())
-                throw std::runtime_error("Too much cores for so little nrows\n");
-
-            int numa_nodes = 1;
-            if (numa_available() >= 0) 
-                numa_nodes = numa_max_node() + 1;
-
-            #pragma omp parallel num_threads(CORES)
-            {
-
-                const int tid        = omp_get_thread_num();
-                const int nthreads   = omp_get_num_threads();
-           
-                MtStruct cur_struct;
-
-                if constexpr (NUMA) {
-                    numa_mt(cur_struct,
-                            n_el, 
-                            tid, 
-                            nthreads, 
-                            numa_nodes);
-                } else {
-                    simple_mt(cur_struct,
-                              n_el, 
-                              tid, 
-                              nthreads);
-                }
-                    
-                const unsigned int start = cur_struct.start;
-                const unsigned int end   = cur_struct.end;
-
-                const size_t out_idx = offset_start.thread_offsets[tid];
-
-                copy_col_filter_range<OneIsTrue,
-                                      Periodic,
-                                      true      // distinct
-                                     >(
-                                       dst,
-                                       src,
-                                       mask,
-                                       out_idx,
-                                       cur_start,
-                                       cur_end,
-                                       n_el2
-                                      );
-
-            }
-
-        } else {
-
-            size_t out_idx = 0;
-
-            copy_col_filter_range<OneIsTrue,
-                                  Periodic,
-                                  true      // distinct
                                  >(
                                    dst,
                                    src,
@@ -551,10 +379,10 @@ void get_dataframe_filter_range_mt(
 
     if constexpr (!IsDense) {
         if (in_view)
-            copy_view();
+            copy_col(row_view_idx, row_view_idx2);
     } else {
         if (in_view)
-            copy_view_dense();
+            copy_col_dense(row_view_idx, row_view_idx2);
     }
 
 }

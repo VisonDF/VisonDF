@@ -101,7 +101,7 @@ void rm_row_filter_range_mt(
             
                 copy_col_filter_range<OneIsTrue,
                                       Periodic,
-                                      false      // distinct but still want move
+                                      false      // move
                                      >(
                                        dst,
                                        src,
@@ -135,7 +135,7 @@ void rm_row_filter_range_mt(
 
             copy_col_filter_range<OneIsTrue,
                                   Periodic,
-                                  false      // not distinct
+                                  false      // no copy -> move
                                  >(
                                    dst,
                                    src,

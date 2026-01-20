@@ -26,6 +26,9 @@ void get_col_filter_range(
         if (start_vl + mask.size >= nrow) {
             throw std::runtime_error("strt_vl + mask.size() > nrow\n");
         }
+        if constexpr (IsDense && std::is_same_v<T, std::string>) {
+            throw std::runtime_error("IsDense && std::is_same_v<T, std::string>\n");
+        }
     }
 
     auto find_col_base = [this,
@@ -121,7 +124,7 @@ void get_col_filter_range(
 
         } else {
 
-            size_t out_idx = 0;
+            size_t out_idx = 0;  // dummy_val
 
             copy_col_filter_range<OneIsTrue,
                                   Periodic,

@@ -6,6 +6,7 @@ template <unsigned int CORES           = 4,
           bool MemClean                = false,
           bool Soft                    = true,
           bool IdxIsTrue               = true,
+          bool Periodic                = false,
           AssertionType AssertionLevel = AssertionType::Simple
          >
 void rm_row_filter_idx_mt(
@@ -40,17 +41,44 @@ void rm_row_filter_idx_mt(
         }
     }
 
-    const size_t n_el = (IdxIsTrue) ? n_el : old_nrow - n_el;
+    const size_t n_el  = (Periodic) ? old_nrow : mask.size();
+    const size_t n_el2 = mask.size();
 
-    auto compact_block = [old_nrow, 
-                          n_el,
+    if constexpr (CORES > 1) {
+        if (runs.thread_offsets.empty()) {
+            build_runs_mt_simple<IdxIsTrue,
+                                 Periodic>(
+                                           runs.thread_offsets,
+                                           mask,
+                                           CORES,
+                                           runs.active_rows,
+                                           n_el,
+                                           n_el2
+                                          );
+        }
+    } else {
+        if (runs.thread_offsets.empty()) {
+            build_runs_simple<IdxIsTrue,
+                              Periodic>(
+                                        mask,
+                                        active_rows,
+                                        n_el,
+                                        n_el2
+                                       );
+        }
+    }
+    nrow = runs.active_rows;
+
+    auto compact_block = [n_el,
+                          n_el2,
                           &runs,
                           &mask]<typename T>(std::vector<T>& vec, 
                                              const size_t inner_cores) {
 
+        T* dst = vec.data();
         T* src;
         std::vector<T> vec2;
-        if constexpr (CORES > 1 || !Sorted && IdxIsTrue) {
+        if constexpr (CORES > 1) {
             vec2 = vec;
             src = &vec2;
         } else {
@@ -59,14 +87,6 @@ void rm_row_filter_idx_mt(
 
         if constexpr (CORES > 1) {
            
-            if constexpr (!IdxIsTrue) {
-                if (runs.thread_offsets.empty()) { 
-                    build_runs_mt_simple<IdxIsTrue>(runs.thread_offsets,
-                                                    mask,
-                                                    CORES);
-                }
-            }
-
             int numa_nodes = 1;
             if (numa_available() >= 0) 
                 numa_nodes = numa_max_node() + 1;
@@ -81,52 +101,51 @@ void rm_row_filter_idx_mt(
 
                 if constexpr (NUMA) {
                     numa_mt(cur_struct,
-                            mask.size(), 
+                            n_el, 
                             tid, 
                             nthreads, 
                             numa_nodes);
                 } else {
                     simple_mt(cur_struct,
-                              mask.size(), 
+                              n_el, 
                               tid, 
                               nthreads);
                 }
                     
-                const unsigned int start = cur_struct.start;
-                const unsigned int end   = cur_struct.end;
+                const unsigned int cur_start = cur_struct.start;
+                const unsigned int cur_end   = cur_struct.end;
 
-                if constexpr (IdxIsTrue) {
-                    for (size_t i = start; i < end; ++i)
-                        vec[i] = std::move((*src)[mask[i]]);
-                } else {
-                    size_t out_idx = runs.thread_offsets[tid];
-                    for (size_t i = start; i < end; ++i) {
-                        const size_t next_stop = mask[i];
-                        while (out_idx < next_stop) {
-                            vec[out_idx] = std::move((*src)[out_idx]);
-                            out_idx += 1;
-                        }
-                    }
-                }
+                size_t out_idx = (!IdxIsTrue) ? runs.thread_offsets[tid] : 0; // else dummy_val
+                copy_col_filter_idx<IdxIsTrue,
+                                    Periodic,
+                                    false      // distinct but wants move
+                                   >(
+                                     dst,
+                                     src,
+                                     mask,
+                                     out_idx,
+                                     cur_start,
+                                     cur_end,
+                                     n_el2
+                                    );
 
             }
 
         } else {
 
-            if constexpr (IdxIsTrue) {
-                for (size_t i = 0; i < mask.size(); ++i)
-                    vec[i] = std::move((*src)[mask[i]]);
-            } else {
-                size_t out_idx = 0;
-                for (size_t i = 0; i < mask.size(); ++i) {
-                    const size_t next_stop = mask[i];
-                    while (out_idx < next_stop) {
-                        vec[out_idx] = std::move((*src)[out_idx]);
-                        out_idx += 1;
-                    }
-                    out_idx += 1;
-                }
-            }
+            size_t out_idx = 0; // dummy val
+            copy_col_filter_idx<IdxIsTrue,
+                                Periodic,
+                                false      // move
+                               >(
+                                  dst,
+                                  src,
+                                  mask,
+                                  out_idx,
+                                  0,
+                                  n_el,
+                                  n_el2
+                                 );
         }
 
         if constexpr (MemClean) {
@@ -224,9 +243,6 @@ void rm_row_filter_idx_mt(
         }
 
     }
-
-    nrow = n_el; 
-
 };
 
 

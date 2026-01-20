@@ -40,32 +40,114 @@ void rm_row_filter_idx_dense_mt(std::vector<unsigned int>& mask,
         }
     }
 
-    const size_t n_el = (IdxIsTrue) ? mask.size() : old_nrow - mask.size();
+    const size_t n_el  = (Periodic) ? old_nrow : mask.size();
+    const size_t n_el2 = mask.size();
+    if constexpr (CORES > 1) {
+        if (runs.vec.empty() || runs.thread_offsets.empty()) {
+            build_runs_mt<IdxIsTrue,
+                          Periodic>(
+                                    runs.thread_offsets,
+                                    thread_counts,
+                                    mask,
+                                    CORES,
+                                    runs,
+                                    runs.active_rows,
+                                    n_el,
+                                    n_el2
+                                   );
+        }
+    } else {
+        if (runs.thread_offsets.empty()) {
+            build_runs_simple<IdxIsTrue,
+                              Periodic>(
+                                        mask,
+                                        active_rows,
+                                        n_el,
+                                        n_el2
+                                       );
+        }
+    }
+    nrow = runs.active_rows;
 
-    auto compact_block_pod = [old_nrow, &x]<typename T>(std::vector<T>& dst,
-                                                        std::vector<T>& src,
-                                                        const size_t inner_threads)
+    auto compact_block_pod = [n_el,
+                              n_el2,
+                              &runs,
+                              &mask]<typename T>(std::vector<T>& dst,
+                                                 std::vector<T>& src,
+                                                 const size_t inner_threads)
     {
 
         if constexpr (CORES > 1) {
 
+            int numa_nodes = 1;
+            if (numa_available() >= 0) 
+                numa_nodes = numa_max_node() + 1;
+
+            #pragma omp parallel if(inner_cores > 1) num_threads(inner_cores)
+            {
+
+                const int tid        = omp_get_thread_num();
+                const int nthreads   = omp_get_num_threads();
+            
+                MtStruct cur_struct;
+
+                if constexpr (NUMA) {
+                    numa_mt(cur_struct,
+                            n_el, 
+                            tid, 
+                            nthreads, 
+                            numa_nodes);
+                } else {
+                    simple_mt(cur_struct,
+                              n_el, 
+                              tid, 
+                              nthreads);
+                }
+                    
+                const unsigned int cur_start = cur_struct.start;
+                const unsigned int cur_end   = cur_struct.end;
+
+                const size_t delta  = runs.thread_counts[tid];
+                const size_t delta2 = (!IdxIsTrue) ? runs.thread_offsets[tid] : 0; // else dummy val
+
+                copy_col_filter_idx_dense<IdxIsTrue,
+                                          Periodic,
+                                          false      // copy (distinct)
+                                         >(
+                                            dst.data(),
+                                            src.data(),
+                                            runs,
+                                            delta,
+                                            delta2,
+                                            cur_start,
+                                            cur_end
+                                          );
+
+            }
+
         } else {
 
-            if (runs.empty()) {
+            const size_t delta  = 0;  // dummy val
+            const size_t delta2 = 0;  // dummy val
 
-                build_runs<IdxIsTrue>(mask,
-                                      local_nrow,
-                                      runs.vec);
+            copy_col_filter_idx_dense<IdxIsTrue,
+                                         Periodic,
+                                         false      // copy (distinct)
+                                        >(
+                                           dst.data(),
+                                           src.data(),
+                                           runs,
+                                           delta,
+                                           delta2,
+                                           0,
+                                           n_el
+                                         );
 
-            }
+        }
 
-            for (size_t r = 0; r < runs.size(); ++r) {
-                const auto& run = runs.vec[r];
-                std::memcpy(dst.data() + run.mask_pos,
-                            src.data() + run.src_start,
-                            run.len * sizeof(T));
-            }
-
+        if constexpr (MemClean) {
+            vec.resize(n_el);
+            vec.shrink_to_fit();
         }
     };
 
@@ -89,27 +171,83 @@ void rm_row_filter_idx_dense_mt(std::vector<unsigned int>& mask,
             return;
         }
 
-        auto compact_block_scalar = [old_nrow, &x](auto& dst,
-                                                   auto& src,
-                                                   const size_t inner_cores)
-        {
-            size_t i  = 0;
-            size_t i2 = 0;
-            size_t written = x[0];
-            while (i2 < x.size()) {
-                const unsigned int ref_val = x[i2++];
-                while (i < ref_val) {
-                    dst[written] = std::move(src[i]);
-                    i += 1;
-                    written += 1;
-                };
-                i += 1;
+        auto compact_block_scalar = [n_el,
+                                     n_el2,
+                                     &runs,
+                                     &mask]<typename T>(std::vector<T>& vec, 
+                                                        const size_t inner_cores) {
+
+            T* dst = vec.data();
+            T* src = vec.data();
+
+            if constexpr (CORES > 1) {
+               
+                int numa_nodes = 1;
+                if (numa_available() >= 0) 
+                    numa_nodes = numa_max_node() + 1;
+
+                #pragma omp parallel if(inner_cores > 1) num_threads(inner_cores)
+                {
+
+                    const int tid        = omp_get_thread_num();
+                    const int nthreads   = omp_get_num_threads();
+               
+                    MtStruct cur_struct;
+
+                    if constexpr (NUMA) {
+                        numa_mt(cur_struct,
+                                n_el, 
+                                tid, 
+                                nthreads, 
+                                numa_nodes);
+                    } else {
+                        simple_mt(cur_struct,
+                                  n_el, 
+                                  tid, 
+                                  nthreads);
+                    }
+                        
+                    const unsigned int cur_start = cur_struct.start;
+                    const unsigned int cur_end   = cur_struct.end;
+
+                    size_t out_idx = (!IdxIsTrue) ? runs.thread_offsets[tid] : 0; // else dummy_val
+                    copy_col_filter_idx<IdxIsTrue,
+                                        Periodic,
+                                        false      // move
+                                       >(
+                                         dst,
+                                         src,
+                                         mask,
+                                         out_idx,
+                                         cur_start,
+                                         cur_end,
+                                         n_el2
+                                        );
+
+                }
+
+            } else {
+
+                size_t out_idx = 0; // dummy val
+                copy_col_filter_idx<IdxIsTrue,
+                                    Periodic,
+                                    false      // move
+                                   >(
+                                      dst,
+                                      src,
+                                      mask,
+                                      out_idx,
+                                      0,
+                                      n_el,
+                                      n_el2
+                                     );
             }
-            while (i < old_nrow) {
-                dst[written] = std::move(src[i]);
-                i += 1;
-                written += 1;
-            };
+
+            if constexpr (MemClean) {
+                vec.resize(n_el);
+                vec.shrink_to_fit();
+            }
+
         };
 
         auto process_container = [&mask](auto&& f,
@@ -161,14 +299,14 @@ void rm_row_filter_idx_dense_mt(std::vector<unsigned int>& mask,
                     const unsigned int end   = cur_struct.end;
 
                     for (size_t cpos = start; cpos < end; ++cpos)
-                        f(matr[cpos], matr[cpos], inner_cores);
+                        f(matr[cpos], inner_cores);
 
                 }
 
             } else {
 
                 for (size_t cpos = 0; cpos < ncols_cur; ++cpos)
-                    f(matr[cpos], matr[cpos], inner_cores);
+                    f(matr[cpos], inner_cores);
 
             }
 
@@ -182,10 +320,12 @@ void rm_row_filter_idx_dense_mt(std::vector<unsigned int>& mask,
         process_container(compact_block_pod,    dbl_v,  5);
 
         if (!name_v_row.empty()) {
-            compact_block_scalar(name_v_row, name_v_row, CORES);
+            compact_block_scalar(name_v_row, CORES);
         }
     }
-
-    nrow = n_el;
-
 }
+
+
+
+
+

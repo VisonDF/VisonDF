@@ -15,8 +15,6 @@ void get_dataframe_filter_idx_mt(
                                  )
 {
 
-    const size_t nrow2 = cur_obj.get_nrow();
-
     if constexpr (AssertionLevel == AssertionType::Hard) {
         if constexpr (!IdxIsTrue || IsDense) {
             unsigned int ref_val = mask[0];
@@ -66,36 +64,68 @@ void get_dataframe_filter_idx_mt(
         return pos;
     };
 
-    const unsigned int local_nrow = (IdxIsTrue) ? mask.size() : nrow2 - mask.size();
-    nrow = local_nrow;
+    const size_t nrow2 = cur_obj.get_nrow();
+    const size_t n_el = (Periodic) ? nrow2 : mask.size() ;
+    const size_t n_el2 = mask.size();
 
     std::vector<size_t> thread_counts;
     if constexpr (CORES > 1) {
         if constexpr (IsDense) {
             if (runs.vec.empty() || runs.thread_offsets.empty()) {
-                build_runs_mt<IdxIsTrue>(runs.thread_offsets,
-                                         thread_counts,
-                                         mask,
-                                         CORES,
-                                         local_nrow,
-                                         runs.vec);
+                build_runs_mt<IdxIsTrue,
+                              Periodic>(
+                                        runs.thread_offsets,
+                                        thread_counts,
+                                        mask,
+                                        CORES,
+                                        runs,
+                                        runs.active_rows,
+                                        n_el,
+                                        n_el2
+                                       );
             }
         } else {
-            if constexpr (!IdxIsTrue) {
-                if (runs.thread_offsets.empty()) { 
-                    build_runs_mt_simple<IdxIsTrue>(runs.thread_offsets,
-                                                    mask,
-                                                    CORES);
-                }
+            if (runs.thread_offsets.empty()) {
+                build_runs_mt_simple<IdxIsTrue,
+                                     Periodic>(
+                                               runs.thread_offsets,
+                                               mask,
+                                               CORES,
+                                               runs.active_rows,
+                                               n_el,
+                                               n_el2
+                                              );
             }
         }
     } else {
-        if (runs.empty()) {
-            build_runs<IdxIsTrue>(mask,
-                                  local_nrow,
-                                  runs.vec);
+        if constexpr (IsDense) {
+            if (runs.empty()) {
+                if (runs.thread_offsets.empty()) {
+                    build_runs<IdxIsTrue,
+                               Periodic>(
+                                         mask,
+                                         runs.vec,
+                                         runs.active_rows,
+                                         n_el,
+                                         n_el2
+                                        );
+                }
+            }
+        } else {
+            if (runs.thread_offsets.empty()) {
+                build_runs_simple<IdxIsTrue,
+                                  Periodic>(
+                                            mask,
+                                            active_rows,
+                                            n_el,
+                                            n_el2
+                                           );
+            }
         }
     }
+
+    const unsigned int local_nrow = runs.active_rows;
+    nrow = local_nrow;
 
     in_view = cur_obj.get_in_view();
     ankerl::unordered_dense::set<unsigned int>& col_alrd_materialized2  = cur_obj.get_col_alrd_materialized();
@@ -109,17 +139,18 @@ void get_dataframe_filter_idx_mt(
     auto copy_col_dense = [&mask,
                            &runs,
                            &thread_counts,
-                           local_nrow]<typename T>(
-                                                   std::vector<T>& dst_vec,
-                                                   const std::vector<T>& src_vec2
-                                                   )
+                           n_el,
+                           n_el2]<typename T>(
+                                              std::vector<T>& dst_vec,
+                                              const std::vector<T>& src_vec2
+                                             )
     {
         const std::string* __restrict src = src_vec2.data();
         std::string*       __restrict dst = dst_vec.data();
 
         if constexpr (CORES > 1) {
 
-            if (CORES > local_nrow)
+            if (CORES > n_el)
                 throw std::runtime_error("Too much cores for so little nrows\n");
 
             int numa_nodes = 1;
@@ -136,133 +167,71 @@ void get_dataframe_filter_idx_mt(
 
                 if constexpr (NUMA) {
                     numa_mt(cur_struct,
-                            runs.size(), 
+                            n_el, 
                             tid, 
                             nthreads, 
                             numa_nodes);
                 } else {
                     simple_mt(cur_struct,
-                              runs.size(), 
+                              n_el, 
                               tid, 
                               nthreads);
                 }
                     
-                const unsigned int start = cur_struct.start;
-                const unsigned int end   = cur_struct.end;
+                const unsigned int cur_start = cur_struct.start;
+                const unsigned int cur_end   = cur_struct.end;
 
-                if constexpr (IdxIsTrue) {
-                    for (size_t r = start; r < start + len; ++r) {
-                        const auto& run = runs.vec[r]; 
-                        std::memcpy(dst.data() + run.mask_pos,
-                                    src.data() + run.src_start,
-                                    run.len * sizeof(T));
-                    }
-                } else {
-                    const size_t delta = thread_counts[tid];
-                    for (size_t r = start; r < start + len; ++r) {
-                        const auto& run = runs[r]; 
-                        std::memcpy(dst.data() + delta + run.mask_pos,
-                                    src.data() + run.src_start,
-                                    run.len * sizeof(T));
-                    }
-                }
+                const size_t delta  = runs.thread_counts[tid];
+                const size_t delta2 = (!IdxIsTrue) ? runs.thread_offsets[tid] : 0; // else dummy val
+
+                copy_col_filter_idx_dense<IdxIsTrue,
+                                          Periodic,
+                                          true      // copy (distinct)
+                                         >(
+                                            dst,
+                                            src,
+                                            runs,
+                                            delta,
+                                            delta2,
+                                            cur_start,
+                                            cur_end
+                                          );
             }
 
         } else {
 
-            for (size_t r = 0; r < runs.size(); ++r) {
-                const auto& run = runs.vec[r]; 
-                std::memcpy(dst.data() + run.mask_pos,
-                            src.data() + run.src_start,
-                            run.len * sizeof(T));
-            }
+            const size_t delta  = 0;  // dummy val
+            const size_t delta2 = 0;  // dummy val
+
+            copy_col_filter_idx_dense<IdxIsTrue,
+                                         Periodic,
+                                         true      // copy (distinct)
+                                        >(
+                                           dst,
+                                           src,
+                                           runs,
+                                           delta,
+                                           delta2,
+                                           0,
+                                           n_el
+                                         );
 
         }
-    };
-
-    auto copy_view_dense = [&mask, 
-                            &runs,
-                            &row_view_idx2, 
-                            local_nrow]()
-    {
-        const std::string* __restrict src = row_view_idx2.data();
-        std::string*       __restrict dst = row_view_idx.data();
-
-        if constexpr (CORES > 1) {
-
-            if (CORES > local_nrow)
-                throw std::runtime_error("Too much cores for so little nrows\n");
-
-            int numa_nodes = 1;
-            if (numa_available() >= 0) 
-                numa_nodes = numa_max_node() + 1;
-
-            #pragma omp parallel num_threads(CORES)
-            {
-
-                const int tid        = omp_get_thread_num();
-                const int nthreads   = omp_get_num_threads();
-           
-                MtStruct cur_struct;
-
-                if constexpr (NUMA) {
-                    numa_mt(cur_struct,
-                            local_nrow, 
-                            tid, 
-                            nthreads, 
-                            numa_nodes);
-                } else {
-                    simple_mt(cur_struct,
-                              local_nrow, 
-                              tid, 
-                              nthreads);
-                }
-                    
-                const unsigned int start = cur_struct.start;
-                const unsigned int len   = cur_struct.len;
-
-                if constexpr (IdxIsTrue) {
-                    for (size_t r = start; r < start + len; ++r) {
-                        const auto& run = runs.vec[r]; 
-                        std::memcpy(dst.data() + run.mask_pos,
-                                    src.data() + run.src_start,
-                                    run.len * sizeof(T));
-                    }
-                } else {
-                    const size_t delta = thread_counts[tid];
-                    for (size_t r = start; r < start + len; ++r) {
-                        const auto& run = runs[r]; 
-                        std::memcpy(dst.data() + delta + run.mask_pos,
-                                    src.data() + run.src_start,
-                                    run.len * sizeof(T));
-                    }
-                }
-            }
-
-        } else {
-            for (size_t r = 0; r < runs.size(); ++r) {
-                const auto& run = runs.vec[r]; 
-                std::memcpy(dst.data() + run.mask_pos,
-                            src.data() + run.src_start,
-                            run.len * sizeof(T));
-            }
-        }
-
     };
 
     auto copy_col = [&mask,
-                     &runs,
-                     local_nrow](
-                                 auto& dst_vec,
-                                 const auto& src_vec2
-                                )
+                     n_el,
+                     n_el2](
+                            auto& dst_vec,
+                            const auto& src_vec2
+                           )
     {
         const std::string* __restrict src = src_vec2.data();
         std::string*       __restrict dst = dst_vec.data();
    
         if constexpr (CORES > 1) {
 
-            if (CORES > local_nrow)
+            if (CORES > n_el)
                 throw std::runtime_error("Too much cores for so little nrows\n");
 
             int numa_nodes = 1;
@@ -279,13 +248,13 @@ void get_dataframe_filter_idx_mt(
 
                 if constexpr (NUMA) {
                     numa_mt(cur_struct,
-                            local_nrow, 
+                            n_el, 
                             tid, 
                             nthreads, 
                             numa_nodes);
                 } else {
                     simple_mt(cur_struct,
-                              local_nrow, 
+                              n_el, 
                               tid, 
                               nthreads);
                 }
@@ -293,121 +262,39 @@ void get_dataframe_filter_idx_mt(
                 const unsigned int start = cur_struct.start;
                 const unsigned int end   = cur_struct.end;
 
-                if constexpr (IdxIsTrue) {
-                    for (size_t i = start; i < end; ++i)
-                        dst[i] = src[mask[i]];
-                } else {
-                    size_t out_idx = runs.thread_offsets[tid];
-                    for (size_t i = start; i < end; ++i) {
-                        const size_t next_stop = mask[i];
-                        while (out_idx < next_stop) {
-                            dst[out_idx] = src[out_idx];
-                            out_idx += 1;
-                        }
-                    }
-                }
+                size_t out_idx = (!IdxIsTrue) ? runs.thread_offsets[tid] : 0; // else dummy_val
+
+                copy_col_filter_idx<IdxIsTrue,
+                                    Periodic,
+                                    true      // copy
+                                   >(
+                                     dst,
+                                     src,
+                                     mask,
+                                     out_idx,
+                                     cur_start,
+                                     cur_end,
+                                     n_el2
+                                    );
 
             }
 
         } else {
 
-            if constexpr (IdxIsTrue) {
-                for (size_t i = 0; i < mask.size(); ++i)
-                    dst[i] = src[mask[i]];
-            } else {
-                size_t out_idx = 0;
-                for (size_t i = 0; i < mask.size(); ++i) {
-                    const size_t next_stop = mask[i];
-                    while (out_idx < next_stop) {
-                        dst[out_idx] = src[out_idx];
-                        out_idx += 1;
-                    }
-                    out_idx += 1;
-                }
-            }
-        }
-    };
+            size_t out_idx = 0; // dummy val
 
-    auto copy_col_view = [&mask,
-                          &runs,
-                          &row_view_idx2, 
-                          local_nrow]()
-    {
-        const std::string* __restrict src = row_view_idx2.data();
-        std::string*       __restrict dst = row_view_idx.data();
-   
-        if constexpr (CORES > 1) {
-
-            if (CORES > local_nrow)
-                throw std::runtime_error("Too much cores for so little nrows\n");
-
-            int numa_nodes = 1;
-            if (numa_available() >= 0) 
-                numa_nodes = numa_max_node() + 1;
-
-            #pragma omp parallel num_threads(CORES)
-            {
-
-                const int tid        = omp_get_thread_num();
-                const int nthreads   = omp_get_num_threads();
-           
-                MtStruct cur_struct;
-
-                if constexpr (NUMA) {
-                    numa_mt(cur_struct,
-                            local_nrow, 
-                            tid, 
-                            nthreads, 
-                            numa_nodes);
-                } else {
-                    simple_mt(cur_struct,
-                              local_nrow, 
-                              tid, 
-                              nthreads);
-                }
-                    
-                const unsigned int start = cur_struct.start;
-                const unsigned int end   = cur_struct.end;
-
-                if constexpr (IdxIsTrue) {
-                    for (size_t i = start; i < end; ++i) {
-                        const size_t act = mask[j];
-                        dst[j]     = src[act];
-                        row_view_idx[j] = row_view_idx2[act];
-                    }
-                } else {
-                    size_t out_idx = runs.thread_offsets[tid];
-                    for (size_t i = start; i < end; ++i) {
-                        const size_t next_stop = mask[i];
-                        while (out_idx < next_stop) {
-                            dst[out_idx] = src[out_idx];
-                            row_view_idx[out_idx] = row_view_idx2[out_idx];
-                            out_idx += 1;
-                        }
-                    }
-                }
-            }
-
-        } else {
-
-            if constexpr (IdxIsTrue) {
-                for (size_t j = 0; j < local_nrow; ++j) {
-                    const size_t act = mask[j];
-                    dst[j]     = src[act];
-                    row_view_idx[j] = row_view_idx2[act];
-                }
-            } else {
-                size_t out_idx = 0;
-                for (size_t i = 0; i < mask.size(); ++i) {
-                    const size_t next_stop = mask[i];
-                    while (out_idx < next_stop) {
-                        dst[out_idx] = src[out_idx];
-                        row_view_idx[out_idx] = row_view_idx2[out_idx];
-                        out_idx += 1;
-                    }
-                    out_idx += 1;
-                }
-            }
+            copy_col_filter_idx<IdxIsTrue,
+                                Periodic,
+                                true      // copy
+                               >(
+                                  dst,
+                                  src,
+                                  mask,
+                                  out_idx,
+                                  0,
+                                  n_el,
+                                  n_el2
+                                 );
         }
     };
 
@@ -555,9 +442,9 @@ void get_dataframe_filter_idx_mt(
         copy_col(name_v_row, name_v_row2);
 
     if constexpr (!IsDense) {
-        copy_view();
+        copy_col(row_view_idx, row_view_idx2);
     } else {
-        copy_view_dense();
+        copy_view_dense(row_view_idx, row_view_idx2);
     }
 
 }

@@ -2,7 +2,7 @@
 
 template <bool OneIsTrue,
           bool Periodic,
-          bool Distinct
+          bool Copy
          >
 inline void copy_col_filter (
                              auto* dst,
@@ -15,7 +15,7 @@ inline void copy_col_filter (
                             )
 {
 
-    if constexpr (Distinct) {
+    if constexpr (Copy) {
         if constexpr (!Periodic) {
             if constexpr (OneIsTrue) {
                 for (size_t i = cur_start; i < cur_end; ++i) {

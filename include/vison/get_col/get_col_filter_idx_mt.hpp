@@ -6,6 +6,7 @@ template <unsigned int CORES           = 4,
           bool MapCol                  = false,
           bool IsDense                 = false, // assumed sorted increasingly
           bool IdxIsTrue               = true,
+          bool Periodic                = true,
           AssertionType AssertionLevel = AssertionType::Simple,
           typename T>
 void get_col_filter_idx_mt(
@@ -41,11 +42,8 @@ void get_col_filter_idx_mt(
         }
     }
 
-    if constexpr (IdxIsTrue) {
-        rtn_v.resize(mask.size());
-    } else {
-        rtn_v.resize(local_nrow - mask.size());
-    }
+    const unsigned int n_el  = (Periodic) ? local_nrow : mask.size();
+    const unsigned int n_el2 = mask.size();
 
     auto find_col_base = [this,
                           x]([[maybe_unused]] const auto &idx_vec, 
@@ -73,20 +71,29 @@ void get_col_filter_idx_mt(
         return pos;
     };
 
-    auto extract_idx_masked = [&rtn_v, &mask](const auto*__restrict src) {
+    auto extract_idx_masked = [n_el,
+                               n_el2,
+                               &rtn_v, 
+                               &mask](const auto*__restrict src) 
+    {
 
         if constexpr (CORES > 1) {
 
-            if (CORES > rtn_v.size())
+            if (CORES > n_el)
                 throw std::runtime_error("Too much cores for so little nrows\n");
 
-            if constexpr (!IdxIsTrue) {
-                if (runs.thread_offsets.empty()) { 
-                    build_runs_mt_simple<IdxIsTrue>(runs.thread_offsets,
-                                                    mask,
-                                                    CORES);
-                }
+            if (runs.thread_offsets.empty()) { 
+                build_runs_mt_simple<IdxIsTrue,
+                                     Periodic>(
+                                               runs.thread_offsets,
+                                               mask,
+                                               CORES,
+                                               runs.active_rows,
+                                               n_el,
+                                               n_el2
+                                              );
             }
+            rtn_v.resize(runs.active_rows);
 
             int numa_nodes = 1;
             if (numa_available() >= 0) 
@@ -101,56 +108,71 @@ void get_col_filter_idx_mt(
 
                 if constexpr (NUMA) {
                     numa_mt(cur_struct,
-                            rtn_v.size(), 
+                            n_el, 
                             tid, 
                             nthreads, 
                             numa_nodes);
                 } else {
                     simple_mt(cur_struct,
-                              rtn_v.size(), 
+                              n_el, 
                               tid, 
                               nthreads);
                 }
                     
-                const unsigned int start = cur_struct.start;
-                const unsigned int end   = cur_struct.end;
+                const unsigned int cur_start = cur_struct.start;
+                const unsigned int cur_end   = cur_struct.end;
 
-                if constexpr (IdxIsTrue) {
-                    for (size_t i = start; i < end; ++i)
-                        rtn_v[i] = src[mask[i]];
-                } else {
-                    size_t out_idx = runs.thread_offsets[tid];
-                    for (size_t i = start; i < end; ++i) {
-                        const size_t next_stop = mask[i];
-                        while (out_idx < next_stop) {
-                            rtn_v[out_idx] = src[out_idx];
-                            out_idx += 1;
-                        }
-                    }
-                }
+                size_t out_idx = (!IdxIsTrue) ? runs.thread_offsets[tid] : 0; // else dummy_val
+
+                copy_col_filter_idx<IdxIsTrue,
+                                    Periodic,
+                                    true      // copy
+                                   >(
+                                     rtn_v.data(),
+                                     src,
+                                     mask,
+                                     out_idx,
+                                     cur_start,
+                                     cur_end,
+                                     n_el2
+                                    );
 
             }
 
         } else {
 
-            if constexpr (IdxIsTrue) {
-                for (size_t i = 0; i < mask.size(); ++i)
-                    rtn_v[i] = src[mask[i]];
-            } else {
-                size_t out_idx = 0;
-                for (size_t i = 0; i < mask.size(); ++i) {
-                    const size_t next_stop = mask[i];
-                    while (out_idx < next_stop) {
-                        rtn_v[out_idx] = src[out_idx];
-                        out_idx += 1;
-                    }
-                    out_idx += 1;
-                }
+            if (runs.thread_offsets.empty()) { 
+                build_runs_simple<IdxIsTrue,
+                                  Periodic>(
+                                            mask,
+                                            runs.active_rows,
+                                            n_el,
+                                            n_el2
+                                           );
             }
+            rtn_v.resize(runs.active_rows);
+
+            size_t out_idx = 0; // dummy val
+
+            copy_col_filter_idx<IdxIsTrue,
+                                Periodic,
+                                true      // copy
+                               >(
+                                  rtn_v.data(),
+                                  src,
+                                  mask,
+                                  out_idx,
+                                  0,
+                                  n_el,
+                                  n_el2
+                                 );
         }
     };
 
-    auto extract_idx_masked_dense = [local_nrow,
+    auto extract_idx_masked_dense = [n_el,
+                                     n_el2,
+                                     &rtn_v,
+                                     &runs,
                                      &mask]<typename T>(
                                                         T* __restrict dst,
                                                         const T* __restrict src,
@@ -159,22 +181,25 @@ void get_col_filter_idx_mt(
 
         if constexpr (CORES > 1) {
 
-            if (CORES > rtn_v.size())
+            if (CORES > n_el)
                 throw std::runtime_error("Too much cores for so little nrows\n");
 
             std::vector<size_t> thread_counts;
-
-            if (runs.vec.empty() || runs.thread_offsets.empty()) {
-
-                build_runs_mt<IdxIsTrue>(runs.thread_offsets,
-                                         thread_counts,
-                                         mask,
-                                         CORES,
-                                         local_nrow,
-                                         runs.vec);
-
+            if (runs.thread_offsets.empty()) {
+                build_runs_mt<IdxIsTrue,
+                              Periodic>(
+                                        runs.thread_offsets,
+                                        thread_counts,
+                                        mask,
+                                        CORES,
+                                        runs,
+                                        runs.active_rows,
+                                        n_el,
+                                        n_el2
+                                       );
             }
-           
+            dst->resize(runs.active_rows);
+
             int numa_nodes = 1;
             if (numa_available() >= 0) 
                 numa_nodes = numa_max_node() + 1;
@@ -188,54 +213,66 @@ void get_col_filter_idx_mt(
 
                 if constexpr (NUMA) {
                     numa_mt(cur_struct,
-                            runs.size(), 
+                            n_el, 
                             tid, 
                             nthreads, 
                             numa_nodes);
                 } else {
                     simple_mt(cur_struct,
-                              runs.size(), 
+                              n_el, 
                               tid, 
                               nthreads);
                 }
                     
-                const size_t start = cur_struct.start;
-                const size_t len   = runs.thread_offsets[tid];
+                const size_t cur_start = cur_struct.start;
+                const size_t cur_end   = cur_struct.end;
 
-                if constexpr (IdxIsTrue) {
-                    for (size_t r = start; r < start + len; ++r) {
-                        const auto& run = runs.vec[r]; 
-                        std::memcpy(dst.data() + run.mask_pos,
-                                    src.data() + run.src_start,
-                                    run.len * sizeof(T));
-                    }
-                } else {
-                    const size_t delta = thread_counts[tid];
-                    for (size_t r = start; r < start + len; ++r) {
-                        const auto& run = runs[r]; 
-                        std::memcpy(dst.data() + delta + run.mask_pos,
-                                    src.data() + run.src_start,
-                                    run.len * sizeof(T));
-                    }
-                }
+                const size_t delta  = runs.thread_counts[tid];
+                const size_t delta2 = (!IdxIsTrue) ? runs.thread_offsets[tid] : 0; // else dummy val
+
+                copy_col_filter_idx_dense<IdxIsTrue,
+                                          Periodic,
+                                          true      // copy (distinct)
+                                         >(
+                                            dst,
+                                            src,
+                                            runs,
+                                            delta,
+                                            delta2,
+                                            cur_start,
+                                            cur_end
+                                          );
             }
 
         } else {
 
-            if (runs.empty()) {
-
-                build_runs<IdxIsTrue>(mask,
-                                      local_nrow,
-                                      runs.vec);
-
+            if (runs.thread_offsets.empty()) {
+                build_runs<IdxIsTrue,
+                           Periodic>(
+                                     mask,
+                                     runs.vec,
+                                     runs.active_rows,
+                                     n_el,
+                                     n_el2
+                                    );
             }
+            dst->.resize(runs.active_rows);
 
-            for (size_t r = 0; r < runs.size(); ++r) {
-                const auto& run = runs.vec[r]; 
-                std::memcpy(dst.data() + run.mask_pos,
-                            src.data() + run.src_start,
-                            run.len * sizeof(T));
-            }
+            const size_t delta  = 0;  // dummy val
+            const size_t delta2 = 0;  // dummy val
+
+            copy_col_filter_idx_dense<IdxIsTrue,
+                                         Periodic,
+                                         true      // copy (distinct)
+                                        >(
+                                           dst,
+                                           src,
+                                           runs,
+                                           delta,
+                                           delta2,
+                                           0,
+                                           n_el
+                                         );
         }
     }
 
@@ -250,7 +287,7 @@ void get_col_filter_idx_mt(
         if constexpr (!IsDense) {
             extract_idx_masked(chr_v[pos_base].data());
         } else {
-            extract_idx_masked_dense(chr_v[pos_base].data(), rtn_v.data());
+            extract_idx_masked_dense(chr_v[pos_base].data());
         }
 
     } else if constexpr (IsBool) {
@@ -259,7 +296,7 @@ void get_col_filter_idx_mt(
         if constexpr (!IsDense) {
             extract_idx_masked(bool_v[pos_base].data());
         } else {
-            extract_idx_masked_dense(bool_v[pos_base].data(), rtn_v.data());
+            extract_idx_masked_dense(bool_v[pos_base].data());
         }
 
     } else if constexpr (std::is_same_v<T, IntT>) {
@@ -268,7 +305,7 @@ void get_col_filter_idx_mt(
         if constexpr (!IsDense) {
             extract_idx_masked(int_v[pos_base].data());
         } else {
-            extract_idx_masked_dense(int_v[pos_base].data(), rtn_v.data());
+            extract_idx_masked_dense(int_v[pos_base].data());
         }
 
     } else if constexpr (std::is_same_v<T, UIntT>) {
@@ -286,7 +323,7 @@ void get_col_filter_idx_mt(
         if constexpr (!IsDense) {
             extract_idx_masked(dbl_v[pos_base].data());
         } else {
-            extract_idx_masked_dense(dbl_v[pos_base].data(), rtn_v.data());
+            extract_idx_masked_dense(dbl_v[pos_base].data());
         }
 
     } else {
