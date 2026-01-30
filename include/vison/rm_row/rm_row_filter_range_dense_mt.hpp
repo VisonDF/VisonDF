@@ -95,20 +95,20 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
 
                 size_t i = cur_start;
 
-                copy_col_dense<
-                               OneIsTrue,
-                               Periodic,
-                               true     // distinct
-                              >c(
-                                  dst,
-                                  src,
-                                  mask,
-                                  i,
-                                  out_idx,
-                                  cur_start,
-                                  cur_end,
-                                  n_el2
-                                );
+                copy_col_filter_range_dense<
+                                            OneIsTrue,
+                                            Periodic,
+                                            true     // distinct
+                                           >c(
+                                               dst,
+                                               src,
+                                               mask,
+                                               i,
+                                               out_idx,
+                                               cur_start,
+                                               cur_end,
+                                               n_el2
+                                             );
             }
 
             if constexpr (!Periodic) {
@@ -122,20 +122,20 @@ void rm_row_range_dense_boolmask_mt(std::vector<uint8_t>& mask,
             size_t i       = 0;
             size_t out_idx = 0;
 
-            copy_col_dense<
-                           OneIsTrue,
-                           Periodic,
-                           false     // not distinct
-                          >(
-                             dst,
-                             src,
-                             mask,
-                             i,
-                             out_idx,
-                             0,
-                             n_el,
-                             n_el2
-                           );
+            copy_col_filter_range_dense<
+                                        OneIsTrue,
+                                        Periodic,
+                                        false     // not distinct
+                                       >(
+                                          dst,
+                                          src,
+                                          mask,
+                                          i,
+                                          out_idx,
+                                          0,
+                                          n_el,
+                                          n_el2
+                                        );
 
             if constexpr (!Periodic) {
                 memmove(dst + offset_start.active_rows, 
