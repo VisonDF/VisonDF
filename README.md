@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo/visonDF.png" alt="visonDF logo" width="300"/>
+  <img src="logo/logo_darkmode.svg" alt="visonDF logo" width="300"/>
 </p>
 
 <a href="https://visondf.dev">official website</a>
