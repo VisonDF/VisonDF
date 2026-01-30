@@ -18,7 +18,7 @@ void rm_row_filter_idx_dense_mt(std::vector<unsigned int>& mask,
     const size_t n_el = (IdxIsTrue) ? n_el : old_nrow - n_el;
 
     if constexpr (AssertionLevel == AssertionType::Hard) {
-        if constexpr (!IdxIsTrue || IsDense) {
+        if constexpr (!IdxIsTrue) {
             unsigned int ref_val = mask[0];
             for (size_t i = 1; i < mask.size(); ++i) {
                 if (ref_val < mask[i]) 
