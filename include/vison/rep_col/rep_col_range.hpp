@@ -4,10 +4,11 @@ template <bool IsBool                  = false,
           bool MapCol                  = false,
           AssertionType AssertionLevel = AssertionType::None,
           typename T> 
-void rep_col(
-             std::vector<T> &x, 
-             const unsigned int colnb
-            ) 
+void rep_col_range(
+                   std::vector<T> &x, 
+                   const unsigned int colnb,
+                   const unsigned int strt_vl
+                  ) 
 {
 
     rep_col_range_mt<1,     // CORES
@@ -17,8 +18,8 @@ void rep_col(
                      AssertionLevel
                     >(x, 
                       colnb,
-                      0     // strt_vl
-                      );
+                      strt_vl
+                     );
 
 };
 

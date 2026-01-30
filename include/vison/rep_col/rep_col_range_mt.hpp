@@ -1,13 +1,16 @@
 #pragma once
 
-template <bool IsBool                  = false,
+template <unsigned int CORES           = 4,
+          bool NUMA                    = false,
+          bool IsBool                  = false,
           bool MapCol                  = false,
           AssertionType AssertionLevel = AssertionType::None,
           typename T> 
-void rep_col_filter_range(std::vector<T>& x, 
-                          const unsigned int colnb,
-                          const std::vector<uint8_t>& mask,
-                          const unsigned int strt_vl)
+void rep_col_range_mt(
+                      std::vector<T> &x, 
+                      const unsigned int colnb,
+                      const unsigned int strt_vl
+                     ) 
 {
 
     static_assert(is_supported_type<element_type<T>>, "Error, type not supported\n");
@@ -15,11 +18,8 @@ void rep_col_filter_range(std::vector<T>& x,
     const unsigned int local_nrow = nrow;
 
     if constexpr (AssertionLevel > AssertionType::None) {
-        if (x.size() != mask.size()) {
-            throw std::runtime_error("vector and mask have different size\n");
-        }
         if (strt_vl + x.size() != local_nrow) {
-            throw std::runtime_error("Vector out of bound\n");
+          throw std::runtime_error("Vector out of bound\n");
         }
     }
  
@@ -83,11 +83,7 @@ void rep_col_filter_range(std::vector<T>& x,
                 }
                     
                 const unsigned int start = cur_struct.start;
-                const unsigned int end   = cur_struct.end;
-
-                for (size_t i = start; i < end; ++i) {
-                    
-                }
+                const unsigned int len   = cur_struct.len;
 
                 memcpy(dst + strt_vl + start, 
                        x.data() + start, 
@@ -190,6 +186,8 @@ void rep_col_filter_range(std::vector<T>& x,
 
     };
 
-}
+};
+
+
 
 

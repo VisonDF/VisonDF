@@ -13,8 +13,9 @@ void otm(Dataframe &obj_l,
          const FloatT default_decimal = 0) 
 {
 
-    otm_mt<1, 
-           false, 
+    otm_mt<1,     // CORES
+           false, // NUMA locality
+           false, // Nested
            SimdHash>(obj_l,
                      obj_r,
                      key1,
