@@ -7,50 +7,52 @@ template <unsigned int CORES           = 4,
           bool IsDense                 = false,
           bool OneIsTrue               = true,
           bool Periodic                = false,
-          AssertionType AssertionLevel = AssertionType::Simple,
+          bool Move                    = false,  // side effects on mask, encouraged to be enabled is colnb corresponds to a string col
+          AssertionType AssertionLevel = AssertionType::None,
           typename T,
-          typename U
-        >
-requires span_or_vec<U>
-void get_col_filter_range(
-                          unsigned int x,
-                          std::vector<T> &rtn_v,
-                          const U &mask,
-                          const unsigned int strt_vl,
-                          OffsetBoolMask& offset_start,
-                          const unsigned int periodic_mask_len
-                         )
+          typename U> 
+requires vector_or_span<U>
+requires vector_or_span<T>
+void rep_col_filter_range_mt(
+                               T& x, 
+                               const unsigned int colnb,
+                               const U& mask,
+                               const unsigned int strt_vl,
+                               OffsetBoolMask& offset_start,
+                               const unsigned int periodic_mask_len
+                             )
 {
 
     static_assert(std::is_same_v<
-                        typename std::remove_cvref<U>::value_type, uint8_t
-                    >,
-                    "uint8_t is required for mask\n"
-    );
+        typename std::remove_cvref_t<U>::value_type,
+        uint8_t
+    >, "Error, uint8_t for mask is required\n");
 
-    const unsigned int n_el  = (!Periodic) ? mask.size() : periodic_mask_len;
-    const unsigned int n_el2 = mask.size();
+    static_assert(is_supported_type<element_type<T>>, "Error, type not supported\n");
+
+    const unsigned int local_nrow = nrow;
 
     if constexpr (AssertionLevel > AssertionType::None) {
-        if (start_vl + mask.size >= nrow) {
-            throw std::runtime_error("strt_vl + mask.size() > nrow\n");
+        if (x.size() != mask.size()) {
+            throw std::runtime_error("vector and mask have different size\n");
         }
-        if constexpr (IsDense && std::is_same_v<T, std::string>) {
-            throw std::runtime_error("IsDense && std::is_same_v<T, std::string>\n");
+        if (strt_vl + x.size() != local_nrow) {
+            throw std::runtime_error("Vector out of bound\n");
+        }
+        if (!(strt_vl + periodic_mask_len < local_nrow)) {
+            throw std::runtime_error("!(strt_vl + periodic_mask_len < local_nrow)\n");
         }
     }
-
-    auto find_col_base = [this,
-                          x]([[maybe_unused]] const auto &idx_vec, 
-                             [[maybe_unused]] const size_t idx_type) -> size_t 
+ 
+    auto find_col_base = [this, 
+                          colnb]([[maybe_unused]] const auto &idx_vec, 
+                                 [[maybe_unused]] const size_t idx_type) -> size_t 
     {
         size_t pos;
-
         if constexpr (!MapCol) {
             pos = 0;
             while (pos < idx_vec.size() && idx_vec[pos] != x)
                 ++pos;
-
             if (pos == idx_vec.size()) {
                 throw std::runtime_error("Error in (get_col), no column found\n");
             }
@@ -63,26 +65,32 @@ void get_col_filter_range(
             }
             pos = matr_idx_map[idx_type][x];
         }
+
         return pos;
     };
 
-    auto extract_masked = [&rtn_v, 
-                           &mask, 
-                           &offset_start,
-                           n_el2,
-                           n_el](const auto*__restrict src) {
+    const unsigned int n_el  = (!Periodic) ? mask.size() : periodic_mask_len;
+    const unsigned int n_el2 = mask.size();
 
-        if (offset_start.vec.empty()) {
-            build_boolmask<OneIsTrue,
-                           Periodic>(offset_start.thread_offsets, 
-                                     mask, 
-                                     CORES,
-                                     offset_start.active_rows,
-                                     n_el2);
-        }
-        rtn_v.resize(offset_start.active_rows);
-
+    auto replace_pod = [&mask,
+                        &x,
+                        &offset_start,
+                        n_el,
+                        n_el2](
+                               T* dst 
+                              ) 
+    {
+  
         if constexpr (CORES > 1) {
+
+            if (offset_start.vec.empty()) {
+                build_boolmask<OneIsTrue,
+                               Periodic>(offset_start.thread_offsets, 
+                                         mask, 
+                                         CORES,
+                                         offset_start.active_rows,
+                                         n_el2);
+            }
 
             if (CORES > n_el)
                 throw std::runtime_error("Too much cores for so little nrows\n");
@@ -114,21 +122,21 @@ void get_col_filter_range(
                     
                 const unsigned int cur_start = cur_struct.start;
                 const unsigned int cur_end   = cur_struct.end;
-           
-                const size_t out_idx = offset_start.thread_offsets[tid];
+                const size_t out_idx         = offset_start.thread_offsets[tid];
 
                 copy_col_filter_range<OneIsTrue,
                                       Periodic,
-                                      true     // distinct
+                                      Move       
                                       >(
-                                        rtn_v.data(),
-                                        src,
+                                        dst,
+                                        x.data(),
                                         mask,
                                         out_idx,
                                         cur_start,
                                         cur_end,
                                         n_el2
                                        );
+
             }
 
         } else {
@@ -137,40 +145,42 @@ void get_col_filter_range(
 
             copy_col_filter_range<OneIsTrue,
                                   Periodic,
-                                  true      // distinct
+                                  Move 
                                  >(
-                                   rtn_v.data(),
-                                   src,
+                                   dst,
+                                   x.data(),
                                    mask,
                                    out_idx,
                                    0,
                                    n_el,
                                    n_el2
                                   );
-        }
 
+        }
+    
     };
 
-    auto extract_masked_dense = [&rtn_v, 
-                                 &mask, 
-                                 &offset_start,
-                                 n_el2,
-                                 n_el]<typename TB>(const TB* __restrict src) {
-
+    auto replace_pod_dense = [&mask,
+                              &x,
+                              &offset_start,
+                              n_el,
+                              n_el2](
+                                     T* dst 
+                                    ) 
+    {
+  
         if (offset_start.vec.empty()) {
             build_boolmask<OneIsTrue,
                            Periodic>(offset_start.thread_offsets, 
                                      mask, 
                                      CORES,
-                                     ofset_start.active_rows,
-                                     n_el,
+                                     offset_start.active_rows,
                                      n_el2);
         }
-        rtn_v.resize(offset_start.active_rows);
 
         if constexpr (CORES > 1) {
 
-            if (CORES > n_el)
+            if (CORES > x.size())
                 throw std::runtime_error("Too much cores for so little nrows\n");
 
             int numa_nodes = 1;
@@ -200,16 +210,15 @@ void get_col_filter_range(
                     
                 const unsigned int cur_start = cur_struct.start;
                 const unsigned int cur_end   = cur_struct.end;
-            
-                const size_t out_idx = offset_start.thread_offsets[tid];
+                const size_t out_idx         = offset_start.thread_offsets[tid];
 
                 copy_col_filter_range_dense<
                                             OneIsTrue,
                                             Periodic,
                                             true     // distinct
                                            >(
-                                              rtn_v.data(),
-                                              src,
+                                              dst,
+                                              x.data(),
                                               mask,
                                               cur_start,
                                               out_idx,
@@ -217,6 +226,7 @@ void get_col_filter_range(
                                               cur_end,
                                               n_el2
                                             );
+
             }
 
         } else {
@@ -226,8 +236,8 @@ void get_col_filter_range(
                                         Periodic,
                                         true     // distinct
                                        >(
-                                          rtn_v.data(),
-                                          src,
+                                          dst,
+                                          x.data(),
                                           mask,
                                           0,
                                           0,
@@ -235,87 +245,90 @@ void get_col_filter_range(
                                           n_el,
                                           n_el2
                                         );
-        }
-    }
-
-    if constexpr (std::is_same_v<T, std::string>) {
-
-        const size_t pos_base = find_col_base(matr_idx[0], 0);
-        extract_masked(str_v[pos_base].data() + strt_vl);
-
-    } else if constexpr (std::is_same_v<T, CharT>) {
-
-        const size_t pos_base = find_col_base(matr_idx[1], 1);
-        if constexpr (!IsDense) {
-
-            extract_masked(chr_v[pos_base].data() + strt_vl);
-
-        } else {
-
-            extract_masked_dense(chr_v[pos_base].data() + strt_vl);
 
         }
+    
+    };
 
-    } else if constexpr (IsBool) {
+    if constexpr (IsBool) {
 
         const size_t pos_base = find_col_base(matr_idx[2], 2);
 
-        if constexpr (!IsDense) {
+        if constexpr (IsDense) {
 
-            extract_masked(bool_v[pos_base].data() + strt_vl);
+            replace_pod_dense(bool_v[pos_base].data());
 
         } else {
 
-            extract_masked_dense(bool_v[pos_base].data() + strt_vl);
+            replace_pod(bool_v[pos_base].data());
 
         }
 
-    } else if constexpr (std::is_same_v<T, IntT>) {
+    } else if constexpr (std::is_same_v<element_type_t<T>, IntT>) {
 
         const size_t pos_base = find_col_base(matr_idx[3], 3);
 
-        if constexpr (!IsDense) {
+        if constexpr (IsDense) {
 
-            extract_masked(int_v[pos_base].data() + strt_vl);
+            replace_pod_dense(int_v[pos_base].data());
 
         } else {
 
-            extract_masked_dense(int_v[pos_base].data() + strt_vl);
+            replace_pod(int_v[pos_base].data());
 
         }
 
-    } else if constexpr (std::is_same_v<T, UIntT>) {
+    } else if constexpr (std::is_same_v<element_type_t<T>, UIntT>) {
 
         const size_t pos_base = find_col_base(matr_idx[4], 4);
 
-        if constexpr (!IsDense) {
+        if constexpr (IsDense) {
 
-            extract_masked(uint_v[pos_base].data() + strt_vl);
+            replace_pod_dense(uint_v[pos_base].data());
 
         } else {
 
-            extract_masked_dense(uint_v[pos_base].data() + strt_vl);
+            replace_pod(uint_v[pos_base].data());
 
         }
 
-    } else if constexpr (std::is_same_v<T, FloatT>) {
+    } else if constexpr (std::is_same_v<element_type_t<T>, FloatT>) {
 
         const size_t pos_base = find_col_base(matr_idx[5], 5);
 
-        if constexpr (!IsDense) {
+        if constexpr (IsDense) {
 
-            extract_masked(dbl_v[pos_base].data() + strt_vl);
+            replace_pod_dense(dbl_v[pos_base].data());
 
         } else {
 
-            extract_masked_dense(dbl_v[pos_base].data() + strt_vl);
+            replace_pod(dbl_v[pos_base].data());
+
+        }
+
+    } else if constexpr (std::is_same_v<element_type_t<T>, std::string>) {
+
+        const size_t pos_base = find_col_base(matr_idx[0], 0);
+
+        replace_str(str_v[pos_base]);
+
+    } else if constexpr (std::is_same_v<element_type_t<T>, CharT>) {
+
+        const size_t pos_base = find_col_base(matr_idx[1], 1);
+
+        if constexpr (IsDense) {
+
+            replace_pod_dense(chr_v[pos_base].data());
+
+        } else {
+
+            replace_pod(chr_v[pos_base].data());
 
         }
 
     } else {
-        throw std::runtime_error("Error in (get_col), unsupported type\n");
-    }
-
+        std::cerr << "Error unsupported type in (replace_col)\n";
+    };
 }
 
 template <unsigned int CORES           = 4,
@@ -325,40 +338,37 @@ template <unsigned int CORES           = 4,
           bool IsDense                 = false,
           bool OneIsTrue               = true,
           bool Periodic                = false,
-          AssertionType AssertionLevel = AssertionType::Simple,
+          bool Move                    = false,
+          AssertionType AssertionLevel = AssertionType::None,
           typename T,
-          typename U
-        >
-requires span_or_vec<U>
-void get_col_filter_range(
-                          unsigned int x,
-                          std::vector<T> &rtn_v,
-                          const U &mask,
-                          const unsigned int strt_vl,
-                          OffsetBoolMask& offset_start = default_offset_start,
-                         )
+          typename U>
+requires vector_or_span<U>
+requires vector_or_span<T>
+void rep_col_filter_range_mt(
+    T& x,
+    unsigned int colnb,
+    const U& mask,
+    unsigned int strt_vl,
+    OffsetBoolMask& offset_start = default_offset_start
+) 
 {
-
-    get_col_filter_range<CORES,
-                         NUMA,
-                         IsBool,
-                         MapCol,
-                         IsDense,
-                         OneIsTrue,
-                         Periodic,
-                         AssertionLevel>(
+    rep_col_filter_range_mt<CORES,
+                            NUMA,
+                            IsBool,
+                            MapCol,
+                            IsDense,
+                            OneIsTrue,
+                            Periodic,
+                            Move,
+                            AssertionLevel>(
         x,
-        rtn_v,
+        colnb,
         mask,
         strt_vl,
         offset_start,
         (nrow - strt_vl)
     );
-
 }
-
-
-
 
 
 

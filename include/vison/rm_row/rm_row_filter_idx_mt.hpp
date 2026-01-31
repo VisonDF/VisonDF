@@ -7,13 +7,21 @@ template <unsigned int CORES           = 4,
           bool Soft                    = true,
           bool IdxIsTrue               = true,
           bool Periodic                = false,
-          AssertionType AssertionLevel = AssertionType::Simple
+          AssertionType AssertionLevel = AssertionType::Simple,
+          typename T
          >
+requires span_or_vec<T>
 void rm_row_filter_idx_mt(
-                          std::vector<uint8_t>& mask,
-                          Runs& runs = default_idx_runs
+                          const T& mask,
+                          Runs& runs,
+                          const unsigned int periodic_mask_len
                          ) 
 {
+
+    static_assert(std::is_same_v<
+        typename std::remove_cvref_t<T>::value_type,
+        unsigned int
+    >, "Error, unsigned int for mask is required\n");
 
     // Soft May auto switch to view mode
     const size_t old_nrow = nrow;
@@ -41,7 +49,7 @@ void rm_row_filter_idx_mt(
         }
     }
 
-    const size_t n_el  = (Periodic) ? old_nrow : mask.size();
+    const size_t n_el  = (Periodic) ? periodic_mask_len : mask.size();
     const size_t n_el2 = mask.size();
 
     if constexpr (CORES > 1) {
@@ -244,6 +252,38 @@ void rm_row_filter_idx_mt(
 
     }
 };
+
+template <unsigned int CORES           = 4, 
+          bool NUMA                    = false,
+          MtMethod MtType              = MtMethod::Row,
+          bool MemClean                = false,
+          bool Soft                    = true,
+          bool IdxIsTrue               = true,
+          bool Periodic                = false,
+          AssertionType AssertionLevel = AssertionType::Simple,
+          typename T
+         >
+requires span_or_vec<T>
+void rm_row_filter_idx_mt(
+                          const T& mask,
+                          Runs& runs = default_idx_runs,
+                         ) 
+{
+
+    rm_row_filter_idx_mt<CORES,
+                         NUMA,
+                         MtType,
+                         MemClean,
+                         Soft,
+                         IdxIsTrue,
+                         Periodic,
+                         AssertionLevel>rm_row_filter_idx_mt(
+        mask,
+        runs,
+        nrow
+    );
+
+}
 
 
 

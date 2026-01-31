@@ -7,14 +7,22 @@ template <unsigned int CORES           = 4,
           bool Soft                    = true,
           bool OneIsTrue               = true
           bool Periodic                = false,
-          AssertionType AssertionLevel = AssertionType::Simple
+          AssertionType AssertionLevel = AssertionType::Simple,
+          typename T
          >
+requires span_or_vec<T>
 void rm_row_filter_range_mt(
-                            std::vector<uint8_t>& mask,
+                            const T& mask,
                             const size_t strt_vl,
-                            OffsetBoolMask& offset_start = default_offset_start
+                            OffsetBoolMask& offset_start,
+                            const unsigned int periodic_mask_len
                            ) 
 {
+
+    static_assert(std::is_same_v<
+        typename std::remove_cvref_t<T>::value_type,
+        uint8_t
+    >, "Error, uint8_t for mask is required\n");
 
     // Soft May auto switch to view mode
     const size_t old_nrow = nrow;
@@ -22,6 +30,9 @@ void rm_row_filter_range_mt(
     if constexpr (AssertionLevel > AssertionType::None) {
         if (strt_vl + mask.size() >= old_nrow)
             throw std::runtime_error("strt_vl + mask.size() out of bounds\n");
+        if (!(strt_vl + periodic_mask_len < old_nrow)) {
+            throw std::runtime_error("!(strt_vl + periodic_mask_len < local_nrow)\n");
+        }
     }
 
     if constexpr (AssertionLevel > AssertionType::Simple) {
@@ -35,7 +46,7 @@ void rm_row_filter_range_mt(
 
     }
 
-    const unsigned int n_el  = (Periodic) ? old_nrow - strt_vl : mask.size();
+    const unsigned int n_el  = (Periodic) ? periodic_mask_len : mask.size();
     const unsigned int n_el2 = mask.size();
 
     if constexpr (CORES > 1) {
@@ -257,6 +268,44 @@ void rm_row_filter_range_mt(
     nrow = old_nrow - n_el; 
 
 };
+
+
+template <unsigned int CORES           = 4, 
+          bool NUMA                    = false,
+          MtMethod MtType              = MtMethod::Row,
+          bool MemClean                = false,
+          bool Soft                    = true,
+          bool OneIsTrue               = true
+          bool Periodic                = false,
+          AssertionType AssertionLevel = AssertionType::Simple,
+          typename T
+         >
+requires span_or_vec<T>
+void rm_row_filter_range_mt(
+                            const T& mask,
+                            const size_t strt_vl,
+                            OffsetBoolMask& offset_start = default_offset_start
+                           ) 
+{
+
+    rm_row_filter_range_mt<CORES,
+                           NUMA,
+                           MtType,
+                           MemClean,
+                           Soft,
+                           OneIsTrue,
+                           Periodic,
+                           AssertionLevel>rm_row_filter_range_mt(
+        mask,
+        strt_vl,
+        offset_start,
+        (nrow - strt_vl)
+    );
+
+}
+
+
+
 
 
 

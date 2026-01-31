@@ -5,15 +5,23 @@ template <unsigned int CORES           = 4,
           bool MapCol                  = false,
           bool IsDense                 = false, // assumed sorted
           bool IdxIsTrue               = true,
-          AssertionType AssertionLevel = AssertionType::Normal
+          AssertionType AssertionLevel = AssertionType::Normal,
+          typename T
         >
+requires span_or_vec<T>
 void get_dataframe_filter_idx_mt(
                                  const std::vector<size_t>& cols, 
                                  Dataframe& cur_obj,
-                                 const std::vector<unsigned int>& mask,
-                                 Runs& runs = default_idx_runs
+                                 const T& mask,
+                                 Runs& runs,
+                                 periodic_mask_len
                                  )
 {
+
+    static_assert(std::is_same_v<
+                    typename std::remove_cvref_t<T>::value_type, unsigned int>, 
+                    "mask is required to be unsigned int vector or span\n"
+    );
 
     if constexpr (AssertionLevel == AssertionType::Hard) {
         if constexpr (!IdxIsTrue || IsDense) {
@@ -65,7 +73,7 @@ void get_dataframe_filter_idx_mt(
     };
 
     const size_t nrow2 = cur_obj.get_nrow();
-    const size_t n_el = (Periodic) ? nrow2 : mask.size() ;
+    const size_t n_el = (Periodic) ? periodic_mask_len : mask.size() ;
     const size_t n_el2 = mask.size();
 
     std::vector<size_t> thread_counts;
@@ -448,6 +456,41 @@ void get_dataframe_filter_idx_mt(
     }
 
 }
+
+template <unsigned int CORES           = 4,
+          bool NUMA                    = false,
+          bool MapCol                  = false,
+          bool IsDense                 = false, // assumed sorted
+          bool IdxIsTrue               = true,
+          AssertionType AssertionLevel = AssertionType::Normal,
+          typename T
+        >
+requires span_or_vec<T>
+void get_dataframe_filter_idx_mt(
+                                 const std::vector<size_t>& cols, 
+                                 Dataframe& cur_obj,
+                                 const T& mask,
+                                 Runs& runs = default_idx_runs,
+                                 )
+{
+
+    get_dataframe_filter_idx<CORES,
+                             NUMA,
+                             MapCol,
+                             IsDense,
+                             IdxIsTrue,
+                             AssertionLevel>(
+        cols,
+        cur_obj,
+        mask,
+        runs,
+        cur_obj.get_nrow()
+    );
+
+}
+
+
+
 
 
 

@@ -6,7 +6,8 @@ template <unsigned int CORES           = 4,
           bool MapCol                  = false,
           AssertionType AssertionLevel = AssertionType::None,
           typename T> 
-void rep_col_mt(std::vector<T> &x, 
+requires span_or_vec<T>
+void rep_col_mt(const T &x, 
                 const unsigned int colnb) 
 {
 
@@ -16,7 +17,9 @@ void rep_col_mt(std::vector<T> &x,
                      MapCol,
                      AssertionLevel>(x, 
                                      colnb, 
-                                     0 // strt_vl
+                                     0,        // strt_vl
+                                     0,        // start of x
+                                     x.size(), // end of x
                                      );
 
 };

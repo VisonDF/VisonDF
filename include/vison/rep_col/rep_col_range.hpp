@@ -4,8 +4,9 @@ template <bool IsBool                  = false,
           bool MapCol                  = false,
           AssertionType AssertionLevel = AssertionType::None,
           typename T> 
+requires span_or_vec<T>
 void rep_col_range(
-                   std::vector<T> &x, 
+                   const T &x, 
                    const unsigned int colnb,
                    const unsigned int strt_vl
                   ) 

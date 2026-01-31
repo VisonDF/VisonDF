@@ -6,16 +6,25 @@ template <unsigned int CORES           = 4,
           bool IsDense                 = false,
           bool OneIsTrue               = true,
           bool Periodic                = false,
-          AssertionType AssertionLevel = AssertionType::Simple
+          AssertionType AssertionLevel = AssertionType::Simple,
+          typename T
     >
+requires span_or_vec<T>
 void get_dataframe_filter_range_mt(
                                    const std::vector<size_t>& cols, 
                                    Dataframe& cur_obj,
-                                   const std::vector<uint8_t>& mask,
+                                   const T& mask,
                                    const size_t strt_vl,
-                                   OffsetBoolMask& offset_start = default_offset_start
+                                   OffsetBoolMask& offset_start,
+                                   periodic_mask_len
                                    )
 {
+
+    static_assert(std::is_same_v<
+                      typename std::remove_cvref_t<T>::value_type, uint8_t
+                  >,
+                  "uint8_t required for mask\n"
+    );
 
     if constexpr (AssertionLevel > AssertionType::Simple) {
         if (strt_vl + mask.size() > cur_obj.get_nrow()) {
@@ -49,7 +58,7 @@ void get_dataframe_filter_range_mt(
         return pos;
     };
 
-    const unsigned int n_el  = (!Periodic) ? mask.size() : nrow - strt_vl;
+    const unsigned int n_el  = (!Periodic) ? mask.size() : periodic_mask_len;
     const unsigned int n_el2 = mask.size();
 
     if (offset_start.thread_offsets.empty()) {
@@ -387,7 +396,41 @@ void get_dataframe_filter_range_mt(
 
 }
 
+template <unsigned int CORES           = 4,
+          bool NUMA                    = false,
+          bool MapCol                  = false,
+          bool IsDense                 = false,
+          bool OneIsTrue               = true,
+          bool Periodic                = false,
+          AssertionType AssertionLevel = AssertionType::Simple,
+          typename T
+    >
+requires span_or_vec<T>
+void get_dataframe_filter_range_mt(
+                                   const std::vector<size_t>& cols, 
+                                   Dataframe& cur_obj,
+                                   const T& mask,
+                                   const size_t strt_vl,
+                                   OffsetBoolMask& offset_start = default_offset_start
+                                   )
+{
 
+    get_dataframe_filter_range_mt<CORES,
+                                  NUMA,
+                                  MapCol,
+                                  IsDense,
+                                  OneIsTrue,
+                                  Periodic,
+                                  AssertionLevel>(
+        cols,
+        cur_obj,
+        mask,
+        strt_vl,
+        offset_start,
+        (cur_obj.get_nrow() - strt_vl)
+    );
+
+}
 
 
 

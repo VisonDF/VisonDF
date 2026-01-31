@@ -6,10 +6,13 @@ template <unsigned int CORES           = 4,
           bool MapCol                  = false,
           AssertionType AssertionLevel = AssertionType::None,
           typename T> 
+requires span_or_vec<T>
 void rep_col_range_mt(
-                      std::vector<T> &x, 
+                      const T &x, 
                       const unsigned int colnb,
-                      const unsigned int strt_vl
+                      const unsigned int strt_vl, // start of the df col
+                      const unsigned int start,
+                      const unsigned int end
                      ) 
 {
 
@@ -18,11 +21,14 @@ void rep_col_range_mt(
     const unsigned int local_nrow = nrow;
 
     if constexpr (AssertionLevel > AssertionType::None) {
-        if (strt_vl + x.size() != local_nrow) {
-          throw std::runtime_error("Vector out of bound\n");
+        if (!(end > start)) {
+            std::runtime_error("end must be strictly superior to start\n");
+        }
+        if (end > local_nrow) {
+            std::runtime_error("end out of bounds\n");
         }
     }
- 
+
     auto find_col_base = [colnb]([[maybe_unused]] const auto &idx_vec, 
                                  [[maybe_unused]] const size_t idx_type) -> size_t {
         size_t pos;
@@ -46,7 +52,10 @@ void rep_col_range_mt(
         return pos;
     };
 
-    auto replace_pod = [&find_col_index,
+    const unsigned int len = end - start
+
+    auto replace_pod = [len,
+                        &find_col_index,
                         &x](
                             T* dst 
                            ) 
@@ -71,31 +80,31 @@ void rep_col_range_mt(
 
                 if constexpr (NUMA) {
                     numa_mt(cur_struct,
-                            x.size(), 
+                            len, 
                             tid, 
                             nthreads, 
                             numa_nodes);
                 } else {
                     simple_mt(cur_struct,
-                              x.size(), 
+                              len, 
                               tid, 
                               nthreads);
                 }
                     
-                const unsigned int start = cur_struct.start;
-                const unsigned int len   = cur_struct.len;
+                const unsigned int cur_start = cur_struct.start;
+                const unsigned int cur_len   = cur_struct.len;
 
-                memcpy(dst + strt_vl + start, 
+                memcpy(dst + strt_vl, 
                        x.data() + start, 
-                       len * sizeof(T));
+                       cur_len * sizeof(T));
 
             }
 
         } else {
 
             memcpy(dst + strt_vl, 
-                   x.data(), 
-                   x.size() * sizeof(T));
+                   x.data() + start, 
+                   len * sizeof(T));
 
         }
     

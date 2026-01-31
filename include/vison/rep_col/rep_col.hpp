@@ -3,9 +3,10 @@
 template <bool IsBool                  = false,
           bool MapCol                  = false,
           AssertionType AssertionLevel = AssertionType::None,
-          typename T> 
+          typename T>
+requires span_or_vec<T>
 void rep_col(
-             std::vector<T> &x, 
+             const T &x, 
              const unsigned int colnb
             ) 
 {
@@ -17,7 +18,9 @@ void rep_col(
                      AssertionLevel
                     >(x, 
                       colnb,
-                      0     // strt_vl
+                      0,       // strt_vl
+                      0,       // start of x
+                      x.size() // end of x
                       );
 
 };
