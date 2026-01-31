@@ -37,8 +37,7 @@ void rm_row_range_mt(const unsigned int start,
 
         const unsigned int len = end - start;
 
-        auto eraser = [len,
-                       x](auto& matr, const size_t idx_type) {
+        auto eraser = [len](auto& matr, const size_t idx_type) {
 
             const size_t ncols_cur = matr_idx[idx_type].size();
 
