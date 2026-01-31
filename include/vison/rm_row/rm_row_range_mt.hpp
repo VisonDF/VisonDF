@@ -35,10 +35,12 @@ void rm_row_range_mt(const unsigned int start,
 
     } else {
 
-        auto eraser = [x](auto& matr, const size_t idx_type) {
+        const unsigned int len = end - start;
+
+        auto eraser = [len,
+                       x](auto& matr, const size_t idx_type) {
 
             const size_t ncols_cur = matr_idx[idx_type].size();
-            const unsigned int len = end - start;
 
             if constexpr (CORES > 1) {
 
@@ -100,17 +102,18 @@ void rm_row_range_mt(const unsigned int start,
         if (!name_v_row.empty()) {
             name_v_row.erase(name_v_row.begin() + x);
             if constexpr (MemClean) {
-              name_v_row.shrink_to_fit();
+                name_v.resize(len);
+                name_v_row.shrink_to_fit();
             }
         }
 
         if constexpr (MemClean) {
-            for (auto& el : str_v)  el.shrink_to_fit();
-            for (auto& el : chr_v)  el.shrink_to_fit();
-            for (auto& el : bool_v) el.shrink_to_fit();
-            for (auto& el : int_v)  el.shrink_to_fit();
-            for (auto& el : uint_v) el.shrink_to_fit();
-            for (auto& el : dbl_v)  el.shrink_to_fit();
+            for (auto& el : str_v)  el.resize(len); el.shrink_to_fit();
+            for (auto& el : chr_v)  el.resize(len); el.shrink_to_fit();
+            for (auto& el : bool_v) el.resize(len); el.shrink_to_fit();
+            for (auto& el : int_v)  el.resize(len); el.shrink_to_fit();
+            for (auto& el : uint_v) el.resize(len); el.shrink_to_fit();
+            for (auto& el : dbl_v)  el.resize(len); el.shrink_to_fit();
         }
 
     }
