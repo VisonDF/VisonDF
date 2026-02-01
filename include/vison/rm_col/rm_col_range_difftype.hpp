@@ -1,11 +1,10 @@
 #pragma once
 
-template <typename T                    = void,
-           bool MapCol                  = false,
-           bool MemClean                = false,
-           AssertionType AssertionLevel = AssertionType::Simple
+template <bool MapCol                  = false,
+          bool MemClean                = false,
+          AssertionType AssertionLevel = AssertionType::Simple
          >
-void rm_col_range_sametype(std::vector<unsigned int>& cols) // better if sorted ascendly
+void rm_col_range_difftype(std::vector<unsigned int>& cols) // better if sorted ascendly
 {
 
     static_assert(is_supported_type<element_type_t<T>>, "Type not supported");
@@ -22,48 +21,18 @@ void rm_col_range_sametype(std::vector<unsigned int>& cols) // better if sorted 
     size_t idx_in_type;
     size_t idx_type;
 
-    using container_t = std::conditional_t<std::is_same_v<T, void>,
-                            std::variant<std::monostate,
-                             std::vector<std::string>*,
-                             std::vector<CharT>*,
-                             std::vector<uint8_t>*,
-                             std::vector<IntT>*,
-                             std::vector<UIntT>*,
-                             std::vector<FloatT>*
-                            >,
-                            std::vector<element_type_t<T>>*
-    >;
+    for (int i = cols.size() - 1; i > -1; --i) {
 
-    key_t var_container_table;
+        std::variant<std::monostate,
+           std::vector<std::string>&,
+           std::vector<CharT>&,
+           std::vector<uint8_t>&,
+           std::vector<IntT>&,
+           std::vector<UIntT>&,
+           std::vector<FloatT>&
+        > var_container_table;
 
-    if constexpr (!std::is_same_v<T, void>) {
-
-        if constexpr (std::is_same_v<element_type_t<T>, std::string>) {
-            idx_type = 0;
-            var_container_table = str_v;
-        } else if constexpr (std::is_same_v<element_type_t<T>, CharT>) {
-            idx_type = 1;
-            var_container_table = chr_v;
-        } else if constexpr (std::is_same_v<element_type_t<T>, uint8_t>) {
-            idx_type = 2;
-            var_container_table = bool_v;
-        } else if constexpr (std::is_same_v<element_type_t<T>, IntT>) {
-            idx_type = 3;
-            var_container_table = int_v;
-        } else if constexpr (std::is_same_v<element_type_t<T>, UIntT>) {
-            idx_type = 4;
-            var_container_table = uint_v;
-        } else if constexpr (std::is_same_v<element_type_t<T>, FloatT>) {
-            idx_type = 5;
-            var_container_table = dbl_v;
-        } else {
-            std::cerr << "Impossible type\n";
-            return;
-        }
-
-    } else {
-
-        switch (type_refv[cols[0]]) {
+        switch (type_refv[cols[nbcol]]) {
             case 's': idx_type = 0; var_container_table = str_v; break;
             case 'c': idx_type = 1; var_container_table = chr_v; break;
             case 'b': idx_type = 2; var_container_table = bool_v; break;
@@ -72,10 +41,6 @@ void rm_col_range_sametype(std::vector<unsigned int>& cols) // better if sorted 
             case 'd': idx_type = 5; var_container_table = dbl_v; break;
             default: throw std::runtime_error("Type unknown, can not exist\n");
         }
-
-    }
-
-    for (int i = cols.size() - 1; i > -1; --i) {
 
         const unsigned int nbcol = cols[i];
 

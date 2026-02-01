@@ -59,17 +59,15 @@ void rm_col(unsigned int nbcol) {
         }
 
     } else {
-
         switch (type_refv[nbcol]) {
-            case 's': idx_type = 0; break;
-            case 'c': idx_type = 1; break;
-            case 'b': idx_type = 2; break;
-            case 'i': idx_type = 3; break;
-            case 'u': idx_type = 4; break;
-            case 'd': idx_type = 5; break;
+            case 's': idx_type = 0; var_container_table = str_v; break;
+            case 'c': idx_type = 1; var_container_table = chr_v; break;
+            case 'b': idx_type = 2; var_container_table = bool_v; break;
+            case 'i': idx_type = 3; var_container_table = int_v; break;
+            case 'u': idx_type = 4; var_container_table = uint_v; break;
+            case 'd': idx_type = 5; var_container_table = dbl_v; break;
             default: throw std::runtime_error("Type unknown, can not exist\n");
         }
-
     }
 
     if constexpr (!MapCol) {
