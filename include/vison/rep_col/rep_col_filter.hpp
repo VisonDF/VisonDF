@@ -9,17 +9,17 @@ template <bool IsBool                  = false,
           AssertionType AssertionLevel = AssertionType::None,
           typename T,
           typename U
-         >
-requires span_or_vec<U>
+         > 
 requires span_or_vec<T>
-void rep_col_filter_range(
-                          T& x, 
-                          const unsigned int colnb,
-                          const U& mask,
-                          const unsigned int strt_vl,
-                          OffsetBoolMask& offset_start = default_offset_start,
-                          const unsigned int periodic_mask_len
-                         )
+requires span_or_vec<U>
+void rep_col_filter(
+                    T& x, 
+                    const unsigned int colnb,
+                    const U& mask,
+                    const unsigned int strt_vl,
+                    OffsetBoolMask& offset_start = default_offset_start,
+                    const unsigned int periodic_mask_len
+                   )
 {
 
     rep_col_filter_range_mt<1,     // CORES
@@ -34,7 +34,7 @@ void rep_col_filter_range(
         x, 
         colnb,
         mask,
-        strt_vl,
+        0,  // strt_vl
         default_offset_start,
         periodic_mask_len
     );
@@ -49,9 +49,9 @@ template <bool IsBool                  = false,
           AssertionType AssertionLevel = AssertionType::None,
           typename T,
           typename U
-         >
-requires span_or_vec<U>
+         > 
 requires span_or_vec<T>
+requires span_or_vec<U>
 void rep_col_filter_range(
                           T& x, 
                           const unsigned int colnb,
@@ -73,7 +73,7 @@ void rep_col_filter_range(
         x, 
         colnb,
         mask,
-        strt_vl,
+        0,  // strt_vl
         default_offset_start,
         (nrow - strt_vl)
     );
