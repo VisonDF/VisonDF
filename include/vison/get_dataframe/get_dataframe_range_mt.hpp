@@ -1,7 +1,8 @@
 #pragma once
 
-template <unsigned int CORES = 4,
-          bool NUMA = false,
+template <unsigned int CORES           = 4,
+          bool NUMA                    = false,
+          MtMethod MtType              = MtMethod::Row,
           AssertionType AssertionLevel = AssertionType::Simple
          >
 void get_dataframe_mt(
@@ -21,7 +22,7 @@ void get_dataframe_mt(
         }
     }
 
-    nrow                   = end - start;
+    nrow                          = end - start;
     const unsigned int local_nrow = nrow;
     
     in_view                = cur_obj.get_in_view();
@@ -29,8 +30,9 @@ void get_dataframe_mt(
     const auto row_view_idx2                                            = cur_obj.get_row_view_idx();
     const std::vector<std::string>& name_v_row2 = cur_obj.get_rowname();
 
-    auto copy_view = [local_nrow,
-                      &row_view_idx2]() 
+    auto str_copy_col = [local_nrow](std::string* dst, 
+                                     const std::string* src,
+                                     const unsigned int inner_cores) 
     {
 
         if constexpr (CORES > 1) {
@@ -42,60 +44,7 @@ void get_dataframe_mt(
             if (numa_available() >= 0) 
                 numa_nodes = numa_max_node() + 1;
 
-            #pragma omp parallel num_threads(CORES)
-            {
-
-                const int tid        = omp_get_thread_num();
-                const int nthreads   = omp_get_num_threads();
-           
-                MtStruct cur_struct;
-
-                if constexpr (NUMA) {
-                    numa_mt(cur_struct,
-                            local_nrow, 
-                            tid, 
-                            nthreads, 
-                            numa_nodes);
-                } else {
-                    simple_mt(cur_struct,
-                              local_nrow, 
-                              tid, 
-                              nthreads);
-                }
-                    
-                const unsigned int cur_start = cur_struct.start;
-                const unsigned int cur_end   = cur_struct.end;
-                const unsigned int cur_len   = cur_struct.len;
-
-                memcpy(row_view_idx.data()  + cur_start, 
-                       row_view_idx2.data() + start + cur_start, 
-                       len * sizeof(T));
-
-
-            }
-
-        } else {
-
-           memcpy(row_view_idx.data()  + cur_start, 
-                  row_view_idx2.data() + start + cur_start, 
-                  len * sizeof(T));
-
-        }
-    }
-
-    auto str_copy_col = [local_nrow](std::string* dst, 
-                                     const std::string* src) {
-
-        if constexpr (CORES > 1) {
-
-            if (CORES > local_nrow)
-                throw std::runtime_error("Too much cores for so little nrows\n");
-
-            int numa_nodes = 1;
-            if (numa_available() >= 0) 
-                numa_nodes = numa_max_node() + 1;
-
-            #pragma omp parallel num_threads(CORES)
+            #pragma omp parallel if(inner_cores > 1) num_threads(inner_cores)
             {
 
                 const int tid        = omp_get_thread_num();
@@ -133,7 +82,9 @@ void get_dataframe_mt(
     }
 
     auto copy_col = [local_nrow]<typename T>(T* dst, 
-                                             const T* src) {
+                                             const T* src,
+                                             const unsigned int inner_cores) 
+    {
 
         if constexpr (CORES > 1) {
 
@@ -144,7 +95,7 @@ void get_dataframe_mt(
             if (numa_available() >= 0) 
                 numa_nodes = numa_max_node() + 1;
 
-            #pragma omp parallel num_threads(CORES)
+            #pragma omp parallel if(inner_cores > 1) num_threads(inner_cores)
             {
 
                 const int tid        = omp_get_thread_num();
@@ -191,8 +142,23 @@ void get_dataframe_mt(
     const auto& dbl_vec2  = cur_obj.get_dbl_vec();
 
     auto process_container = [local_nrow]<typename T>(const std::vector<std::vector<T>>& matr2,
-                                                      std::vector<std::vector<T>>& matr){
-        for (const auto& el : matr2) {
+                                                      std::vector<std::vector<T>>& matr)
+    {
+
+        const unsigned int outer_cores = std::conditional_t<MtType == MtMethod::Col,
+                                                            CORES,
+                                                            std::min<unsigned int>(
+                                                                matr_idx2.size(), std::max(1u, CORES / 2)
+                                                             )
+                                                           >;
+        const unsigned int inner_cores = std::conditional_t<MtType == MtMethod::Row,
+                                                            CORES,
+                                                            std::max(1u, CORES / outer_threads)
+                                                           >;
+
+        #pragma omp paralel for if(outer_cores > 1) num_threads(outer_cores)
+        for (size_t i = 0; i < matr2.size(); ++i) {
+            const auto& el = matr2[i];
             matr.emplace_back();
             matr.back().resize(local_nrow);
             auto* dst       = matr_v.back().data();
@@ -207,10 +173,27 @@ void get_dataframe_mt(
 
     auto cols_proceed = [local_nrow, 
                          &col_alrd_materialized2,
-                         &cols](auto&& f, auto&& f2) 
+                         &cols](
+                                 auto&& f, 
+                                 auto&& f2
+                                ) 
     {
-        size_t i2 = 0;
-        for (int i : cols) {
+
+        const unsigned int outer_cores = std::conditional_t<MtType == MtMethod::Col,
+                                                            CORES,
+                                                            std::min<unsigned int>(
+                                                                cols.size(), std::max(1u, CORES / 2)
+                                                             )
+                                                           >;
+        const unsigned int inner_cores = std::conditional_t<MtType == MtMethod::Row,
+                                                            CORES,
+                                                            std::max(1u, CORES / outer_threads)
+                                                           >;
+
+        #pragma omp parallel for if(outer_cores > 1) num_threads(outer_cores)
+        for (size_t i2 = 0; i2 < cols.size(); ++i) {
+
+            const unsigned int i = cols[i2];
 
             switch (type_refv[i]) {
                   case 's': {
@@ -219,7 +202,8 @@ void get_dataframe_mt(
                               str_v.emplace_back();
                               str_v.back().resize(local_nrow);
                               f2(str_v.back().data(),  
-                                 str_vec2[i].data()); 
+                                 str_vec2[i].data(),
+                                 inner_cores); 
                               break;
                             }
                   case 'c': {
@@ -227,7 +211,8 @@ void get_dataframe_mt(
                               chr_v.emplace_back();
                               chr_v.back().resize(local_nrow);
                               f1(chr_v.back().data(),  
-                                 chr_vec2[i].data()); 
+                                 chr_vec2[i].data(),
+                                 inner_cores); 
                               break;
                             }
                   case 'b': {
@@ -235,7 +220,8 @@ void get_dataframe_mt(
                               bool_v.emplace_back();
                               bool_v.back().resize(local_nrow);
                               f1(bool_v.back().data(),  
-                                 bool_vec2[i].data()); 
+                                 bool_vec2[i].data(),
+                                 inner_cores); 
                               break;
                             }
                   case 'i': {
@@ -243,7 +229,8 @@ void get_dataframe_mt(
                               int_v.emplace_back();
                               int_v.back().resize(local_nrow);
                               f1(int_v.back().data(),  
-                                 int_vec2[i].data()); 
+                                 int_vec2[i].data(),
+                                 inner_cores); 
                               break;
                             }
                  case 'u': {
@@ -251,7 +238,8 @@ void get_dataframe_mt(
                               uint_v.emplace_back();
                               uint_v.back().resize(local_nrow);
                               f1(uint_v.back().data(),  
-                                 uint_vec2[i].data()); 
+                                 uint_vec2[i].data(),
+                                 inner_cores); 
                               break;
                             }
                   case 'd': {
@@ -259,11 +247,15 @@ void get_dataframe_mt(
                               dbl_v.emplace_back();
                               dbl_v.back().resize(local_nrow);
                               f1(dbl_v.back().data(),  
-                                 dbl_vec2[i].data()); 
+                                 dbl_vec2[i].data(),
+                                 inner_cores); 
                               break;
                             }
             }
+        }
 
+        size_t i2 = 0;
+        for (const auto i : cols) {
             if (col_alrd_materialized2.contains(i))
                 col_alrd_materialized.insert(i);
                 
@@ -271,7 +263,6 @@ void get_dataframe_mt(
             type_refv[i2] = type_refv1[i];
 
             i2 += 1;
-
         }
 
     };
@@ -325,8 +316,12 @@ void get_dataframe_mt(
         str_copy_col(name_v_row.data(), name_v_row2.data());
     }
 
-    if (in_view)
-        copy_view();
+    if (in_view) {
+        row_view_idx.resize(local_nrow);
+        copy_col(row_view_idx.data(),
+                 row_view_idx2.data(),
+                 CORES);
+    }
 }
 
 
