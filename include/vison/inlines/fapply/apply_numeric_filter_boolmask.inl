@@ -1,18 +1,24 @@
 #pragma once
 
-template <bool MapCol        = false,
-          unsigned int CORES = 4,
+template <unsigned int CORES = 4,
+          bool NUMA          = false,
+          bool MapCol        = false,
           bool OneIsTrue     = true,
           bool Periodic      = false,
           typename T, 
+          typename U, 
           typename F>
-inline void apply_numeric_filter_boolmask(const std::vector<T>& values, 
-                                          const unsigned int n, 
-                                          const size_t idx_type, 
-                                          F&& f,
-                                          const std::vector<uint8_t>& mask,
-                                          const unsigned int strt_vl,
-                                          OffsetBoolMask& offset_start) 
+requires span_or_vec<U>
+inline void apply_numeric_filter_boolmask(
+                                            const std::vector<T>& values, 
+                                            const unsigned int n, 
+                                            const size_t idx_type, 
+                                            F&& f,
+                                            const U& mask,
+                                            const unsigned int strt_vl,
+                                            OffsetBoolMask& offset_start,
+                                            const unsigned int periodic_mask_len
+                                          ) 
 {
     unsigned int idx_in_type = 0;
     if constexpr (!MapCol) {
@@ -37,12 +43,12 @@ inline void apply_numeric_filter_boolmask(const std::vector<T>& values,
     }
 
     T* dst = values[idx_in_type].data() + strt_vl;
-    const unsigned int n_el  = (Periodic) ? mask.size() : nrow - strt_vl;
+    const unsigned int n_el  = (Periodic) ? periodic_mask_len : nrow - strt_vl;
     const unsigned int n_el2 = mask.size();
 
     if constexpr (CORES > 1) {
 
-        if (CORES > mask.size())
+        if (CORES > n_el)
             throw std::runtime_error("Too much cores for so little nrows\n");
 
         if (offset_start.vec.empty()) {

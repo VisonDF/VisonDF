@@ -1,18 +1,23 @@
 #pragma once
 
-template <bool MapCol         = false,
-          unsigned int CORES  = 4,
+template <unsigned int CORES  = 4,
           bool NUMA           = false,
+          bool MapCol         = false,
           bool IdxIsTrue      = true,
           bool Periodic       = false,
-          typename T, 
+          typename T,
+          typename U,
           typename F>
-inline void apply_numeric_filter_idx(const std::vector<T>& values, 
-                                     const unsigned int n, 
-                                     const size_t idx_type, 
-                                     F&& f,
-                                     const std::vector<unsigned int>& mask,
-                                     Runs& runs = default_idx_runs) 
+requires span_or_vec<U>
+inline void apply_numeric_filter_idx(
+                                       const std::vector<T>& values, 
+                                       const unsigned int n, 
+                                       const size_t idx_type, 
+                                       F&& f,
+                                       const U& mask,
+                                       Runs& runs,
+                                       const unsigned int periodic_mask_len
+                                    ) 
 {
 
     unsigned int i2 = 0;
@@ -39,7 +44,7 @@ inline void apply_numeric_filter_idx(const std::vector<T>& values,
 
     std::vector<T>& dst = values[i2];
 
-    const unsigned int n_el  = (Periodic) ? nrow : mask.size();
+    const unsigned int n_el  = (Periodic) ? periodic_mask_len : mask.size();
     const unsigned int n_el2 = mask.size();
 
     if constexpr (CORES > 1) {
@@ -167,7 +172,6 @@ inline void apply_numeric_filter_idx(const std::vector<T>& values,
         }
     }
 }
-
 
 
 

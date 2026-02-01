@@ -8,12 +8,16 @@ template <unsigned int CORES           = 4,
           bool IdxIsTrue               = true,
           bool Periodic                = true,
           AssertionType AssertionLevel = AssertionType::Simple,
-          typename T>
+          typename T,
+          typename U
+         >
+requires span_or_vec<U>
 void get_col_filter_idx_mt(
                            unsigned int x,
                            std::vector<T> &rtn_v,
-                           std::vector<unsigned int> &mask,
-                           Runs& runs = default_idx_runs
+                           const U &mask,
+                           Runs& runs,
+                           const unsigned int periodic_mask_len
                           )
 {
 
@@ -42,7 +46,7 @@ void get_col_filter_idx_mt(
         }
     }
 
-    const unsigned int n_el  = (Periodic) ? local_nrow : mask.size();
+    const unsigned int n_el  = (Periodic) ? periodic_mask_len : mask.size();
     const unsigned int n_el2 = mask.size();
 
     auto find_col_base = [this,
@@ -331,6 +335,48 @@ void get_col_filter_idx_mt(
         return;
     }
 }
+
+template <unsigned int CORES           = 4,
+          bool NUMA                    = false,
+          bool IsBool                  = false,
+          bool MapCol                  = false,
+          bool IsDense                 = false, // assumed sorted increasingly
+          bool IdxIsTrue               = true,
+          bool Periodic                = true,
+          AssertionType AssertionLevel = AssertionType::Simple,
+          typename T,
+          typename U
+         >
+requires span_or_vec<U>
+void get_col_filter_idx_mt(
+                           unsigned int x,
+                           std::vector<T> &rtn_v,
+                           const U &mask,
+                           Runs& runs = default_idx_runs,
+                          )
+{
+
+    get_col_filter_idx_mt<CORES,
+                          NUMA,
+                          IsBool,
+                          MapCol,
+                          IsDense,
+                          IdxIsTrue,
+                          Periodic,
+                          AssertionLevel>(
+        x,
+        rtn_v,
+        mask,
+        runs,
+        nrow
+    );
+
+}
+
+
+
+
+
 
 
 
