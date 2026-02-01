@@ -49,7 +49,7 @@ void get_col_mt(const unsigned int x,
             if (numa_available() >= 0) 
                 numa_nodes = numa_max_node() + 1;
 
-            #pragma omp parallel num_threads(CORES)
+            #pragma omp parallel if(CORES > 1) num_threads(CORES)
             {
 
                 const int tid        = omp_get_thread_num();

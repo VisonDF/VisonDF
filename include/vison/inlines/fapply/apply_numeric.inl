@@ -47,7 +47,7 @@ inline void apply_numeric(const std::vector<std::vector<T>>& values,
         if (numa_available() >= 0) 
             numa_nodes = numa_max_node() + 1;
 
-        #pragma omp prallel num_threads(CORES)
+        #pragma omp prallel if(CORES > 1) num_threads(CORES)
         {
 
             const int tid        = omp_get_thread_num();
