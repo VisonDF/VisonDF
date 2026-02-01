@@ -71,7 +71,8 @@ void get_dataframe_filter_range_mt(
                                  n_el2);
     }
 
-    nrow = offset_start.active_rows;
+    const unsigned int local_nrow = offset_start.active_rows;
+    nrow = local_nrow;
 
     in_view = cur_obj.get_in_view();
     ankerl::unordered_dense::set<unsigned int>& col_alrd_materialized2  = cur_obj.get_col_alrd_materialized();
@@ -84,25 +85,24 @@ void get_dataframe_filter_range_mt(
                          &mask, 
                          &offset_start]<typename T>(
                                                      std::vector<T>& dst_vec,
-                                                     const std::vector<T>& src_vec2
+                                                     const std::vector<T>& src_vec2,
+                                                     const unsigned int inner_cores
                                                    )
     {
-
-        dst_vec.resize(offset_start.active_rows);
 
         const T* __restrict src = src_vec2.data() + strt_vl;
         T*       __restrict dst = dst_vec.data();
 
         if constexpr (CORES > 1) {
 
-            if (CORES > mask.size())
-                throw std::runtime_error("Too much cores for so little nrows\n");
+            //if (CORES > mask.size())
+            //    throw std::runtime_error("Too much cores for so little nrows\n");
 
             int numa_nodes = 1;
             if (numa_available() >= 0) 
                 numa_nodes = numa_max_node() + 1;
 
-            #pragma omp parallel num_threads(CORES)
+            #pragma omp parallel if(inner_cores > 1) num_threads(inner_cores)
             {
 
                 const int tid        = omp_get_thread_num();
@@ -174,25 +174,24 @@ void get_dataframe_filter_range_mt(
                      &mask, 
                      &offset_start]<typename T>(
                                                 auto& dst_vec,
-                                                const auto& src_vec2
+                                                const auto& src_vec2,
+                                                const unsigned int inner_cores
                                                )
     {
   
-        dst_vec.resize(offset_start.active_rows);
-
         const T* __restrict src = src_vec2.data() + strt_vl;
         T*       __restrict dst = dst_vec.data();
 
         if constexpr (CORES > 1) {
 
-            if (CORES > mask.size())
-                throw std::runtime_error("Too much cores for so little nrows\n");
+            //if (CORES > mask.size())
+            //    throw std::runtime_error("Too much cores for so little nrows\n");
 
             int numa_nodes = 1;
             if (numa_available() >= 0) 
                 numa_nodes = numa_max_node() + 1;
 
-            #pragma omp parallel num_threads(CORES)
+            #pragma omp parallel if(inner_cores > 1) num_threads(inner_cores)
             {
 
                 const int tid        = omp_get_thread_num();
@@ -260,78 +259,134 @@ void get_dataframe_filter_range_mt(
     const auto& uint_vec2 = cur_obj.get_uint_vec();
     const auto& dbl_vec2  = cur_obj.get_dbl_vec();
 
-    auto process_container = []<typename T>(const std::vector<std::vector<T>>& matr2,
-                                            std::vector<std::vector<T>>& matr){
-        for (const auto& el : matr2) {
+    auto process_container = [local_nrow]<typename T>(const std::vector<std::vector<T>>& matr2,
+                                                      std::vector<std::vector<T>>& matr)
+    {
+
+
+        const unsigned int outer_cores = std::conditional_t<MtType == MtMethod::Col,
+                                                            CORES,
+                                                            std::min<unsigned int>(
+                                                                matr_idx2.size(), std::max(1u, CORES / 2)
+                                                             )
+                                                           >;
+        const unsigned int inner_cores = std::conditional_t<MtType == MtMethod::Row,
+                                                            CORES,
+                                                            std::max(1u, CORES / outer_threads)
+                                                           >;
+
+        #pragma omp paralel for if(outer_cores > 1) num_threads(outer_cores)
+        for (size_t i = 0; matr2.size(); ++i) {
+            const auto& el = matr2[i];
             matr.emplace_back();
+            matr.back.resize(local_nrow);
             auto* dst       = matr_v.back().data();
             const auto* src = el.data();
             if constexpr (!IsDense || std::is_same_v<T, std::string>) {
-                copy_col(dst, src);
+                copy_col(dst, 
+                        src,
+                        inner_cores);
             } else {
-                copy_col_dns(dst, src);
+                copy_col_dns(dst, 
+                             src,
+                             inner_cores);
             }
         }
     };
 
-    auto cols_proceed = [&find_col_base,
+    auto cols_proceed = [this,
+                         local_nrow,
+                         &find_col_base,
                          &col_alrd_materialized2,
-                         &cols](auto&& f1, auto&& f2) 
+                         &cols](
+                                 auto&& f1, 
+                                 auto&& f2
+                                ) 
     {
-        size_t i2 = 0;
-        for (int i : cols) {
+        
+
+        const unsigned int outer_cores = std::conditional_t<MtType == MtMethod::Col,
+                                                            CORES,
+                                                            std::min<unsigned int>(
+                                                                cols.size(), std::max(1u, CORES / 2)
+                                                             )
+                                                           >;
+        const unsigned int inner_cores = std::conditional_t<MtType == MtMethod::Row,
+                                                            CORES,
+                                                            std::max(1u, CORES / outer_threads)
+                                                           >;
+
+        #pragma omp parallel for if(outer_cores > 1) num_threads(outer_cores)
+        for (size_t i2 = 0; i2 < cls.size(); ++i2) {
+
+            const unsigned int i = cols[i2];
 
             switch (type_refv[i]) {
                   case 's': {
                               matr_idx_map[0] = i2;
                               str_v.emplace_back();
+                              str_v.back().resize(local_nrow);
                               const size_t idx_in_type = find_col_base(matr_idx[0], 0, i);
                               f2(str_v.back(),  
-                                 str_vec2[idx_in_type]); 
+                                 str_vec2[idx_in_type],
+                                 inner_cores); 
                               break;
                             }
                   case 'c': {
                               matr_idx_map[1] = i2;
                               chr_v.emplace_back();
+                              chr_v.back().resize(local_nrow);
                               const size_t idx_in_type = find_col_base(matr_idx[1], 1, i);
                               f1(chr_v.back(),  
-                                 chr_vec2[idx_in_type]); 
+                                 chr_vec2[idx_in_type],
+                                 inner_cores); 
                               break;
                             }
                   case 'b': {
                               matr_idx_map[2] = i2;
                               bool_v.emplace_back();
+                              bool_v.back().resize(local_nrow);
                               const size_t idx_in_type = find_col_base(matr_idx[2], 2, i);
                               f1(bool_v.back(),  
-                                 bool_vec2[idx_in_type]); 
+                                 bool_vec2[idx_in_type],
+                                 inner_cores); 
                               break;
                             }
                   case 'i': {
                               matr_idx_map[3] = i2;
                               int_v.emplace_back();
+                              int_v.back().resize(local_nrow);
                               const size_t idx_in_type = find_col_base(matr_idx[3], 3, i);
                               f1(int_v.back(),  
-                                 int_vec2[idx_in_type]); 
+                                 int_vec2[idx_in_type],
+                                 inner_cores); 
                               break;
                             }
                  case 'u': {
                               matr_idx_map[4] = i2;
                               uint_v.emplace_back();
+                              uint_v.back().resize(local_nrow);
                               const size_t idx_in_type = find_col_base(matr_idx[4], 4, i);
                               f1(uint_v.back(),  
-                                 uint_vec2[idx_in_type]); 
+                                 uint_vec2[idx_in_type],
+                                 inner_cores); 
                               break;
                             }
                   case 'd': {
                               matr_idx_map[5] = i2;
                               dbl_v.emplace_back();
+                              dbl_v.back().resize(local_nrow);
                               const size_t idx_in_type = find_col_base(matr_idx[5], 5, i);
                               f1(dbl_v.back(),  
-                                 dbl_vec2[idx_in_type]); 
+                                 dbl_vec2[idx_in_type],
+                                 inner_cores); 
                               break;
                             }
             }
+        }
 
+        size_t i2 = 0;
+        for (const auto i : cols) {
             if (col_alrd_materialized2.contains(i))
                 col_alrd_materialized.insert(i);
                 
@@ -339,9 +394,7 @@ void get_dataframe_filter_range_mt(
             type_refv[i2] = type_refv1[i];
 
             i2 += 1;
-
         }
-
     };
 
     if (cols.empty()) {
