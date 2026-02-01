@@ -443,23 +443,24 @@ namespace vison {
         #include "get_dataframe/vectorized/get_dataframe_filter_idx_simd.hpp"
 
         #include "write/write_csv/writef.hpp"
-  
-        #include "inlines/rep_col/rep_col_filter_boolmask.inl"
-        #include "inlines/rep_col/rep_col_filter_boolmask_bacth.inl"
+
         #include "rep_col/rep_col.hpp"
-        #include "rep_col/batched/rep_col_batch.hpp"
+        #include "rep_col/rep_col_mt.hpp"
+        #include "rep_col/rep_col_range.hpp"
+        #include "rep_col/rep_col_range_mt.hpp"
         #include "rep_col/rep_col_filter.hpp"
-        #include "rep_col/batched/rep_col_filter_batch.hpp"
+        #include "rep_col/rep_col_filter_mt.hpp"
         #include "rep_col/rep_col_filter_range.hpp"
+        #include "rep_col/rep_col_filter_range_mt.hpp"
         #include "rep_col/rep_col_filter_idx.hpp"
-        #include "rep_col/batched/rep_col_filter_idx_batch.hpp"
-        #include "rep_col/batched/rep_col_filter_range_batch.hpp"
+        #include "rep_col/rep_col_filter_idx_mt.hpp"
 
         #include "add_col/add_col_mt.hpp"
         #include "add_col/add_col.hpp"
 
         #include "rm_col/rm_col.hpp"
-        #include "rm_col/rm_col_range.hpp"
+        #include "rm_col/rm_col_range_sametype.hpp"
+        #include "rm_col/rm_col_range_difftype.hpp"
 
         #include "rm_row/rm_row.hpp"
         #include "rm_row/rm_row_mt.hpp"
