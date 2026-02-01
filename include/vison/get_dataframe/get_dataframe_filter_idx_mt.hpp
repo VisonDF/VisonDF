@@ -2,6 +2,7 @@
 
 template <unsigned int CORES           = 4,
           bool NUMA                    = false,
+          MtMethod MtType              = MtMethod::Row,
           bool MapCol                  = false,
           bool IsDense                 = false, // assumed sorted
           bool IdxIsTrue               = true,
